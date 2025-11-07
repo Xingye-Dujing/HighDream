@@ -5,8 +5,9 @@ from typing import Deque, Dict, List, Tuple
 
 from sympy import Expr, Symbol, latex, log, simplify, sympify
 
-from core import BaseStepGenerator, RuleRegistry
 from utils import Context, MatcherList, Operation, RuleContext, RuleDict, RuleFunction
+from .base_step_generator import BaseStepGenerator
+from .rule_registry import RuleRegistry
 
 
 class BaseCalculator(ABC):
