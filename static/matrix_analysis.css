@@ -1,0 +1,465 @@
+@font-face {
+  font-family: "JetBrains";
+  src: url("./fonts/JetBrainsMono-Bold.ttf");
+}
+
+@font-face {
+  font-family: "LXGW";
+  src: url("./fonts/LXGWWenKaiGB-Medium.ttf");
+}
+
+:root {
+  --font-family: "JetBrains", "LXGW", Arial, serif;
+  --jp-border-width: 1px;
+  --jp-border-color0: #e0e0e0;
+  --jp-border-color1: #bdbdbd;
+  --jp-border-color2: #9e9e9e;
+  --jp-ui-font-size: calc(14px / var(--jp-ui-font-scale-factor));
+  --jp-ui-font-color0: rgba(0, 0, 0, 0.87);
+  --jp-ui-font-color1: rgba(0, 0, 0, 0.54);
+  --jp-content-line-height: 1.6;
+  --jp-layout-color0: white;
+  --jp-layout-color1: #f7f7f7;
+  --jp-layout-color2: #e7e7e7;
+  --jp-layout-color3: #d7d7d7;
+  --jp-brand-color0: #1976d2;
+  --jp-brand-color1: #5b89cd;
+  --jp-error-color: #f44336;
+  --jp-success-color: #4caf50;
+  --jp-kernel-idle-color: #4caf50;
+  --jp-kernel-busy-color: #ff9800;
+  --jp-kernel-error-color: #f44336;
+  --jp-cell-padding: 10px;
+  --jp-cell-prompt-width: 100px;
+  --jp-cell-prompt-opacity: 1;
+  --jp-cell-prompt-not-active-opacity: 0.5;
+  --jp-cell-editor-background: var(--jp-layout-color0);
+  --jp-cell-editor-border-color: var(--jp-border-color1);
+  --jp-cell-editor-background-edit: var(--jp-layout-color0);
+  --jp-cell-editor-active-border-color: var(--jp-brand-color1);
+  --jp-cell-output-background: rgba(255, 255, 255, 0.685);
+  --jp-code-font-size: 13px;
+  --jp-code-line-height: 1.6;
+  --jp-toolbar-border-color: var(--jp-border-color1);
+  --transition-speed: 0.3s;
+  --animation-timing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button:focus,
+select:focus,
+input:focus {
+  outline: transparent;
+  outline-offset: -1px;
+}
+
+mjx-container {
+  margin: 10px !important;
+}
+
+/* 避免在渲染区下方产生多余的空白 */
+mjx-assistive-mml {
+  top: -10000px !important;
+  left: -10000px !important;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--jp-ui-font-size);
+  background-color: var(--jp-layout-color1);
+  color: var(--jp-ui-font-color0);
+  margin: 0;
+  padding: 0;
+  line-height: var(--jp-content-line-height);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar:horizontal {
+  height: 8px;
+}
+
+::-webkit-scrollbar:vertical {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--jp-layout-color1);
+  border-radius: 5px;
+  border: 1px solid var(--jp-border-color0);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--jp-layout-color1);
+  border-radius: 5px;
+  transition: background 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--jp-layout-color2);
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--jp-layout-color1);
+}
+
+a {
+  text-decoration: none;
+}
+
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  background-color: var(--jp-layout-color0);
+  padding: 0 20px;
+  border-bottom: var(--jp-border-width) solid var(--jp-toolbar-border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+#header h1 {
+  font-size: 18px;
+  margin: 0;
+  font-weight: 600;
+  color: var(--jp-ui-font-color0);
+  display: flex;
+  align-items: center;
+}
+
+#header h1 i {
+  margin-right: 12px;
+  color: var(--jp-brand-color0);
+}
+
+#header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-btn {
+  background: none;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--jp-ui-font-color1);
+  transition: all var(--transition-speed);
+  position: relative;
+  overflow: hidden;
+  font-size: 16px;
+}
+
+.header-btn:hover {
+  background-color: var(--jp-layout-color2);
+  color: var(--jp-ui-font-color0);
+  transform: translateY(-1px);
+}
+
+.header-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: inherit;
+}
+
+.header-btn:hover::after {
+  opacity: 0.05;
+}
+
+#math-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.math-bg-element {
+  position: absolute;
+  font-size: 5rem;
+  opacity: 0.02;
+  color: var(--jp-ui-font-color0);
+  font-family: var(--font-family);
+  transition: all 0.5s ease;
+  animation: float 15s infinite ease-in-out;
+}
+
+.math-bg-element:nth-child(odd) {
+  animation-delay: 0s;
+}
+
+.math-bg-element:nth-child(even) {
+  animation-delay: 7.5s;
+}
+
+body:hover .math-bg-element {
+  opacity: 0.03;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-15px) rotate(2deg);
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+  }
+  75% {
+    transform: translateY(15px) rotate(-2deg);
+  }
+}
+
+#content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--jp-cell-padding);
+}
+
+#matrix-render,
+.result-section {
+  padding: var(--jp-cell-padding);
+  border: var(--jp-border-width) solid var(--jp-cell-editor-border-color);
+  background-color: var(--jp-cell-editor-background);
+  border-radius: 8px;
+}
+
+/* 重设边距 */
+.result-section {
+  margin-top: 20px;
+}
+
+#render {
+  border: var(--jp-border-width) solid var(--jp-cell-editor-border-color);
+  background-color: var(--jp-cell-editor-background);
+  padding: var(--jp-cell-padding);
+  border-radius: 8px;
+}
+
+.rank,
+.det,
+.det-steps-1,
+.eigenvectors,
+.U,
+.S,
+.V {
+  margin-bottom: 10px;
+}
+
+.matrix-preview,
+.math-output {
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 6px;
+  min-height: 52px;
+  border: 1px dashed var(--jp-border-color1);
+  font-size: 15px;
+  transition: all var(--transition-speed);
+}
+
+.math-output {
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  max-height: 300px;
+  position: relative;
+}
+
+/* 折叠状态 */
+.math-output.collapsed {
+  max-height: 40px;
+  overflow: hidden;
+}
+
+.result-item {
+  margin-bottom: 20px;
+  transition: all 0.2s ease;
+}
+
+.result-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.result-item h3 {
+  margin: 0 0 12px 0;
+  font-size: 1em;
+  font-weight: 500;
+  text-indent: 2em;
+}
+
+.result-top {
+  display: flex;
+  justify-content: space-between;
+}
+
+.det-button {
+  display: flex;
+}
+
+.run-button {
+  background: var(--jp-layout-color0);
+  border: 1px solid var(--jp-border-color1);
+  margin-right: 30px;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  z-index: 10;
+  color: var(--jp-ui-font-color1);
+  font-size: 12px;
+}
+
+.run-button:hover {
+  background-color: var(--jp-brand-color0);
+  color: white;
+  border-color: var(--jp-brand-color0);
+  transform: scale(1.1);
+}
+
+/* 新增：数学输出区域控制按钮 */
+.math-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 5;
+}
+
+.math-control-btn {
+  background: var(--jp-layout-color0);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  color: var(--jp-ui-font-color1);
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.math-control-btn:hover {
+  background-color: var(--jp-brand-color0);
+  color: white;
+  border-color: var(--jp-brand-color0);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* 全屏遮罩 */
+.math-fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.math-fullscreen-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.math-fullscreen-content {
+  background-color: var(--jp-layout-color0);
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 90%;
+  max-height: 90%;
+  overflow: auto;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.math-fullscreen-overlay.active .math-fullscreen-content {
+  transform: scale(1);
+}
+
+.math-fullscreen-header {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--jp-border-color1);
+  flex-shrink: 0;
+}
+
+.math-fullscreen-close {
+  background: var(--jp-layout-color0);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  color: var(--jp-ui-font-color1);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.math-fullscreen-close:hover {
+  background-color: var(--jp-error-color);
+  color: white;
+  border-color: var(--jp-error-color);
+}
+
+.math-fullscreen-body {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}

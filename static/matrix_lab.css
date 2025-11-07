@@ -1,0 +1,59 @@
+#notebook-container {
+  padding: 0;
+}
+
+#content,
+.cell {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--jp-cell-padding);
+}
+
+.add-cell-button {
+  top: 20px;
+  right: 20px;
+}
+
+.markdown-cell .cell-prompt {
+  width: 40px;
+}
+
+#matrix-render {
+  padding: var(--jp-cell-padding);
+  border: var(--jp-border-width) solid var(--jp-cell-editor-border-color);
+  background-color: var(--jp-cell-editor-background);
+  border-radius: 8px;
+}
+
+.matrix-preview {
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 6px;
+  min-height: 52px;
+  border: 1px dashed var(--jp-border-color1);
+  font-size: 15px;
+  transition: all var(--transition-speed);
+}
+
+#render {
+  border: var(--jp-border-width) solid var(--jp-cell-editor-border-color);
+  background-color: var(--jp-cell-editor-background);
+  padding: var(--jp-cell-padding);
+  border-radius: 8px;
+}
+
+.record-toggle {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 10px;
+  font-size: 12px;
+  color: var(--jp-ui-font-color1);
+}
+
+.record-toggle input[type="radio"] {
+  margin-right: 4px;
+}
+
+.record-toggle span {
+  white-space: nowrap;
+}

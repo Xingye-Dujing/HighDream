@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Matrix Analysis</title>
+    <link rel="stylesheet" href="../static/fontawesome/css/all.min.css" />
+    <link rel="stylesheet" href="/static/matrix_analysis.css" />
+    <script
+      id="MathJax-script"
+      async
+      src="../static/mathjax/es5/tex-chtml-full.js"
+    ></script>
+    <script src="/static/matrix_analysis.js"></script>
+  </head>
+
+  <body>
+    <div id="math-background">
+      <div class="math-bg-element" style="top: 10%; left: 5%">∫</div>
+      <div class="math-bg-element" style="top: 20%; right: 8%">∑</div>
+      <div class="math-bg-element" style="top: 40%; left: 7%">∂</div>
+      <div class="math-bg-element" style="top: 60%; right: 10%">π</div>
+      <div class="math-bg-element" style="top: 80%; left: 12%">∞</div>
+      <div class="math-bg-element" style="bottom: 15%; right: 5%">∇</div>
+    </div>
+
+    <div id="header">
+      <h1><i></i>Matrix Analysis</h1>
+      <div id="header-controls">
+        <a href="/">
+          <button class="header-btn" id="matrixLabBtn" title="首页">
+            <i class="fas fa-circle"></i>
+          </button>
+        </a>
+      </div>
+    </div>
+
+    <div id="content">
+      {% if expression %}
+      <div id="matrix-render" class="result-section">
+        <div class="matrix-preview">
+          <!-- 此处的 p 标签不可见, 用于传递表达式字符串 -->
+          <p style="display: none">{{expression}}</p>
+          <div class="render"></div>
+        </div>
+      </div>
+
+      <div class="result-section">
+        <div class="result-item">
+          <div class="result-top">
+            <h3>化为行阶梯型(Ref)</h3>
+            <button class="run-button run-ref" title="运行">
+              <i class="fas fa-play"></i>
+            </button>
+          </div>
+          <div class="ref math-output">\( \text{未运行} \)</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-top">
+            <h3>秩(Rank)</h3>
+            <button class="run-button run-rank" title="运行">
+              <i class="fas fa-play"></i>
+            </button>
+          </div>
+          <div class="rank math-output">\( \text{计算错误} \)</div>
+          <div class="rank-steps math-output">\( \text{未运行} \)</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-top">
+            <h3>行列式(Determinant)</h3>
+            <div class="det-button">
+              <button class="run-button run-det-1" title="运行 1">
+                <i class="fas fa-play"></i>
+              </button>
+              <button class="run-button run-det-2" title="运行 2">
+                <i class="fas fa-play"></i>
+              </button>
+            </div>
+          </div>
+          <div class="det math-output">\( \text{计算错误} \)</div>
+          <div class="det-steps-1 math-output">\( \text{未运行} \)</div>
+          <div class="det-steps-2 math-output">\( \text{未运行} \)</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-top">
+            <h3>特征值(Eigenvalues)</h3>
+            <button class="run-button run-eigen" title="运行">
+              <i class="fas fa-play"></i>
+            </button>
+          </div>
+          <div class="eigenvalues math-output">\( \text{计算错误} \)</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-top">
+            <h3>特征向量(Eigenvectors)</h3>
+          </div>
+          <div class="eigenvectors math-output">\( \text{计算错误} \)</div>
+          <div class="eigen-steps math-output">\( \text{未运行} \)</div>
+        </div>
+
+        <div class="result-item">
+          <div class="result-top">
+            <h3>奇异值分解(SVD)\(\quad A = U \Sigma V^T \)</h3>
+            <button class="run-button run-svd" title="运行">
+              <i class="fas fa-play"></i>
+            </button>
+          </div>
+          <div class="svd U math-output">\( \text{未运行} \)</div>
+          <div class="svd S math-output">\( \text{未运行} \)</div>
+          <div class="svd V math-output">\( \text{未运行} \)</div>
+          <div class="svd-steps math-output">\( \text{未运行} \)</div>
+        </div>
+      </div>
+      {% else %}
+      <div class="result-section">
+        <h2>未提供矩阵表达式</h2>
+        <p>请通过后端传递 <code>expression</code> 变量.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- 全屏遮罩 -->
+    <div class="math-fullscreen-overlay">
+      <div class="math-fullscreen-content">
+        <div class="math-fullscreen-header">
+          <button class="math-fullscreen-close" title="关闭">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="math-fullscreen-body"></div>
+      </div>
+    </div>
+  </body>
+</html>

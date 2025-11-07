@@ -1,0 +1,981 @@
+@font-face {
+  font-family: "JetBrains";
+  src: url("./fonts/JetBrainsMono-Bold.ttf");
+}
+
+@font-face {
+  font-family: "LXGW";
+  src: url("./fonts/LXGWWenKaiGB-Medium.ttf");
+}
+
+:root {
+  --font-family: "JetBrains", "LXGW", Arial, serif;
+  --jp-border-width: 1px;
+  --jp-border-color0: #e0e0e0;
+  --jp-border-color1: #bdbdbd;
+  --jp-border-color2: #9e9e9e;
+  --jp-ui-font-size: calc(14px / var(--jp-ui-font-scale-factor));
+  --jp-ui-font-color0: rgba(0, 0, 0, 0.87);
+  --jp-ui-font-color1: rgba(0, 0, 0, 0.54);
+  --jp-content-line-height: 1.6;
+  --jp-layout-color0: white;
+  --jp-layout-color1: #f7f7f7;
+  --jp-layout-color2: #e7e7e7;
+  --jp-layout-color3: #d7d7d7;
+  --jp-brand-color0: #1976d2;
+  --jp-brand-color1: #5b89cd;
+  --jp-error-color: #f44336;
+  --jp-success-color: #4caf50;
+  --jp-kernel-idle-color: #4caf50;
+  --jp-kernel-busy-color: #ff9800;
+  --jp-kernel-error-color: #f44336;
+  --jp-cell-padding: 10px;
+  --jp-cell-prompt-width: 100px;
+  --jp-cell-prompt-opacity: 1;
+  --jp-cell-prompt-not-active-opacity: 0.5;
+  --jp-cell-editor-background: var(--jp-layout-color0);
+  --jp-cell-editor-border-color: var(--jp-border-color1);
+  --jp-cell-editor-background-edit: var(--jp-layout-color0);
+  --jp-cell-editor-active-border-color: var(--jp-brand-color1);
+  --jp-cell-output-background: rgba(255, 255, 255, 0.685);
+  --jp-code-font-size: 13px;
+  --jp-code-line-height: 1.6;
+  --jp-toolbar-border-color: var(--jp-border-color1);
+  --transition-speed: 0.3s;
+  --animation-timing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+mjx-container {
+  margin: 10px !important;
+}
+
+/* 避免在渲染区下方产生多余的空白 */
+mjx-assistive-mml {
+  top: -10000px !important;
+  left: -10000px !important;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--jp-ui-font-size);
+  background-color: var(--jp-layout-color1);
+  color: var(--jp-ui-font-color0);
+  margin: 0;
+  padding: 0;
+  line-height: var(--jp-content-line-height);
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+button:focus,
+select:focus,
+input:focus {
+  outline: transparent;
+  outline-offset: -1px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar:horizontal {
+  height: 8px;
+}
+
+::-webkit-scrollbar:vertical {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--jp-layout-color1);
+  border-radius: 5px;
+  border: 1px solid var(--jp-border-color0);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--jp-layout-color1);
+  border-radius: 5px;
+  transition: background 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--jp-layout-color2);
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--jp-layout-color1);
+}
+
+a {
+  text-decoration: none;
+}
+
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  background-color: var(--jp-layout-color1);
+  padding: 0 16px;
+  border-bottom: var(--jp-border-width) solid var(--jp-toolbar-border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+#header h1 {
+  font-size: 18px;
+  margin: 0;
+  font-weight: 600;
+  color: var(--jp-ui-font-color0);
+  display: flex;
+  align-items: center;
+}
+
+/* 实现缩进 */
+#header h1 i {
+  margin-right: 12px;
+}
+
+#header-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header-btn {
+  background: none;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--jp-ui-font-color1);
+  transition: all var(--transition-speed);
+  position: relative;
+  overflow: hidden;
+}
+
+.header-btn:hover {
+  color: var(--jp-ui-font-color0);
+}
+
+/* 按键微交互 */
+.header-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: inherit;
+}
+
+.header-btn:hover::after {
+  opacity: 0.1;
+}
+
+#toolbar {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  background-color: var(--jp-layout-color1);
+  padding: 0 16px;
+  border-bottom: var(--jp-border-width) solid var(--jp-toolbar-border-color);
+  position: sticky;
+  top: 48px;
+  z-index: 99;
+  gap: 8px;
+}
+
+.toolbar-button {
+  background: none;
+  border: 1px solid transparent;
+  font-size: 13px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--jp-ui-font-color0);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-speed);
+  position: relative;
+  overflow: hidden;
+  font-family: var(--font-family);
+}
+
+.toolbar-button:hover {
+  background-color: var(--jp-layout-color2);
+  border-color: var(--jp-border-color1);
+}
+
+.toolbar-button::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: inherit;
+}
+
+.toolbar-button:hover::after {
+  opacity: 0.1;
+}
+
+.toolbar-button i {
+  margin-right: 6px;
+  font-size: 12px;
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 24px;
+  background-color: var(--jp-border-color1);
+  margin: 0 8px;
+}
+
+#kernel-status {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--jp-kernel-idle-color);
+  margin-left: auto;
+}
+
+#kernel-status i {
+  margin-right: 6px;
+  transition: color 0.3s ease;
+}
+
+#kernel-status span {
+  color: var(--jp-ui-font-color0);
+}
+
+#notebook-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+  min-height: calc(100vh - 96px);
+}
+
+#notebook {
+  width: 100%;
+  max-width: 1000px;
+  padding: 0 20px;
+}
+
+.cell {
+  display: flex;
+  margin-bottom: 24px;
+  position: relative;
+  transition: transform 0.2s, opacity 0.3s;
+  opacity: 1;
+  transform: translateY(0);
+  width: 100%;
+}
+
+.cell-prompt {
+  width: var(--jp-cell-prompt-width);
+  padding: var(--jp-cell-padding);
+  text-align: right;
+  font-family: var(--font-family);
+  font-size: 12px;
+  opacity: var(--jp-cell-prompt-not-active-opacity);
+  flex-shrink: 0;
+  user-select: none;
+  transition: all var(--transition-speed);
+}
+
+.cell.cell-active .cell-prompt {
+  opacity: var(--jp-cell-prompt-opacity);
+  color: var(--jp-brand-color0);
+  font-weight: 600;
+}
+
+.cell-content-wrapper {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.cell-content {
+  border: var(--jp-border-width) solid var(--jp-cell-editor-border-color);
+  background-color: var(--jp-cell-editor-background);
+  padding: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.cell-active .cell-content {
+  border: 3px dashed var(--jp-cell-editor-active-border-color);
+}
+
+.cell-input {
+  padding: var(--jp-cell-padding);
+}
+
+.cell-controls {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 4px 0;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: var(--font-family);
+}
+
+.operation-type {
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 6px;
+  background-color: var(--jp-layout-color0);
+  color: var(--jp-ui-font-color0);
+  cursor: pointer;
+  min-width: 100px;
+  max-width: 130px;
+  font-family: var(--font-family);
+}
+
+.expr-sort,
+.limit-sort,
+.sort {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: var(--font-family);
+  border: 1px dashed var(--jp-border-color1);
+  border-radius: 6px;
+  background-color: var(--jp-layout-color0);
+  color: var(--jp-ui-font-color0);
+  cursor: pointer;
+  min-width: 100px;
+}
+
+.operations-sort,
+.det-sort {
+  min-width: 10px;
+}
+
+.var-input,
+.expression-controls,
+.limit-controls,
+.controls {
+  font-size: 12px;
+  color: var(--jp-ui-font-color1);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-family);
+}
+
+.var-label,
+.expr-label,
+.limit-label,
+.label {
+  white-space: nowrap;
+}
+
+.var-input input,
+.expression-controls input,
+.limit-controls input {
+  width: 36px;
+  padding: 4px 6px;
+  border: 1px dashed var(--jp-border-color1);
+  border-radius: 4px;
+  text-align: center;
+  font-family: var(--font-family);
+  background: var(--jp-layout-color0);
+}
+
+.cell-input textarea {
+  width: 100%;
+  min-height: 100px;
+  border: 1px dashed var(--jp-border-color1);
+  resize: vertical;
+  font-family: var(--font-family);
+  font-size: var(--jp-code-font-size);
+  line-height: var(--jp-code-line-height);
+  background: transparent;
+  outline: none;
+  padding: 16px;
+  tab-size: 4;
+  -moz-tab-size: 4;
+  border-radius: 6px;
+}
+
+.math-preview {
+  margin-top: 12px;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 6px;
+  min-height: 48px;
+  border: 1px dashed var(--jp-border-color1);
+  font-size: 15px;
+  transition: all var(--transition-speed);
+}
+
+.cell.cell-active .math-preview {
+  border-color: var(--jp-brand-color0);
+}
+
+.preview-error {
+  color: var(--jp-error-color);
+  font-size: 12px;
+}
+
+.cell-output-container {
+  overflow: hidden; /* 禁止外部容器出现滚动条 */
+  margin-top: 8px;
+}
+
+.cell-output {
+  margin-top: 12px;
+  padding: 16px 8px 16px 16px;
+  background-color: var(--jp-cell-output-background);
+  border-radius: 6px;
+  min-height: 48px;
+  border: 1px dashed var(--jp-border-color1);
+  font-size: 15px;
+  transition: all var(--transition-speed);
+  max-height: 300px; /* 限制最大高度，可按需求调整 */
+  overflow-y: hidden; /* 禁止垂直滚动 */
+  overflow-x: hidden; /* 禁止水平滚动 */
+}
+
+.cell-output:empty {
+  display: none;
+}
+
+.cell-output.result-animation {
+  animation: highlight 0.5s ease;
+}
+
+@keyframes highlight {
+  0% {
+    background-color: var(--jp-cell-output-background);
+  }
+  50% {
+    background-color: rgba(76, 175, 80, 0.1);
+  }
+  100% {
+    background-color: var(--jp-cell-output-background);
+  }
+}
+
+.math-output {
+  padding: 8px 0;
+  max-height: 280px; /* 避免 math-output 超出 cell-output */
+  overflow-y: auto; /* 垂直滚动 */
+  overflow-x: auto; /* 水平滚动 */
+}
+
+.math-output mjx-container {
+  display: block;
+  text-align: center;
+  outline: none;
+  font-size: 1.2em !important;
+  color: var(--jp-ui-font-color0);
+}
+
+.add-cell-button {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  background: var(--jp-layout-color0);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--transition-speed);
+  z-index: 10;
+  color: var(--jp-ui-font-color1);
+  font-size: 12px;
+}
+
+.run-cell-button,
+.operation-button,
+.keyboard-button {
+  background: var(--jp-layout-color0);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  z-index: 10;
+  color: var(--jp-ui-font-color1);
+  font-size: 12px;
+}
+
+.cell:hover .add-cell-button {
+  opacity: 1;
+}
+
+.add-cell-button:hover,
+.run-cell-button:hover,
+.operation-button:hover,
+.keyboard-button:hover {
+  background-color: var(--jp-brand-color0);
+  color: white;
+  border-color: var(--jp-brand-color0);
+  transform: scale(1.1);
+}
+
+.cell-type-selector {
+  display: flex;
+  border-bottom: 1px solid var(--jp-border-color0);
+  margin-bottom: 12px;
+}
+
+.cell-type-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--jp-ui-font-color1);
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition-speed);
+}
+
+.cell-type-btn.active {
+  color: var(--jp-brand-color0);
+  border-bottom-color: var(--jp-brand-color0);
+}
+
+.cell-type-btn:hover {
+  color: var(--jp-ui-font-color0);
+}
+
+.loading {
+  color: var(--jp-ui-font-color1);
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  padding: 12px;
+}
+
+.loading::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--jp-border-color1);
+  border-top: 2px solid var(--jp-brand-color0);
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: spin 1s linear infinite;
+}
+
+.error {
+  color: var(--jp-error-color);
+  font-family: var(--font-family);
+  font-size: 12px;
+  padding: 12px;
+  background-color: rgba(244, 67, 54, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid var(--jp-error-color);
+}
+
+.success {
+  color: var(--jp-success-color);
+  padding: 12px;
+  background-color: rgba(76, 175, 80, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid var(--jp-success-color);
+  margin: 8px 0;
+}
+
+.cell.code-cell .cell-prompt {
+  color: var(--jp-brand-color0);
+}
+
+.cell.markdown-cell .cell-prompt {
+  color: #952d8b;
+}
+
+.cell.markdown-cell .cell-content {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  font-family: "LXGW";
+}
+
+.cell.markdown-cell.cell-active .cell-content {
+  border: 3px dashed #952d8b;
+}
+
+#math-keyboard {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--jp-layout-color1);
+  border-top: 1px solid var(--jp-border-color1);
+  z-index: 1000;
+  transition: transform 0.3s var(--animation-timing);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(100%); /* 默认隐藏在屏幕下方 */
+}
+
+#math-keyboard.keyboard-visible {
+  transform: translateY(0); /* 显示时滑入屏幕 */
+}
+
+.keyboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--jp-border-color1);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--jp-ui-font-color0);
+}
+
+.keyboard-close-btn {
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--jp-ui-font-color1);
+  transition: all var(--transition-speed);
+  position: relative;
+  overflow: hidden;
+}
+
+.keyboard-close-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: inherit;
+}
+
+.keyboard-close-btn:hover::after {
+  opacity: 0.1;
+}
+
+.keyboard-close-btn:hover {
+  background-color: var(--jp-layout-color2);
+  color: var(--jp-ui-font-color0);
+}
+
+.keyboard-content {
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.keyboard-row {
+  display: flex;
+  margin-bottom: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.keyboard-key {
+  padding: 10px 14px;
+  background-color: var(--jp-layout-color0);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: var(--font-family);
+  color: var(--jp-ui-font-color0);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.keyboard-key::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: inherit;
+}
+
+.keyboard-key:hover::after {
+  opacity: 0.1;
+}
+
+.keyboard-key:hover {
+  background-color: var(--jp-brand-color0);
+  color: white;
+  border-color: var(--jp-brand-color0);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.notification {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  padding: 0;
+  border-radius: 8px;
+  color: white;
+  z-index: 3000;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s var(--animation-timing);
+  transform: translateX(100%);
+  opacity: 0;
+  max-width: 400px;
+}
+
+.notification-show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.notification-hide {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  gap: 12px;
+}
+
+.notification-success {
+  background-color: var(--jp-success-color);
+}
+
+.notification-error {
+  background-color: var(--jp-error-color);
+}
+
+.notification i {
+  font-size: 20px;
+}
+
+/* 数学背景装饰 */
+#math-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.math-bg-element {
+  position: absolute;
+  font-size: 4rem;
+  opacity: 0.03;
+  color: var(--jp-ui-font-color0);
+  font-family: var(--font-family);
+  transition: opacity 0.5s ease;
+}
+
+body:hover .math-bg-element {
+  opacity: 0.04;
+}
+
+/* 浮动动画关键帧 */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+  }
+  75% {
+    transform: translateY(20px) rotate(-5deg);
+  }
+}
+
+/* 数学输出区域控制按钮 */
+.math-output {
+  position: relative;
+}
+
+.math-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 5;
+}
+
+.math-control-btn {
+  background: var(--jp-layout-color0);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  color: var(--jp-ui-font-color1);
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.math-control-btn:hover {
+  background-color: var(--jp-brand-color0);
+  color: white;
+  border-color: var(--jp-brand-color0);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* 折叠状态 */
+.math-output.collapsed {
+  max-height: 40px;
+  overflow: hidden;
+}
+
+/* 全屏遮罩 */
+.math-fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.math-fullscreen-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.math-fullscreen-content {
+  background-color: var(--jp-layout-color0);
+  border-radius: 8px;
+  padding: 30px;
+  max-width: 90%;
+  max-height: 90%;
+  overflow: auto;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.math-fullscreen-overlay.active .math-fullscreen-content {
+  transform: scale(1);
+}
+
+.math-fullscreen-header {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--jp-border-color1);
+  flex-shrink: 0;
+}
+
+.math-fullscreen-close {
+  background: var(--jp-layout-color0);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  color: var(--jp-ui-font-color1);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.math-fullscreen-close:hover {
+  background-color: var(--jp-error-color);
+  color: white;
+  border-color: var(--jp-error-color);
+}
+
+.math-fullscreen-body {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+.operation-type optgroup {
+  font-weight: lighter;
+  background-color: #e8f4f8;
+  color: var(--jp-ui-font-color0);
+}
+
+.operation-type optgroup[label="微积分"] {
+  background-color: #e0daf8;
+}
+
+.operation-type optgroup[label="线性代数"] {
+  background-color: #f0f8e8;
+}
+
+.operation-type optgroup option {
+  background-color: var(--jp-layout-color0);
+}

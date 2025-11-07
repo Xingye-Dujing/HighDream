@@ -1,0 +1,39 @@
+from typing import Dict, List, Protocol, Tuple, Union
+from sympy import Derivative, Expr, Integral, Limit, Symbol
+
+# The operation to be performed.
+Operation = Union[Derivative, Integral, Limit]
+# The evaluation context providing additional information.
+Context = Union[Symbol, Expr, str]
+RuleContext = Dict[str, Context]
+RuleFunctionReturn = Union[Tuple[Expr, str], None]
+MatcherFunctionReturn = Union[str, None]
+
+
+class RuleFunction(Protocol):
+    """Callable that applies a rule to a symbolic expression,
+
+    Returns:
+        Tuple:
+        - Expr: The transformed expression.
+        - str: The description of the rule applied.
+    """
+
+    def __call__(self, expr: Expr, context: Context) -> RuleFunctionReturn: ...
+
+
+class MatcherFunction(Protocol):
+    """Callable that matches a symbolic expression
+
+    Returns:
+        The name of the matched rule as a string, or None if no rule applies.
+    """
+
+    def __call__(self, expr: Expr,
+                 context: Context) -> MatcherFunctionReturn: ...
+
+
+# Mapping of rule names to functions.
+RuleDict = Dict[str, RuleFunction]
+RuleList = List[RuleFunction]
+MatcherList = List[MatcherFunction]
