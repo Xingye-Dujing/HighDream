@@ -3,7 +3,7 @@
 # TODO 支持多重积分(偏积分)
 
 from typing import List, Tuple
-from sympy import Expr, Integral, Symbol, simplify
+from sympy import Expr, Integral, Symbol
 
 from core import BaseCalculator
 from utils import MatcherList, Operation, RuleDict
@@ -35,38 +35,27 @@ class IntegralCalculator(BaseCalculator):
         self.rule_dict: RuleDict = RULE_DICT
         self.matcher_list: MatcherList = MATCHER_LIST
 
-    @staticmethod
-    def _step_expr_postprocess(step_expr: Expr) -> Expr:
-        """Add constant of integration (+C) for indefinite integrals without the integral symbol."""
-        if step_expr.has(Integral):
-            return step_expr
-        return step_expr + C
-
     def _final_postprocess(self, final_expr: Expr) -> None:
-        """Ensure the constant of integration (+C) appears only in explanatory text or final output,
+        """Add constant of integration (+C) for indefinite integrals without the integral symbol.
+
+        Ensure the constant of integration (+C) appears only in explanatory text or final output,
         never embedded in the symbolic antiderivative expression.
         """
-        if not final_expr.free_symbols:
-            return
-
-        final_expr -= C
-
-        # Map each free symbol to a new symbol with positive=True, real=True
-        assumption_map = {
-            s: Symbol(s.name, positive=True, real=True)
-            for s in final_expr.free_symbols
-        }
-
-        # Replace symbols with their assumed counterparts
-        expr_with_assumptions = final_expr.xreplace(assumption_map)
-        simplified_expr = simplify(expr_with_assumptions) + C
-
-        # Must compare strings, because variables must be not equal due to different assumptions
-        if str(simplified_expr) != str(final_expr):
-            self.step_generator.add_step(
-                simplified_expr,
-                "假设所有变量为正实数, 化简表达式"
-            )
+        super()._final_postprocess(final_expr)
+        # Add C to the last step
+        self.step_generator.steps[-1] += C
+        try:
+            # When expression experience simplification without assumptions,
+            # add C to the penultimate expression.
+            if not self.step_generator.steps[-2].has(C):
+                self.step_generator.steps[-2] += C
+            # When no rule applies to the remaining Integral, fall back to SymPy's Integral.doit() and
+            # the result experiences simplification without assumptions and simplification with assumptions.
+            # add C to the third-to-last expression.
+            if not self.step_generator.steps[-3].has(C):
+                self.step_generator.steps[-3] += C
+        except IndexError:
+            pass
 
     def compute_list(self, expr: str, var: Symbol) -> Tuple[List[Expr], List[str]]:
         """Define Integral context."""
