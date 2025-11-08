@@ -66,15 +66,8 @@ class BaseCalculator(ABC):
                 expr, operation, **context)
         return self.cache[key]
 
-    def _preprocess_expression(self, expr: Expr) -> Expr:
-        """Apply custom simplifications not covered by SymPy's simplify."""
-        # ln(1/f(x)) = -ln(f(x))
-        expr = expr.replace(
-            lambda e: e.is_Function and e.func == log and len(
-                e.args) == 1 and e.args[0].is_Pow and e.args[0].args[1] == -1,
-            lambda e: -log(e.args[0].args[0])
-        )
-        return expr
+    def _preprocess_expression(self, _expr: Expr) -> Expr:
+        """Preprocess the expression before applying rules."""
 
     @staticmethod
     def _step_expr_postprocess(step_expr: Expr) -> Expr:
@@ -131,8 +124,31 @@ class BaseCalculator(ABC):
             )
         return new_expr, explanation, expr_to_operation
 
-    def _final_postprocess(self, _final_expr: Expr) -> None:
-        pass
+    def _final_postprocess(self, final_expr: Expr) -> None:
+        """Apply domain-aware simplification by assuming all free symbols are positive real numbers.
+
+        This step helps reduce expressions like sqrt(x^2) to x, log(x^2)/2 to log(x), etc.,
+        which SymPy avoids under generic assumptions to preserve mathematical correctness.
+        """
+        if not final_expr.free_symbols:
+            return
+
+        # Map each free symbol to a new symbol with positive=True, real=True
+        assumption_map = {
+            s: Symbol(s.name, positive=True, real=True)
+            for s in final_expr.free_symbols
+        }
+
+        # Replace symbols with their assumed counterparts
+        expr_with_assumptions = final_expr.xreplace(assumption_map)
+        simplified_expr = simplify(expr_with_assumptions)
+
+        # Must compare strings, because variables must be not equal due to different assumptions
+        if str(simplified_expr) != str(final_expr):
+            self.step_generator.add_step(
+                simplified_expr,
+                "假设所有变量为正实数, 化简表达式"
+            )
 
     def _do_compute(self, expr: str, operation: Operation, **context: Context) -> None:
         """Perform the core symbolic computation and record each evaluation step."""
@@ -188,6 +204,7 @@ class BaseCalculator(ABC):
             simplified_expr = self._cached_simplify(final_expr)
             if simplified_expr != final_expr:
                 self.step_generator.add_step(simplified_expr, "简化表达式")
+                final_expr = simplified_expr
 
         self._final_postprocess(final_expr)
 
