@@ -1,6 +1,12 @@
 from utils import MatcherList, RuleDict
 
 from .rules.parts_rule_help import select_parts_u_dv
+from .rules.substitution_rule_help import (
+    try_exp_log_substitution,
+    try_radical_substitution,
+    try_standard_substitution,
+    try_trig_substitution
+)
 from .rules.integral_basic_rules import (
     add_matcher, add_rule, mul_const_matcher, mul_const_rule
 )
@@ -13,6 +19,16 @@ from .rules.integral_function_rules import (
 from .rules.integral_special_rules import (
     parts_matcher, parts_rule, substitution_matcher, substitution_rule
 )
+
+__all__ = [
+    'RULE_DICT',
+    'MATCHER_LIST',
+    'select_parts_u_dv',
+    'try_exp_log_substitution',
+    'try_radical_substitution',
+    'try_standard_substitution',
+    'try_trig_substitution'
+]
 
 # Rule mapping: Rule name -> Rule function
 RULE_DICT: RuleDict = {

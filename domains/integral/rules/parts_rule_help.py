@@ -1,6 +1,9 @@
 from typing import Tuple
-from sympy import Expr, Mul, Pow, Symbol, acos, asin, atan, exp, log
-from sympy.functions.elementary.trigonometric import TrigonometricFunction
+from sympy import Expr, Mul, Symbol
+
+from utils import (
+    is_exp, is_inv_trig, is_log, is_poly, is_trig
+)
 
 # LIATE rule for choosing 'u' in integration by parts:
 # Lower number = higher priority for choosing 'u'
@@ -14,20 +17,6 @@ LIATE_PRIORITY = {
 }
 
 
-def _is_algebraic(expr: Expr, var: Symbol) -> bool:
-    """Heuristic check for algebraic expressions in var."""
-    if expr.is_number:
-        return True
-    if expr == var:
-        return True
-    if expr.is_Add or expr.is_Mul:
-        return all(_is_algebraic(arg, var) for arg in expr.args)
-    if isinstance(expr, Pow):
-        base, expnt = expr.args
-        return _is_algebraic(base, var) and expnt.is_Rational
-    return False
-
-
 def _classify_factor(factor: Expr, var: Symbol) -> int:
     """Classify a factor according to LIATE rule for integration by parts.
 
@@ -37,29 +26,25 @@ def _classify_factor(factor: Expr, var: Symbol) -> int:
     Returns priority score (lower = better candidate for 'u').
     """
     # 1. Logarithmic: ln(x), log(x, b)
-    if isinstance(factor, log):
+    if is_log(factor):
         return LIATE_PRIORITY['log']
 
     # 2. Inverse Trigonometric
-    if isinstance(factor, (asin, acos, atan)):
+    if is_inv_trig(factor):
         return LIATE_PRIORITY['inverse_trig']
 
     # 3. Algebraic: polynomial, rational, root expressions
     # Rough check: built from var using +, -, *, /, ** (rational exponents)
-    if _is_algebraic(factor, var):
+    if is_poly(factor, var):
         return LIATE_PRIORITY['algebraic']
 
     # 4. Trigonometric
-    if isinstance(factor, TrigonometricFunction):
+    if is_trig(factor):
         return LIATE_PRIORITY['trig']
 
     # 5. Exponential: exp(x), a**x (a constant)
-    if isinstance(factor, exp):
+    if is_exp(factor, var):
         return LIATE_PRIORITY['exp']
-    if isinstance(factor, Pow):
-        base, expnt = factor.args
-        if base.is_number and expnt.has(var):
-            return LIATE_PRIORITY['exp']
 
     # Default: unknown function (e.g., f(x)), treat as lowest priority
     return 5

@@ -1,241 +1,152 @@
 from sympy import (
-    Dummy, Expr, Integral, Mul, Pow, Symbol, Wild, acos, asin, atan, cos,
-    diff, exp, integrate, latex, log, sec, simplify, sin, sqrt, tan
+    Dummy, Expr, Mul, Wild, diff, exp, integrate,
+    latex, log, simplify, sqrt
 )
 
-from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
+from utils import (
+    Context, MatcherFunctionReturn, RuleFunctionReturn,
+    has_radical, is_exp, is_inv_trig, is_log, is_poly, is_trig
+)
 from utils.latex_formatter import wrap_latex
-from domains.integral import select_parts_u_dv
+from domains.integral import (
+    select_parts_u_dv, try_exp_log_substitution,
+    try_radical_substitution,
+    try_standard_substitution,
+    try_trig_substitution
+)
 
 
 def parts_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    """
-    分部积分法：∫u dv = uv - ∫v du
-    基于 LIATE 法则: 智能选择 u 和 dv。
+    """Apply integration by parts: u dv = u v − v du.
+
+    Uses the LIATE heuristic to select u from a product of two factors:
+      L — Logarithmic      (e.g., log(x))
+      I — Inverse trig     (e.g., asin(x))
+      A — Algebraic        (e.g., x, x**2)
+      T — Trigonometric    (e.g., sin(x))
+      E — Exponential      (e.g., exp(x))
+
+    Only triggers for binary products (exactly two factors).
     """
     var = context['variable']
-    if isinstance(expr, Mul) and len(expr.args) == 2:
-        u, dv = select_parts_u_dv(expr, var)
-        du = diff(u, var)
-        v = integrate(dv, var)
-        result = u * v - integrate(v * du, var)
-        return result, f"分部积分法 (LIATE 选择 $u={latex(u)}$, $dv={latex(dv)}\\,d{var}$): $\\int {latex(expr)}\\,d{var} = {latex(u)}\\cdot{latex(v)} - \\int {latex(v)}\\cdot{latex(du)}\\,d{var} + C$"
-    return None
+    u, dv = select_parts_u_dv(expr, var)
+    du = diff(u, var)
+    v = integrate(dv, var)
+    result = u * v - integrate(v * du, var)
+    var_latex, expr_latex, u_latex, v_latex, du_latex = wrap_latex(
+        var, expr, u, v, du)
+    return result, (
+        f"分部积分法(LIATE 选择 $u={latex(u)}$, $dv={latex(dv)}\\,d{var_latex}$): $"
+        f"\\int {expr_latex}\\,d{var_latex} = "
+        f"{u_latex}\\cdot{v_latex} - \\int {v_latex}\\cdot{du_latex}\\,d{var_latex} + C$"
+    )
 
 
 def substitution_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    """换元法：支持复合函数、三角代换、根式代换、指数/对数代换"""
+    """Apply substitution (u-substitution) for integration.
+
+    Tries the following strategies in order:
+      1. Standard form: f(g(x)) * g'(x) to f(u) du
+      2. Trigonometric substitution (e.g., sqrt(a^2−x^2), sqrt(a^2+x^2), sqrt(x^2−a^2))
+      3. Radical substitution (e.g., sqrt[n]{ax + b})
+      4. Exponential/logarithmic substitution (e.g., e^{ax}, log(ax))
+
+    Returns a transformed integral or None if no substitution applies.
+    """
     var = context['variable']
-    u = Dummy('u')  # 避免变量冲突
-    # 策略 1：标准形式 f(g(x)) * g'(x)
-    result = _try_standard_substitution(expr, var, u)
-    if result:
-        return result
-    # 策略 2：三角代换
-    result = _try_trig_substitution(expr, var, u)
-    if result:
-        return result
-    # 策略 3：根式代换
-    result = _try_radical_substitution(expr, var, u)
-    if result:
-        return result
-    # 策略 4：指数/对数代换
-    result = _try_exp_log_substitution(expr, var, u)
-    if result:
+    u = Dummy('u')  # Use dummy variable to avoid symbol collision
+
+    # Strategy 1: Standard chain-rule pattern f(g(x)) * g'(x)
+    result = try_standard_substitution(expr, var, u)
+    if result is not None:
         return result
 
-    return None
+    # Strategy 2: Trigonometric substitutions for sqrt(a^2 +- x^2) etc.
+    result = try_trig_substitution(expr, var)
+    if result is not None:
+        return result
 
+    # Strategy 3: Substitutions for nested radicals (e.g., (ax + b)^{1/n})
+    result = try_radical_substitution(expr, var, u)
+    if result is not None:
+        return result
 
-def _try_standard_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunctionReturn:
-    """匹配 ∫f(g(x)) * g'(x) dx 形式，支持 exp(sin(x))*cos(x) 等嵌套函数"""
-    # 如果表达式不是乘法，尝试直接积分 f(g(x)) * g'(x)
-    if not isinstance(expr, Mul):
-        factors = [expr]
-    else:
-        factors = expr.args
-    # 查找所有形如 f(g(x)) 的函数嵌套
-    for factor in factors:
-        if factor.is_Function and len(factor.args) == 1:
-            inner_expr = factor.args[0]  # g(x)
-            if not inner_expr.has(var):
-                continue
-            # 计算 g'(x)
-            gp = diff(inner_expr, var)
-            if gp.is_zero:
-                continue
-            # 检查 g'(x) 是否在表达式中作为因子出现
-            # 即：expr / f(g(x)) 是否包含 g'(x) 或其倍数
-            try:
-                outer_part = expr / factor  # 剩余部分
-                if outer_part.is_zero:
-                    continue
-                # 检查 outer_part 是否与 g'(x) 成比例
-                ratio = outer_part / gp
-                if ratio.is_constant():
-                    # f(u) = factor.subs(inner_expr, u)
-                    f_u = factor.func(u)  # exp(u), cos(u), etc.
-                    inner_integral = integrate(f_u, u)
-                    if inner_integral.has(Integral):
-                        continue
-                    result = inner_integral.subs(u, inner_expr)
-                    explanation = (
-                        f"换元法: 令 $u = {latex(inner_expr)}$, $du = {latex(gp)}\\,d{var}$, "
-                        f"原式化为 $\\int {latex(f_u)}\\,du = {latex(inner_integral)}$, "
-                        f"故积分为 ${latex(result)} + C$"
-                    )
-                    return result, explanation
-            except Exception:
-                continue
-    return None
-
-
-def _try_trig_substitution(expr: Expr, var: Symbol, _u: Symbol) -> RuleFunctionReturn:
-    """处理 √(a² - x²), √(a² + x²), √(x² - a²) 的三角代换"""
-
-    a = Wild('a', exclude=[var])
-    # 1. √(a² - x²) → x = a*sin(θ)
-    match = expr.find(sqrt(a**2 - var**2))
-    if match:
-        a_val = match[0]
-        theta = Dummy('theta')
-        x_sub = a_val * sin(theta)
-        dx_dtheta = diff(x_sub, theta)
-        new_expr = expr.subs(var, x_sub) * dx_dtheta
-        int_theta = integrate(new_expr, theta)
-        if int_theta.has(Integral):
-            return None
-        result = int_theta.subs(theta, asin(var / a_val))
-        explanation = (
-            f"三角代换: $\\sqrt{{{latex(a_val)}^2 - {var}^2}}$ 形式, "
-            f"令 ${var} = {latex(a_val)} \\sin\\theta$, "
-            f"得 $\\int ... d\\theta = {latex(int_theta)}$, "
-            f"回代后为 ${latex(result)} + C$"
-        )
-        return result, explanation
-    # 2. √(a² + x²) → x = a*tan(θ)
-    match = expr.find(sqrt(a**2 + var**2))
-    if match:
-        a_val = match[0]
-        theta = Dummy('theta')
-        x_sub = a_val * tan(theta)
-        dx_dtheta = diff(x_sub, theta)
-        new_expr = expr.subs(var, x_sub) * dx_dtheta
-        int_theta = integrate(new_expr, theta)
-        if int_theta.has(Integral):
-            return None
-        result = int_theta.subs(theta, atan(var / a_val))
-        explanation = (
-            f"三角代换: $\\sqrt{{{latex(a_val)}^2 + {var}^2}}$ 形式, "
-            f"令 ${var} = {latex(a_val)} \\tan\\theta$, 积分得 ${latex(result)} + C$"
-        )
-        return result, explanation
-    # 3. √(x² - a²) → x = a*sec(θ)
-    match = expr.find(sqrt(var**2 - a**2))
-    if match:
-        a_val = match[0]
-        theta = Dummy('theta')
-        x_sub = a_val * sec(theta)
-        dx_dtheta = diff(x_sub, theta)
-        new_expr = expr.subs(var, x_sub) * dx_dtheta
-        int_theta = integrate(new_expr, theta)
-        if int_theta.has(Integral):
-            return None
-        result = int_theta.subs(theta, acos(a_val / var))
-        explanation = (
-            f"三角代换: $\\sqrt{{{var}^2 - {latex(a_val)}^2}}$ 形式, "
-            f"令 ${var} = {latex(a_val)} \\sec\\theta$, 积分得 ${latex(result)} + C$"
-        )
-        return result, explanation
+    # Strategy 4: Substitutions involving exp or log terms
+    result = try_exp_log_substitution(expr, var, u)
+    if result is not None:
+        return result
 
     return None
 
 
-def _try_radical_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunctionReturn:
-    """根式代换：如 √x, √(x + √x)"""
-    radicals = expr.atoms(Pow)
-    for rad in radicals:
-        if rad.exp.is_Rational and rad.exp < 1 and var in rad.free_symbols:
-            n = int(1 / rad.exp)  # 如 1/2 → n=2
-            inner_expr = rad.base  # 如 x, x + √x
-            # 令 u = rad，即 u = √x → x = u²
-            x_sub = inner_expr.subs(var, u**n)
-            try:
-                dx_du = diff(x_sub, u)
-                # 新表达式 = 原式替换 x → x(u)，并乘以 dx/du
-                new_expr = expr.subs(rad, u).subs(var, x_sub) * dx_du
-                result_expr = integrate(new_expr, u)
-                if result_expr.has(Integral):
-                    continue
-                final_result = result_expr.subs(u, rad)
-                explanation = (
-                    f"根式代换: 令 $u = {latex(rad)}$, 则 ${var} = {latex(x_sub)}$, "
-                    f"$d{var} = {latex(dx_du)}\\,du$, 积分得 ${latex(final_result)} + C$"
-                )
-                return final_result, explanation
-            except Exception:
-                continue
-    return None
+def parts_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+    """Heuristic matcher for integration by parts.
 
+    Returns 'parts' if the expression is a product of two factors
+    that likely benefit from LIATE-based integration by parts, e.g.:
+      - log(x) * polynomial(x)
+      - polynomial(x) * trig(x)
+      - polynomial(x) * exp(x)
 
-def _try_exp_log_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunctionReturn:
-    """指数/对数代换"""
-    # e^x 代换
-    if expr.has(exp(var)):
-        x_sub = log(u)
-        dx_du = diff(x_sub, u)
-        new_expr = expr.subs(exp(var), u).subs(var, x_sub) * dx_du
-        result_expr = integrate(new_expr, u)
-        if not result_expr.has(Integral):
-            final_result = result_expr.subs(u, exp(var))
-            explanation = (
-                f"指数代换: 令 $u = e^{{{var}}}$, ${var} = \\ln u$, "
-                f"$d{var} = \\frac{{1}}{{u}}\\,du$, 积分得 ${latex(final_result)} + C$"
-            )
-            return final_result, explanation
-    # ln(x) 代换
-    if expr.has(log(var)):
-        x_sub = exp(u)
-        dx_du = diff(x_sub, u)
-        new_expr = expr.subs(log(var), u).subs(var, x_sub) * dx_du
-        result_expr = integrate(new_expr, u)
-        if not result_expr.has(Integral):
-            final_result = result_expr.subs(u, log(var))
-            explanation = (
-                f"对数代换: 令 $u = \\ln {var}$, ${var} = e^u$, "
-                f"$d{var} = e^u\\,du$, 积分得 ${latex(final_result)} + C$"
-            )
-            return final_result, explanation
+    This avoids triggering parts on cases like sin(x)*cos(x) or exp(x)*log(x).
+    """
+    var = context['variable']
+
+    # Only consider binary products
+    if not isinstance(expr, Mul) or len(expr.args) != 2:
+        return None
+
+    arg1, arg2 = expr.args
+
+    # Classify factor type for matching using LIATE ordering:
+    # L (Log), I (Inverse trig), A (Algebraic/polynomial), T (Trig), E (Exp)
+    types = [
+        [is_log(arg1), is_inv_trig(arg1), is_poly(
+            arg1, var), is_trig(arg1), is_exp(arg1, var)],
+        [is_log(arg2), is_inv_trig(arg2), is_poly(
+            arg2, var), is_trig(arg2), is_exp(arg2, var)]
+    ]
+
+    # Unpack for readability following LIATE order
+    (l1, i1, p1, t1, e1), (l2, i2, p2, t2, e2) = types
+
+    # LIATE-motivated patterns:
+    # 1. Any log * anything (L is highest priority -> good for u)
+    if l1 or l2:
+        return 'parts'
+
+    # 2. Inverse trig * anything except log (I is second priority)
+    if (i1 and not l2) or (i2 and not l1):
+        return 'parts'
+
+    # 3. Polynomial * (trig or exp) -> poly as u, trig/exp as dv
+    if (p1 and (t2 or e2)) or (p2 and (t1 or e1)):
+        return 'parts'
 
     return None
 
 
-def parts_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn:
-    var = _context['variable']
-    if isinstance(expr, Mul) and len(expr.args) == 2:
-        has_log = any(isinstance(arg, log) for arg in expr.args)
-        has_poly = any(arg.is_polynomial(var) for arg in expr.args)
-        has_trig = any(arg.has(sin, cos) for arg in expr.args)
-        has_exp = any(isinstance(arg, exp) for arg in expr.args)
-        if has_log or (has_poly and (has_trig or has_exp)):
-            return 'parts'
-    return None
+def substitution_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+    """Heuristic matcher for u-substitution in integration.
 
+    Returns 'substitution' if the expression exhibits one of:
+      1. Standard pattern: f(g(x)) * g'(x) (up to constant multiple)
+      2. Trigonometric substitution forms: sqrt(a^2−x^2), sqrt(a^2+x^2), sqrt(x^2−a^2)
+      3. Nested radicals: (ax + b)^{p/q} with q > 1
+      4. Pure exp(x) or log(x) terms that suggest substitution
+    """
+    var = context['variable']
 
-def substitution_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn:
-    """换元法匹配器：检测是否适合代换"""
-    var = _context['variable']
-    # 1. 标准形式 f(g(x)) * g'(x)
-    # 快速排除常数
+    # Skip constant expressions
     if not expr.has(var):
         return None
-    # 获取所有乘法因子
-    if expr.is_Mul:
-        factors = expr.args
-    else:
-        factors = [expr]
-    # 查找形如 f(g(x)) 的函数嵌套
+
+    # Normalize expression into a list of factors (even for non-Mul)
+    factors = list(expr.args) if expr.is_Mul else [expr]
+
+    # Strategy 1: Standard u-substitution pattern f(g(x)) * g'(x)
     for factor in factors:
+        # Look for unary functions like sin(g(x)), log(g(x)), etc.
         if factor.is_Function and len(factor.args) == 1:
             inner = factor.args[0]
             if not inner.has(var):
@@ -243,27 +154,37 @@ def substitution_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn
             gp = diff(inner, var)
             if gp.is_zero:
                 continue
-            # 计算 expr / factor → 剩余部分
-            outer_part = expr / factor
-            if outer_part.is_zero:
+
+            # Compute the "remaining part" = expr / factor
+            try:
+                outer_part = expr / factor
+            except ZeroDivisionError:
                 continue
-            # 检查 outer_part 是否与 gp 成比例（即存在常数 k 使得 outer_part = k * gp）
-            if outer_part.is_constant():
-                # 特殊情况：f(g(x)) 本身是唯一因子，如 ∫sin(ln(x)) dx（不匹配）
+
+            if outer_part == 0:
                 continue
-            # 简化 ratio = outer_part / gp
-            ratio = simplify(outer_part / gp)
+
+            # Check if outer_part is a constant multiple of g'(x)
+            try:
+                ratio = simplify(outer_part / gp)
+            except Exception:
+                continue
+
             if ratio.is_constant():
                 return 'substitution'
-    # 2. 三角代换特征
-    if (expr.find(sqrt(1 - var**2)) or
-        expr.find(sqrt(1 + var**2)) or
-            expr.find(sqrt(var**2 - 1))):
+
+    # Strategy 2: Trigonometric substitution patterns
+    a = Wild('a', exclude=[var], properties=[
+             lambda x: x.is_positive])  # Assume a > 0
+    if expr.find(sqrt(a**2 - var**2)):
         return 'substitution'
-    # 3. 根式
-    if any(isinstance(arg, Pow) and arg.exp.is_Rational and arg.exp < 1 for arg in expr.args):
+
+    # Strategy 3: Radical expressions (e.g., (ax+b)^{1/n})
+    if has_radical(expr, var):
         return 'substitution'
-    # 4. 指数/对数
+
+    # Strategy 4: Exponential or logarithmic terms in x
     if expr.has(exp(var)) or expr.has(log(var)):
         return 'substitution'
+
     return None

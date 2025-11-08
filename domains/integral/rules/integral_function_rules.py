@@ -11,7 +11,7 @@ def const_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     """Apply the const rule: c dx = c*x + C"""
     var = context['variable']
     var_latex, expr_latex = wrap_latex(var, expr)
-    return expr * var, f"常数积分: $\\int {expr_latex}\\,d{var} = {expr_latex} \\cdot {var_latex} + C$"
+    return expr * var, f"常数积分: $\\int {expr_latex}\\,d{var} = {var_latex} + C$"
 
 
 def var_rule(_expr: Expr, context: Context) -> RuleFunctionReturn:
@@ -24,8 +24,8 @@ def var_rule(_expr: Expr, context: Context) -> RuleFunctionReturn:
 def power_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     """Apply the pow rule:
 
-    n != -1 -> x^n dx = x^(n+1)/(n+1) + C;
-    n = -1 -> ln|x| + C
+    n != -1 to x^n dx = x^(n+1)/(n+1) + C;
+    n = -1 to ln|x| + C
     """
     var = context['variable']
     var_latex, expr_latex = wrap_latex(var, expr)
@@ -41,7 +41,7 @@ def power_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     # General case: n != -1
     result = var**(exponent + 1) / (exponent + 1)
     exponent_latex = wrap_latex(exponent+1)
-    return result, f"幂函数积分规则: $\\int {expr_latex}}}\\,d{var_latex} = \\frac{{{var_latex}^{{{exponent_latex}}}}}{{{exponent_latex}}} + C$"
+    return result, f"幂函数积分规则: $\\int {expr_latex}\\,d{var_latex} = \\frac{{{var_latex}^{{{exponent_latex}}}}}{{{exponent_latex}}} + C$"
 
 
 def exp_rule(_expr: Expr, context: Context) -> RuleFunctionReturn:
@@ -85,6 +85,8 @@ def inverse_trig_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     for key, (res, desc) in mapping.items():
         if expr.equals(key):
             return res, desc
+
+    return None
 
 
 def hyperbolic_rule(expr: Expr, context: Context) -> RuleFunctionReturn:

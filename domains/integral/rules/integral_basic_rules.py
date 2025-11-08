@@ -1,4 +1,4 @@
-from sympy import Add, Expr, Integral, Mul
+from sympy import Add, Expr, Integral, Mul, latex
 
 from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
 from utils.latex_formatter import wrap_latex
@@ -16,7 +16,7 @@ def add_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
 
     rhs_latex = " + ".join(
         f"\\int {wrap_latex(term)}\\,d{var_latex}" for term in expr.args)
-    explanation = f"应用加法规则: $\\int{expr_latex}\\,d{var_latex} = {rhs_latex} + C$"
+    explanation = f"应用加法规则: $\\int{expr_latex}\\,d{var_latex} = {rhs_latex}$"
     return new_expr, explanation
 
 
@@ -39,7 +39,7 @@ def mul_const_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     if const_part == -1:
         return -Integral(func_part, var), f"负号提出: $\\int {expr_latex}\\,d{var} = -\\int {func_part_latex}\\,d{var_latex}$"
     inner_integral = Integral(func_part, var)
-    return const_part * inner_integral, f"常数因子提取: $\\int {expr_latex}\\,d{var} = {const_part} \\int {func_part_latex}\\,d{var_latex}$"
+    return const_part * inner_integral, f"常数因子提取: $\\int {expr_latex}\\,d{var} = {latex(const_part)} \\int {func_part_latex}\\,d{var_latex}$"
 
 
 def add_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn:

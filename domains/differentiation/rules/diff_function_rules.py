@@ -104,91 +104,91 @@ def log_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     if expr.args[0] == var:
-        return 1/var, f"应用自然对数规则: $\\frac{{d}}{{d{var_latex}}}(\\ln{var_latex}) = \\frac{{1}}{{{var}}}$"
+        return 1/var, f"应用自然对数规则: $\\frac{{d}}{{d{var_latex}}}\\ln({var_latex}) = \\frac{{1}}{{{var}}}$"
 
 
 def sin_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     if expr.args[0] == var:
-        return cos(var), f"应用正弦函数规则: $\\frac{{d}}{{d{var_latex}}}(\\sin({var})) = \\cos({var})$"
+        return cos(var), f"应用正弦函数规则: $\\frac{{d}}{{d{var_latex}}}\\sin({var}) = \\cos({var})$"
 
 
 def cos_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     if expr.args[0] == var:
-        return -sin(var), f"应用余弦函数规则: $\\frac{{d}}{{d{var_latex}}}(\\cos({var})) = -\\sin({var})$"
+        return -sin(var), f"应用余弦函数规则: $\\frac{{d}}{{d{var_latex}}}\\cos({var}) = -\\sin({var})$"
 
 
 def tan_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     if expr.args[0] == var:
-        return sec(var)**2, f"应用正切函数规则: $\\frac{{d}}{{d{var_latex}}}(\\tan({var})) = \\sec^2({var})$"
+        return sec(var)**2, f"应用正切函数规则: $\\frac{{d}}{{d{var_latex}}}\\tan({var}) = \\sec^2({var})$"
 
 
 def sec_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     if expr.args[0] == var:
-        return sec(var)*tan(var), f"应用正割函数规则: $\\frac{{d}}{{d{var_latex}}}(\\sec({var})) = \\sec({var})\\tan({var})$"
+        return sec(var)*tan(var), f"应用正割函数规则: $\\frac{{d}}{{d{var_latex}}}\\sec({var}) = \\sec({var})\\tan({var})$"
 
 
 def csc_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     if expr.args[0] == var:
-        return -csc(var)*cot(var), f"应用余割函数规则: $\\frac{{d}}{{d{var_latex}}}(\\csc({var})) = -\\csc({var})\\cot({var})$"
+        return -csc(var)*cot(var), f"应用余割函数规则: $\\frac{{d}}{{d{var_latex}}}\\csc({var}) = -\\csc({var})\\cot({var})$"
 
 
 def cot_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     if expr.args[0] == var:
-        return -csc(var)**2, f"应用余切函数规则: $\\frac{{d}}{{d{var_latex}}}(\\cot({var})) = -\\csc^2({var})$"
+        return -csc(var)**2, f"应用余切函数规则: $\\frac{{d}}{{d{var_latex}}}\\cot({var}) = -\\csc^2({var})$"
 
 
 def asin_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     if expr.args[0] == var:
-        return 1/((1-var**2)**0.5), f"应用反正弦函数规则: $\\frac{{d}}{{d{var_latex}}}(\\arcsin({var})) = \\frac{{1}}{{\\sqrt{{1-{var}^2}}}}$"
+        return 1/((1-var**2)**0.5), f"应用反正弦函数规则: $\\frac{{d}}{{d{var_latex}}}\\arcsin({var}) = \\frac{{1}}{{\\sqrt{{1-{var}^2}}}}$"
 
 
 def acos_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     if expr.args[0] == var:
-        return -1/((1-var**2)**0.5), f"应用反余弦函数规则: $\\frac{{d}}{{d{var_latex}}}(\\arccos({var})) = -\\frac{{1}}{{\\sqrt{{1-{var}^2}}}}$"
+        return -1/((1-var**2)**0.5), f"应用反余弦函数规则: $\\frac{{d}}{{d{var_latex}}}\\arccos({var}) = -\\frac{{1}}{{\\sqrt{{1-{var}^2}}}}$"
 
 
 def atan_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     if expr.args[0] == var:
-        return 1/(1+var**2), f"应用反正切函数规则: $\\frac{{d}}{{d{var_latex}}}(\\arctan({var})) = \\frac{{1}}{{1+{var}^2}}$"
+        return 1/(1+var**2), f"应用反正切函数规则: $\\frac{{d}}{{d{var_latex}}}\\arctan({var}) = \\frac{{1}}{{1+{var}^2}}$"
 
 
 def sinh_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     if expr.args[0] == var:
-        return cosh(var), f"应用双曲正弦函数规则: $\\frac{{d}}{{d{var_latex}}}(\\sinh({var})) = \\cosh({var})$"
+        return cosh(var), f"应用双曲正弦函数规则: $\\frac{{d}}{{d{var_latex}}}\\sinh({var}) = \\cosh({var})$"
 
 
 def cosh_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     if expr.args[0] == var:
-        return sinh(var), f"应用双曲余弦函数规则: $\\frac{{d}}{{d{var_latex}}}(\\cosh({var})) = \\sinh({var})$"
+        return sinh(var), f"应用双曲余弦函数规则: $\\frac{{d}}{{d{var_latex}}}\\cosh({var}) = \\sinh({var})$"
 
 
 def tanh_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     if expr.args[0] == var:
-        return 1 - tanh(var)**2, f"应用双曲正切函数规则: $\\frac{{d}}{{d{var_latex}}}(\\tanh({var})) = 1 - \\tanh^2({var})$"
+        return 1 - tanh(var)**2, f"应用双曲正切函数规则: $\\frac{{d}}{{d{var_latex}}}\\tanh({var}) = 1 - \\tanh^2({var})$"
 
 
 def const_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn:

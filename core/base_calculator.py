@@ -109,6 +109,7 @@ class BaseCalculator(ABC):
         for rule in self.rule_registry.get_applicable_rules(expr, rule_context):
             if not self._check_rule_is_can_apply(rule):
                 continue
+            # print(f"rule: {rule.__name__}")
             result = rule(expr, rule_context)
             if result:
                 return result
