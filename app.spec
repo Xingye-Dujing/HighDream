@@ -4,7 +4,7 @@
 
 a = Analysis(
     ['app.py'],
-    pathex=['F:\python_project\MathTool'],
+    pathex=['F:\python_project\HighDream'],
     binaries=[],
     datas=[('static', 'static'), ('templates', 'templates')],
     hiddenimports=[],
