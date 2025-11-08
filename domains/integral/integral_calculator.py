@@ -3,7 +3,7 @@
 # TODO 支持多重积分(偏积分)
 
 from typing import List, Tuple
-from sympy import Expr, Integral, Symbol
+from sympy import Expr, Integral, Symbol, simplify
 
 from core import BaseCalculator
 from utils import MatcherList, Operation, RuleDict
@@ -41,6 +41,32 @@ class IntegralCalculator(BaseCalculator):
         if step_expr.has(Integral):
             return step_expr
         return step_expr + C
+
+    def _final_postprocess(self, final_expr: Expr) -> None:
+        """Ensure the constant of integration (+C) appears only in explanatory text or final output,
+        never embedded in the symbolic antiderivative expression.
+        """
+        if not final_expr.free_symbols:
+            return
+
+        final_expr -= C
+
+        # Map each free symbol to a new symbol with positive=True, real=True
+        assumption_map = {
+            s: Symbol(s.name, positive=True, real=True)
+            for s in final_expr.free_symbols
+        }
+
+        # Replace symbols with their assumed counterparts
+        expr_with_assumptions = final_expr.xreplace(assumption_map)
+        simplified_expr = simplify(expr_with_assumptions) + C
+
+        # Must compare strings, because variables must be not equal due to different assumptions
+        if str(simplified_expr) != str(final_expr):
+            self.step_generator.add_step(
+                simplified_expr,
+                "假设所有变量为正实数, 化简表达式"
+            )
 
     def compute_list(self, expr: str, var: Symbol) -> Tuple[List[Expr], List[str]]:
         """Define Integral context."""
