@@ -3,7 +3,7 @@ from collections import deque
 from functools import lru_cache
 from typing import Deque, Dict, List, Tuple
 
-from sympy import Expr, Symbol, latex, log, simplify, sympify
+from sympy import Expr, Symbol, latex, simplify, sympify
 
 from utils import Context, MatcherList, Operation, RuleContext, RuleDict, RuleFunction
 from .base_step_generator import BaseStepGenerator
@@ -66,8 +66,9 @@ class BaseCalculator(ABC):
                 expr, operation, **context)
         return self.cache[key]
 
-    def _preprocess_expression(self, _expr: Expr) -> Expr:
+    def _preprocess_expression(self, expr: Expr) -> Expr:
         """Preprocess the expression before applying rules."""
+        return expr
 
     @staticmethod
     def _step_expr_postprocess(step_expr: Expr) -> Expr:
