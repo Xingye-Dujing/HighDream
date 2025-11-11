@@ -12,9 +12,13 @@ from .rules.integral_basic_rules import (
 )
 from .rules.integral_function_rules import (
     const_matcher, const_rule, exp_matcher, exp_rule,
-    hyperbolic_matcher, hyperbolic_rule, inverse_trig_matcher, inverse_trig_rule,
-    log_matcher, log_rule, power_matcher, power_rule,
-    trig_matcher, trig_rule, var_matcher, var_rule
+    inverse_trig_matcher, inverse_trig_rule,
+    log_matcher, log_rule, pow_matcher, pow_rule,
+    var_matcher, var_rule, sin_matcher, sin_rule,
+    cos_matcher, cos_rule, tan_matcher, tan_rule,
+    sec_matcher, sec_rule, csc_matcher, csc_rule,
+    cot_matcher, cot_rule, sinh_matcher, sinh_rule,
+    cosh_matcher, cosh_rule
 )
 from .rules.integral_special_rules import (
     parts_matcher, parts_rule, substitution_matcher, substitution_rule
@@ -32,12 +36,18 @@ __all__ = [
 
 # Rule mapping: Rule name -> Rule function
 RULE_DICT: RuleDict = {
-    'power': power_rule,
+    'pow': pow_rule,
     'exp': exp_rule,
     'log': log_rule,
-    'trig': trig_rule,
+    'sin': sin_rule,
+    'cos': cos_rule,
+    'tan': tan_rule,
+    'sec': sec_rule,
+    'csc': csc_rule,
+    'cot': cot_rule,
+    'sinh': sinh_rule,
+    'cosh': cosh_rule,
     'inverse_trig': inverse_trig_rule,
-    'hyperbolic': hyperbolic_rule,
     'const': const_rule,
     'var': var_rule,
     'add': add_rule,
@@ -49,7 +59,8 @@ RULE_DICT: RuleDict = {
 # Note: Earlier entries have higher priority.
 MATCHER_LIST: MatcherList = [
     const_matcher, var_matcher, add_matcher, mul_const_matcher,
-    power_matcher, exp_matcher, log_matcher, trig_matcher,
-    inverse_trig_matcher, hyperbolic_matcher, substitution_matcher,
+    pow_matcher, exp_matcher, log_matcher, sin_matcher, cos_matcher, tan_matcher,
+    sec_matcher, csc_matcher, cot_matcher, exp_matcher, log_matcher, sinh_matcher, cosh_matcher,
+    inverse_trig_matcher, substitution_matcher,
     parts_matcher
 ]

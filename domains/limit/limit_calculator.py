@@ -92,7 +92,7 @@ class LimitCalculator(BaseCalculator):
             self._add_left_limit_step(expr, var, point)
         else:
             self._add_both_limit_step(expr, var, point)
-        self.step_generator._steps += steps[1:]
+        self.step_generator.steps += steps[1:]
         self.step_generator._explanations += explanations[1:]
 
     def _add_final_step(self, left_result: Expr, right_result: Expr) -> None:

@@ -6,11 +6,11 @@ class LimitStepGenerator(BaseStepGenerator):
 
     def to_latex_both(self) -> str:
         """Generate a LaTeX string representing two-sided limits' steps."""
-        if not self._steps:
+        if not self.steps:
             return r"\begin{align}\end{align}"
 
         lines = []
-        for i, (step, explanation) in enumerate(zip(self._steps, self._explanations)):
+        for i, (step, explanation) in enumerate(zip(self.steps, self._explanations)):
             step_type = self._get_step_type(explanation)
 
             if step_type == "left_limit_start":

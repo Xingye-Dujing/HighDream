@@ -1,8 +1,7 @@
-from typing import Dict
+from typing import Any, Dict
 from sympy import (
-    Expr, Symbol, log, Pow, asin,
-    acos, Interval, solveset,
-    oo, S, sympify
+    Add, Expr, Limit, Mul, Symbol, limit, log, Pow, asin,
+    acos, Interval, solveset, oo, S, sympify, zoo
 )
 
 
@@ -95,7 +94,6 @@ def detect_feasible_directions(expr: Expr, var: Symbol, point: str) -> Dict[str,
         # 如果左侧邻域无解，则左极限很可能不可计算
         if not has_left_solution:
             feasible['left'] = False
-            # 可以选择打印或记录原因，用于调试
             # print(f"左极限检测失败: {reason} 在 x->{point}- 时无法满足")
         # 如果右侧邻域无解，则右极限很可能不可计算
         if not has_right_solution:
@@ -106,3 +104,148 @@ def detect_feasible_directions(expr: Expr, var: Symbol, point: str) -> Dict[str,
             break  # 所有方向都不可行，无需检查剩余约束
 
     return feasible
+
+
+def get_limit_args(context: Dict[str, Any]) -> tuple:
+    """获取极限参数"""
+    var, point = context['variable'], context['point']
+    direction = context.get('direction', '+')
+    dir_sup = '^{+}' if direction == '+' else '^{-}'
+    return var, point, direction, dir_sup
+
+
+def check_limit_exists_oo(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
+    """
+    检查极限是否存在且为有限值(含无穷)
+    """
+    try:
+        lim = Limit(expr, var, point, dir=direction).doit()
+        return lim.is_finite or lim == oo or lim == -oo
+    except Exception:
+        return False
+
+
+def check_function_tends_to_zero(f: Expr, var: Symbol, point: Any, direction: str) -> bool:
+    try:
+        lim = limit(f, var, point, dir=direction)
+        return lim == 0
+    except Exception:
+        return False
+
+
+def check_limit_exists(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
+    """
+    检查极限是否存在且为有限值
+    """
+    try:
+        lim = Limit(expr, var, point, dir=direction).doit()
+        return lim.is_finite
+    except Exception:
+        return False
+
+
+def is_indeterminate_form(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
+    """
+    检查表达式在给定点是否为不定式
+    不定式包括: 0/0, oo/oo, 0·oo, oo-oo, 1^oo, 0^0, oo^0
+    """
+    try:
+        # 尝试计算极限值
+        _lim_val = limit(expr, var, point, dir=direction)
+        # 检查常见的不定式形式
+        if isinstance(expr, Mul):
+            factors = expr.as_ordered_factors()
+            # 检查 0·oo 形式
+            zero_found = False
+            inf_found = False
+            for factor in factors:
+                factor_lim = limit(factor, var, point, dir=direction)
+                if factor_lim == 0:
+                    zero_found = True
+                elif factor_lim in (oo, -oo):
+                    inf_found = True
+            if zero_found and inf_found:
+                return True
+        elif isinstance(expr, Add):
+            terms = expr.as_ordered_terms()
+            # 检查 oo-oo 形式
+            pos_inf_found = False
+            neg_inf_found = False
+            for term in terms:
+                term_lim = limit(term, var, point, dir=direction)
+                if term_lim == oo:
+                    pos_inf_found = True
+                elif term_lim == -oo:
+                    neg_inf_found = True
+            if pos_inf_found and neg_inf_found:
+                return True
+        elif isinstance(expr, Pow):
+            base, exponent = expr.base, expr.exp
+            base_lim = limit(base, var, point, dir=direction)
+            exp_lim = limit(exponent, var, point, dir=direction)
+
+            # 检查 1^oo, 0^0, oo^0 形式
+            if (base_lim == 1 and exp_lim in (oo, -oo)) or \
+               (base_lim == 0 and exp_lim == 0) or \
+               (base_lim in (oo, -oo) and exp_lim == 0):
+                return True
+
+        return False
+
+    except Exception:
+        return True
+
+
+def check_combination_indeterminate(part1: Expr, part2: Expr, var: Symbol, point: Any, direction: str, operation: str) -> bool:
+    """
+    检查两个部分组合后是否会产生不定式
+    operation: 'mul' 或 'add'
+    """
+    try:
+        if operation == 'mul':
+            # 检查乘法组合：0·oo 或 oo·0
+            lim1 = limit(part1, var, point, dir=direction)
+            lim2 = limit(part2, var, point, dir=direction)
+
+            if (lim1 == 0 and lim2 in (oo, -oo)) or (lim1 in (oo, -oo) and lim2 == 0):
+                return True
+
+        elif operation == 'add':
+            # 检查加法组合：oo - oo
+            lim1 = limit(part1, var, point, dir=direction)
+            lim2 = limit(part2, var, point, dir=direction)
+
+            if (lim1 == oo and lim2 == -oo) or (lim1 == -oo and lim2 == oo):
+                return True
+
+        return False
+    except Exception:
+        return False
+
+
+def is_infinite(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
+    """检查表达式极限是否为无穷"""
+    try:
+        lim = limit(expr, var, point, dir=direction)
+        return lim in (oo, -oo)
+    except Exception:
+        return False
+
+
+def is_zero(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
+    """检查表达式极限是否为 0"""
+    try:
+        lim = limit(expr, var, point, dir=direction)
+        return lim == 0
+    except Exception:
+        return False
+
+
+def is_constant(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
+    """检查表达式的极限是否为常数(即数值而非无穷或符号)"""
+    try:
+        lim = limit(expr, var, point, dir=direction)
+        # 检查是否为数值常数（非无穷、非符号）
+        return lim.is_real and not lim.has(oo, -oo, zoo)
+    except Exception:
+        return False

@@ -1,10 +1,32 @@
 from sympy import (
-    Abs, Expr, Pow, acos, asin, atan, cos, cosh, cot, csc, exp,
+    Abs, Expr, Integral, Pow, acos, asin, atan, cos, cosh, cot, csc, exp,
     log, sec, sin, sinh, sqrt, tan, tanh
 )
 
+from core import RuleRegistry
 from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
 from utils.latex_formatter import wrap_latex
+
+_create_matcher = RuleRegistry.create_common_matcher
+
+
+def _create_rule(func_name):
+    return RuleRegistry.create_common_rule(Integral, func_name)
+
+
+# Generate all exp and log rules using the factory function
+exp_rule = _create_rule("指数")
+log_rule = _create_rule("对数")
+# Generate all trigonometric and hyperbolic rules using the factory function
+sin_rule = _create_rule("正弦")
+cos_rule = _create_rule("余弦")
+tan_rule = _create_rule("正切")
+sec_rule = _create_rule("正割")
+csc_rule = _create_rule("余割")
+cot_rule = _create_rule("余切")
+sinh_rule = _create_rule("双曲正弦")
+cosh_rule = _create_rule("双曲余弦")
+tanh_rule = _create_rule("双曲正切")
 
 
 def const_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
@@ -21,7 +43,7 @@ def var_rule(_expr: Expr, context: Context) -> RuleFunctionReturn:
     return (var**2) / 2, f"变量积分: $\\int {var_latex}\\,d{var_latex} = \\frac{{{var_latex}^2}}{2} + C$"
 
 
-def power_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def pow_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     """Apply the pow rule:
 
     n != -1 to x^n dx = x^(n+1)/(n+1) + C;
@@ -44,36 +66,6 @@ def power_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return result, f"幂函数积分规则: $\\int {expr_latex}\\,d{var_latex} = \\frac{{{var_latex}^{{{exponent_latex}}}}}{{{exponent_latex}}} + C$"
 
 
-def exp_rule(_expr: Expr, context: Context) -> RuleFunctionReturn:
-    """e^x dx = e^x + C"""
-    var = context['variable']
-    var_latex = wrap_latex(var)
-    return exp(var), f"$\\int e^{{{var}}}\\,d{var_latex} = e^{{{var}}} + C$"
-
-
-def log_rule(_expr: Expr, context: Context) -> RuleFunctionReturn:
-    """ln(x) dx = x * ln(x) - x + C"""
-    var = context['variable']
-    var_latex = wrap_latex(var)
-    result = var * log(var) - var
-    return result, f"自然对数积分: $\\int \\ln{var_latex}\\,d{var_latex} = {wrap_latex(result)} + C$"
-
-
-def trig_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    var = context['variable']
-
-    rules = {
-        sin: (-cos(var), f"正弦函数积分: $\\int \\sin({var})\\,d{var} = -\\cos({var}) + C$"),
-        cos: (sin(var), f"余弦函数积分: $\\int \\cos({var})\\,d{var} = \\sin({var}) + C$"),
-        tan: (-log(cos(var)), f"正切函数积分: $\\int \\tan({var})\\,d{var} = -\\ln|\\cos({var})| + C$"),
-        sec: (log(sec(var) + tan(var)), f"正割函数积分: $\\int \\sec({var})\\,d{var} = \\ln|\\sec({var}) + \\tan({var})| + C$"),
-        csc: (-log(csc(var) + cot(var)), f"余割函数积分: $\\int \\csc({var})\\,d{var} = -\\ln|\\csc({var}) + \\cot({var})| + C$"),
-        cot: (log(sin(var)),
-              f"余切函数积分: $\\int \\cot({var})\\,d{var} = \\ln|\\sin({var})| + C$")
-    }
-    return rules[expr.func]
-
-
 def inverse_trig_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
@@ -89,16 +81,18 @@ def inverse_trig_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return None
 
 
-def hyperbolic_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    var = context['variable']
-    var_latex = wrap_latex(var)
-    rules = {
-        sinh: (cosh(var), f"双曲正弦积分: $\\int \\sinh({var})\\,d{var_latex} = \\cosh({var}) + C$"),
-        cosh: (sinh(var), f"双曲余弦积分: $\\int \\cosh({var})\\,d{var_latex} = \\sinh({var}) + C$"),
-        tanh: (var - log(cosh(var)),
-               f"双曲正切积分: $\\int \\tanh({var})\\,d{var_latex} = {var} - \\ln|\\cosh({var})| + C$")
-    }
-    return rules[expr.func]
+pow_matcher = _create_matcher(Pow)
+exp_matcher = _create_matcher(exp)
+log_matcher = _create_matcher(log)
+sin_matcher = _create_matcher(sin)
+cos_matcher = _create_matcher(cos)
+tan_matcher = _create_matcher(tan)
+sec_matcher = _create_matcher(sec)
+csc_matcher = _create_matcher(csc)
+cot_matcher = _create_matcher(cot)
+sinh_matcher = _create_matcher(sinh)
+cosh_matcher = _create_matcher(cosh)
+tanh_matcher = _create_matcher(tanh)
 
 
 def const_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn:
@@ -114,44 +108,9 @@ def var_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
     return None
 
 
-def power_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    var = context['variable']
-    if isinstance(expr, Pow) and expr.base == var:
-        return 'power'
-    return None
-
-
-def exp_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    var = context['variable']
-    if isinstance(expr, exp) and expr.args[0] == var:
-        return 'exp'
-    return None
-
-
-def log_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    var = context['variable']
-    if isinstance(expr, log) and expr.args[0] == var:
-        return 'log'
-    return None
-
-
-def trig_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    var = context['variable']
-    if expr.func in [sin, cos, tan, sec, csc, cot] and expr.args[0] == var:
-        return 'trig'
-    return None
-
-
 def inverse_trig_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
     var = context['variable']
     patterns = [1/sqrt(1 - var**2), -1/sqrt(1 - var**2), 1/(1 + var**2)]
     if any(expr == p for p in patterns):
         return 'inverse_trig'
-    return None
-
-
-def hyperbolic_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    var = context['variable']
-    if expr.func in [sinh, cosh, tanh] and expr.args[0] == var:
-        return 'hyperbolic'
     return None

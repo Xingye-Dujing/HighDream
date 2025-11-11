@@ -1,6 +1,12 @@
-from sympy import Expr
+from typing import Union
 
-from utils import Context, MatcherFunction, MatcherList, RuleDict, RuleFunction, RuleList
+from sympy import Expr, exp, latex, log
+from sympy.functions.elementary.trigonometric import InverseTrigonometricFunction, TrigonometricFunction
+
+from utils import (
+    Context, MatcherFunction, MatcherFunctionReturn, MatcherList,
+    Operation, RuleDict, RuleFunction, RuleFunctionReturn, RuleList
+)
 
 
 class RuleRegistry:
@@ -41,3 +47,24 @@ class RuleRegistry:
             if rule_name in self._rules:
                 applicable.append(self._rules[rule_name])
         return applicable
+
+    @staticmethod
+    def create_common_rule(operation: Operation, func_name: str) -> RuleFunction:
+        """Creates a commom rule function."""
+        def rule_function(expr: Expr, context: Context) -> RuleFunctionReturn:
+            var = context['variable']
+            expr_diff = operation(expr, var)
+            result = expr_diff.doit()
+            return result,  f"应用{func_name}函数规则: ${latex(expr_diff)} = {latex(result)}$"
+
+        return rule_function
+
+    @staticmethod
+    def create_common_matcher(func: Union[exp, log, InverseTrigonometricFunction, TrigonometricFunction]) -> MatcherFunction:
+        """Creates a commom matcher function for a given function."""
+        def matcher_function(expr: Expr, context: Context) -> MatcherFunctionReturn:
+            if isinstance(expr, func) and expr.args[0] == context['variable']:
+                # Return the lowercase name of the function
+                return func.__name__.lower()
+            return None
+        return matcher_function
