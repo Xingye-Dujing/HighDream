@@ -56,6 +56,7 @@ def mul_split_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     factors = expr.as_ordered_factors()
 
     # TODO: 此函数相似代码很多, 后续还需进一步重构
+    # Two for loops to apply the two strategies successively.
     # Strategy 1: Extract standard limit forms
     for i, factor in enumerate(factors):
         new_factor = None

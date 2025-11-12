@@ -25,8 +25,9 @@ def check_mul_split(expr: Expr, var: Symbol, point: Expr, direction: str) -> boo
         return False
     factors = expr.as_ordered_factors()
 
-    # Strategy 1: Detect standard limit forms
-    for factor in factors:
+    # A for loop to detect.
+    for i, factor in enumerate(factors):
+        # Strategy 1: Detect standard limit forms
         num, den = factor.as_numer_denom()
         # Detect sin(f(x)), f(x) to 0
         for part in (num, den):
@@ -51,20 +52,17 @@ def check_mul_split(expr: Expr, var: Symbol, point: Expr, direction: str) -> boo
                     if f.has(var) and check_function_tends_to_zero(f, var, point, direction):
                         return True
 
-    # Detect (f(x) + 1)**h(x), f(x) -> 0
-    for factor in factors:
-        if not isinstance(factor, Pow):
-            continue
-        base, _exp = factor.as_base_exp()
-        inv_f = base - 1
-        if check_function_tends_to_zero(inv_f, var, point, direction):
-            # Check if f(x)*g(x) tends to a constant
-            ratio = simplify(inv_f * _exp)
-            if not ratio.has(var):
-                return True
+        # Detect (f(x) + 1)**h(x), f(x) -> 0
+        if isinstance(factor, Pow):
+            base, _exp = factor.as_base_exp()
+            inv_f = base - 1
+            if check_function_tends_to_zero(inv_f, var, point, direction):
+                # Check if f(x)*g(x) tends to a constant
+                ratio = simplify(inv_f * _exp)
+                if not ratio.has(var):
+                    return True
 
-    # Strategy 2: General multiplicative splitting
-    for i, factor in enumerate(factors):
+        # Strategy 2: General multiplicative splitting
         first_part = factor
         rest_factors = factors[:i] + factors[i+1:]
         if not rest_factors:
