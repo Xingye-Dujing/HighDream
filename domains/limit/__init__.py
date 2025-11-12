@@ -12,6 +12,9 @@ from .limit_help_func import (
     is_infinite,
     is_zero,
 )
+from .rules.check_split import (
+    check_add_split, check_div_split, check_mul_split
+)
 from .rules.base_rules import (
     small_o_add_rule, small_o_add_matcher,
     const_inf_mul_rule, const_inf_mul_matcher,
@@ -47,12 +50,6 @@ from .rules.lhopital_rules import (
     lhopital_inf_minus_inf_matcher, lhopital_inf_minus_inf_rule,
     lhopital_power_matcher, lhopital_power_rule
 )
-from .rules.taylor_rules import (
-    taylor_quotient_rule, taylor_quotient_matcher,
-    taylor_substitution_rule, taylor_substitution_matcher,
-    taylor_infinity_rule, taylor_infinity_matcher,
-    taylor_composition_rule, taylor_composition_matcher
-)
 
 __all__ = [
     'LimitStepGenerator',
@@ -60,6 +57,9 @@ __all__ = [
     'check_function_tends_to_zero',
     'check_limit_exists',
     'check_limit_exists_oo',
+    'check_add_split',
+    'check_mul_split',
+    'check_div_split',
     'get_limit_args',
     'is_constant',
     'is_indeterminate_form',
@@ -113,10 +113,6 @@ RULE_DICT: RuleDict = {
     'lhopital_zero_times_inf': lhopital_zero_times_inf_rule,
     'lhopital_inf_minus_inf': lhopital_inf_minus_inf_rule,
     'lhopital_power': lhopital_power_rule,
-    'taylor_quotient': taylor_quotient_rule,
-    'taylor_substitution': taylor_substitution_rule,
-    'taylor_infinity': taylor_infinity_rule,
-    'taylor_composition': taylor_composition_rule,
     'conjugate_rationalize': conjugate_rationalize_rule,
 }
 

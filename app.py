@@ -3,6 +3,7 @@
 # TODO 注意: ab 会被解析成一个字母, 而不是 a*b. * 绝对不可以省略!!!
 # TODO 把所有用于验证的 a == b 换成 a.euqals(b). 后者可以解决表达式有多个等价形式的情况
 # TODO 所有括号换成 \left( 和 \right), 这样的括号更加美观, 会自动匹配表达式的高度
+# TODO sympy 会把所有幂都具体算出, 这样会导致当幂过大时, 会直接卡住. 所有我们要特别处理, 不把幂的值具体算出.
 
 # pyinstaller 打包时需要添加此句
 import matplotlib.backends.backend_svg

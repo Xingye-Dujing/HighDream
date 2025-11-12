@@ -1,35 +1,34 @@
 # TODO 下面都有 乘法形式 和 分式形式 两种. 深入研究分式形式是否是不必要的, 即仅 乘法形式 是否就涵盖所有情况
 # TODO 另外想一个好办法去提出 exp(f(x))-1, 现在写的太死，局限性很高
 
-from typing import Any, Dict, Optional, Tuple
+from sympy import E, Expr, Integer, Pow, exp, latex, log, sin, simplify
 
-from sympy import E, Expr, Integer, Limit,  Pow, Symbol, exp, latex, log, oo, sin, simplify
+from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
+from domains.limit import check_function_tends_to_zero
 
 
-def _get_limit_args(context: Dict[str, Any]) -> tuple:
-    """获取极限参数"""
+def _get_limit_args(context: Context) -> tuple:
+    """Special for dir_sup."""
     var, point = context['variable'], context['point']
     direction = context.get('direction', '+')
     dir_sup = '^{+}' if direction == '+' else '^{-}'
     return var, point, direction, dir_sup
 
 
-def _check_function_tends_to_zero(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
-    """检查函数在给定点是否趋于 0"""
-    try:
-        limit_val = Limit(expr, var, point, dir=direction).doit()
-        return limit_val == 0
-    except Exception:
-        return False
+def sin_over_x_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+    """Applies the standard limit rule: u to 0, sin(u)/u to 1.
 
+    To expressions of the form:
+        - sin(f(x))/g(x)   where f(x)/g(x) to c (constant),
+        - sin(f(x))*h(x)   where f(x)*h(x) to c (constant).
 
-def sin_over_x_rule(expr: Expr, context: Dict[str, Any]) -> Optional[Tuple[Expr, str]]:
-    """重要极限: sin(f(x))/h(x) 或 sin(f(x))*h(x) 形式, f(x)/h(x)=常数 或 f(x)*h(x)=常数"""
+    The rule is applicable only when the inner argument f(x) tends to 0 at the limit point.
+    """
     var, point, _, dir_sup = _get_limit_args(context)
     ratio = None
 
     if expr.is_Mul:
-        # 处理形式 sin(f(x))*h(x)
+        # Handle product form: sin(f(x))*h(x)
         sin_factor = None
         other_factor = 1
         for arg in expr.args:
@@ -39,61 +38,69 @@ def sin_over_x_rule(expr: Expr, context: Dict[str, Any]) -> Optional[Tuple[Expr,
                 other_factor *= arg
         sin_arg = sin_factor.args[0]
         ratio = sin_arg * other_factor
-        den = 1/other_factor if other_factor != 0 else oo
+        den = 1/other_factor
     else:
-        # 标准分式形式
+        # Handle quotient form: sin(f(x))/g(x)
         num, den = expr.as_numer_denom()
         if isinstance(num, sin):
             sin_arg = num.args[0]
             ratio = sin_arg / den
 
-    t_sub = latex(sin_arg)
-    var_to = latex(point)
+    # Build LaTeX explanation
+    var_latexatex, t_sub_latex, point_latexatex, ratio_latexatex = latex(
+        var), latex(sin_arg), latex(point), latex(ratio)
 
-    rule_text = f"\\lim_{{x \\to {var_to}{dir_sup}}} {latex(expr)} = "
+    rule_text = f"\\lim_{{x \\to {point_latexatex}{dir_sup}}} {latex(expr)} = "
 
-    is_identity = t_sub == latex(var) and ratio == 1
+    is_identity = t_sub_latex == var_latexatex and ratio == 1
 
     if is_identity:
         rule_text += '1'
     else:
-        if t_sub != latex(var):
+        if t_sub_latex != var_latexatex:
             lim_expr = f"\\lim_{{t \\to 0{dir_sup}}}"
             rule_text += (
-                f"{'' if ratio == 1 else latex(ratio)} {lim_expr} \\frac{{\\sin(t)}}{{t}} = "
-                f"{'1' if ratio == 1 else latex(ratio)}"
-                f"\\quad \\text{{(令 }} t = {t_sub} \\text{{)}}"
+                f"{'' if ratio == 1 else ratio_latexatex} {lim_expr} \\frac{{\\sin(t)}}{{t}} = "
+                f"{'1' if ratio == 1 else ratio_latexatex}"
+                f"\\quad \\text{{(令 }} t = {t_sub_latex} \\text{{)}}"
             )
         else:
             lim_expr = f"\\lim_{{x \\to 0{dir_sup}}}"
             rule_text += (
-                f"{'' if ratio == 1 else latex(ratio)} {lim_expr} \\frac{{\\sin(x)}}{{x}} = "
-                f"{'1' if ratio == 1 else latex(ratio)}"
+                f"{'' if ratio == 1 else ratio_latexatex} {lim_expr} \\frac{{\\sin(x)}}{{x}} = "
+                f"{'1' if ratio == 1 else ratio_latexatex}"
             )
 
     result = Integer(1) if ratio == 1 else ratio
     return result, f"重要极限: ${rule_text}$"
 
 
-def one_plus_one_over_x_pow_x_rule(expr: Expr, context: Dict[str, Any]) -> Tuple[Expr, str]:
-    """重要极限: (1 + 1/f(x))^f(x) -> e 或 (1 + f(x))^(1/f(x)) -> e 的形式"""
-    var, point, direction, dir_sup = _get_limit_args(context)
-    var_l, point_l, dir_l = latex(var), latex(point), dir_sup
+def one_plus_one_over_x_pow_x_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+    """Applies the standard exponential limit: u to 0, (1+u)^(1/u) = e,
+
+    To expressions of the form:
+        - (1+f(x))^{g(x)}   where f(x) to 0 and f(x)*g(x) to c (constant),
+        - equivalently, (1+1/h(x))^h(x) when h(x) yo +-oo.
+
+    The rule is valid only if the base tends to 1 and the product f(x)*exponent
+    approaches a finite constant.
+    """
+    var, point, _, dir_sup = _get_limit_args(context)
+    var_latex, point_latex = latex(var), latex(point)
 
     base, _exp = expr.as_base_exp()
-    # 统一为 (f(x) + 1)**h(x) 形式处理
-    inv_term = simplify(base - 1)  # 即 (1 + f(x)) 里的 f(x)
+    # Identify f(x) such that base = 1 + f(x)
+    inv_term = simplify(base - 1)
     f_expr = inv_term
-    g_expr = _exp
-    ratio = f_expr * g_expr
+    ratio = f_expr * _exp
+
+    # Build LaTeX explanation
     if ratio == 1:
-        body = (
-            f"\\lim_{{{var_l} \\to {point_l}{dir_l}}} {latex(expr)} = e"
-        )
+        body = f"\\lim_{{{var_latex} \\to {point_latex}{dir_sup}}} {latex(expr)} = e"
     else:
         body = (
-            f"\\lim_{{{var_l} \\to {point_l}{dir_l}}} {latex(expr)} = "
-            f"\\lim_{{{var_l} \\to {point_l}{dir_l}}} "
+            f"\\lim_{{{var_latex} \\to {point_latex}{dir_sup}}} {latex(expr)} = "
+            f"\\lim_{{{var_latex} \\to {point_latex}{dir_sup}}} "
             f"\\left[(1 + {latex(f_expr)})^{{\\frac{{1}}{{{latex(f_expr)}}}}}\\right]^{{{latex(ratio)}}}.\\quad"
             f"\\lim_{{f(x) \\to 0{dir_sup}}} (1+f(x))^{{\\frac{{1}}{{f(x)}}}} = e,"
             f"\\text{{故原极限为 }} e^{{{latex(ratio)}}}."
@@ -105,67 +112,265 @@ def one_plus_one_over_x_pow_x_rule(expr: Expr, context: Dict[str, Any]) -> Tuple
     return result, rule_text
 
 
-def ln_one_plus_x_over_x_rule(expr: Expr, context: Dict[str, Any]) -> Optional[Tuple[Expr, str]]:
-    """重要极限: ln(1+f(x))/g(x) 或 ln(1+f(x))*h(x)，其中 f(x)/g(x) 或 f(x)*h(x) -> 常数"""
-    var, point, _, dir_sup = _get_limit_args(context)
+def ln_one_plus_x_over_x_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+    """Applies the standard logarithmic limit: u to 0, ln(1+u)/u = 1.
 
-    ratio, f = None, None
+    To expressions of the form:
+        - ln(1+f(x))/g(x)   where f(x)/g(x) to c (constant),
+        - ln(1+f(x))*h(x)   where f(x)*h(x) to c (constant).
+
+    The rule is valid only when f(x) to 0 as x approaches the limit point from the given direction.
+    """
+    var, point, dir_sup, _ = _get_limit_args(context)
+
+    ratio = None
 
     if expr.is_Mul:
-        # 处理 ln(1+f(x)) * h(x) 形式
+        # Handle product form: ln(1+f(x))*h(x)
         log_factor, other_factor = None, 1
         for arg in expr.args:
             if isinstance(arg, log):
                 log_factor = arg
             else:
                 other_factor *= arg
-        if log_factor is None:
-            return None
         f = log_factor.args[0] - 1
         ratio = simplify(f * other_factor)
     else:
-        # 处理 ln(1+f(x)) / g(x) 形式
+        # Handle quotient form: ln(1+f(x))/g(x)
         numerator, denominator = expr.as_numer_denom()
-        if not isinstance(numerator, log):
-            return None
         f = numerator.args[0] - 1
         ratio = simplify(f / denominator)
 
-    if f is None:
-        return None
-
-    f_l = latex(f)
-    ratio_l = "" if ratio == 1 else latex(ratio)
-    var_l, point_l, dir_sup_l = latex(var), latex(point), dir_sup
-    lim_expr = f"\\lim_{{{var_l} \\to {point_l}{dir_sup_l}}}"
+    # Build LaTeX explanation
+    ratio_latex = "" if ratio == 1 else latex(ratio)
+    f_latex, var_latex, point_latex = latex(f), latex(var), latex(point)
+    lim_expr = f"\\lim_{{{var_latex} \\to {point_latex}{dir_sup}}}"
 
     result = Integer(1) if ratio == 1 else ratio
+    expr_latex, result_latex = latex(expr), latex(result)
 
     if ratio == 1 and f == var:
-        rule_text = f"{lim_expr} {latex(expr)} = 1"
+        rule_text = f"{lim_expr} {expr_latex} = 1"
     elif ratio != 1 and f == var:
         rule_text = (
-            f"{lim_expr} {latex(expr)} = "
-            f"{ratio_l} {lim_expr} \\frac{{\\ln(1+{var_l})}}{{{var_l}}} = {latex(result)}"
+            f"{lim_expr} {expr_latex} = "
+            f"{ratio_latex} {lim_expr} \\frac{{\\ln(1+{var_latex})}}{{{var_latex}}} = {result_latex}"
         )
     else:
         rule_text = (
-            f"{lim_expr} {latex(expr)} = "
-            f"{ratio_l} \\lim_{{t \\to 0{dir_sup}}} \\frac{{\\ln(1+t)}}{{t}} = {latex(result)}"
-            f" \\quad \\text{{(令 }} t = {f_l} \\text{{)}}"
+            f"{lim_expr} {expr_latex} = "
+            f"{ratio_latex} \\lim_{{t \\to 0{dir_sup}}} \\frac{{\\ln(1+t)}}{{t}} = {result_latex}"
+            f" \\quad \\text{{(令 }} t = {f_latex} \\text{{)}}"
         )
 
     return result, f"重要极限: ${rule_text}$"
 
 
-def sin_over_x_matcher(expr: Expr, context: Dict[str, Any]) -> Optional[str]:
-    """匹配 sin(f(x))/h(x) 或 sin(f(x))*h(x) 形式, f(x)/h(x) = 常数 或 f(x)*h(x) = 常数"""
+def g_over_exp_minus_one_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+    """Applies the standard exponential limit: u to 0, u/(e^u-1) = 1.
+
+    To expressions of the form:
+        g(x)/(e^f(x)-1),
+    where f(x) to 0 and the ratio g(x)/f(x) to c (a finite constant).
+
+    This rule is valid only when the exponent tends to zero at the limit point.
+    """
+    var, point, _, dir_sup = _get_limit_args(context)
+    num, den = expr.as_numer_denom()
+
+    exp_part = [a for a in den.args if a.has(exp)]
+
+    f = exp_part[0].args[0]
+    ratio = simplify(num / f)
+
+    # Build LaTeX explanation
+    ratio_latex = "" if ratio == 1 else latex(ratio)
+    f_latex, var_latex, point_latex = latex(f),  latex(var), latex(point)
+    lim_expr = f"\\lim_{{{var_latex} \\to {point_latex}{dir_sup}}}"
+
+    result = Integer(1) if ratio == 1 else ratio
+    expr_latex, result_latex = latex(expr), latex(result)
+
+    # Earliest special case
+    if ratio == 1 and f == var:
+        rule_text = f"{lim_expr} {expr_latex} = 1"
+    # f(x) == x
+    elif ratio != 1 and f == var:
+        rule_text = (
+            f"{lim_expr} {expr_latex} = "
+            f"{ratio_latex} {lim_expr} \\frac{{{var_latex}}}{{e^{{{var_latex}}} - 1}} = {result_latex }"
+        )
+    # General case
+    else:
+        rule_text = (
+            f"{lim_expr} {expr_latex} = "
+            f"{ratio_latex} \\lim_{{t \\to 0{dir_sup}}} \\frac{{t}}{{e^t - 1}} = {result_latex }"
+            f" \\quad \\text{{(令 }} t = {f_latex} \\text{{)}}"
+        )
+
+    return result, f"重要极限: ${rule_text}$"
+
+
+def g_over_ln_one_plus_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+    """Applies the standard logarithmic limit: u to 0, u/ln(1+u) = 1.
+
+    To expressions of the form:
+        g(x)/ln(1+f(x))},
+    where f(x) to 0 and the ratio g(x)/f(x) to c (a finite constant).
+
+    This rule is valid only when the argument of the logarithm tends to 1,
+    i.e., f(x) to 0 at the limit point from the specified direction.
+    """
+    var, point, _, dir_sup = _get_limit_args(context)
+    num, den = expr.as_numer_denom()
+    f = den.args[0] - 1
+    ratio = simplify(num / f)
+
+    # Build LaTeX explanation
+    expr_latex, var_latex, point_latex, f_latex = latex(
+        expr), latex(var), latex(point), latex(f)
+    lim_expr = f"\\lim_{{x \\to {point_latex}{dir_sup}}}"
+    ratio_latex = "" if ratio == 1 else latex(ratio)
+
+    result = Integer(1) if ratio == 1 else ratio
+
+    rule_text = ''
+    if ratio != 1 and f != var:
+        lim_expr = f"\\lim_{{t \\to {point_latex}{dir_sup}}}"
+        rule_text = (
+            f"{lim_expr} {expr_latex} = "
+            f"{ratio_latex} {lim_expr} \\frac{{t}}{{\\ln(1+t)}} = "
+            f"{latex(result)} "
+            f"\\quad \\text{{(令 }} t = {f_latex} \\text{{)}}"
+        )
+    elif ratio != 1 and f == var:
+        rule_text = (
+            f"{lim_expr} {expr_latex} = "
+            f"{ratio_latex} {lim_expr} \\frac{{{var_latex}}}{{\\ln(1+{var_latex})}} = "
+            f"{latex(result)}"
+        )
+    else:
+        rule_text = f"{lim_expr} {expr_latex} = 1"
+
+    return result, f"重要极限: ${rule_text}$"
+
+
+def g_over_sin_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+    """Applies the standard trigonometric limit: u to 0, u/sin(u) = 1.
+
+    To expressions of the form:
+        g(x)/sin(f(x)),
+    where f(x) to 0 and the ratio g(x)/f(x) to c (a finite constant).
+
+    This rule is valid only when the argument of the sine tends to 0 at the limit point.
+    """
+    var, point, _, dir_sup = _get_limit_args(context)
+    num, den = expr.as_numer_denom()
+    f = den.args[0]
+    ratio = simplify(num / f)
+
+    # Build LaTeX explanation
+    expr_latex, var_latex, point_latex, f_latex = latex(
+        expr), latex(var), latex(point), latex(f)
+    lim_expr = f"\\lim_{{{var_latex} \\to {point_latex}{dir_sup}}}"
+    ratio_latex = "" if ratio == 1 else latex(ratio)
+
+    result = Integer(1) if ratio == 1 else ratio
+
+    rule_text = ""
+    if ratio != 1 and f != var:
+        lim_expr_t = f"\\lim_{{t \\to {point_latex}{dir_sup}}}"
+        rule_text = (
+            f"{lim_expr} {expr_latex} = "
+            f"{ratio_latex} {lim_expr_t} \\frac{{t}}{{\\sin(t)}} = "
+            f"{latex(result)} "
+            f"\\quad \\text{{(令 }} t = {f_latex} \\text{{)}}"
+        )
+    elif ratio != 1 and f == var:
+        rule_text = (
+            f"{lim_expr} {expr_latex} = "
+            f"{ratio_latex} {lim_expr} \\frac{{{var_latex}}}{{\\sin({var_latex})}} = "
+            f"{latex(result)}"
+        )
+    else:
+        rule_text = f"{lim_expr} {expr_latex} = 1"
+
+    return result, f"重要极限: ${rule_text}$"
+
+
+def exp_minus_one_over_x_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+    """Applies the standard exponential limit: u to 0, (e^u-1)/u = 1.
+
+    To expressions of the form:
+        (e^f(x)-1}/g(x) or (e^f(x)-1)*h(x),
+    where f(x) to 0 and the effective ratio f(x)/g(x) or f(x)*h(x) tends to a finite constant.
+
+    This rule is valid only when f(x) to 0 at the limit point from the specified direction.
+    """
+    var, point, _, dir_sup = _get_limit_args(context)
+
+    ratio = None
+
+    if expr.is_Mul:
+        # Handle product form: (e^f(x)-1)*h(x)
+        exp_factor, other_factor = None, 1
+        for arg in expr.args:
+            if arg.is_Add and arg.has(exp):
+                exp_factor = arg
+            else:
+                other_factor *= arg
+        # Extract e^f(x) -1
+        exp_part = [a for a in exp_factor.args if a.has(exp)]
+        f = exp_part[0].args[0]
+        ratio = simplify(f * other_factor)
+    else:
+        # Handle quotient form: (e^f(x)-1)/g(x)
+        numerator, denominator = expr.as_numer_denom()
+        exp_part = [a for a in numerator.args if a.has(exp)]
+        f = exp_part[0].args[0]
+        ratio = simplify(f / denominator)
+
+    # Build LaTeX explanation
+    ratio_latex = "" if ratio == 1 else latex(ratio)
+    f_latex, var_latex, point_latex = latex(f), latex(var), latex(point)
+    lim_expr = f"\\lim_{{{var_latex} \\to {point_latex}{dir_sup}}}"
+
+    result = Integer(1) if ratio == 1 else ratio
+    expr_latex, result_latex = latex(expr), latex(result)
+
+    if ratio == 1 and f == var:
+        rule_text = f"{lim_expr} {expr_latex} = 1"
+    elif ratio != 1 and f == var:
+        rule_text = (
+            f"{lim_expr} {expr_latex} = "
+            f"{ratio_latex} {lim_expr} \\frac{{e^{{{var_latex}}} - 1}}{{{var_latex}}} = {result_latex}"
+        )
+    else:
+        rule_text = (
+            f"{lim_expr} {expr_latex} = "
+            f"{ratio_latex} \\lim_{{t \\to 0{dir_sup}}} \\frac{{e^t - 1}}{{t}} = {result_latex}"
+            f" \\quad \\text{{(令 }} t = {f_latex} \\text{{)}}"
+        )
+
+    return result, f"重要极限: ${rule_text}$"
+
+
+def sin_over_x_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+    """Matches expressions that can be reduced to the standard limit: u to 0, sin(u)/u = 1.
+
+    i.e., forms like:
+        sin(f(x))/g(x) or sin(f(x))*h(x),
+    where f(x) to 0 and the effective ratio f(x)/g(x) or product f(x)*h(x) tends to a nonzero constant.
+
+    This matcher only returns 'sin_over_x' if:
+      1. The sine argument f(x) to 0 as x to point (from the given direction).
+      2. The asymptotic coefficient (f/g or f*h) is effectively constant near the limit point.
+    """
     var, point, direction, _ = _get_limit_args(context)
 
-    # 处理形式 sin(f(x))*h(x)
+    # Handle product form: sin(f(x))*h(x)
     if expr.is_Mul:
-        sin_factor = None
-        other_factor = 1
+        sin_factor, other_factor = None, 1
         for arg in expr.args:
             if isinstance(arg, sin):
                 sin_factor = arg
@@ -174,43 +379,63 @@ def sin_over_x_matcher(expr: Expr, context: Dict[str, Any]) -> Optional[str]:
 
         if sin_factor is not None:
             sin_arg = sin_factor.args[0]
-            # 检查是否满足 sin(f(x))*g(x) 且 f(x)*g(x) = 常数
             product = sin_arg * other_factor
-            if not product.has(var) and _check_function_tends_to_zero(sin_arg, var, point, direction):
+            if not product.has(var) and check_function_tends_to_zero(sin_arg, var, point, direction):
                 return 'sin_over_x'
-
-    # 处理标准分式形式
-    numerator, denominator = expr.as_numer_denom()
-    if isinstance(numerator, sin):
-        sin_arg = numerator.args[0]
-        ratio = sin_arg / denominator
-        if not ratio.has(var) and _check_function_tends_to_zero(sin_arg, var, point, direction):
-            return 'sin_over_x'
+    else:
+        # Handle quotient form: sin(f(x))/g(x)
+        numerator, denominator = expr.as_numer_denom()
+        if isinstance(numerator, sin):
+            sin_arg = numerator.args[0]
+            ratio = sin_arg / denominator
+            if not ratio.has(var) and check_function_tends_to_zero(sin_arg, var, point, direction):
+                return 'sin_over_x'
 
     return None
 
 
-def one_plus_one_over_x_pow_x_matcher(expr: Expr, context: Dict[str, Any]) -> Optional[str]:
-    """匹配 (1 + 1/f(x))**h(x)  或 (1 + f(x))**(1/h(x)) 形式, 其中 f(x) -> oo 或 f(x) -> 0 且 f(x)/h(x) = 常数"""
+def one_plus_one_over_x_pow_x_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+    """Matches expressions that reduce to the standard exponential limit:
+        u to 0, (1+u)^(1/u) = e,
+    or equivalently,
+        v to oo (1+1/v)^v = e.
+
+    This includes forms like:
+        (1+f(x))^g(x},
+    where f(x) to 0 and the product f(x)*g(x) to c (a finite nonzero constant).
+
+    The matcher returns 'one_plus_one_over_x_pow_x' if:
+      1. The base is of the form 1+u(x) with u(x) to 0,
+      2. The exponent g(x) is such that u(x)*g(x) tends to a constant (independent of x).
+    """
     var, point, direction, _ = _get_limit_args(context)
     if not isinstance(expr, Pow):
         return None
     base, _exp = expr.as_base_exp()
-    # 统一为 (f(x) + 1)**h(x) 形式处理
     inv_f = base - 1
     ratio = simplify(inv_f * _exp)
-    if _check_function_tends_to_zero(inv_f, var, point, direction) and not ratio.has(var):
+    if check_function_tends_to_zero(inv_f, var, point, direction) and not ratio.has(var):
         return 'one_plus_one_over_x_pow_x'
 
     return None
 
 
-def ln_one_plus_x_over_x_matcher(expr: Expr, context: Dict[str, Any]) -> Optional[str]:
-    """匹配 ln(1+f(x))/g(x) 或 ln(1+f(x))*h(x) 形式，且 f(x)/g(x) 或 f(x)*h(x) = 常数"""
+def ln_one_plus_x_over_x_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+    """Matches expressions that reduce to the standard logarithmic limit: u to 0, ln(1+u)/u = 1.
+
+    This includes forms like:
+        ln(1+f(x))/g(x) or ln(1+f(x))*h(x),
+    where f(x) to 0 and the effective coefficient f(x)/g(x) or f(x)*h(x) tends to a finite constant.
+
+    The matcher returns 'ln_one_plus_x_over_x' if:
+      1. The logarithm argument is of the form 1+f(x) with f(x) to 0,
+      2. The asymptotic ratio f(x)/denominator (after normalizing to quotient form)
+         converges to a constant independent of the limit variable.
+    """
     var, point, direction, _ = _get_limit_args(context)
 
     if expr.is_Mul:
-        # 乘法形式
+        # Handle product form: ln(1+f(x))*h(x)
         log_factor, other_factor = None, 1
         for arg in expr.args:
             if isinstance(arg, log):
@@ -220,26 +445,37 @@ def ln_one_plus_x_over_x_matcher(expr: Expr, context: Dict[str, Any]) -> Optiona
         if log_factor is not None:
             f = log_factor.args[0] - 1
             product = f * other_factor
-            if not product.has(var) and _check_function_tends_to_zero(f, var, point, direction):
+            if not product.has(var) and check_function_tends_to_zero(f, var, point, direction):
                 return 'ln_one_plus_x_over_x'
     else:
-        # 分式形式
+        # Handle quotient form: ln(1+f(x))/g(x)
         numerator, denominator = expr.as_numer_denom()
         if isinstance(numerator, log):
             f = numerator.args[0] - 1
             ratio = f / denominator
-            if not ratio.has(var) and _check_function_tends_to_zero(f, var, point, direction):
+            if not ratio.has(var) and check_function_tends_to_zero(f, var, point, direction):
                 return 'ln_one_plus_x_over_x'
 
     return None
 
 
-def exp_minus_one_over_x_matcher(expr: Expr, context: Dict[str, Any]) -> Optional[str]:
-    """匹配 (e^{f(x)} - 1)/g(x) 或 (e^{f(x)} - 1)*h(x) 形式，且 f(x)/g(x) 或 f(x)*h(x) = 常数"""
+def exp_minus_one_over_x_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+    """Matches expressions that reduce to the standard exponential limit: u to 0, (e^u-1)/u = 1.
+
+    This includes forms like:
+        (e^f(x)-1)/g(x) or (e^f(x)-1)*h(x),
+    where f(x) to 0 and the effective coefficient f(x)/g(x) or f(x)*h(x) tends to a finite constant.
+
+    The matcher returns 'exp_minus_one_over_x' if:
+      1. The expression contains a term of the form e^f(x)-1,
+      2. f(x) to 0 at the limit point (from the specified direction),
+      3. The asymptotic ratio f(x)/denominator (after canonical normalization)
+         converges to a constant independent of the limit variable.
+    """
     var, point, direction, _ = _get_limit_args(context)
 
     if expr.is_Mul:
-        # 乘法形式
+        # Handle product form: (e^f(x)-1)*h(x)
         exp_factor, other_factor = None, 1
         for arg in expr.args:
             if arg.is_Add and arg.has(exp):
@@ -249,261 +485,104 @@ def exp_minus_one_over_x_matcher(expr: Expr, context: Dict[str, Any]) -> Optiona
         if exp_factor is not None:
             exp_part = [a for a in exp_factor.args if a.has(exp)]
             if exp_part:
-                try:
-                    # 提取公共常数, 凑重要极限
-                    f = exp_part[0].args[1].args[0]
-                    if exp_part[0].args[0].has(var):
-                        return None
-                except:
-                    f = exp_part[0].args[0]
+                f = exp_part[0].args[0]
                 product = f * other_factor
-                if not product.has(var) and _check_function_tends_to_zero(f, var, point, direction):
+                if not product.has(var) and check_function_tends_to_zero(f, var, point, direction):
                     return 'exp_minus_one_over_x'
     else:
-        # 分式形式
+        # Handle quotient form:
         numerator, denominator = expr.as_numer_denom()
         if numerator.is_Add and numerator.has(exp):
             exp_part = [a for a in numerator.args if a.has(exp)]
             if exp_part:
                 f = exp_part[0].args[0]
                 ratio = f / denominator
-                if not ratio.has(var) and _check_function_tends_to_zero(f, var, point, direction):
+                if not ratio.has(var) and check_function_tends_to_zero(f, var, point, direction):
                     return 'exp_minus_one_over_x'
 
     return None
 
 
-def exp_minus_one_over_x_rule(expr: Expr, context: Dict[str, Any]) -> Optional[Tuple[Expr, str]]:
-    """重要极限: (e^{f(x)} - 1)/g(x) 或 (e^{f(x)} - 1)*h(x)，其中 f(x)/g(x) 或 f(x)*h(x) -> 常数"""
-    var, point, _, dir_sup = _get_limit_args(context)
+def g_over_sin_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+    """Matches expressions that reduce to the reciprocal of the standard sine limit: u to 0, u/sin(u) = 1,
 
-    ratio, f = None, None
+    i.e., forms like:
+        g(x)/sin(f(x)),
+    where f(x) to 0 and the ratio g(x)/f(x) tends to a finite constant.
 
-    if expr.is_Mul:
-        # 处理 (e^{f(x)} - 1) * h(x)
-        exp_factor, other_factor = None, 1
-        for arg in expr.args:
-            if arg.is_Add and arg.has(exp):
-                exp_factor = arg
-            else:
-                other_factor *= arg
-        if exp_factor is None:
-            return None
-        # 提取 e^{f(x)} - 1
-        exp_part = [a for a in exp_factor.args if a.has(exp)]
-        if not exp_part:
-            return None
-        try:
-            # 提取公共常数, 凑重要极限
-            f = exp_part[0].args[1].args[0]
-            if exp_part[0].args[0].has(var):
-                return None
-            ratio = simplify(f * other_factor * exp_part[0].args[0])
-        except:
-            f = exp_part[0].args[0]
-            ratio = simplify(f * other_factor)
-    else:
-        # 处理 (e^{f(x)} - 1) / g(x)
-        numerator, denominator = expr.as_numer_denom()
-        if not (numerator.is_Add and numerator.has(exp)):
-            return None
-        exp_part = [a for a in numerator.args if a.has(exp)]
-        if not exp_part:
-            return None
-        f = exp_part[0].args[0]
-        ratio = simplify(f / denominator)
+    This pattern arises when the denominator is sin(f(x)) with f(x) to 0,
+    and the numerator behaves asymptotically like a constant multiple of f(x).
 
-    if f is None:
-        return None
-
-    f_l = latex(f)
-    ratio_l = "" if ratio == 1 else latex(ratio)
-    var_l, point_l, dir_sup_l = latex(var), latex(point), dir_sup
-    lim_expr = f"\\lim_{{{var_l} \\to {point_l}{dir_sup_l}}}"
-
-    result = Integer(1) if ratio == 1 else ratio
-
-    if ratio == 1 and f == var:
-        rule_text = f"{lim_expr} {latex(expr)} = 1"
-    elif ratio != 1 and f == var:
-        rule_text = (
-            f"{lim_expr} {latex(expr)} = "
-            f"{ratio_l} {lim_expr} \\frac{{e^{{{var_l}}} - 1}}{{{var_l}}} = {latex(result)}"
-        )
-    else:
-        rule_text = (
-            f"{lim_expr} {latex(expr)} = "
-            f"{ratio_l} \\lim_{{t \\to 0{dir_sup}}} \\frac{{e^t - 1}}{{t}} = {latex(result)}"
-            f" \\quad \\text{{(令 }} t = {f_l} \\text{{)}}"
-        )
-
-    return result, f"重要极限: ${rule_text}$"
-
-
-# 倒数重要极限规则
-def g_over_sin_rule(expr: Expr, context: Dict[str, Any]) -> Optional[Tuple[Expr, str]]:
-    """重要极限: g(x)/sin(f(x))，其中 g(x)/f(x) -> 常数"""
-    var, point, _, dir_sup = _get_limit_args(context)
-    num, den = expr.as_numer_denom()
-    if not isinstance(den, sin):
-        return None
-    f = den.args[0]
-    ratio = simplify(num / f)
-
-    var_l, point_l, f_l = latex(var), latex(point), latex(f)
-    lim_expr = f"\\lim_{{{var_l} \\to {point_l}{dir_sup}}}"
-    ratio_l = "" if ratio == 1 else latex(ratio)
-
-    result = Integer(1) if ratio == 1 else ratio
-
-    rule_text = ""
-    if ratio != 1 and f != var:
-        lim_expr_t = f"\\lim_{{t \\to {point_l}{dir_sup}}}"
-        rule_text = (
-            f"{lim_expr} {latex(expr)} = "
-            f"{ratio_l} {lim_expr_t} \\frac{{t}}{{\\sin(t)}} = "
-            f"{latex(result)} "
-            f"\\quad \\text{{(令 }} t = {f_l} \\text{{)}}"
-        )
-    elif ratio != 1 and f == var:
-        rule_text = (
-            f"{lim_expr} {latex(expr)} = "
-            f"{ratio_l} {lim_expr} \\frac{{{var_l}}}{{\\sin({var_l})}} = "
-            f"{latex(result)}"
-        )
-    else:
-        rule_text = f"{lim_expr} {latex(expr)} = 1"
-
-    return result, f"重要极限: ${rule_text}$"
-
-
-def g_over_sin_matcher(expr: Expr, context: Dict[str, Any]) -> Optional[str]:
+    The matcher returns 'g_over_sin' if:
+      1. The denominator is exactly sin(f(x)),
+      2. f(x) to 0 as x approaches the limit point (from the given direction),
+      3. The ratio g(x) / f(x) converges to a constant independent of the limit variable.
+    """
     var, point, direction, _ = _get_limit_args(context)
     num, den = expr.as_numer_denom()
     if isinstance(den, sin):
         f = den.args[0]
         ratio = simplify(num / f)
-        if not ratio.has(var) and _check_function_tends_to_zero(f, var, point, direction):
+        if not ratio.has(var) and check_function_tends_to_zero(f, var, point, direction):
             return 'g_over_sin'
     return None
 
 
-def g_over_ln_one_plus_rule(expr: Expr, context: Dict[str, Any]) -> Optional[Tuple[Expr, str]]:
-    """重要极限: g(x)/ln(1+f(x))，其中 g(x)/f(x) -> 常数"""
-    var, point, _, dir_sup = _get_limit_args(context)
-    num, den = expr.as_numer_denom()
-    if not isinstance(den, log):
-        return None
-    f = den.args[0] - 1
-    ratio = simplify(num / f)
+def g_over_ln_one_plus_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+    """Matches expressions that reduce to the reciprocal of the standard logarithmic limit: u to 0, u/ln(1+u) = 1,
 
-    var_l, point_l, f_l = latex(var), latex(point), latex(f)
-    lim_expr = f"\\lim_{{x \\to {point_l}{dir_sup}}}"
-    ratio_l = "" if ratio == 1 else latex(ratio)
+    i.e., forms like:
+        g(x)/ln(1+f(x)),
+    where f(x) to 0 and the ratio g(x)/f(x) tends to a finite constant.
 
-    result = Integer(1) if ratio == 1 else ratio
+    This pattern arises when the denominator is ln(1+f(x)) with f(x) to 0,
+    and the numerator behaves asymptotically like a constant multiple of f(x).
 
-    rule_text = ''
-    if ratio != 1 and f != var:
-        lim_expr = f"\\lim_{{t \\to {point_l}{dir_sup}}}"
-        rule_text = (
-            f"{lim_expr} {latex(expr)} = "
-            f"{ratio_l} {lim_expr} \\frac{{t}}{{\\ln(1+t)}} = "
-            f"{latex(result)} "
-            f"\\quad \\text{{(令 }} t = {f_l} \\text{{)}}"
-        )
-    elif ratio != 1 and f == var:
-        rule_text = (
-            f"{lim_expr} {latex(expr)} = "
-            f"{ratio_l} {lim_expr} \\frac{{{var_l}}}{{\\ln(1+{var_l})}} = "
-            f"{latex(result)}"
-        )
-    else:
-        rule_text = f"{lim_expr} {latex(expr)} = 1"
-
-    return result, f"重要极限: ${rule_text}$"
-
-
-def g_over_ln_one_plus_matcher(expr: Expr, context: Dict[str, Any]) -> Optional[str]:
+    The matcher returns 'g_over_ln_one_plus' if:
+      1. The denominator is exactly log(1 + f(x)),
+      2. f(x) to 0 as x approaches the limit point (from the given direction),
+      3. The ratio g(x)/f(x) converges to a constant independent of the limit variable.
+    """
     var, point, direction, _ = _get_limit_args(context)
     num, den = expr.as_numer_denom()
     if isinstance(den, log):
         f = den.args[0] - 1
         ratio = simplify(num / f)
-        if not ratio.has(var) and _check_function_tends_to_zero(f, var, point, direction):
+        if not ratio.has(var) and check_function_tends_to_zero(f, var, point, direction):
             return 'g_over_ln_one_plus'
     return None
 
 
-def g_over_exp_minus_one_matcher(expr: Expr, context: Dict[str, Any]) -> Optional[str]:
-    """匹配 g(x)/(e^{f(x)} - 1) 形式，且 g(x)/f(x) = 常数"""
+def g_over_exp_minus_one_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+    """Matches expressions that reduce to the reciprocal of the standard exponential limit: u to 0, u/(e^u-1) = 1,
+
+    i.e., forms like:
+        g(x)/(e^f(x)-1),
+    where f(x) to 0 and the ratio g(x)/f(x) tends to a finite constant.
+
+    This pattern arises when the denominator is exactly e^f(x) - 1 with f(x) to 0,
+    and the numerator behaves asymptotically like a constant multiple of f(x).
+
+    The matcher returns 'g_over_exp_minus_one' if:
+      1. The denominator is precisely exp(f(x)) - 1 (a two-term sum with one exp and one -1),
+      2. f(x) to 0 as x approaches the limit point (from the given direction),
+      3. The ratio g(x)/f(x) converges to a constant independent of the limit variable.
+    """
     var, point, direction, _ = _get_limit_args(context)
     num, den = expr.as_numer_denom()
 
     if not (den.is_Add and den.has(exp)):
         return None
 
-    # 提取 e^{f(x)} 项
+    # Extract e^f(x)
     exp_part = [a for a in den.args if a.has(exp)]
     if not exp_part:
         return None
 
-    try:
-        # 提取公共常数, 凑重要极限
-        f = exp_part[0].args[1].args[0]
-    except:
-        f = exp_part[0].args[0]
+    f = exp_part[0].args[0]
     ratio = simplify(num / f)
 
-    if not ratio.has(var) and _check_function_tends_to_zero(f, var, point, direction):
+    if not ratio.has(var) and check_function_tends_to_zero(f, var, point, direction):
         return "g_over_exp_minus_one"
 
     return None
-
-
-def g_over_exp_minus_one_rule(expr: Expr, context: Dict[str, Any]) -> Optional[Tuple[Expr, str]]:
-    """重要极限: g(x)/(e^{f(x)} - 1)，其中 g(x)/f(x) -> 常数"""
-    var, point, _, dir_sup = _get_limit_args(context)
-    num, den = expr.as_numer_denom()
-
-    if not (den.is_Add and den.has(exp)):
-        return None
-
-    exp_part = [a for a in den.args if a.has(exp)]
-    if not exp_part:
-        return None
-
-    try:
-        # 提取公共常数, 凑重要极限
-        f = exp_part[0].args[1].args[0]
-        ratio = simplify(num / f * 1/exp_part[0].args[0])
-    except:
-        f = exp_part[0].args[0]
-        ratio = simplify(num / f)
-
-    f_l = latex(f)
-    ratio_l = "" if ratio == 1 else latex(ratio)
-    var_l, point_l, dir_sup_l = latex(var), latex(point), dir_sup
-    lim_expr = f"\\lim_{{{var_l} \\to {point_l}{dir_sup_l}}}"
-
-    result = Integer(1) if ratio == 1 else ratio
-
-    # 规则文本
-    if ratio == 1 and f == var:
-        # 最简单的情况
-        rule_text = f"{lim_expr} {latex(expr)} = 1"
-    elif ratio != 1 and f == var:
-        # f(x) = x 的情况
-        rule_text = (
-            f"{lim_expr} {latex(expr)} = "
-            f"{ratio_l} {lim_expr} \\frac{{{var_l}}}{{e^{{{var_l}}} - 1}} = {latex(result)}"
-        )
-    else:
-        # 一般换元情况
-        rule_text = (
-            f"{lim_expr} {latex(expr)} = "
-            f"{ratio_l} \\lim_{{t \\to 0{dir_sup}}} \\frac{{t}}{{e^t - 1}} = {latex(result)}"
-            f" \\quad \\text{{(令 }} t = {f_l} \\text{{)}}"
-        )
-
-    return result, f"重要极限: ${rule_text}$"

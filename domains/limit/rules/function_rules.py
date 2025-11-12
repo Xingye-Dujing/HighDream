@@ -1,7 +1,7 @@
 from typing import Union
 
 from sympy import (
-    Expr, Limit, Pow, acos, asin, atan, cos, cosh, cot, csc, exp,
+    Expr, Limit, Pow, S, acos, asin, atan, cos, cosh, cot, csc, exp,
     latex, log, sec, sin, sinh, tan, tanh, oo
 )
 from sympy.functions.elementary.trigonometric import InverseTrigonometricFunction, TrigonometricFunction
@@ -16,7 +16,7 @@ _create_matcher = RuleRegistry.create_common_matcher
 def _create_rule(func: Union[exp, log, InverseTrigonometricFunction, TrigonometricFunction], func_name: str) -> RuleFunction:
     """Special create rule function."""
     def rule_function(expr: Expr, context: Context) -> RuleFunctionReturn:
-        var, point, direction, _ = get_limit_args(context)
+        var, point, direction = get_limit_args(context)
 
         arg = expr.args[0]
         expr_limit = Limit(arg, var, point, dir=direction)
@@ -46,66 +46,69 @@ tanh_rule = _create_rule(tanh, "双曲正切")
 
 
 def pow_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    var, point, direction, dir_sup = get_limit_args(context)
-    expr_latex = latex(expr)
-    point_latex = f"{latex(point)}{dir_sup}"
-    expr_limit_latex = f"\\lim_{{{var} \\to {point_latex}}} {expr_latex}"
+    """Applies limit rules for expressions of the form `base ** exponent`.
+
+    Handles three cases:
+      1. Constant base: a**f(x) to a**lim f(x) (if a is constant).
+      2. Constant exponent: f(x)**b to (lim f(x))**b (if b is constant).
+      3. Variable base and exponent: Transforms f(x)**g(x) into
+         exp(lim g(x)*log(f(x))), provided f(x) > 0 in a punctured neighborhood
+         of the limit point (to ensure the logarithm is well-defined).
+
+    For case 3, the function performs both symbolic and numerical checks to verify
+    that the base remains positive near the limit point from the specified direction.
+    """
+
+    var, point, direction = get_limit_args(context)
+    expr_limit_latex = latex(Limit(expr, var, point, dir=direction))
 
     base, exponent = expr.args
-    # 检查底数和指数是否含变量
     base_has_var, exp_has_var = base.has(var), exponent.has(var)
 
-    # Case 1: 底数是常数 -> a^v => a^(lim v)
+    # Case 1: Constant base
     if not base_has_var:
         new_expr = base ** Limit(exponent, var, point, dir=direction)
         rule_desc = f"应用常数底数幂规则: ${expr_limit_latex} = {latex(new_expr)}$"
         return new_expr, rule_desc
 
-    # Case 2: 指数是常数 -> u^b => (lim u)^b
+    # Case 2: Constant exponent
     if not exp_has_var:
         new_expr = Limit(base, var, point, dir=direction) ** exponent
         rule_desc = f"应用常数指数幂规则: ${expr_limit_latex} = {latex(new_expr)}$"
 
         return new_expr, rule_desc
 
-    # Case 3: 底数和指数都含变量 -> 使用 exp-log 转换
-    # 此时需要确保 base > 0 在极限点附近(- 左附近/+ 右附近)成立
+    # Case 3: Both base and exponent depend on var
     try:
-        # 计算底数在极限点的极限(用于初步筛选)
         base_limit = Limit(base, var, point, dir=direction).doit()
-        # 初步筛选底数极限的符号(排除明显非法情况)
-        # 若底数极限为负实数(非无穷), 则邻域内可能存在负数, 直接拒绝(除非指数是奇数整数, 但复杂场景暂不处理)
+        # Reject if base tends to a negative real number (log undefined in reals).
         if base_limit.is_real and base_limit < 0:
             return None
-        # 若底数极限为正无穷, 允许(ln(+oo) 有定义)
-        if base_limit == oo:
-            pass  # 后续还有邻域验证处理
-        # 若底数极限为负无穷, 拒绝(ln(-oo) 无定义)
-        elif base_limit == -oo:
-            return None
-        # 关键验证 - 邻域内底数是否严格为正(根据极限方向选择邻近点)
-        # 定义邻域步长(小量, 避免数值误差)
-        epsilon = 1e-8
-        # 根据方向选择邻近点(左极限取 point - epsilon, 右极限取 point + epsilon)
-        near_point = point + (-epsilon if direction == '-' else epsilon)
-        # 计算底数在邻近点的值(数值计算)
-        base_near = base.subs(var, near_point).evalf()
-        # 若底数在邻近点 <=0, 拒绝转换(对数无定义)
-        if base_near <= 0:
+        # Reject if base tends to negative infinity.
+        if base_limit == -oo:
             return None
 
-        # 所有检查通过, 可以安全应用 exp-log 变换
+        # For +oo, proceed (log(+oo) = +oo is acceptable in extended reals).
+
+        # Perform a local positivity check near the limit point.
+        epsilon = S(1e-8)  # Use SymPy Rational/Float for consistency
+        offset = -epsilon if direction == '-' else epsilon
+        near_point = point + offset
+
+        # Evaluate base numerically at a nearby point.
+        base_near_val = base.subs(var, near_point).evalf()
+
+        # Require strict positivity to define log in a real neighborhood.
+        if not (base_near_val.is_real and base_near_val > 0):
+            return None
+
+        # Safe to apply exp-log transformation.
         log_base = log(base)
         exp_argument = exponent * log_base
         new_limit = Limit(exp_argument, var, point, dir=direction)
         new_expr = exp(new_limit)
 
-        rule_desc = (
-            f"应用指数对数变换: "
-            f"${expr_limit_latex} = "
-            f"\\lim_{{{latex(var)} \\to {point_latex}}} e^{{({latex(exponent)}) \\cdot \\ln {latex(base)}}} = "
-            f"{latex(new_expr)}$"
-        )
+        rule_desc = f"应用指数对数变换: ${expr_limit_latex} = {latex(new_expr)}$"
 
         return new_expr, rule_desc
     except Exception:

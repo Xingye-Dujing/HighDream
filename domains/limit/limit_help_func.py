@@ -110,19 +110,14 @@ def get_limit_args(context: Dict[str, Any]) -> tuple:
     """获取极限参数"""
     var, point = context['variable'], context['point']
     direction = context.get('direction', '+')
-    dir_sup = '^{+}' if direction == '+' else '^{-}'
-    return var, point, direction, dir_sup
+    return var, point, direction
 
 
-def check_limit_exists_oo(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
+def check_limit_exists_oo(lim_val: Expr) -> bool:
     """
     检查极限是否存在且为有限值(含无穷)
     """
-    try:
-        lim = Limit(expr, var, point, dir=direction).doit()
-        return lim.is_finite or lim == oo or lim == -oo
-    except Exception:
-        return False
+    return lim_val.is_finite or lim_val == oo or lim_val == -oo
 
 
 def check_function_tends_to_zero(f: Expr, var: Symbol, point: Any, direction: str) -> bool:
@@ -245,7 +240,7 @@ def is_constant(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
     """检查表达式的极限是否为常数(即数值而非无穷或符号)"""
     try:
         lim = limit(expr, var, point, dir=direction)
-        # 检查是否为数值常数（非无穷、非符号）
+        # 检查是否为数值常数(非无穷, 非符号)
         return lim.is_real and not lim.has(oo, -oo, zoo)
     except Exception:
         return False

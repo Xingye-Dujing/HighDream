@@ -1,28 +1,25 @@
 # TODO 判断是否添加括号 / 获取极限参数的函数可以考虑放在工具库里, 共所有领域使用
 # TODO 另外想一个好办法去提出 exp(f(x))-1, 现在写的太死，局限性很高
 
-from typing import Any
 from sympy import (
-    AccumBounds, Add, Expr, Integer, Limit, Mul, Pow, Rational, S, Symbol,
-    UnevaluatedExpr, exp, latex, limit, log, nan, oo, simplify, sin, zoo
+    AccumBounds, Add, Expr, Integer, Limit, Mul, Pow, S, UnevaluatedExpr,
+    exp, latex, limit, log, nan, oo, simplify, sin, sqrt, zoo
 )
 
 from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
-from utils.latex_formatter import wrap_latex
 from domains.limit import (
-    check_combination_indeterminate, check_function_tends_to_zero,
-    check_limit_exists, check_limit_exists_oo,
-    get_limit_args, is_constant, is_indeterminate_form,
-    is_infinite, is_zero,
+    check_add_split, check_combination_indeterminate, check_div_split,
+    check_function_tends_to_zero, check_limit_exists, check_mul_split,
+    get_limit_args, is_constant, is_indeterminate_form, is_infinite, is_zero,
 )
 
 
 def direct_substitution_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    """直接代入规则"""
-    var, point, direction, _ = get_limit_args(context)
+    """Apply the direct substitution rule for evaluating a limit."""
+    var, point, direction = get_limit_args(context)
 
     result = Limit(expr, var, point, dir=direction)
-    # 用于判断是否跳过中间代入步骤
+    # Determine whether to skip showing the intermediate substitution step
     skip_intermediate = (
         expr == var
         or expr.is_number
@@ -33,215 +30,90 @@ def direct_substitution_rule(expr: Expr, context: Context) -> RuleFunctionReturn
     if skip_intermediate:
         full_rule = f"{lhs} = {rhs}"
     else:
-        # 代入但不计算
+        # Perform substitution without evaluation to display the intermediate form.
         expr_subbed = expr.subs(var, UnevaluatedExpr(point))
         full_rule = f"{lhs} = {latex(expr_subbed)} = {rhs}"
 
-    return result, f"直接代入: ${full_rule}$"
+    return result.doit(), f"直接代入: ${full_rule}$"
 
 
 def mul_split_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    """乘法拆分规则, 支持多个重要极限的提出"""
-    var, point, direction, dir_sup = get_limit_args(context)
+    """Apply multiplicative splitting rules to decompose a limit expression.
+
+    This function attempts two strategies in order:
+
+    1. Standard limit form extraction: Identify and extract well-known
+       indeterminate forms that converge to standard limits (e.g.,
+       sin(f(x))/f(x) to 1 as f(x) to 0, ln(1+f(x))/f(x) to 1, etc.).
+
+    2. General multiplicative splitting: If no standard form is found,
+       split the expression into two parts whose individual limits exist
+       and whose product does not yield an indeterminate form.
+    """
+
+    var, point, direction = get_limit_args(context)
+    expr_limit = Limit(expr, var, point, dir=direction)
     factors = expr.as_ordered_factors()
 
-    # 提出 sin(f(x))/f(x) 或 f(x)/sin(f(x)), f(x)->0
+    # TODO: 此函数相似代码很多, 后续还需进一步重构
+    # Strategy 1: Extract standard limit forms
     for i, factor in enumerate(factors):
+        new_factor = None
         num, den = factor.as_numer_denom()
-        # sin(f(x)) 位于分母的情况
-        if isinstance(den, sin) and den.has(var) and check_function_tends_to_zero(den, var, point, direction):
-            f_x = den.args[0]
-            sin_over_x = f_x / den
-            rest_factors = factors[:i] + [1/f_x] + factors[i+1:]
-            rest_part = Mul(*rest_factors)
 
-            new_expr = Limit(sin_over_x, var, point, dir=direction) * \
-                Limit(rest_part, var, point, dir=direction)
-
-            rule_text = (
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                f"\\left({latex(expr)}\\right) = "
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                f"\\left({latex(sin_over_x)} \\cdot {wrap_latex(rest_part)}\\right) = "
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} {latex(sin_over_x)} "
-                f"\\cdot "
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} {wrap_latex(rest_part)}"
-            )
-            return new_expr, f"应用重要极限的乘法拆分规则: ${rule_text}$"
-
+        # Case: sin(f(x))/f(x) or f(x)/sin(f(x)), where f(x) to 0
         if isinstance(num, sin) and num.has(var) and check_function_tends_to_zero(num, var, point, direction):
-            f_x = num.args[0]
-            sin_over_x = num / f_x
-            rest_factors = factors[:i] + [f_x] + factors[i+1:]
-            rest_part = Mul(*rest_factors)
+            new_factor = factor.args[0]  # f(x)
+        elif isinstance(den, sin) and den.has(var) and check_function_tends_to_zero(den, var, point, direction):
+            new_factor = 1/factor.args[0].args[0]  # 1/f(x)
 
-            new_expr = Limit(sin_over_x, var, point, dir=direction) * \
-                Limit(rest_part, var, point, dir=direction)
+        # Case: ln(1+f(x))/f(x) or f(x)/ln(1 + f(x)), where f(x) to 0
+        elif isinstance(num, log):
+            if factor.has(var) and check_function_tends_to_zero(factor, var, point, direction):
+                new_factor = num.args[0] - 1  # f(x)
+        elif isinstance(den, log):
+            if factor.has(var) and check_function_tends_to_zero(factor, var, point, direction):
+                new_factor = 1/(den.args[0] - 1)  # 1/(f(x))
 
-            rule_text = (
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                f"\\left({latex(expr)}\\right) = "
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                f"\\left({latex(sin_over_x)} \\cdot {wrap_latex(rest_part)}\\right) = "
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} {latex(sin_over_x)} "
-                f"\\cdot "
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} {wrap_latex(rest_part)}"
-            )
-            return new_expr, f"应用重要极限的乘法拆分规则: ${rule_text}$"
-
-    # 检测 ln(1+f(x))/f(x)
-    for i, factor in enumerate(factors):
-        numerator, den = factor.as_numer_denom()
-        if isinstance(numerator, log):
-            f = numerator.args[0] - 1
-            if f.has(var) and check_function_tends_to_zero(f, var, point, direction):
-                rest_factors = factors[:i] + [f] + factors[i+1:]
-                rest_part = Mul(*rest_factors)
-
-                new_expr = Limit(factor / f, var, point, dir=direction) * \
-                    Limit(rest_part, var, point, dir=direction)
-
-                rule_text = (
-                    f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                    f"\\left({latex(expr)}\\right) = "
-                    f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                    f"\\left(\\frac{{\\ln(1+{latex(f)})}}{{{latex(f)}}} \\cdot {latex(rest_part)}\\right) = "
-                    f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                    f"\\frac{{\\ln(1+{latex(f)})}}{{{latex(f)}}} "
-                    f"\\cdot "
-                    f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} {latex(rest_part)}"
-                )
-
-                return new_expr, f"应用重要极限的乘法拆分规则: ${rule_text}$"
-        # 位于分母
-        if isinstance(den, log):
-            f = den.args[0] - 1
-            if f.has(var) and check_function_tends_to_zero(f, var, point, direction):
-                rest_factors = factors[:i] + [1/f] + factors[i+1:]
-                rest_part = Mul(*rest_factors)
-
-                new_expr = Limit(f * factor, var, point, dir=direction) * \
-                    Limit(rest_part, var, point, dir=direction)
-
-                rule_text = (
-                    f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                    f"\\left({latex(expr)}\\right) = "
-                    f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                    f"\\left(\\frac{{{latex(f)}}}{{\\ln(1+{latex(f)})}} \\cdot {latex(rest_part)}\\right) = "
-                    f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                    f"\\frac{{{latex(f)}}}{{\\ln(1+{latex(f)})}}"
-                    f"\\cdot "
-                    f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} {latex(rest_part)}"
-                )
-
-                return new_expr, f"应用重要极限的乘法拆分规则: ${rule_text}$"
-
-    # 提出 (e^f(x) - 1)/f(x), f(x)->0
-    for i, factor in enumerate(factors):
-        numerator, den = factor.as_numer_denom()
-        f = None
-        if isinstance(numerator, Add) and len(numerator.args) == 2:
-            try:
-                const_1 = numerator.args[1].args[0]
-                const_2 = numerator.args[0]
-                if const_1.has(var) or const_2.has(var):
-                    continue
-                # 提取公共常数, 凑重要极限
-                if const_1 / const_2 == -1 and isinstance(numerator.args[1].args[1], exp):
-                    f = numerator.args[1].args[1].args[0]
-                    if not check_function_tends_to_zero(f, var, point, direction):
-                        continue
-            except Exception:
-                try:
-                    f = numerator.args[1].args[0]
-                    other = numerator.args[0]
-                    if other.has(var):
-                        continue
-                    if not f.has(var) and check_function_tends_to_zero(f, var, point, direction) and not isinstance(numerator.args[1], exp):
-                        continue
-                except Exception:
-                    continue
-            if not f:
+        # Case: (exp(f(x))-1)/f(x) or f(x)/(exp(f(x))-1), where f(x) to 0
+        elif isinstance(num, Add) and len(num.args) == 2:
+            other = num.args[0]
+            if other != -1:
                 continue
-            rest_factors = factors[:i] + [f] + factors[i+1:]
-            rest_part = Mul(*rest_factors)
-
-            new_expr = Limit(factor / f, var, point, dir=direction) * \
-                Limit(rest_part, var, point, dir=direction)
-
-            rule_text = (
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                f"\\left({latex(expr)}\\right) = "
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                f"\\left(\\frac{{{latex(numerator)}}}{{{latex(f)}}} \\cdot {wrap_latex(rest_part)}\\right) = "
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                f"\\frac{{{latex(numerator)}}}{{{latex(f)}}} "
-                f"\\cdot "
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} {wrap_latex(rest_part)}"
-            )
-            return new_expr, f"应用重要极限的乘法拆分规则: ${rule_text}$"
-        # 位于分母
-        if isinstance(den, Add) and len(den.args) == 2:
-            try:
-                const = den.args[1].args[0]
-                if const.has(var):
-                    continue
-                # 提取公共常数, 凑重要极限
-                if const / den.args[0] == -1 and isinstance(den.args[1].args[1], exp):
-                    f = den.args[1].args[1].args[0]
-                    if not check_function_tends_to_zero(f, var, point, direction):
-                        continue
-            except Exception:
-                try:
-                    f = den.args[1].args[0]
-                    if not f.has(var) and check_function_tends_to_zero(f, var, point, direction) or not isinstance(den.args[1], exp):
-                        continue
-                except Exception:
-                    continue
-            if not f:
+            f = num.args[1].args[0]
+            if not f.has(var) and check_function_tends_to_zero(f, var, point, direction) and not isinstance(num.args[1], exp):
                 continue
-            rest_factors = factors[:i] + [1/f] + factors[i+1:]
+            new_factor = f
+        elif isinstance(den, Add) and len(den.args) == 2:
+            other = den.args[0]
+            if other != -1:
+                continue
+            f = den.args[1].args[0]
+            if not f.has(var) and check_function_tends_to_zero(f, var, point, direction) or not isinstance(den.args[1], exp):
+                continue
+            new_factor = 1/f
+
+        # Case: (1+f(x))**h(x) with f(x) to 0 and f(x)*h(x) to constant
+        elif isinstance(factor, Pow):
+            base, _exp = factor.as_base_exp()
+            inv_f = base - 1
+            if check_function_tends_to_zero(inv_f, var, point, direction):
+                ratio = simplify(inv_f * _exp)
+                if not ratio.has(var):  # limit of f*h exists and is constant
+                    new_factor = 1  # entire factor is a standard exponential limit
+
+        # Apply transformation if a standard form was matched
+        if new_factor is not None:
+            rest_factors = factors[:i] + [new_factor] + factors[i+1:]
             rest_part = Mul(*rest_factors)
 
-            new_expr = Limit(f * factor, var, point, dir=direction) * \
+            new_expr = Limit(factor / new_factor, var, point, dir=direction) * \
                 Limit(rest_part, var, point, dir=direction)
 
-            rule_text = (
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}}"
-                f"\\left({latex(expr)}\\right) = "
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}}"
-                f"\\left(\\frac{{{latex(f)}}}{{{latex(den)}}} \\cdot {wrap_latex(rest_part)}\\right) = "
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}}"
-                f"\\frac{{{latex(f)}}}{{{latex(den)}}}"
-                f"\\cdot "
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} {wrap_latex(rest_part)}"
-            )
+            rule_text = f"{latex(expr_limit)} = {latex(new_expr)}"
             return new_expr, f"应用重要极限的乘法拆分规则: ${rule_text}$"
 
-    # 提出 (f(x) + 1)**h(x), f(x) -> 0
-    for i, factor in enumerate(factors):
-        if not isinstance(factor, Pow):
-            continue
-        base, _exp = factor.as_base_exp()
-        # 统一为 (f(x) + 1)**h(x) 形式处理
-        inv_f = base - 1
-        ratio = simplify(inv_f * _exp)
-        if check_function_tends_to_zero(inv_f, var, point, direction) and not ratio.has(var):
-            rest_factors = factors[:i] + factors[i+1:]
-            rest_part = Mul(*rest_factors)
-
-            new_expr = Limit(factor, var, point, dir=direction) * \
-                Limit(rest_part, var, point, dir=direction)
-
-            rule_text = (
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                f"\\left({latex(expr)}\\right) = "
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} {latex(factor)}"
-                f"\\cdot \\lim_{{{var} \\to {latex(point)}{dir_sup}}} {latex(rest_part)}"
-            )
-            return new_expr, f"应用重要极限的乘法拆分规则: ${rule_text}$"
-
-    # 常规乘法拆分
+    # Strategy 2: General multiplicative splitting
     for i, factor in enumerate(factors):
         first_part = factor
         rest_factors = factors[:i] + factors[i+1:]
@@ -249,239 +121,251 @@ def mul_split_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
             continue
         rest_part = Mul(*rest_factors)
 
+        # Only split if both sub-limits exist and their combination is determinate
         if (check_limit_exists(first_part, var, point, direction) and
             check_limit_exists(rest_part, var, point, direction) and
                 not check_combination_indeterminate(first_part, rest_part, var, point, direction, 'mul')):
 
-            first_limit = Limit(first_part, var, point, dir=direction)
-            new_expr = first_limit * \
+            new_expr = Limit(first_part, var, point, dir=direction) * \
                 Limit(rest_part, var, point, dir=direction)
 
-            rule_text = (
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                f"\\left({latex(first_part)} \\cdot {latex(rest_part)}\\right) = "
-                f"{latex(first_limit)} \\cdot \\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-                f"{latex(rest_part)}"
-            )
+            return new_expr, f"应用乘法拆分规则: ${latex(expr_limit)} = {latex(new_expr)}$"
 
-            return new_expr, f"应用乘法拆分规则: ${rule_text}$"
-
-    return None, None
+    return None
 
 
 def add_split_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    """加法拆分规则: 每次拆出一项, 前提是该项和剩余部分的极限都存在且拆分后不会产生不定式"""
-    var, point, direction, dir_sup = get_limit_args(context)
-    terms = expr.as_ordered_terms()
+    """Apply additive splitting rule to decompose a limit of a sum.
 
-    for i, _ in enumerate(terms):
+    This rule attempts to split the expression into two parts such that:
+
+    - The limit of each part exists individually, and
+    - Their combination does not result in an indeterminate form (e.g., oo − oo).
+
+    The function iteratively considers prefixes of the ordered terms
+    (from one term up to all but the last) as the first part, and the
+    remainder as the second part.
+    """
+    var, point, direction = get_limit_args(context)
+    terms = expr.as_ordered_terms()
+    n = len(terms)
+
+    # Try all non-trivial prefix splits: [term_0], [term_0 + term_1], ..., up to all but last
+    for i in range(n):
         first_part = Add(*terms[:i+1])
-        rest_terms = terms[i+1:] if i+1 < len(terms) else []
+        rest_terms = terms[i+1:] if i+1 < n else []
         rest_part = Add(*rest_terms) if rest_terms else S.Zero
 
-        # 检查两个极限是否存在且拆分后不会产生不定式
+        # Only split if both sub-limits exist and their sum is determinate
         if (check_limit_exists(first_part, var, point, direction) and
             check_limit_exists(rest_part, var, point, direction) and
                 not check_combination_indeterminate(first_part, rest_part, var, point, direction, 'add')):
 
-            # 计算第一个部分的极限
-            first_limit = Limit(first_part, var, point, dir=direction)
-
-            new_expr = first_limit + \
+            new_expr = Limit(first_part, var, point, dir=direction) + \
                 Limit(rest_part, var, point, dir=direction)
-            first_latex = wrap_latex(first_part)
-            rest_latex = wrap_latex(rest_part)
-            first_limit_latex = latex(first_limit)
+            expr_limit = Limit(expr, var, point, dir=direction)
 
-            rule_text = (
-                f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}}"
-                f"\\left({first_latex} + {rest_latex}\\right) = "
-                f"{first_limit_latex} + \\lim_{{{var} \\to {latex(point)}{dir_sup}}} {rest_latex}"
-            )
+            return new_expr, f"应用加法拆分规则: ${latex(expr_limit)} = {latex(new_expr)}$"
 
-            return new_expr, f"应用加法拆分规则: ${rule_text}$"
-
-    return None, None
+    return None
 
 
 def div_split_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    """除法拆分规则: 分式的极限等于分子极限除以分母极限, 前提是分母极限不为零且拆分后不会产生不定式"""
-    var, point, direction, dir_sup = get_limit_args(context)
+    """Apply the quotient rule for limits."""
+    var, point, direction = get_limit_args(context)
+    expr_limit = Limit(expr, var, point, dir=direction)
 
-    # 获取分子和分母
-    numerator, denominator = expr.as_numer_denom()
+    num, den = expr.as_numer_denom()
 
-    # 构造新的表达式: Limit(numerator) / Limit(denominator)
-    num_limit_expr = Limit(numerator, var, point, dir=direction)
-    den_limit_expr = Limit(denominator, var, point, dir=direction)
+    num_limit_expr = Limit(num, var, point, dir=direction)
+    den_limit_expr = Limit(den, var, point, dir=direction)
     new_expr = num_limit_expr / den_limit_expr
 
-    num_latex = wrap_latex(numerator)
-    den_latex = wrap_latex(denominator)
-    num_limit_latex = latex(num_limit_expr)
-    den_limit_latex = latex(den_limit_expr)
+    return new_expr, f"应用除法拆分规则: ${latex(expr_limit)} = {latex(new_expr)}$"
 
-    rule_text = (
-        f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} "
-        f"\\frac{{{num_latex}}}{{{den_latex}}} = "
-        f"\\frac{{{num_limit_latex}}}{{{den_limit_latex}}}"
+
+def const_inf_add_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+    """Apply the constant-plus-infinity rule for limits.
+
+    This rule handles sums where:
+
+    - At least one term tends to +-oo,
+    - All infinite terms share the same sign (all +oo or all −oo),
+    - All remaining (non-infinite) terms have finite limits (i.e., are bounded near the limit point).
+
+    In such cases, the overall limit is determined solely by the infinite part.
+    """
+    var, point, direction = get_limit_args(context)
+    expr_limit = Limit(expr, var, point, dir=direction)
+    terms = expr.as_ordered_terms()
+
+    inf_sign = None
+    for term in terms:
+        # Find the sign from the first infinite term
+        lim_val = limit(term, var, point, dir=direction)
+        if lim_val not in (oo, -oo):
+            continue
+        inf_sign = 1 if lim_val == oo else -1 if lim_val == -oo else None
+        break
+
+    result = oo * inf_sign
+
+    explanation = rf"应用\,趋于常数(有界)+-趋于无穷\, 规则(所有无穷项同号): ${latex(expr_limit)} = {latex(result)}$"
+    return result, explanation
+
+
+def const_inf_div_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+    """Apply the bounded-over-infinity limit rule.
+
+    This rule applies when:
+
+    - The expression is a quotient (num/den),
+    - The numerator has a finite limit (i.e., is bounded near the limit point),
+    - The denominator tends to +-oo.
+
+    In such cases, the overall limit is 0.
+    """
+    var, point, direction = get_limit_args(context)
+    expr_limit = Limit(expr, var, point, dir=direction)
+
+    return Integer(0), rf"应用\,趋于常数(有界)/趋于无穷\,规则: ${latex(expr_limit)} = 0$"
+
+
+def const_inf_mul_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+    """Apply the non-zero-constant-times-infinity limit rule.
+
+    This rule applies when the expression is a product such that:
+
+    - At least one factor tends to +-oo,
+    - All other factors tend to finite limits,
+    - The product of the finite limits is non-zero.
+
+    In such cases, the overall limit is +-oo.
+    """
+    var, point, direction = get_limit_args(context)
+    expr_limit = Limit(expr, var, point, dir=direction)
+    factors = expr.as_ordered_factors()
+
+    count = 0
+    for factor in factors:
+        lim_val = limit(factor, var, point, dir=direction)
+        if lim_val == -oo or lim_val < 0:
+            count += 1
+
+    total_sign = -1 if (count % 2) else 1
+    result = oo * total_sign
+
+    return result, rf"应用\,趋于非零常数(有界)(可无)$\cdot$趋于无穷\,规则: ${latex(expr_limit)} = {latex(result)}$"
+
+
+def small_o_add_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+    """Apply the sum-of-infinitesimals rule.
+
+    This rule applies when the expression is a finite sum (or difference)
+    of terms, each of which tends to 0 as the variable approaches the limit point.
+
+    In such cases, the overall limit is 0.
+    """
+    var, point, direction = get_limit_args(context)
+    expr_limit = Limit(expr, var, point, dir=direction)
+
+    return Integer(0), rf"应用\,多个趋于\,0\,相加减\,规则: ${latex(expr_limit)} = 0$"
+
+
+def const_zero_div_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+    """Apply the non-zero-constant-over-zero limit rule.
+
+    This rule applies when:
+      - The expression is a quotient (num/den),
+      - num to L != 0 (finite and non-zero),
+      - den to 0 (from a specific side, so sign is determined).
+
+    The result is +-oo, with sign = sign(L) * sign(den near point).
+    """
+    var, point, direction = get_limit_args(context)
+    expr_limit = Limit(expr, var, point, dir=direction)
+    num, _ = expr.as_numer_denom()
+
+    sign = 1 if direction == '+' else -1
+    # SymPy moves the minus sign to the numerator,
+    # so we only need to consider the sign of the limit of the numerator.
+    num_lim = limit(num, var, point, dir=direction).doit()
+    sign *= 1 if num_lim > 0 else -1
+    result = oo * sign
+
+    return result, rf"应用\,趋于非零常数(有界)/趋于0\,规则(可能需要通分再观察): ${latex(expr_limit)} = {latex(result)}$"
+
+
+def conjugate_rationalize_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+    """Rationalize a fraction whose numerator is of the form sqrt(A) +- sqrt(B).
+
+    This rule applies when:
+      - The expression is a quotient,
+      - The numerator is a sum/difference of exactly two terms,
+      - Each term is a square root (possibly with a coefficient of +-1),
+      - The denominator is non-zero near the limit point.
+
+    It multiplies numerator and denominator by the conjugate to eliminate radicals.
+    """
+    var, point, direction = get_limit_args(context)
+    expr_limit = Limit(expr, var, point, dir=direction)
+    num, den = expr.as_numer_denom()
+
+    # Construct conjugate: flip the sign between the two terms
+    # Original: a + b  to conjugate = a - b
+    # Original: a - b  to conjugate = a + b
+    # Since num = term1 + term2 (SymPy always stores as Add), we use a - b as conjugate
+    a, b = num.args
+    conj = a - b
+    new_num = simplify(a**2 - b**2)
+    new_den = simplify(den * conj)
+    new_expr = simplify(new_num / new_den)
+    new_limit = Limit(new_expr, var, point, dir=direction)
+
+    explanation = (
+        rf"$分子含有根号差，乘以共轭\,{latex(conj)}\,进行有理化:"
+        f"{latex(expr_limit)} ="
+        f"\\lim_{{{var} \\to {latex(point)}{direction}}}"
+        f"\\frac{{({latex(num)})({latex(conj)})}}{{{latex(den)}({latex(conj)})}}="
+        f"{latex(new_limit)}"
     )
 
-    return new_expr, f"应用除法拆分规则: ${rule_text}$"
-
-
-def _check_mul_split(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
-    """
-    检查表达式是否为乘法且存在一个因子，使得:
-    该因子的极限存在(有限值或无穷);
-    剩下的乘积的极限也存在(有限值或无穷);
-    且拆分后不会产生不定式.
-    同时检测 sin(x)/x 以及其他重要极限提出情况。
-    """
-    if not isinstance(expr, Mul):
-        return False
-    factors = expr.as_ordered_factors()
-    # 检测 sin(f(x))/f(x), f(x)->0
-    for factor in factors:
-        num, den = factor.as_numer_denom()
-        # 既检查分子也检查分母
-        for part in (num, den):
-            if isinstance(part, sin) and factor.has(var) and check_function_tends_to_zero(part.args[0], var, point, direction):
-                return True
-
-    # 检测 ln(1+f(x)), f(x)->0
-    for factor in factors:
-        num, den = factor.as_numer_denom()
-        # 既检查分子也检查分母
-        for part in (num, den):
-            if isinstance(part, log):
-                f = part.args[0] - 1
-                if f.has(var) and check_function_tends_to_zero(f, var, point, direction):
-                    return True
-
-    # 检测 (e^f(x) - 1), f(x)->0
-    for factor in factors:
-        num, den = factor.as_numer_denom()
-        # 既检查分子也检查分母
-        for part in (num, den):
-            if isinstance(part, Add) and len(part.args) == 2:
-                try:
-                    const = part.args[1].args[0]
-                    if const.has(var):
-                        continue
-                    # 提取公共常数, 凑重要极限
-                    if const / part.args[0] == -1 and isinstance(part.args[1].args[1], exp):
-                        f = part.args[1].args[1].args[0]
-                        if check_function_tends_to_zero(f, var, point, direction):
-                            return True
-                except Exception:
-                    # sympify 保证常数在前
-                    if part.args[0] == -1 and isinstance(part.args[1], exp):
-                        f = part.args[1].args[0]
-                        if f.has(var) and check_function_tends_to_zero(f, var, point, direction):
-                            return True
-
-    # 检测 (f(x) + 1)**h(x), f(x) -> 0
-    for factor in factors:
-        if not isinstance(factor, Pow):
-            continue
-        base, _exp = factor.as_base_exp()
-        # 统一为 (f(x) + 1)**h(x) 形式处理
-        inv_f = base - 1
-        ratio = simplify(inv_f * _exp)
-        if check_function_tends_to_zero(inv_f, var, point, direction) and not ratio.has(var):
-            return True
-
-    # 常规乘法拆分检测
-    for i, factor in enumerate(factors):
-        first_part = factor
-        rest_factors = factors[:i] + factors[i+1:]
-        if not rest_factors:
-            continue
-        rest_part = Mul(*rest_factors)
-
-        if (check_limit_exists(first_part, var, point, direction) and
-            check_limit_exists(rest_part, var, point, direction) and
-                not check_combination_indeterminate(first_part, rest_part, var, point, direction, 'mul')):
-            return True
-
-    return False
-
-
-def _check_add_split(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
-    """
-    检查表达式是否为加法且存在一项, 使得:
-    该项的极限存在(有限值或无穷); 剩下的和的极限也存在(有限值或无穷)
-    且拆分后不会产生不定式
-    """
-    if not isinstance(expr, Add):
-        return False
-    terms = expr.as_ordered_terms()
-    for i, term in enumerate(terms):
-        # 提出第 i 项
-        first_part = term
-        rest_terms = terms[:i] + terms[i+1:]
-        rest_part = Add(*rest_terms) if rest_terms else S.Zero
-
-        # 检查两个极限是否存在且拆分后不会产生不定式
-        if (check_limit_exists(first_part, var, point, direction) and
-            check_limit_exists(rest_part, var, point, direction) and
-                not check_combination_indeterminate(first_part, rest_part, var, point, direction, 'add')):
-            return True
-    return False
-
-
-def _check_div_split(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
-    """
-    检查表达式是否为分式, 且满足:
-    1. 分子极限存在(有限或无穷)
-    2. 分母极限存在且不为零
-    3. 不产生不定式 (0/0, oo/oo)
-    """
-    if not isinstance(expr, Mul) or not any(isinstance(arg, Pow) and arg.exp == -1 for arg in expr.args):
-        return False
-    numerator, denominator = expr.as_numer_denom()
-    if denominator == S.One:
-        return False
-    # 检查分子极限是否存在
-    if not check_limit_exists_oo(numerator, var, point, direction):
-        return False
-    # 检查分母极限是否存在且不为零
-    denom_limit = limit(denominator, var, point, dir=direction).doit()
-    if not check_limit_exists_oo(denominator, var, point, direction) or denom_limit == 0:
-        return False
-    # 检查是否为不定式
-    num_limit = limit(numerator, var, point, dir=direction).doit()
-    if (num_limit == 0 and denom_limit == 0) or \
-            (num_limit in (oo, -oo) and denom_limit in (oo, -oo)):
-        return False
-    return True
+    return new_limit, explanation
 
 
 def direct_substitution_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+    """Determine whether the direct substitution rule is applicable for evaluating the limit.
+
+    Direct substitution is valid if:
+
+    - Substituting the limit point into the expression yields a well-defined value
+      (finite, +-oo, or complex infinity zoo), and
+    - The resulting form is not an indeterminate form (e.g., 0/0, oo/oo, 0*oo, oo-oo, 1^oo, 0^oo, oo^0).
     """
-    检查是否可以应用直接代入法.
-    如果代入后为不定式(如 0/0, oo/oo, 0·oo, oo-oo, 1^oo, 0^0, oo^0), 则返回 None.
-    否则, 若极限存在（有限或确定无穷），返回 'direct_substitution'.
-    """
-    var, point, direction, _ = get_limit_args(context)
+    var, point, direction = get_limit_args(context)
     try:
-        # 尝试直接代入表达式整体
+        # Perform naive substitution of the limit point
         substituted_value = expr.subs(var, point)
-        # 代入值后出现复数无穷的情况(比如 1/x(x->0)  时就会出现)
+
+        # Complex infinity (zoo) is acceptable — e.g., 1/x as x yo 0
         if substituted_value.has(zoo):
             return 'direct_substitution'
+
+        # Explicit NaN indicates an undefined or indeterminate result
         if substituted_value is nan:
-            return None  # 显式 nan, 不能代入
-        # 特殊情况：表达式本身就是变量或常数
+            return None
+
+        # Trivial cases: constant or the variable itself
         if expr.is_number or expr == var:
             return 'direct_substitution'
-        # 排除不定式: 任一一部分均不可以是不定式
+
+        # Check for indeterminate subexpressions in multiplicative factors
         factors = expr.as_ordered_factors()
         for factor in factors:
             if is_indeterminate_form(factor, var, point, direction):
                 return None
-        # 检查极限是否存在
+
+        # Final fallback: compute the actual limit to verify existence
         lim_val = limit(expr, var, point, dir=direction)
         if lim_val.is_finite or lim_val in (oo, -oo):
             return 'direct_substitution'
@@ -491,268 +375,208 @@ def direct_substitution_matcher(expr: Expr, context: Context) -> MatcherFunction
 
 
 def mul_split_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    """检查表达式是否为乘法, 且可以拆分为两个部分, 每部分极限存在（有限或无穷）且不会产生不定式"""
-    var, point, direction, _ = get_limit_args(context)
-    if _check_mul_split(expr, var, point, direction):
+    """Determine whether multiplicative splitting is applicable.
+
+    This matcher checks if the expression is a product that can be safely split
+    into two non-empty subexpressions such that:
+
+    - The limit of each part exists (finite or infinite), and
+    - Their combination does not result in an indeterminate form (e.g., 0*oo).
+    """
+    var, point, direction = get_limit_args(context)
+    if check_mul_split(expr, var, point, direction):
         return 'mul_split'
     return None
 
 
 def add_split_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    """检查表达式是否为加法, 且可以拆分为两个部分, 每部分极限存在（有限或无穷）且不会产生不定式"""
-    var, point, direction, _ = get_limit_args(context)
-    if _check_add_split(expr, var, point, direction):
+    """Determine whether additive splitting is applicable.
+
+    This matcher checks if the expression is a sum that can be safely split
+    into two non-empty subexpressions such that:
+
+    - The limit of each part exists (finite or infinite), and
+    - Their combination does not yield an indeterminate form (e.g., oo−oo).
+    """
+    var, point, direction = get_limit_args(context)
+    if check_add_split(expr, var, point, direction):
         return 'add_split'
     return None
 
 
 def div_split_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    """检查表达式是否为分式且可以应用除法极限法则"""
-    var, point, direction, _ = get_limit_args(context)
-    if _check_div_split(expr, var, point, direction):
+    """Determine whether the quotient rule for limits is applicable.
+
+    This matcher checks if the expression is a quotient (i.e., a rational expression)
+    for which the limit can be evaluated as the quotient of the limits of its
+    numerator and denominator, provided that:
+
+    - The limits of both numerator and denominator exist (finite or infinite),
+    - The limit of the denominator is non-zero, and
+    - The resulting form is not indeterminate (e.g., 0/0 or oo/oo).
+    """
+    var, point, direction = get_limit_args(context)
+    if check_div_split(expr, var, point, direction):
         return 'div_split'
     return None
 
 
-def const_inf_add_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    """处理 趋于常数(有界) +- 趋于无穷（所有无穷项符号一致）的情况"""
-    var, point, direction, dir_sup = get_limit_args(context)
-    terms = expr.as_ordered_terms()
-
-    inf_sign = None
-    for term in terms:
-        # 用第一个无穷记录正负号
-        if is_infinite(term, var, point, direction) and inf_sign is None:
-            lim_val = limit(term, var, point, dir=direction)
-            inf_sign = 1 if lim_val == oo else -1 if lim_val == -oo else None
-
-    result = oo * inf_sign
-    result_latex = latex(result)
-
-    rule_text = f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} \\left({latex(expr)}\\right) = {result_latex}"
-    explanation = rf"应用\,趋于常数(有界)+-趋于无穷\, 规则(所有无穷项同号): ${rule_text}$"
-    return result, explanation
-
-
 def const_inf_add_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    """匹配 趋于常数(有界) +- 趋于无穷（所有无穷项符号一致）的情况"""
+    """Matches expressions of the form 'bounded_term +- unbounded_terms',
+    where all unbounded terms tend to infinity with the same sign.
+
+    This matcher identifies sums consisting of:
+      - Zero or more terms that approach a finite real limit (i.e., bounded),
+      - One or more terms that diverge to either +oo or -oo,
+      - All divergent terms must share the same sign at the limit point.
+    """
     if not isinstance(expr, Add):
         return None
-    var, point, direction, _ = get_limit_args(context)
+    var, point, direction = get_limit_args(context)
     terms = expr.as_ordered_terms()
 
-    const_terms = []
-    inf_terms = []
+    have_inf = False
     inf_sign = None
 
     for term in terms:
-        if is_constant(term, var, point, direction):
-            const_terms.append(term)
-        elif is_infinite(term, var, point, direction):
-            inf_terms.append(term)
-            lim_val = limit(term, var, point, dir=direction)
-            term_sign = 1 if lim_val == oo else -1 if lim_val == -oo else None
-            if term_sign is None:
-                return None  # 非标准无穷，不匹配
+        lim_val = limit(term, var, point, dir=direction)
+        if lim_val in (oo, -oo):
+            have_inf = True
+            term_sign = 1 if lim_val == oo else -1
             if inf_sign is None:
                 inf_sign = term_sign
+            # Divergent terms have conflicting signs.
             elif inf_sign != term_sign:
-                return None  # 符号冲突，不匹配
+                return None
+        elif lim_val.is_real:
+            continue
         else:
-            return None  # 存在其他类型项，不匹配
+            # Non-real or undefined limits (e.g., zoo) are not supported.
+            return None
 
-    # 必须至少有一个无穷项，常数项可有可无
-    if len(inf_terms) >= 1:
+    # At least one infinite term is required; bounded terms are optional.
+    if have_inf:
         return 'const_inf_add'
 
     return None
 
 
-def const_inf_mul_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    """处理 (趋于非零常数) × (趋于无穷) 的情况"""
-    var, point, direction, dir_sup = get_limit_args(context)
-    factors = expr.as_ordered_factors()
-
-    const_factors = []
-    inf_factors = []
-
-    for factor in factors:
-        if is_constant(factor, var, point, direction):
-            const_factors.append(factor)
-        elif is_infinite(factor, var, point, direction):
-            inf_factors.append(factor)
-
-    # 计算所有非零常数因子的乘积极限
-    const_product = 1
-    for f in const_factors:
-        const_product *= limit(f, var, point, dir=direction)
-    # 计算所有无穷因子的符号乘积
-    inf_sign_product = 1
-    for f in inf_factors:
-        lim_val = limit(f, var, point, dir=direction)
-        if lim_val == oo:
-            inf_sign_product *= 1
-        elif lim_val == -oo:
-            inf_sign_product *= -1
-
-    total_sign = 1 if (const_product * inf_sign_product) > 0 else -1
-    result = oo * total_sign
-
-    rule_text = f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} \\left({latex(expr)}\\right)= {latex(result)}"
-    return result, rf"应用\,趋于非零常数(有界)(可无)$\cdot$趋于无穷\,规则: ${rule_text}$"
-
-
 def const_inf_mul_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    """匹配 趋于非零常数(可无) × 趋于无穷 的情况"""
+    """Matches expressions of the form 'c * f(x)', where:
+      - c is a nonzero finite real constant (optional),
+      - f(x) tends to +-oo as x approaches the limit point,
+      - The expression is a pure product (not a rational expression).
+
+    This matcher excludes cases involving:
+      - Oscillatory limits (e.g., AccumBounds),
+      - Factors that tend to zero (to avoid indeterminate forms like 0 * oo),
+      - Expressions that are internally represented as fractions.
+    """
     if not isinstance(expr, Mul):
         return None
-    _, denominator = expr.as_numer_denom()
-    # 必须是纯粹的乘法, 不可是那种可以视作乘法的分式
-    if denominator != 1:
+    _, den = expr.as_numer_denom()
+    # Reject expressions that are rational (i.e., have a nontrivial denominator).
+    if den != 1:
         return None
-    var, point, direction, _ = get_limit_args(context)
+    var, point, direction = get_limit_args(context)
     factors = expr.as_ordered_factors()
 
     has_inf = False
     for factor in factors:
-        if is_infinite(factor, var, point, direction):
+        lim_val = limit(factor, var, point, dir=direction)
+        if lim_val in (oo, -oo):
             has_inf = True
-        elif is_constant(factor, var, point, direction):
-            lim_val = limit(factor, var, point, dir=direction)
-            # 如有振荡, 不可应用
+        elif lim_val.is_real:
+            # Oscillatory behavior is not allowed.
             if isinstance(lim_val, AccumBounds):
                 return None
+            # Zero limit would lead to an indeterminate form (0 * oo).
             if lim_val == 0:
                 return None
+        else:
+            # Non-real or undefined limits (e.g., zoo) are not supported.
+            return None
 
-    if not has_inf:
-        return None
+    if has_inf:
+        return 'const_inf_mul'
 
-    return 'const_inf_mul'
-
-
-def const_inf_div_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    """处理 趋于常数(有界) / 趋于无穷 的情况"""
-    var, point, _, dir_sup = get_limit_args(context)
-
-    rule_text = f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} \\left({latex(expr)}\\right) = 0"
-    return Integer(0), rf"应用\,趋于常数(有界)/趋于无穷\,规则: ${rule_text}$"
+    return None
 
 
 def const_inf_div_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    """匹配 趋于常数(有界) / 趋于无穷 的情况"""
-    var, point, direction, _ = get_limit_args(context)
-    numerator, denominator = expr.as_numer_denom()
-    if denominator == 1:
+    """Matches expressions of the form 'bounded / unbounded', where:
+      - The numerator approaches a finite real limit (i.e., is bounded),
+      - The denominator diverges to +-oo.
+
+    This pattern corresponds to limits that evaluate to zero due to a bounded
+    quantity being divided by an unbounded one.
+    """
+    var, point, direction = get_limit_args(context)
+    num, den = expr.as_numer_denom()
+    if den == 1:
         return None
 
-    if is_constant(numerator, var, point, direction) and is_infinite(denominator, var, point, direction):
+    if is_constant(num, var, point, direction) and is_infinite(den, var, point, direction):
         return 'const_inf_div'
     return None
 
 
-def const_zero_div_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    """处理 趋于常数(有界)(不为 0) / 趋于 0 的情况"""
-    var, point, direction, dir_sup = get_limit_args(context)
-    numerator, _ = expr.as_numer_denom()
-
-    num_lim = limit(numerator, var, point, dir=direction).doit()
-    sign = 1 if direction == '+' else -1
-    # sympy 会把负号提给分子
-    sign *= 1 if num_lim > 0 else -1
-    result = oo * sign
-
-    rule_text = (
-        f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} \\left({latex(expr)}\\right) = {latex(result)}"
-    )
-    return result, rf"应用\,趋于非零常数(有界)/趋于0\,规则(可能需要通分再观察): ${rule_text}$"
-
-
 def const_zero_div_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    """匹配 趋于常数(有界)(不为 0) / 趋于 0 的情况"""
-    var, point, direction, _ = get_limit_args(context)
-    numerator, denominator = expr.as_numer_denom()
-    if denominator == 1:
+    """Matches expressions of the form 'c / f(x)', where:
+      - The numerator tends to a nonzero finite real constant (c != 0),
+      - The denominator tends to zero.
+
+    This pattern typically indicates a limit that diverges to +-oo,
+    depending on the signs of the numerator and denominator near the limit point.
+    """
+    var, point, direction = get_limit_args(context)
+    num, den = expr.as_numer_denom()
+    if den == 1:
         return None
 
-    if is_constant(numerator, var, point, direction):
-        num_lim = limit(numerator, var, point, dir=direction)
-        if num_lim != 0 and is_zero(denominator, var, point, direction):
+    if is_constant(num, var, point, direction):
+        num_lim = limit(num, var, point, dir=direction)
+        if num_lim != 0 and is_zero(den, var, point, direction):
             return 'const_zero_div'
     return None
 
 
-def small_o_add_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    """处理多个无穷小相加减的情况: 极限为 0"""
-    var, point, _, dir_sup = get_limit_args(context)
-
-    rule_text = f"\\lim_{{{var} \\to {latex(point)}{dir_sup}}} \\left({latex(expr)}\\right) = 0"
-    return Integer(0), rf"应用\,多个趋于\,0\,相加减\,规则: ${rule_text}$"
-
-
 def small_o_add_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    """匹配多个无穷小相加减的情况: 所有项极限均为 0"""
+    """Matches sums or differences of multiple infinitesimal terms,
+    i.e., expressions where every term tends to zero at the limit point.
+
+    This pattern is used to identify o(1) behavior under addition.
+    A single infinitesimal term is intentionally excluded—such cases
+    should be handled by direct substitution or simpler matchers.
+    """
     if not isinstance(expr, Add):
         return None
 
-    var, point, direction, _ = get_limit_args(context)
+    var, point, direction = get_limit_args(context)
     terms = expr.as_ordered_terms()
-    # 至少要有两项(否则就是单个无穷小，应由直接代入处理)
+    # Require at least two terms; single-term infinitesimals are handled elsewhere.
     if len(terms) < 2:
         return None
+    # All terms must vanish in the limit.
     for term in terms:
         if not is_zero(term, var, point, direction):
-            return None  # 存在非无穷小项，不匹配
+            return None  # Non-infinitesimal term found.
 
     return 'small_o_add'
 
 
-def has_sqrt(expr):
-    # 判断表达式中是否存在平方根
-    return any(isinstance(arg, Pow) and arg.exp == Rational(1, 2) for arg in expr.atoms(Pow))
-
-
 def conjugate_rationalize_matcher(expr, _context) -> MatcherFunctionReturn:
+    """Matches expressions whose numerator is the difference (or sum) of two square roots,
+    i.e., of the form (sqrt(A)+-sqrt(B))/D, where A and B are subexpressions.
+
+    This pattern is typically targeted for rationalization via multiplication by the
+    conjugate (sqrt(A)+-sqrt(B)).
     """
-    匹配形如 (sqrt(A) - sqrt(B)) / something 的情况
-    """
-    try:
-        num, _ = expr.as_numer_denom()
-    except Exception:
-        return None
-    if num.is_Add and len(num.args) == 2:
+    num, _ = expr.as_numer_denom()
+    # Check if numerator is a sum/difference of exactly two terms.
+    if isinstance(num, Add) and len(num.args) == 2:
         a, b = num.args
-        # 判断是否存在根号（幂为1/2）
-        has_a = any(isinstance(arg, Pow) and arg.exp == Rational(1, 2)
-                    for arg in a.atoms(Pow))
-        has_b = any(isinstance(arg, Pow) and arg.exp == Rational(1, 2)
-                    for arg in b.atoms(Pow))
-        if has_a or has_b:
+        # Both terms must be explicit square roots
+        if a.func == sqrt and b.func == sqrt:
             return 'conjugate_rationalize'
     return None
-
-
-def conjugate_rationalize_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
-    """
-    对分子为 sqrt(A)-sqrt(B) 的分式进行有理化
-    """
-    var, point, direction, _ = get_limit_args(context)
-    num, den = expr.as_numer_denom()
-
-    a, b = num.args
-    conj = a - b  # 共轭
-    new_num = simplify(a**2 - b**2)
-    new_den = simplify(den * conj)
-    new_expr = simplify(new_num / new_den)
-    new_limit = Limit(new_expr, var, point, dir=direction)
-
-    explanation = (
-        rf"$分子含有根号差，乘以共轭\,{latex(conj)}\,进行有理化:"
-        f"\\lim_{{{var} \\to {latex(point)}{direction}}}{latex(expr)}="
-        f"\\lim_{{{var} \\to {latex(point)}{direction}}}"
-        f"\\frac{{({latex(num)})({latex(conj)})}}{{{latex(den)}({latex(conj)})}}="
-        f"\\lim_{{{var} \\to {latex(point)}{direction}}}"
-        f"\\frac{{{latex(new_num)}}}{{{latex(new_den)}}}$"
-    )
-
-    return new_limit, explanation
