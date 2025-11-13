@@ -9,7 +9,7 @@ from typing import List, Tuple
 from sympy import AccumBounds, Expr, Limit, S, Symbol, latex, sympify, zoo
 
 from core import BaseCalculator
-from utils import Context, MatcherList, Operation, RuleContext, RuleDict, RuleFunction
+from utils import Context, MatcherList, Operation, RuleDict, RuleFunction
 from domains.limit import LHOPITAL_RULES, LimitStepGenerator, MATCHER_LIST, RULE_DICT
 from .limit_help_func import detect_feasible_directions
 
@@ -44,12 +44,8 @@ class LimitCalculator(BaseCalculator):
         var, point, direction = self._context_split(**context)
         return operation(expr, var, point, dir=direction)
 
-    def _get_context_dict(self, **context: Context) -> RuleContext:
-        context_dict = super()._get_context_dict(**context)
-        context_dict.update({'step_gen': self.step_generator})
-        return context_dict
-
     def _check_rule_is_can_apply(self, rule: RuleFunction) -> bool:
+        # Prevent infinite loops when applying lhopital rules.
         if rule.__name__ in self._lhopital_rules:
             self._lhopital_count += 1
             if self._lhopital_count > self._lhopital_max:

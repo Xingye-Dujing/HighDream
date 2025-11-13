@@ -1,224 +1,158 @@
-from typing import Any, Dict
+from typing import Dict, List, Tuple, Union
 from sympy import (
-    Add, Expr, Limit, Mul, Symbol, limit, log, Pow, asin,
-    acos, Interval, solveset, oo, S, sympify, zoo
+    EmptySet, FiniteSet, Expr, Interval, Intersection, Limit,
+    Pow, S, Symbol, acos, asin, limit, log, oo, solveset, zoo
 )
+from sympy.core.relational import Relational
 
 
-def detect_feasible_directions(expr: Expr, var: Symbol, point: str) -> Dict[str, bool]:
-    """
-    检测在给定极限点处, 左极限和右极限是否具备基本的可计算性(主要基于定义域).
+def detect_feasible_directions(expr: Expr, var: Symbol, point: Expr) -> Dict[str, bool]:
+    """Determine whether left/right limits are potentially computable based on domain constraints.
+
+    This function analyzes the expression's subcomponents (logarithms, even roots, inverse trigonometric
+    functions, etc.) to infer whether the expression is defined in arbitrarily small neighborhoods
+    to the left (var to point⁻) or right (var to point+) of the limit point.
+
+    It does not guarantee the limit exists—only that the expression is potentially defined
+    near the point from that side.
+
+    Args:
+        expr (Expr): The symbolic expression to analyze.
+        var (Symbol): The variable with respect to which the limit is taken.
+        point (Expr): The limit point (e.g., 0, oo).
+
     Returns:
-        Dict[str, bool]: 字典, 包含 'left' 和 'right' 键, 值为布尔值.
-                         True 表示该方向可能可计算(满足基本定义域要求),
-                         False 表示该方向很可能不可计算(违反基本定义域要求).
+        Dict[str, bool]: A dictionary with keys 'left' and 'right'.
+        - True: The expression may be defined in some punctured neighborhood on that side.
+        - False: The expression is provably undefined arbitrarily close on that side.
+
+    Note:
+        - For infinite points (+-oo), both directions are conservatively marked as feasible,
+          since directional analysis at infinity is context-dependent and often unnecessary.
+        - Uses purely symbolic methods—no floating-point perturbations (e.g., point +- 1e-6).
+        - If constraint solving fails (e.g., transcendental inequalities), assumes feasibility
+          (conservative "fail-open" policy to avoid false negatives).
     """
-    # 初始化结果，默认两个方向都可行
+
+    # Handle infinite limit points
+    if point in (oo, -oo):
+        return {'left': True, 'right': True}
+
+    # Early exit: if point is not real, directional limits are ill-defined in real calculus
+    if not point.is_real:
+        return {'left': False, 'right': False}
+
+    # Collect domain constraints as relational expressions (e.g., f(var) > 0)
+    constraints: List[Relational] = []
+
+    # 1. Logarithms: log(u) requires u > 0
+    for log_expr in expr.atoms(log):
+        arg = log_expr.args[0]
+        constraints.append(arg > 0)
+
+    # 2. Even roots: u**(p/q) with q even and p/q > 0 requires u >= 0
+    for pow_expr in expr.atoms(Pow):
+        base, exp = pow_expr.args
+        if exp.is_Rational and exp > 0 and exp.q % 2 == 0:
+            constraints.append(base >= 0)
+
+    # 3. Inverse sine/cosine: asin(u), acos(u) require -1 <= u <= 1
+    for inv_trig in expr.atoms(asin, acos):
+        arg = inv_trig.args[0]
+        constraints.append(arg >= -1)
+        constraints.append(arg <= 1)
+
+    # If no domain-restricting subexpressions, all directions are feasible
+    if not constraints:
+        return {'left': True, 'right': True}
+
+    # Define left and right punctured neighborhoods symbolically
+    # Use open intervals approaching the point
+    left_domain = Interval.open(-oo, point)
+    right_domain = Interval.open(point, oo)
+
     feasible = {'left': True, 'right': True}
 
-    # 如果极限点是无穷大，则只有单侧（或视为双侧相同），无需复杂检测
-    if point in (oo, -oo, S.Infinity, S.NegativeInfinity):
-        # 对于无穷大，我们通常不区分严格的左/右，或者认为只有一个方向有意义
-        # 这里简单返回都可行，因为检测无穷附近的定义域比较复杂且不常见
-        return feasible
+    for constr in constraints:
+        # Skip non-relational or malformed constraints
+        if not isinstance(constr, Relational):
+            continue
 
-    # 尝试将 point 转换为 SymPy 对象
-    point = sympify(point)
-
-    # 核心思路：检查表达式在极限点 var=point 附近，左右邻域内是否有定义。
-    # 我们通过分析表达式中关键子表达式（对数、根号、反三角）的定义域约束来实现。
-
-    # 收集所有需要检查定义域的子表达式及其约束条件
-    constraints = []
-
-    # 1. 检查对数函数 log(f(var)) 或 ln(f(var))
-    for log_expr in expr.atoms(log):
-        # 获取对数的真数部分
-        arg_expr = log_expr.args[0]
-        # 约束：真数 > 0
-        constraints.append((arg_expr > 0, f"对数真数 {arg_expr} 必须大于0"))
-    # 2. 检查偶次根号 sqrt(f(var)) 或 f(var)**(1/n) 其中 n 为偶数
-    #    注意：sympy 的 sqrt 是特殊的，**(1/2) 也是
-    for pow_expr in expr.atoms(Pow):
-        base, exponent = pow_expr.args
-        # 判断是否为偶次根号: 指数是正的有理数且分母为偶数
-        # 或者是 sqrt 函数 (sympy 的 sqrt 是 Pow 的特例，指数为 1/2)
-        if exponent.is_Rational and exponent > 0:
-            if exponent.q % 2 == 0:  # 分母是偶数，即偶次根
-                constraints.append(
-                    (base >= 0, f"偶次根号 {pow_expr} 的底数 {base} 必须非负"))
-    # 3. 检查反三角函数 asin(f(var)), acos(f(var))
-    for asin_expr in expr.atoms(asin):
-        arg_expr = asin_expr.args[0]
-        constraints.append(
-            (arg_expr >= -1, f"asin 参数 {arg_expr} 必须 >= -1"))
-        constraints.append((arg_expr <= 1, f"asin 参数 {arg_expr} 必须 <= 1"))
-    for acos_expr in expr.atoms(acos):
-        arg_expr = acos_expr.args[0]
-        constraints.append(
-            (arg_expr >= -1, f"acos 参数 {arg_expr} 必须 >= -1"))
-        constraints.append((arg_expr <= 1, f"acos 参数 {arg_expr} 必须 <= 1"))
-    # 4. 可以扩展检查其他有定义域限制的函数，例如 1/sqrt(f(var)) 隐含 f(var)>0
-    #    但上述检查通常已覆盖主要情况
-    # 如果没有约束，所有方向都可行
-    if not constraints:
-        return feasible
-    # 对于每个约束，检查在极限点左侧和右侧的邻域内是否可能满足
-    for constraint_expr, _ in constraints:
-        # 我们关心的是在 point 的左侧 (var < point) 和右侧 (var > point) 是否存在满足约束的点
-        # 使用 solveset 或直接分析来判断
-        # 方法1: 尝试求解约束在 point 附近的解集
-        # 定义左侧邻域 (开区间) 和右侧邻域 (开区间)
-        left_interval = Interval.open(
-            point - 1e-6, point) if point != -oo else Interval(-oo, point)
-        right_interval = Interval.open(
-            point, point + 1e-6) if point != oo else Interval(point, oo)
-        # 检查约束在左侧邻域是否有解
+        # Determine where the constraint holds
         try:
-            left_solution_set = solveset(
-                constraint_expr, var, domain=left_interval)
-            has_left_solution = not left_solution_set.is_empty
+            solution_set = solveset(constr, var, domain=S.Reals)
         except (NotImplementedError, ValueError):
-            # 如果求解失败，保守地假设该方向可能可行，或者标记为需要进一步检查
-            has_left_solution = True  # 保守策略：假设可行，让后续计算去处理
-            # 或者可以设置为 False 来更严格地排除，但这可能导致误报
-            # has_left_solution = False
-        # 检查约束在右侧邻域是否有解
-        try:
-            right_solution_set = solveset(
-                constraint_expr, var, domain=right_interval)
-            has_right_solution = not right_solution_set.is_empty
-        except (NotImplementedError, ValueError):
-            has_right_solution = True  # 保守策略
+            # Cannot solve symbolically to assume constraint can be satisfied nearby
+            continue
 
-        # 如果左侧邻域无解，则左极限很可能不可计算
-        if not has_left_solution:
+        # If solution set is empty globally, mark both directions as infeasible
+        if solution_set.is_empty:
+            feasible['left'] = feasible['right'] = False
+            break
+
+        # Intersect with directional domains to check local feasibility
+        try:
+            left_intersect = Intersection(solution_set, left_domain)
+            right_intersect = Intersection(solution_set, right_domain)
+        except Exception:
+            # Fallback: assume feasible if intersection fails
+            continue
+
+        # A direction is infeasible only if the intersection is provably empty
+        if isinstance(left_intersect, (EmptySet, FiniteSet)) and left_intersect.is_empty:
             feasible['left'] = False
-            # print(f"左极限检测失败: {reason} 在 x->{point}- 时无法满足")
-        # 如果右侧邻域无解，则右极限很可能不可计算
-        if not has_right_solution:
+        if isinstance(right_intersect, (EmptySet, FiniteSet)) and right_intersect.is_empty:
             feasible['right'] = False
-            # print(f"右极限检测失败: {reason} 在 x->{point}+ 时无法满足")
-        # 如果某个方向已经被标记为 False，可以提前跳出内层循环，但外层循环继续检查其他约束
+
+        # Early termination if both directions are ruled out
         if not feasible['left'] and not feasible['right']:
-            break  # 所有方向都不可行，无需检查剩余约束
+            break
 
     return feasible
 
 
-def get_limit_args(context: Dict[str, Any]) -> tuple:
-    """获取极限参数"""
+def get_limit_args(context: Dict[str, Union[Symbol, Expr, str]]) -> Tuple[Symbol, Expr, str]:
+    """Extract limit parameters from the evaluation context.
+
+    Retrieves the limit variable, point, and direction from a context dictionary.
+    This utility ensures consistent access to limit metadata across matchers and solvers.
+    """
     var, point = context['variable'], context['point']
     direction = context.get('direction', '+')
     return var, point, direction
 
 
+def check_limit_exists(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
+    """Check whether a directional limit exists and is finite.
+
+    Attempts to evaluate the limit of expr as var approaches point from the specified
+    direction. Returns True only if the limit evaluates to a finite real (or complex) value.
+    Infinite limits (oo, -oo), undefined results (Nan), oscillatory behavior, or evaluation
+    failures are all treated as non-existent for the purpose of this function.
+    """
+    try:
+        lim_val = Limit(expr, var, point, dir=direction).doit()
+        return lim_val.is_finite
+    except Exception:
+        return False
+
+
 def check_limit_exists_oo(lim_val: Expr) -> bool:
+    """Determine whether a limit value is considered to exis" in extended real analysis.
+
+    In the context of real-variable calculus, a limit is often said to exist if it
+    evaluates to a finite real number or diverges to positive/negative infinity.
+    This function returns True for such cases, and False for indeterminate forms,
+    undefined expressions (e.g., NaN), or complex infinities.
     """
-    检查极限是否存在且为有限值(含无穷)
-    """
-    return lim_val.is_finite or lim_val == oo or lim_val == -oo
-
-
-def check_function_tends_to_zero(f: Expr, var: Symbol, point: Any, direction: str) -> bool:
-    try:
-        lim = limit(f, var, point, dir=direction)
-        return lim == 0
-    except Exception:
-        return False
-
-
-def check_limit_exists(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
-    """
-    检查极限是否存在且为有限值
-    """
-    try:
-        lim = Limit(expr, var, point, dir=direction).doit()
-        return lim.is_finite
-    except Exception:
-        return False
-
-
-def is_indeterminate_form(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
-    """
-    检查表达式在给定点是否为不定式
-    不定式包括: 0/0, oo/oo, 0·oo, oo-oo, 1^oo, 0^0, oo^0
-    """
-    try:
-        # 尝试计算极限值
-        _lim_val = limit(expr, var, point, dir=direction)
-        # 检查常见的不定式形式
-        if isinstance(expr, Mul):
-            factors = expr.as_ordered_factors()
-            # 检查 0·oo 形式
-            zero_found = False
-            inf_found = False
-            for factor in factors:
-                factor_lim = limit(factor, var, point, dir=direction)
-                if factor_lim == 0:
-                    zero_found = True
-                elif factor_lim in (oo, -oo):
-                    inf_found = True
-            if zero_found and inf_found:
-                return True
-        elif isinstance(expr, Add):
-            terms = expr.as_ordered_terms()
-            # 检查 oo-oo 形式
-            pos_inf_found = False
-            neg_inf_found = False
-            for term in terms:
-                term_lim = limit(term, var, point, dir=direction)
-                if term_lim == oo:
-                    pos_inf_found = True
-                elif term_lim == -oo:
-                    neg_inf_found = True
-            if pos_inf_found and neg_inf_found:
-                return True
-        elif isinstance(expr, Pow):
-            base, exponent = expr.base, expr.exp
-            base_lim = limit(base, var, point, dir=direction)
-            exp_lim = limit(exponent, var, point, dir=direction)
-
-            # 检查 1^oo, 0^0, oo^0 形式
-            if (base_lim == 1 and exp_lim in (oo, -oo)) or \
-               (base_lim == 0 and exp_lim == 0) or \
-               (base_lim in (oo, -oo) and exp_lim == 0):
-                return True
-
-        return False
-
-    except Exception:
+    if lim_val.is_finite:
         return True
+    if lim_val in (S.Infinity, S.NegativeInfinity):
+        return True
+    return False
 
 
-def check_combination_indeterminate(part1: Expr, part2: Expr, var: Symbol, point: Any, direction: str, operation: str) -> bool:
-    """
-    检查两个部分组合后是否会产生不定式
-    operation: 'mul' 或 'add'
-    """
-    try:
-        if operation == 'mul':
-            # 检查乘法组合：0·oo 或 oo·0
-            lim1 = limit(part1, var, point, dir=direction)
-            lim2 = limit(part2, var, point, dir=direction)
-
-            if (lim1 == 0 and lim2 in (oo, -oo)) or (lim1 in (oo, -oo) and lim2 == 0):
-                return True
-
-        elif operation == 'add':
-            # 检查加法组合：oo - oo
-            lim1 = limit(part1, var, point, dir=direction)
-            lim2 = limit(part2, var, point, dir=direction)
-
-            if (lim1 == oo and lim2 == -oo) or (lim1 == -oo and lim2 == oo):
-                return True
-
-        return False
-    except Exception:
-        return False
-
-
-def is_infinite(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
+def is_infinite(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
     """检查表达式极限是否为无穷"""
     try:
         lim = limit(expr, var, point, dir=direction)
@@ -227,7 +161,7 @@ def is_infinite(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
         return False
 
 
-def is_zero(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
+def is_zero(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
     """检查表达式极限是否为 0"""
     try:
         lim = limit(expr, var, point, dir=direction)
@@ -236,7 +170,7 @@ def is_zero(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
         return False
 
 
-def is_constant(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
+def is_constant(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
     """检查表达式的极限是否为常数(即数值而非无穷或符号)"""
     try:
         lim = limit(expr, var, point, dir=direction)
@@ -244,3 +178,204 @@ def is_constant(expr: Expr, var: Symbol, point: Any, direction: str) -> bool:
         return lim.is_real and not lim.has(oo, -oo, zoo)
     except Exception:
         return False
+
+
+def check_function_tends_to_zero(f: Expr, var: Symbol, point: Expr, direction: str) -> bool:
+    """Check whether a function tends to zero in a given directional limit.
+
+    Attempts to compute the one-sided or two-sided limit of f as var approaches point
+    from the specified direction. Returns True only if the limit exists and is exactly zero.
+    """
+    try:
+        lim_val = limit(f, var, point, dir=direction)
+        return lim_val == S.Zero
+    except Exception:
+        return False
+
+
+def is_indeterminate_form(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
+    """Determine whether an expression exhibits an indeterminate form at a limit point.
+
+    This function analyzes the structure and limit behavior of expr as var to point
+    from the given direction to detect classical indeterminate forms:
+
+    - 0/0, oo/oo
+    - 0*oo
+    - oo-oo
+    - 1^oo, 0^0, oo^0
+
+    Note that this is a heuristic structural check, not a definitive mathematical test.
+    It evaluates subexpression limits to classify the form. If any sub-limit fails to evaluate,
+    the function conservatively assumes an indeterminate form may be present.
+
+    Args:
+        expr (Expr): The symbolic expression to analyze.
+        var (Symbol): The variable approaching the limit point.
+        point (Expr): The point being approached (e.g., 0, oo).
+        direction (str): Direction of approach ('+' or '-').
+
+    Returns:
+        bool: True if an indeterminate form is detected; False otherwise.
+              Returns True on evaluation failure (conservative fallback).
+
+    Examples:
+        >>> x = symbols('x')
+        >>> is_indeterminate_form(sin(x)/x, x, 0, '+')      # 0/0
+        True
+        >>> is_indeterminate_form(x*log(x), x, 0, '+')     # 0*(-oo)
+        True
+        >>> is_indeterminate_form(exp(x)/x, x, oo, '+')      # oo/oo
+        True
+        >>> is_indeterminate_form(x+1, x, 0, '+')          # regular
+        False
+    """
+    try:
+        # Helper to safely compute sub-limits
+        def _limit(e: Expr) -> Expr:
+            return limit(e, var, point, dir=direction)
+
+        # Case 1: a/b to check 0/0 or oo/oo
+        if expr.is_Mul:
+            numer, denom = expr.as_numer_denom()
+            if denom != 1:  # Actually a division
+                try:
+                    L_num = _limit(numer)
+                    L_den = _limit(denom)
+                except Exception:
+                    return True  # Conservative: assume indeterminate
+
+                # Check 0/0
+                if L_num == S.Zero and L_den == S.Zero:
+                    return True
+                # Check oo/oo (including -oo)
+                if (L_num in (oo, -oo)) and (L_den in (oo, -oo)):
+                    return True
+
+        # Case 2: Multiplication to check 0*oo
+        if expr.is_Mul:
+            factors = expr.as_ordered_factors()
+            has_zero = False
+            has_inf = False
+            for f in factors:
+                try:
+                    L_f = _limit(f)
+                except Exception:
+                    return True
+                if L_f == S.Zero:
+                    has_zero = True
+                elif L_f in (oo, -oo):
+                    has_inf = True
+            if has_zero and has_inf:
+                return True
+
+        # Case 3: Addition to check oo-oo
+        if expr.is_Add:
+            terms = expr.as_ordered_terms()
+            has_pos_inf = False
+            has_neg_inf = False
+            for t in terms:
+                try:
+                    L_t = _limit(t)
+                except Exception:
+                    return True
+                if L_t == oo:
+                    has_pos_inf = True
+                elif L_t == -oo:
+                    has_neg_inf = True
+            if has_pos_inf and has_neg_inf:
+                return True
+
+        # Case 4: Power to check 1^oo, 0^0, oo^0
+        if expr.is_Pow:
+            base, exp = expr.base, expr.exp
+            try:
+                L_base = _limit(base)
+                L_exp = _limit(exp)
+            except Exception:
+                return True
+
+            # 1^oo
+            if L_base == S.One and L_exp in (oo, -oo):
+                return True
+            # 0^0
+            if L_base == S.Zero and L_exp == S.Zero:
+                return True
+            # oo^0
+            if L_base in (oo, -oo) and L_exp == S.Zero:
+                return True
+
+        return False
+
+    except Exception:
+        # Top-level fallback: if anything goes wrong, assume indeterminate
+        return True
+
+
+def check_combination_indeterminate(part1: Expr, part2: Expr, var: Symbol, point: Expr, direction: str, operation: str) -> bool:
+    """Check whether combining two subexpressions yields an indeterminate form.
+
+    This function evaluates the limits of part1 and part2 as var to point from the
+    specified direction and checks for classical indeterminate combinations:
+
+    - For operation='mul': detects 0*oo or oo*0 (including sign variants like 0*(-oo)).
+    - For operation='add': detects oo-oo (i.e., oo+(-oo) or -oo+oo).
+
+    Args:
+        part1 (Expr): First subexpression.
+        part2 (Expr): Second subexpression.
+        var (Symbol): Limit variable.
+        point (Expr): Point being approached (e.g., 0, oo).
+        direction (str): Direction of approach; typically '+' or '-'.
+        operation (str): Binary operation to simulate. Must be either:
+            - 'mul' for multiplication,
+            - 'add' for addition.
+
+    Returns:
+        bool: True if the combination results in an indeterminate form;
+              False otherwise (including when limits are finite or determinate).
+
+    Raises:
+        ValueError: If operation is not 'mul' or 'add'.
+
+    Note:
+        This function assumes real-valued limits. Complex infinities (zoo) are not treated
+        as indeterminate in this context. Evaluation failures (e.g., non-convergent sub-limits)
+        result in False—the function does not conservatively assume indeterminacy on error,
+        unlike broader form detectors.
+
+    Examples:
+        >>> x = symbols('x')
+        >>> check_combination_indeterminate(x, 1/x, x, 0, '+', 'mul')   # 0*oo
+        True
+        >>> check_combination_indeterminate(1/x, -1/x, x, 0, '+', 'add')  # oo+(-oo)
+        True
+        >>> check_combination_indeterminate(x, x, x, 0, '+', 'mul')       # 0*0
+        False
+    """
+    if operation not in ('mul', 'add'):
+        raise ValueError(
+            f"Unsupported operation: {operation!r}. Expected 'mul' or 'add'.")
+
+    try:
+        lim1 = limit(part1, var, point, dir=direction)
+        lim2 = limit(part2, var, point, dir=direction)
+    except Exception:
+        # If either sub-limit fails to evaluate, we cannot confirm indeterminacy.
+        # Unlike full-expression analyzers, this helper returns False on error.
+        return False
+
+    if operation == 'mul':
+        # Check for 0 * (±oo) or (±oo) * 0
+        is_zero1 = lim1 == S.Zero
+        is_zero2 = lim2 == S.Zero
+        is_inf1 = lim1 in (oo, -oo)
+        is_inf2 = lim2 in (oo, -oo)
+
+        return (is_zero1 and is_inf2) or (is_inf1 and is_zero2)
+
+    if operation == 'add':
+        # Check for oo + (-oo) or (-oo) + oo
+        return (lim1 == oo and lim2 == -oo) or (lim1 == -oo and lim2 == oo)
+
+    # Unreachable due to earlier validation
+    return False
