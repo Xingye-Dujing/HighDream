@@ -153,25 +153,44 @@ def check_limit_exists_oo(lim_val: Expr) -> bool:
 
 
 def is_infinite(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
-    """检查表达式极限是否为无穷"""
+    """Check whether the directional limit of an expression diverges to infinity.
+
+    Computes the limit of expr as var approaches point from the specified direction.
+    Returns True if the result is positive or negative real infinity (oo or -oo).
+    """
     try:
-        lim = limit(expr, var, point, dir=direction)
-        return lim in (oo, -oo)
+        lim_val = limit(expr, var, point, dir=direction)
+        return lim_val == S.Infinity or lim_val == S.NegativeInfinity
     except Exception:
         return False
 
 
 def is_zero(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
-    """检查表达式极限是否为 0"""
+    """Check whether the directional limit of an expression equals zero.
+
+    Computes the limit of expr as var approaches point from the specified direction.
+    Returns True if the result is exactly zero in the symbolic sense.
+    """
+
     try:
-        lim = limit(expr, var, point, dir=direction)
-        return lim == 0
+        lim_val = limit(expr, var, point, dir=direction)
+        return lim_val == S.Zero
     except Exception:
         return False
 
 
 def is_constant(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
-    """检查表达式的极限是否为常数(即数值而非无穷或符号)"""
+    """Check whether the directional limit of an expression evaluates to a finite numeric constant.
+
+    A constant in this context means a concrete, finite number—such as an integer,
+    rational, floating-point number, or symbolic constant like pi or E—that does not
+    depend on free symbols and is not infinite (oo, -oo, zoo) or indeterminate (NaN).
+
+    This function returns True if the limit exists and is a finite, symbol-free number.
+    Expressions like sin(pi/2) (which evaluates to 1) are accepted; expressions like x,
+    a+1 (with free symbol a), or oo are not.
+    """
+
     try:
         lim = limit(expr, var, point, dir=direction)
         # 检查是否为数值常数(非无穷, 非符号)
