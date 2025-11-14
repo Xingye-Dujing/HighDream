@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple, Union
 from sympy import (
-    EmptySet, FiniteSet, Expr, Interval, Intersection, Limit,
-    Pow, S, Symbol, acos, asin, limit, log, oo, solveset, zoo
+    Expr, Interval, Intersection, Limit, Pow, S, Symbol,
+    acos, asin, limit, log, oo, solveset, zoo
 )
 from sympy.core.relational import Relational
 
@@ -99,9 +99,9 @@ def detect_feasible_directions(expr: Expr, var: Symbol, point: Expr) -> Dict[str
             continue
 
         # A direction is infeasible only if the intersection is provably empty
-        if isinstance(left_intersect, (EmptySet, FiniteSet)) and left_intersect.is_empty:
+        if hasattr(left_intersect, 'is_empty') and left_intersect.is_empty:
             feasible['left'] = False
-        if isinstance(right_intersect, (EmptySet, FiniteSet)) and right_intersect.is_empty:
+        if hasattr(right_intersect, 'is_empty') and right_intersect.is_empty:
             feasible['right'] = False
 
         # Early termination if both directions are ruled out
