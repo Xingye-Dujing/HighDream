@@ -160,7 +160,7 @@ def is_infinite(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
     """
     try:
         lim_val = limit(expr, var, point, dir=direction)
-        return lim_val == S.Infinity or lim_val == S.NegativeInfinity
+        return lim_val in (S.Infinity, S.NegativeInfinity)
     except Exception:
         return False
 
@@ -193,7 +193,6 @@ def is_constant(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
 
     try:
         lim = limit(expr, var, point, dir=direction)
-        # 检查是否为数值常数(非无穷, 非符号)
         return lim.is_real and not lim.has(oo, -oo, zoo)
     except Exception:
         return False

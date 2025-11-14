@@ -66,10 +66,6 @@ class BaseCalculator(ABC):
                 expr, operation, **context)
         return self.cache[key]
 
-    def _preprocess_expression(self, expr: Expr) -> Expr:
-        """Preprocess the expression before applying rules."""
-        return expr
-
     @staticmethod
     def _step_expr_postprocess(step_expr: Expr) -> Expr:
         """Postprocess a step expression before adding it to the step generator.
@@ -81,7 +77,7 @@ class BaseCalculator(ABC):
     @lru_cache(maxsize=128)
     def _cached_simplify(self, expr: Expr) -> Expr:
         """Return a simplified version of the expression, using caching to avoid redundant computation."""
-        return self._preprocess_expression(simplify(expr))
+        return simplify(expr)
 
     def _initialize_rules(self) -> None:
         """Register all rules and matchers."""
@@ -151,39 +147,52 @@ class BaseCalculator(ABC):
                 "假设所有变量为正实数, 化简表达式"
             )
 
+    def _sympify(self, expr: str) -> Expr:
+        """Convert the input expression to a SymPy expression."""
+        return sympify(expr)
+
     def _do_compute(self, expr: str, operation: Operation, **context: Context) -> None:
         """Perform the core symbolic computation and record each evaluation step."""
         self.reset_process()
-        expr = sympify(expr)
+        expr = self._sympify(expr)
 
         initial_operation = self._get_cached_result(expr, operation, **context)
         self.step_generator.add_step(initial_operation)
 
-        simple_expr = self._cached_simplify(expr)
-        if simple_expr != expr:
-            expr = simple_expr
-            initial_operation = self._get_cached_result(
-                expr, operation, **context)
-            self.step_generator.add_step(initial_operation, "简化表达式")
+        try:
+            simple_expr = self._cached_simplify(expr)
+            if simple_expr != expr:
+                expr = simple_expr
+                initial_operation = self._get_cached_result(
+                    expr, operation, **context)
+                self.step_generator.add_step(initial_operation, "简化表达式")
+        # Solve the problem: unhashable type: 'MutableDenseMatrix'
+        except Exception:
+            pass
 
         # BFS using a queue.
         queue: Deque[Expr] = deque([expr])
-        expr_to_operation: Dict[Expr, Operation] = {expr: initial_operation}
+        # Solve the problem: unhashable type: 'MutableDenseMatrix'
+        expr_key = str(expr)
+        expr_to_operation: Dict[Expr, Operation] = {
+            expr_key: initial_operation}
         # Avoid recomputing duplicate expressions.
-        seen = set([expr])
+        seen = set([expr_key])
 
         while queue:
             current_expr = queue.popleft()
-            current_operation = expr_to_operation.get(current_expr)
+            # Solve the problem: unhashable type: 'MutableDenseMatrix'
+            current_expr_key = str(current_expr)
+            current_operation = expr_to_operation.get(current_expr_key)
 
-            if current_expr in self.processed:
+            if current_expr_key in self.processed:
                 continue
-            self.processed.add(current_expr)
+            self.processed.add(current_expr_key)
 
             new_expr, explanation, expr_to_operation = self._update_expression(
                 current_expr, operation, expr_to_operation, **context)
 
-            current_step = expr_to_operation[expr]
+            current_step = expr_to_operation[expr_key]
             current_step = self._step_expr_postprocess(current_step)
             self.step_generator.add_step(current_step, explanation)
 
@@ -195,7 +204,7 @@ class BaseCalculator(ABC):
                     sub_expr = s.args[0]
                     if sub_expr not in seen:
                         seen.add(sub_expr)
-                        expr_to_operation[sub_expr] = s
+                        expr_to_operation[str(sub_expr)] = s
                         queue.append(sub_expr)
 
         # Final simplification

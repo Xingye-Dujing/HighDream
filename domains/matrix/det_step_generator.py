@@ -8,7 +8,7 @@ class DetStepGenerator(BaseStepGenerator):
         latex_str = "\\begin{align}"
 
         # 匹配对应的变换和原理
-        for i, (step, explanation) in enumerate(zip(self.steps, self.explanations)):
+        for i, (step, explanation) in enumerate(zip(self.steps, self._explanations)):
             if i == 0:
                 latex_str += '&' + latex(step)
             else:

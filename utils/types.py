@@ -1,8 +1,8 @@
 from typing import Dict, List, Protocol, Tuple, Union
-from sympy import Derivative, Expr, Integral, Limit, Symbol
+from sympy import Derivative, Determinant, Expr, Integral, Limit, Symbol
 
 # The operation to be performed.
-Operation = Union[Derivative, Integral, Limit]
+Operation = Union[Derivative, Determinant, Integral, Limit]
 # The evaluation context providing additional information.
 Context = Union[Symbol, Expr, str]
 RuleContext = Dict[str, Context]

@@ -431,8 +431,7 @@ def _choose_best_conversion(f: Expr, g: Expr, var: Symbol) -> str:
     # Prefer zero_over_zero in case of tie (often more stable numerically and symbolically)
     if zero_zero_complexity <= inf_inf_complexity:
         return "zero_over_zero"
-    else:
-        return "inf_over_inf"
+    return "inf_over_inf"
 
 
 def lhopital_direct_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
