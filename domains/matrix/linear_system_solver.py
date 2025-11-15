@@ -1,84 +1,14 @@
-from sympy import Matrix, sympify, latex, zeros, eye, simplify, symbols
+from sympy import latex, zeros, eye, symbols
 from IPython.display import display, Math
 
-from domains.matrix import CommonStepGenerator
+from core import CommonMatrixCalculator
 
 
-class LinearSystemSolver:
-
-    def __init__(self):
-        self.step_generator = CommonStepGenerator()
-
-    def simplify_matrix(self, matrix):
-        """
-        对矩阵的每个元素进行化简
-        """
-        simplified_matrix = zeros(matrix.rows, matrix.cols)
-
-        for i in range(matrix.rows):
-            for j in range(matrix.cols):
-                element = matrix[i, j]
-                simplified_element = simplify(element)
-                simplified_matrix[i, j] = simplified_element
-
-        return simplified_matrix
-
-    def parse_matrix_input(self, matrix_input):
-        """解析矩阵输入"""
-        try:
-            if isinstance(matrix_input, str):
-                matrix = Matrix(sympify(matrix_input))
-            else:
-                matrix = matrix_input
-            return matrix
-        except Exception as e:
-            raise ValueError(f"无法解析矩阵输入: {matrix_input}, 错误: {str(e)}") from e
-
-    def parse_vector_input(self, vector_input):
-        """解析向量输入"""
-        try:
-            if isinstance(vector_input, str):
-                # 处理向量输入，如 '[1,2,3]' 或 '[[1],[2],[3]]'
-                if vector_input.startswith('[[') and vector_input.endswith(']]'):
-                    vector = Matrix(sympify(vector_input))
-                else:
-                    # 转换为列向量格式
-                    vector_str = vector_input.strip('[]')
-                    elements = [sympify(x.strip())
-                                for x in vector_str.split(',')]
-                    vector = Matrix(elements)
-            else:
-                vector = vector_input
-            return vector
-        except Exception as e:
-            raise ValueError(f"无法解析向量输入: {vector_input}, 错误: {str(e)}") from e
-
-    def add_step(self, title):
-        """添加步骤标题"""
-        self.step_generator.add_step(title)
-
-    def add_matrix(self, matrix, name="M"):
-        """添加矩阵"""
-        self.step_generator.add_step(f"{name} = {latex(matrix)}")
-
-    def add_vector(self, vector, name="v"):
-        """添加向量"""
-        self.step_generator.add_step(f"{name} = {latex(vector)}")
-
-    def add_equation(self, equation):
-        """添加方程"""
-        self.step_generator.add_step(equation)
+class LinearSystemSolver(CommonMatrixCalculator):
 
     def display_steps(self):
         """显示所有步骤"""
         display(Math(self.step_generator.get_steps_latex()))
-
-    def get_steps_latex(self):
-        return self.step_generator.get_steps_latex()
-
-    def clear_steps(self):
-        """清除所有步骤"""
-        self.step_generator.clear()
 
     def display_system(self, A, b, variables=None):
         """显示线性方程组 Ax = b"""
@@ -236,7 +166,7 @@ class LinearSystemSolver:
 
     def solve_singular_system(self, A_input, b_input, show_steps=True):
         """处理奇异系统(方阵但行列式为0)"""
-        self.clear_steps()
+        self.step_generator.clear()
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
@@ -253,7 +183,7 @@ class LinearSystemSolver:
             self.add_matrix(augmented, "[A|\\boldsymbol{b}]")
 
         # 高斯-约当消元得到简化行阶梯形
-        rref_matrix, pivot_columns = augmented.rref()
+        rref_matrix, _ = augmented.rref()
 
         if show_steps:
             self.add_step("简化行阶梯形:")
@@ -366,7 +296,7 @@ class LinearSystemSolver:
 
     def solve_underdetermined_system(self, A_input, b_input, show_steps=True):
         """处理欠定方程组(引入自由变量)"""
-        self.clear_steps()
+        self.step_generator.clear()
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
@@ -383,7 +313,7 @@ class LinearSystemSolver:
             self.add_matrix(augmented, "[A|\\boldsymbol{b}]")
 
         # 高斯-约当消元得到简化行阶梯形
-        rref_matrix, pivot_columns = augmented.rref()
+        rref_matrix, _ = augmented.rref()
 
         if show_steps:
             self.add_step("简化行阶梯形:")
@@ -461,7 +391,7 @@ class LinearSystemSolver:
 
     def solve_overdetermined_system(self, A_input, b_input, show_steps=True, simplify_result=True):
         """处理超定方程组(最小二乘法)"""
-        self.clear_steps()
+        self.step_generator.clear()
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
@@ -518,7 +448,7 @@ class LinearSystemSolver:
 
     def solve_by_gaussian_elimination(self, A_input, b_input, show_steps=True):
         """方法一：高斯消元法"""
-        self.clear_steps()
+        self.step_generator.clear()
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
@@ -637,7 +567,7 @@ class LinearSystemSolver:
 
     def solve_by_gauss_jordan(self, A_input, b_input, show_steps=True):
         """方法二：高斯-约当消元法"""
-        self.clear_steps()
+        self.step_generator.clear()
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
@@ -742,7 +672,7 @@ class LinearSystemSolver:
 
     def solve_by_matrix_inverse(self, A_input, b_input, show_steps=True):
         """方法三：矩阵求逆法"""
-        self.clear_steps()
+        self.step_generator.clear()
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
@@ -816,7 +746,7 @@ class LinearSystemSolver:
 
     def solve_by_lu_decomposition(self, A_input, b_input, show_steps=True):
         """方法四：LU 分解法"""
-        self.clear_steps()
+        self.step_generator.clear()
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
@@ -945,7 +875,7 @@ class LinearSystemSolver:
 
     def solve_by_cramers_rule(self, A_input, b_input, show_steps=True):
         """方法五：克莱姆法则"""
-        self.clear_steps()
+        self.step_generator.clear()
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
@@ -1022,7 +952,7 @@ class LinearSystemSolver:
 
     def solve(self, A_input, b_input, method='auto', show_steps=True):
         """主求解函数"""
-        self.clear_steps()
+        self.step_generator.clear()
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
@@ -1086,13 +1016,13 @@ def demo_underdetermined_systems():
     for i, (A, b) in enumerate(under_systems, 1):
         solver.add_step(f"\\textbf{{欠定系统示例 {i}}}")
         try:
-            result = solver.solve_underdetermined_system(A, b)
+            solver.solve_underdetermined_system(A, b)
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
         except Exception as e:
             solver.add_step(f"\\text{{错误: }} {str(e)}")
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
 
 
 def demo_overdetermined_systems():
@@ -1117,11 +1047,11 @@ def demo_overdetermined_systems():
             if result is not None:
                 solver.add_vector(result, "\\boldsymbol{x}")
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
         except Exception as e:
             solver.add_step(f"\\text{{错误: }} {str(e)}")
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
 
 
 def demo_basic_systems():
@@ -1147,11 +1077,11 @@ def demo_basic_systems():
         try:
             solver.solve(A, b, method='auto', show_steps=True)
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
         except Exception as e:
             solver.add_step(f"\\text{{错误: }} {str(e)}")
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
 
 
 def demo_special_matrices():
@@ -1183,11 +1113,11 @@ def demo_special_matrices():
             # 使用高斯消元法演示特殊矩阵求解
             solver.solve_by_gaussian_elimination(A, b, show_steps=True)
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
         except Exception as e:
             solver.add_step(f"\\text{{错误: }} {str(e)}")
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
 
 
 def demo_singular_systems():
@@ -1223,13 +1153,13 @@ def demo_singular_systems():
     for name, A, b in singular_systems:
         solver.add_step(f"\\textbf{{{name}}}")
         try:
-            result = solver.solve(A, b, method='auto', show_steps=True)
+            solver.solve(A, b, method='auto', show_steps=True)
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
         except Exception as e:
             solver.add_step(f"\\text{{错误: }} {str(e)}")
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
 
 
 def demo_symbolic_systems():
@@ -1251,22 +1181,22 @@ def demo_symbolic_systems():
         solver.solve(symbolic_A_2x2, symbolic_b_2x2,
                      method='auto', show_steps=True)
         solver.display_steps()
-        solver.clear_steps()
+        solver.step_generator.clear()
     except Exception as e:
         solver.add_step(f"\\text{{错误: }} {str(e)}")
         solver.display_steps()
-        solver.clear_steps()
+        solver.step_generator.clear()
 
     solver.add_step("\\textbf{3×3 符号系统}")
     try:
         solver.solve(symbolic_A_3x3, symbolic_b_3x3,
                      method='auto', show_steps=True)
         solver.display_steps()
-        solver.clear_steps()
+        solver.step_generator.clear()
     except Exception as e:
         solver.add_step(f"\\text{{错误: }} {str(e)}")
         solver.display_steps()
-        solver.clear_steps()
+        solver.step_generator.clear()
 
 
 def demo_all_methods():
@@ -1290,13 +1220,13 @@ def demo_all_methods():
     for method_key, method_name in methods:
         solver.add_step(f"\\textbf{{{method_name}}}")
         try:
-            result = solver.solve(A, b, method=method_key, show_steps=True)
+            solver.solve(A, b, method=method_key, show_steps=True)
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
         except Exception as e:
             solver.add_step(f"\\text{{错误: }} {str(e)}")
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
 
 
 def demo_auto_solve():
@@ -1317,13 +1247,13 @@ def demo_auto_solve():
     for name, A, b in systems:
         solver.add_step(f"\\textbf{{{name}}}")
         try:
-            result = solver.solve(A, b, method='auto', show_steps=True)
+            solver.solve(A, b, method='auto', show_steps=True)
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
         except Exception as e:
             solver.add_step(f"\\text{{错误: }} {str(e)}")
             solver.display_steps()
-            solver.clear_steps()
+            solver.step_generator.clear()
 
 
 if __name__ == "__main__":

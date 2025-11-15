@@ -1,68 +1,11 @@
 from collections import Counter
-from sympy import Matrix, sympify, latex, zeros, eye, simplify, nsimplify, symbols, solve, factor, I
+from sympy import sympify, latex, zeros, eye, simplify, symbols, solve, factor, I
 from IPython.display import display, Math
 
-from domains.matrix import CommonStepGenerator
+from core import CommonMatrixCalculator
 
 
-class EigenSolver:
-
-    def __init__(self):
-        self.step_counter = 0
-        self.step_generator = CommonStepGenerator()
-
-    def add_step(self, title):
-        """显示步骤标题"""
-        self.step_counter += 1
-        self.step_generator.add_step(
-            f"\\textbf{{步骤 {self.step_counter}: }} \\text{{{title}}}")
-
-    def add_matrix(self, matrix, name="A"):
-        """显示矩阵"""
-        self.step_generator.add_step(f"{name} = {latex(matrix)}")
-
-    def add_equation(self, equation):
-        """显示方程"""
-        self.step_generator.add_step(equation)
-
-    def get_steps_latex(self):
-        return self.step_generator.get_steps_latex()
-
-    def simplify_matrix(self, matrix, method='auto'):
-        """
-        对矩阵的每个元素进行化简
-        """
-        if method == 'auto':
-            has_symbols = any(any(element.free_symbols for element in row)
-                              for row in matrix.tolist())
-            method = 'simplify' if has_symbols else 'nsimplify'
-
-        simplified_matrix = zeros(matrix.rows, matrix.cols)
-
-        for i in range(matrix.rows):
-            for j in range(matrix.cols):
-                element = matrix[i, j]
-                if method == 'simplify':
-                    simplified_element = simplify(element)
-                elif method == 'nsimplify':
-                    simplified_element = nsimplify(element, rational=True)
-                else:
-                    simplified_element = element
-
-                simplified_matrix[i, j] = simplified_element
-
-        return simplified_matrix
-
-    def parse_matrix_input(self, matrix_input):
-        """解析矩阵输入"""
-        try:
-            if isinstance(matrix_input, str):
-                matrix = Matrix(sympify(matrix_input))
-            else:
-                matrix = matrix_input
-            return matrix
-        except Exception as e:
-            raise ValueError(f"无法解析矩阵输入: {matrix_input}, 错误: {str(e)}") from e
+class EigenSolver(CommonMatrixCalculator):
 
     def format_lambda_I(self, eigenvalue):
         """为复数或符号特征值添加括号"""
@@ -165,14 +108,14 @@ class EigenSolver:
                 product = matrix * A_T
                 if simplify(product - eye(n)) == zeros(n, n):
                     special_types.append("正交矩阵")
-        except:
+        except Exception:
             pass
 
         # 检查幂等矩阵
         try:
             if simplify(matrix * matrix - matrix) == zeros(n, n):
                 special_types.append("幂等矩阵")
-        except:
+        except Exception:
             pass
 
         # 检查幂零矩阵
@@ -187,7 +130,7 @@ class EigenSolver:
                 current_power = current_power * matrix
             if is_nilpotent:
                 special_types.append("幂零矩阵")
-        except:
+        except Exception:
             pass
 
         if show_steps and special_types:
@@ -300,7 +243,7 @@ class EigenSolver:
                 self.step_generator.add_step(
                     f"\\text{{因式分解: }} \\det(A - \\lambda I) = {latex(char_poly_factored)}")
                 char_poly_simplified = char_poly_factored
-        except:
+        except Exception:
             if show_steps:
                 self.step_generator.add_step(r"\text{无法进行因式分解}")
 
@@ -321,7 +264,7 @@ class EigenSolver:
         eigenvalue_counts = Counter(eigenvalues)
 
         if show_steps:
-            part = ',\;'.join(
+            part = rf',\;'.join(
                 [f'\\lambda_{{{i+1}}} = {latex(eig)}' for i, eig in enumerate(eigenvalues)])
             self.step_generator.add_step(f"\\text{{特征值: }} {part}")
 

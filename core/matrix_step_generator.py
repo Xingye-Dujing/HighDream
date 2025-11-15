@@ -1,7 +1,7 @@
 from typing import List
 
 
-class CommonStepGenerator():
+class MatrixStepGenerator():
     def __init__(self):
         self.steps = []
 

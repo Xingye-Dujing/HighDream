@@ -1,4 +1,3 @@
-from .common_step_generator import CommonStepGenerator
 from .det_step_generator import DetStepGenerator
 from .ref_branch_manager import BranchManager, BranchNode
 from .ref_step_generator import RefStepGenerator

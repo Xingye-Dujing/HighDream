@@ -1,48 +1,10 @@
-from sympy import Matrix, sympify, latex, zeros, eye, symbols, Symbol
+from sympy import Matrix, latex, zeros, eye, symbols, Symbol
 from IPython.display import display, Math
 
-from domains.matrix import CommonStepGenerator
+from core import CommonMatrixCalculator
 
 
-class LUDecomposition:
-
-    def __init__(self):
-        self.step_counter = 0
-        self.step_generator = CommonStepGenerator()
-
-    def add_step(self, title):
-        """显示步骤标题"""
-        self.step_counter += 1
-        self.step_generator.add_step(
-            f"\\textbf{{步骤 {self.step_counter}: }} \\text{{{title}}}")
-
-    def clear_steps(self):
-        """清除步骤记录"""
-        self.step_counter = 0
-        self.step_generator.clear()
-
-    def get_steps_latex(self):
-        """获取步骤的LaTeX格式"""
-        return self.step_generator.get_steps_latex()
-
-    def add_matrix(self, matrix, name="M"):
-        """添加矩阵到步骤"""
-        self.step_generator.add_step(f"{name} = {latex(matrix)}")
-
-    def add_equation(self, equation):
-        """添加方程到步骤"""
-        self.step_generator.add_step(equation)
-
-    def parse_matrix_input(self, matrix_input):
-        """解析矩阵输入"""
-        try:
-            if isinstance(matrix_input, str):
-                matrix = Matrix(sympify(matrix_input))
-            else:
-                matrix = matrix_input
-            return matrix
-        except:
-            raise ValueError(f"无法解析矩阵输入: {matrix_input}")
+class LUDecomposition(CommonMatrixCalculator):
 
     def is_square(self, matrix):
         """检查是否为方阵"""
@@ -54,7 +16,7 @@ class LUDecomposition:
         通过高斯消元过程得到 U, 同时记录消元系数得到 L
         """
         if show_steps:
-            self.clear_steps()
+            self.step_generator.clear()
             self.step_generator.add_step(r"\textbf{方法一: 高斯消元法}")
 
         A = self.parse_matrix_input(matrix_input)
@@ -146,7 +108,7 @@ class LUDecomposition:
         通过直接计算 L 和 U 的元素, 利用矩阵乘法规则
         """
         if show_steps:
-            self.clear_steps()
+            self.step_generator.clear()
             self.step_generator.add_step(r"\textbf{方法二: 假设形式, 待定系数法}")
 
         A = self.parse_matrix_input(matrix_input)
@@ -295,7 +257,7 @@ class LUDecomposition:
         L 的对角线元素为1, U 的对角线元素需要计算
         """
         if show_steps:
-            self.clear_steps()
+            self.step_generator.clear()
             self.step_generator.add_step(r"\textbf{方法三: 另一种假设形式法}")
 
         A = self.parse_matrix_input(matrix_input)
@@ -443,7 +405,7 @@ class LUDecomposition:
         返回 P, L, U 使得 PA = LU
         """
         if show_steps:
-            self.clear_steps()
+            self.step_generator.clear()
             self.step_generator.add_step(r"\textbf{PLU 分解 (带部分主元选择)}")
 
         A = self.parse_matrix_input(matrix_input)
@@ -582,7 +544,7 @@ class LUDecomposition:
         检查矩阵是否满足LU分解的条件
         """
         if show_steps:
-            self.clear_steps()
+            self.step_generator.clear()
             self.step_generator.add_step(r"\textbf{检查LU分解条件}")
 
         A = self.parse_matrix_input(matrix_input)
@@ -637,7 +599,7 @@ class LUDecomposition:
         根据矩阵条件自动判断是否需要行交换
         """
         if show_steps:
-            self.clear_steps()
+            self.step_generator.clear()
             self.step_generator.add_step(r"\textbf{自动 LU/PLU 分解}")
 
         A = self.parse_matrix_input(matrix_input)

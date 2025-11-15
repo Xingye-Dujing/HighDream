@@ -1,41 +1,10 @@
-from sympy import Matrix, sympify, latex, zeros, eye, symbols
+from sympy import Matrix, sympify, latex, zeros, symbols
 from IPython.display import display, Math
 
-from domains.matrix import CommonStepGenerator
+from core import CommonMatrixCalculator
 
 
-class BasicOperations:
-
-    def __init__(self):
-        self.step_generator = CommonStepGenerator()
-
-    def add_step(self, title):
-        """显示步骤标题"""
-        self.step_generator.add_step(
-            f"\\text{{{title}}}")
-
-    def add_matrix(self, matrix, name="A"):
-        """显示矩阵"""
-        self.step_generator.add_step(f"{name} = {latex(matrix)}")
-
-    def add_vector(self, vector, name="x"):
-        """显示向量"""
-        self.step_generator.add_step(f"{name} = {latex(vector)}")
-
-    def get_steps_latex(self):
-        return self.step_generator.get_steps_latex()
-
-    def parse_matrix_input(self, matrix_input):
-        try:
-            if isinstance(matrix_input, str):
-                matrix = Matrix(sympify(matrix_input))
-            elif isinstance(matrix_input, list):
-                matrix = Matrix(matrix_input)
-            else:
-                matrix = matrix_input
-            return matrix
-        except:
-            self.add_step(f"无法解析矩阵输入: {matrix_input}")
+class BasicOperations(CommonMatrixCalculator):
 
     def matrix_addition(self, A_input, B_input, show_steps=True, is_clear=True):
         """
@@ -430,7 +399,7 @@ def demo():
     # 1. 矩阵加法
     ops.step_generator.add_step(r"\textbf{1. 矩阵加法}")
     try:
-        result_add = ops.matrix_addition(A_str, B_str)
+        ops.matrix_addition(A_str, B_str)
         display(Math(ops.get_steps_latex()))
     except Exception as e:
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
@@ -440,7 +409,7 @@ def demo():
     ops.step_generator.clear()
     ops.step_generator.add_step(r"\textbf{2. 矩阵减法}")
     try:
-        result_sub = ops.matrix_subtraction(A_str, B_str)
+        ops.matrix_subtraction(A_str, B_str)
         display(Math(ops.get_steps_latex()))
     except Exception as e:
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
@@ -450,7 +419,7 @@ def demo():
     ops.step_generator.clear()
     ops.step_generator.add_step(r"\textbf{3. 矩阵乘法}")
     try:
-        result_mul = ops.matrix_multiplication(C_str, D_str)
+        ops.matrix_multiplication(C_str, D_str)
         display(Math(ops.get_steps_latex()))
     except Exception as e:
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
@@ -460,7 +429,7 @@ def demo():
     ops.step_generator.clear()
     ops.step_generator.add_step(r"\textbf{4. 标量乘法}")
     try:
-        result_scalar = ops.scalar_multiplication(2, A_str)
+        ops.scalar_multiplication(2, A_str)
         display(Math(ops.get_steps_latex()))
     except Exception as e:
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
@@ -470,7 +439,7 @@ def demo():
     ops.step_generator.clear()
     ops.step_generator.add_step(r"\textbf{5. 矩阵转置}")
     try:
-        result_transpose = ops.transpose(C_str)
+        ops.transpose(C_str)
         display(Math(ops.get_steps_latex()))
     except Exception as e:
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
@@ -480,7 +449,7 @@ def demo():
     ops.step_generator.clear()
     ops.step_generator.add_step(r"\textbf{6. 向量点积}")
     try:
-        result_dot = ops.dot_product(v1_str, v2_str)
+        ops.dot_product(v1_str, v2_str)
         display(Math(ops.get_steps_latex()))
     except Exception as e:
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
@@ -490,7 +459,7 @@ def demo():
     ops.step_generator.clear()
     ops.step_generator.add_step(r"\textbf{7. 向量叉积}")
     try:
-        result_cross = ops.cross_product(v1_str, v2_str)
+        ops.cross_product(v1_str, v2_str)
         display(Math(ops.get_steps_latex()))
     except Exception as e:
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
@@ -511,7 +480,7 @@ def demo_symbolic():
     # 符号矩阵加法
     ops.step_generator.add_step(r"\textbf{符号矩阵加法}")
     try:
-        result_sym_add = ops.matrix_addition(A_sym, B_sym)
+        ops.matrix_addition(A_sym, B_sym)
         display(Math(ops.get_steps_latex()))
     except Exception as e:
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
@@ -519,7 +488,7 @@ def demo_symbolic():
 
     ops.step_generator.add_step(r"\textbf{符号矩阵减法}")
     try:
-        result_sym_sub = ops.matrix_subtraction(A_sym, B_sym)
+        ops.matrix_subtraction(A_sym, B_sym)
         display(Math(ops.get_steps_latex()))
     except Exception as e:
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
@@ -527,7 +496,7 @@ def demo_symbolic():
 
     ops.step_generator.add_step(r"\textbf{符号矩阵标量乘法}")
     try:
-        result_sym_scalar = ops.scalar_multiplication(2, A_sym)
+        ops.scalar_multiplication(2, A_sym)
         display(Math(ops.get_steps_latex()))
     except Exception as e:
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
@@ -536,7 +505,7 @@ def demo_symbolic():
     # 符号矩阵乘法
     ops.step_generator.add_step(r"\textbf{符号矩阵乘法}")
     try:
-        result_sym_mul = ops.matrix_multiplication(
+        ops.matrix_multiplication(
             A_sym, B_sym)
         display(Math(ops.get_steps_latex()))
     except Exception as e:
@@ -545,7 +514,7 @@ def demo_symbolic():
 
     ops.step_generator.add_step(r"\textbf{符号矩阵转置}")
     try:
-        result_sym_transpose = ops.transpose(A_sym)
+        ops.transpose(A_sym)
         display(Math(ops.get_steps_latex()))
     except Exception as e:
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")

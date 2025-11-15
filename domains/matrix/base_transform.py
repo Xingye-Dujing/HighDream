@@ -1,44 +1,10 @@
 from sympy import Matrix, latex, sympify, symbols
 from IPython.display import display, Math
 
-from domains.matrix import CommonStepGenerator
+from core import CommonMatrixCalculator
 
 
-class BaseTransform:
-
-    def __init__(self):
-        self.step_generator = CommonStepGenerator()
-
-    def add_step(self, title):
-        """显示步骤标题"""
-        self.step_generator.add_step(f"\\text{{{title}}}")
-
-    def add_matrix(self, matrix, name="A"):
-        """显示矩阵"""
-        self.step_generator.add_step(f"{name} = {latex(matrix)}")
-
-    def add_vector(self, vector, name="x"):
-        """显示向量"""
-        self.step_generator.add_step(f"{name} = {latex(vector)}")
-
-    def get_steps_latex(self):
-        return self.step_generator.get_steps_latex()
-
-    def parse_input(self, basis_input):
-        """解析基输入"""
-        try:
-            if isinstance(basis_input, str):
-                # 解析字符串输入
-                basis_matrix = Matrix(sympify(basis_input))
-            elif isinstance(basis_input, list):
-                # 列表输入
-                basis_matrix = Matrix(basis_input)
-            else:
-                basis_matrix = basis_input
-
-            return basis_matrix
-        except Exception as e:
-            raise ValueError(f"无法解析基输入: {basis_input}, 错误: {str(e)}") from e
+class BaseTransform(CommonMatrixCalculator):
 
     def show_input(self, basis_matrix, name="基", vector_names=None):
         self.add_step(f"{name}组成的矩阵")
@@ -78,8 +44,8 @@ class BaseTransform:
 
         # 解析输入
         if need_parse:
-            old_basis = self.parse_input(old_basis)
-            new_basis = self.parse_input(new_basis)
+            old_basis = self.parse_matrix_input(old_basis)
+            new_basis = self.parse_matrix_input(new_basis)
             self.show_input(old_basis, "旧基",
                             [f"\\boldsymbol{{v}}_{{{i+1}}}" for i in range(old_basis.cols)])
             self.show_input(new_basis, "新基",
@@ -95,7 +61,7 @@ class BaseTransform:
         try:
             try:
                 old_basis_inv = old_basis.inv()
-            except:
+            except Exception:
                 self.step_generator.add_step(
                     r"\text{V 不可逆, 这意味着 V 的列向量线性相关, 不构成基}")
                 return None
@@ -120,8 +86,8 @@ class BaseTransform:
 
         # 解析输入
         vector = self.parse_vector_input(vector_input, "[\\boldsymbol{x}]_{V}")
-        from_basis = self.parse_input(from_basis_input)
-        to_basis = self.parse_input(to_basis_input)
+        from_basis = self.parse_matrix_input(from_basis_input)
+        to_basis = self.parse_matrix_input(to_basis_input)
         self.show_input(from_basis, "旧基")
         self.show_input(to_basis, "新基", [
                         f"\\boldsymbol{{u}}_{{{i+1}}}" for i in range(to_basis.rows)])
@@ -173,7 +139,7 @@ class BaseTransform:
             self.step_generator.add_step(r"\textbf{坐标变换: 从标准基到给定基}")
 
         vector = self.parse_vector_input(vector_input, "\\boldsymbol{x}")
-        basis = self.parse_input(basis_input)
+        basis = self.parse_matrix_input(basis_input)
         self.show_input(basis, "目标基")
 
         self.add_step("计算向量在新基下的坐标")
@@ -198,7 +164,7 @@ class BaseTransform:
 
         coordinates = self.parse_vector_input(
             coordinates_input, r"[\boldsymbol{x}]_{V}")
-        basis = self.parse_input(basis_input)
+        basis = self.parse_matrix_input(basis_input)
         self.show_input(basis, "当前基")
 
         self.add_step("计算向量在标准基下的表示")

@@ -1,43 +1,10 @@
-from sympy import Matrix, sympify, latex, zeros, eye, symbols, simplify, sqrt
+from sympy import latex, zeros, eye, symbols, simplify, sqrt
 from IPython.display import display, Math
-from domains.matrix import CommonStepGenerator
+
+from core import CommonMatrixCalculator
 
 
-class SchurDecomposition:
-
-    def __init__(self):
-        self.step_generator = CommonStepGenerator()
-
-    def add_step(self, title):
-        """显示步骤标题"""
-        self.step_generator.add_step(
-            f"\\text{{{title}}}")
-
-    def add_matrix(self, matrix, name="M"):
-        """显示矩阵"""
-        self.step_generator.add_step(f"{name} = {latex(matrix)}")
-
-    def add_vector(self, vector, name="v"):
-        """显示向量"""
-        self.step_generator.add_step(f"{name} = {latex(vector)}")
-
-    def add_equation(self, equation):
-        """显示方程"""
-        self.step_generator.add_step(equation)
-
-    def get_steps_latex(self):
-        return self.step_generator.get_steps_latex()
-
-    def parse_matrix_input(self, matrix_input):
-        """解析矩阵输入"""
-        try:
-            if isinstance(matrix_input, str):
-                matrix = Matrix(sympify(matrix_input))
-            else:
-                matrix = matrix_input
-            return matrix
-        except:
-            raise ValueError(f"无法解析矩阵输入: {matrix_input}")
+class SchurDecomposition(CommonMatrixCalculator):
 
     def is_square(self, matrix):
         """检查是否为方阵"""
@@ -436,7 +403,7 @@ class SchurDecomposition:
                 self.step_generator.add_step("\\text{检测到正规矩阵, 尝试直接法}")
             try:
                 return self.schur_decomposition_direct(matrix_input, show_steps)
-            except:
+            except Exception:
                 if show_steps:
                     self.step_generator.add_step("\\text{直接法失败, 使用迭代法}")
                 return self.schur_decomposition_iterative(matrix_input, show_steps)
@@ -505,7 +472,7 @@ def demo_convergence():
 
     schur.step_generator.add_step(r"\text{收敛性测试}")
     A_slow = '[[2,1,1],[1,3,1],[1,1,4]]'
-    Q, T = schur.schur_decomposition_iterative(A_slow)
+    _, T = schur.schur_decomposition_iterative(A_slow)
 
     schur.step_generator.add_step(r"\text{最终上三角矩阵 T: }")
     schur.add_matrix(T, "T")

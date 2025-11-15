@@ -1,109 +1,10 @@
-from sympy import Matrix, sympify, latex, zeros, simplify, nsimplify, eye, Symbol
+from sympy import latex, zeros, simplify, eye, Symbol
 from IPython.display import display, Math
 
-from domains.matrix import CommonStepGenerator
+from core import CommonMatrixCalculator
 
 
-class OrthogonalProcessor:
-
-    def __init__(self):
-        self.step_generator = CommonStepGenerator()
-
-    def add_step(self, title):
-        """显示步骤标题"""
-        self.step_generator.add_step(
-            f"\\text{{{title}}}")
-
-    def add_matrix(self, matrix, name="A"):
-        """显示矩阵"""
-        self.step_generator.add_step(f"{name} = {latex(matrix)}")
-
-    def add_vector(self, vector, name="v"):
-        """显示向量"""
-        self.step_generator.add_step(
-            f"\\boldsymbol{{{name}}} = {latex(vector)}")
-
-    def add_equation(self, equation):
-        """显示方程"""
-        self.step_generator.add_step(equation)
-
-    def get_steps_latex(self):
-        return self.step_generator.get_steps_latex()
-
-    def simplify_matrix(self, matrix, method='auto'):
-        """
-        对矩阵的每个元素进行化简
-        """
-        if method == 'auto':
-            has_symbols = any(any(element.free_symbols for element in row)
-                              for row in matrix.tolist())
-            method = 'simplify' if has_symbols else 'nsimplify'
-
-        simplified_matrix = zeros(matrix.rows, matrix.cols)
-
-        for i in range(matrix.rows):
-            for j in range(matrix.cols):
-                element = matrix[i, j]
-                if method == 'simplify':
-                    simplified_element = simplify(element)
-                elif method == 'nsimplify':
-                    simplified_element = nsimplify(element, rational=True)
-                else:
-                    simplified_element = element
-
-                simplified_matrix[i, j] = simplified_element
-
-        return simplified_matrix
-
-    def parse_vector_input(self, vector_input):
-        """解析向量输入"""
-        try:
-            if isinstance(vector_input, str):
-                if vector_input.startswith('[[') and vector_input.endswith(']]'):
-                    vector = Matrix(sympify(vector_input))
-                else:
-                    vector_str = vector_input.strip('[]')
-                    elements = [sympify(x.strip())
-                                for x in vector_str.split(',')]
-                    vector = Matrix(elements)
-            else:
-                vector = vector_input
-
-            # 确保是列向量
-            if vector.cols > 1:
-                vector = vector.T
-            return vector
-        except Exception as e:
-            raise ValueError(f"无法解析向量输入: {vector_input}, 错误: {str(e)}") from e
-
-    def parse_matrix_input(self, matrix_input):
-        """解析矩阵输入"""
-        try:
-            if isinstance(matrix_input, str):
-                matrix = Matrix(sympify(matrix_input))
-            elif isinstance(matrix_input, list):
-                # 处理向量列表
-                if all(isinstance(v, Matrix) for v in matrix_input):
-                    # 如果输入是Matrix对象列表
-                    if len(matrix_input) == 0:
-                        return Matrix([])
-                    # 检查所有向量维度是否相同
-                    dim = matrix_input[0].rows
-                    if any(v.rows != dim for v in matrix_input):
-                        raise ValueError("所有向量必须具有相同的维度")
-                    # 将向量组合成矩阵（每列是一个向量）
-                    matrix = zeros(dim, len(matrix_input))
-                    for i, vec in enumerate(matrix_input):
-                        for j in range(dim):
-                            matrix[j, i] = vec[j]
-                else:
-                    # 如果是数字或符号列表的列表
-                    matrix = Matrix(matrix_input)
-            else:
-                matrix = matrix_input
-            return matrix
-        except Exception as e:
-            raise ValueError(f"无法解析矩阵输入: {matrix_input}, 错误: {str(e)}") from e
+class OrthogonalProcessor(CommonMatrixCalculator):
 
     def check_special_cases_orthogonal_set(self, vectors_input, show_steps=True):
         """检查正交集的特殊情况"""
@@ -416,8 +317,8 @@ class OrthogonalProcessor:
         if show_steps:
             self.add_step("Gram-Schmidt 过程完成")
             # 化简矩阵
-            Q = self.simplify_matrix(Q, "auto")
-            R = self.simplify_matrix(R, "auto")
+            Q = self.simplify_matrix(Q)
+            R = self.simplify_matrix(R)
             self.add_matrix(Q, "Q")
             self.add_matrix(R, "R")
 
@@ -513,7 +414,7 @@ class OrthogonalProcessor:
 
         try:
             A = self.parse_matrix_input(input_data)
-        except:
+        except Exception:
             # 可能是单个向量
             A = self.parse_vector_input(input_data)
             A = A.T  # 转换为行向量以便统一处理
@@ -638,7 +539,7 @@ def demo_gram_schmidt():
     for name, vectors in test_cases:
         processor.step_generator.add_step(f"\\textbf{{{name}}}")
         try:
-            Q, R = processor.gram_schmidt_orthonormalization(vectors)
+            processor.gram_schmidt_orthonormalization(vectors)
         except Exception as e:
             processor.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(processor.get_steps_latex()))
@@ -664,7 +565,7 @@ def demo_qr_decomposition():
     for name, matrix in test_cases:
         processor.step_generator.add_step(f"\\textbf{{{name}}}")
         try:
-            Q, R = processor.qr_decomposition(matrix)
+            processor.qr_decomposition(matrix)
         except Exception as e:
             processor.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
 

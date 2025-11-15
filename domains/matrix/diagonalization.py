@@ -1,40 +1,10 @@
-from sympy import Matrix, sympify, latex, eye, symbols, simplify, diag, factor, I
+from sympy import Matrix, latex, eye, symbols, simplify, diag, factor, I
 from IPython.display import display, Math
 
-from domains.matrix import CommonStepGenerator
+from core import CommonMatrixCalculator
 
 
-class Diagonalization:
-
-    def __init__(self):
-        self.step_generator = CommonStepGenerator()
-
-    def add_step(self, title):
-        """显示步骤标题"""
-        self.step_generator.add_step(
-            f"\\text{{{title}}}")
-
-    def add_matrix(self, matrix, name="M"):
-        """显示矩阵"""
-        self.step_generator.add_step(f"{name} = {latex(matrix)}")
-
-    def add_equation(self, equation):
-        """显示方程"""
-        self.step_generator.add_step(equation)
-
-    def get_steps_latex(self):
-        return self.step_generator.get_steps_latex()
-
-    def parse_matrix_input(self, matrix_input):
-        """解析矩阵输入"""
-        try:
-            if isinstance(matrix_input, str):
-                matrix = Matrix(sympify(matrix_input))
-            else:
-                matrix = matrix_input
-            return matrix
-        except:
-            raise ValueError(f"无法解析矩阵输入: {matrix_input}")
+class Diagonalization(CommonMatrixCalculator):
 
     def is_square(self, matrix):
         """检查是否为方阵"""
@@ -161,7 +131,7 @@ class Diagonalization:
         # 获取特征值和特征向量
         eigenvects = A.eigenvects()
 
-        for eigenval, multiplicity, eigenvectors in eigenvects:
+        for eigenval, _, eigenvectors in eigenvects:
             if show_steps:
                 self.step_generator.add_step(
                     f"\\text{{特征值 }} \\lambda = {latex(eigenval)}:")
@@ -201,14 +171,12 @@ class Diagonalization:
             self.add_matrix(A, "A")
 
         # 检查对角化条件
-        diagonalizable, eigenvalues, conditions = self.check_diagonalizable_conditions(
+        diagonalizable, eigenvalues, _ = self.check_diagonalizable_conditions(
             matrix_input, show_steps, is_clear=False
         )
 
         if not diagonalizable:
             raise ValueError("矩阵不可对角化")
-
-        n = A.rows
 
         # 计算特征向量
         eigenvectors_dict = self.compute_eigenvectors(
@@ -242,7 +210,7 @@ class Diagonalization:
             eigenval_positions = []
             pos = 1
             for eigenval, multiplicity in eigenvalues.items():
-                for i in range(multiplicity):
+                for _ in range(multiplicity):
                     eigenval_positions.append(
                         f"D_{{{pos}{pos}}} = {latex(eigenval)}")
                     pos += 1
@@ -256,11 +224,11 @@ class Diagonalization:
             P_inv = P.inv()
             if show_steps:
                 self.add_matrix(P_inv, "P^{-1}")
-        except:
+        except Exception as e:
             if show_steps:
                 self.step_generator.add_step(
                     r"\text{警告: 矩阵 P 不可逆, 这可能意味着特征向量线性相关}")
-            raise ValueError("特征向量矩阵不可逆")
+            raise ValueError("特征向量矩阵不可逆") from e
 
         # 验证分解
         if show_steps:
@@ -307,7 +275,7 @@ class Diagonalization:
             self.step_generator.add_step(r"\text{2. 存在正交矩阵 Q 使得 } A = Q D Q^T")
 
         # 进行标准对角化
-        P, D, P_inv = self.diagonalize_matrix(
+        P, D, _ = self.diagonalize_matrix(
             matrix_input, show_steps, normalize=True, is_clear=False)
 
         # 对于对称矩阵, P 应该是正交矩阵
@@ -379,7 +347,7 @@ class Diagonalization:
             self.add_matrix(A, "A")
 
         # 检查是否可对角化
-        diagonalizable, eigenvalues, conditions = self.check_diagonalizable_conditions(
+        diagonalizable, eigenvalues, _ = self.check_diagonalizable_conditions(
             matrix_input, show_steps=False, is_clear=False
         )
 
@@ -424,14 +392,14 @@ class Diagonalization:
 # 演示函数
 def demo_diagonalization():
     """演示对角化分解"""
-    diag = Diagonalization()
+    diag_1 = Diagonalization()
 
     # 可对角化矩阵示例
     A1 = '[[4, -2], [1, 1]]'
     A2 = '[[2, 0, 0], [0, 3, 0], [0, 0, 1]]'  # 对角矩阵
     A3 = '[[1, 2, 0], [2, 1, 0], [0, 0, 3]]'  # 对称矩阵
 
-    diag.step_generator.add_step(r"\textbf{可对角化矩阵演示}")
+    diag_1.step_generator.add_step(r"\textbf{可对角化矩阵演示}")
 
     cases = [
         ("一般可对角化矩阵", A1),
@@ -440,24 +408,24 @@ def demo_diagonalization():
     ]
 
     for name, matrix in cases:
-        diag.step_generator.add_step(f"\\textbf{{{name}}}")
+        diag_1.step_generator.add_step(f"\\textbf{{{name}}}")
         try:
-            diag.auto_diagonalization(matrix)
-            display(Math(diag.get_steps_latex()))
+            diag_1.auto_diagonalization(matrix)
+            display(Math(diag_1.get_steps_latex()))
         except Exception as e:
-            diag.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(diag.get_steps_latex()))
+            diag_1.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+            display(Math(diag_1.get_steps_latex()))
 
 
 def demo_non_diagonalizable():
     """演示不可对角化矩阵"""
-    diag = Diagonalization()
+    diag_2 = Diagonalization()
 
     # 不可对角化矩阵示例
     A1 = '[[1, 1], [0, 1]]'
     A2 = '[[2, 1, 0], [0, 2, 1], [0, 0, 2]]'
 
-    diag.step_generator.add_step(r"\textbf{不可对角化矩阵演示}")
+    diag_2.step_generator.add_step(r"\textbf{不可对角化矩阵演示}")
 
     cases = [
         ("示例 1", A1),
@@ -465,24 +433,24 @@ def demo_non_diagonalizable():
     ]
 
     for name, matrix in cases:
-        diag.step_generator.add_step(f"\\textbf{{{name}}}")
+        diag_2.step_generator.add_step(f"\\textbf{{{name}}}")
         try:
-            diag.auto_diagonalization(matrix)
-            display(Math(diag.get_steps_latex()))
+            diag_2.auto_diagonalization(matrix)
+            display(Math(diag_2.get_steps_latex()))
         except Exception as e:
-            diag.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(diag.get_steps_latex()))
+            diag_2.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+            display(Math(diag_2.get_steps_latex()))
 
 
 def demo_complex():
     """演示复数矩阵对角化"""
-    diag = Diagonalization()
+    diag_3 = Diagonalization()
 
     # 复数矩阵示例
     A1 = '[[0, -1], [1, 0]]'  # 旋转矩阵
     A2 = '[[1, -2], [2, 1]]'  # 有复特征值
 
-    diag.step_generator.add_step(r"\textbf{复数矩阵对角化演示}")
+    diag_3.step_generator.add_step(r"\textbf{复数矩阵对角化演示}")
 
     cases = [
         ("旋转矩阵", A1),
@@ -490,25 +458,25 @@ def demo_complex():
     ]
 
     for name, matrix in cases:
-        diag.step_generator.add_step(f"\\textbf{{{name}}}")
+        diag_3.step_generator.add_step(f"\\textbf{{{name}}}")
         try:
-            diag.auto_diagonalization(matrix)
-            display(Math(diag.get_steps_latex()))
+            diag_3.auto_diagonalization(matrix)
+            display(Math(diag_3.get_steps_latex()))
         except Exception as e:
-            diag.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(diag.get_steps_latex()))
+            diag_3.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+            display(Math(diag_3.get_steps_latex()))
 
 
 def demo_special_cases():
     """演示特殊情况"""
-    diag = Diagonalization()
+    diag_4 = Diagonalization()
 
     # 特殊情况示例
     A1 = '[[1, 0, 0], [0, 1, 0], [0, 0, 1]]'  # 单位矩阵
     A2 = '[[2, 1], [0, 2]]'  # 不可对角化
     A3 = '[[3, 1, 0], [0, 3, 0], [0, 0, 4]]'  # 不可对角化
 
-    diag.step_generator.add_step(r"\textbf{特殊情况演示}")
+    diag_4.step_generator.add_step(r"\textbf{特殊情况演示}")
 
     cases = [
         ("单位矩阵", A1),
@@ -517,13 +485,13 @@ def demo_special_cases():
     ]
 
     for name, matrix in cases:
-        diag.step_generator.add_step(f"\\textbf{{{name}}}")
+        diag_4.step_generator.add_step(f"\\textbf{{{name}}}")
         try:
-            diag.auto_diagonalization(matrix)
-            display(Math(diag.get_steps_latex()))
+            diag_4.auto_diagonalization(matrix)
+            display(Math(diag_4.get_steps_latex()))
         except Exception as e:
-            diag.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(diag.get_steps_latex()))
+            diag_4.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+            display(Math(diag_4.get_steps_latex()))
 
 
 if __name__ == "__main__":

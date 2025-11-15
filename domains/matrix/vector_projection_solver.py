@@ -1,91 +1,10 @@
-from sympy import Matrix, sympify, latex, zeros, simplify, nsimplify
+from sympy import latex, zeros
 from IPython.display import display, Math
-from domains.matrix import CommonStepGenerator
+
+from core import CommonMatrixCalculator
 
 
-class VectorProjectionSolver:
-
-    def __init__(self):
-        self.step_counter = 0
-        self.step_generator = CommonStepGenerator()
-
-    def add_step(self, title):
-        """显示步骤标题"""
-        self.step_counter += 1
-        self.step_generator.add_step(
-            f"\\textbf{{步骤 {self.step_counter}: }} \\text{{{title}}}")
-
-    def add_vector(self, vector, name="v"):
-        """显示向量"""
-        self.step_generator.add_step(f"{name} = {latex(vector)}")
-
-    def add_matrix(self, matrix, name="M"):
-        """显示矩阵"""
-        self.step_generator.add_step(f"{name} = {latex(matrix)}")
-
-    def add_equation(self, equation):
-        """显示方程"""
-        self.step_generator.add_step(equation)
-
-    def get_steps_latex(self):
-        return self.step_generator.get_steps_latex()
-
-    def simplify_matrix(self, matrix, method='auto'):
-        """
-        对矩阵的每个元素进行化简
-        """
-        if method == 'auto':
-            has_symbols = any(any(element.free_symbols for element in row)
-                              for row in matrix.tolist())
-            method = 'simplify' if has_symbols else 'nsimplify'
-
-        simplified_matrix = zeros(matrix.rows, matrix.cols)
-
-        for i in range(matrix.rows):
-            for j in range(matrix.cols):
-                element = matrix[i, j]
-                if method == 'simplify':
-                    simplified_element = simplify(element)
-                elif method == 'nsimplify':
-                    simplified_element = nsimplify(element, rational=True)
-                else:
-                    simplified_element = element
-
-                simplified_matrix[i, j] = simplified_element
-
-        return simplified_matrix
-
-    def parse_vector_input(self, vector_input):
-        """解析向量输入"""
-        try:
-            if isinstance(vector_input, str):
-                if vector_input.startswith('[[') and vector_input.endswith(']]'):
-                    vector = Matrix(sympify(vector_input))
-                else:
-                    vector_str = vector_input.strip('[]')
-                    elements = [sympify(x.strip())
-                                for x in vector_str.split(',')]
-                    vector = Matrix(elements)
-            else:
-                vector = vector_input
-
-            # 确保是列向量
-            if vector.cols > 1:
-                vector = vector.T
-            return vector
-        except Exception as e:
-            raise ValueError(f"无法解析向量输入: {vector_input}, 错误: {str(e)}") from e
-
-    def parse_matrix_input(self, matrix_input):
-        """解析矩阵输入"""
-        try:
-            if isinstance(matrix_input, str):
-                matrix = Matrix(sympify(matrix_input))
-            else:
-                matrix = matrix_input
-            return matrix
-        except Exception as e:
-            raise ValueError(f"无法解析矩阵输入: {matrix_input}, 错误: {str(e)}") from e
+class VectorProjectionSolver(CommonMatrixCalculator):
 
     def check_subspace_type(self, subspace_basis, show_steps=True):
         """
@@ -323,7 +242,7 @@ class VectorProjectionSolver:
                     r"\text{警告: } A^TA \text{ 不可逆，使用伪逆}")
 
             # 使用 Gram-Schmidt 正交化
-            Q, R = self.gram_schmidt_orthogonalization(A, show_steps)
+            Q, _ = self.gram_schmidt_orthogonalization(A, show_steps)
 
             # 投影到正交基上
             projection = Q * (Q.T * b)
@@ -362,7 +281,6 @@ class VectorProjectionSolver:
         自动投影向量到子空间
         """
         self.step_generator.clear()
-        self.step_counter = 0
 
         if show_steps:
             self.step_generator.add_step(r"\textbf{向量投影求解}")
@@ -402,7 +320,7 @@ class VectorProjectionSolver:
                     r"\text{处理退化子空间, 使用 Gram-Schmidt 正交化}")
 
             # 使用 Gram-Schmidt 得到正交基
-            Q, R = self.gram_schmidt_orthogonalization(
+            Q, _ = self.gram_schmidt_orthogonalization(
                 subspace_basis, show_steps)
 
             # 投影到正交基上
@@ -457,7 +375,6 @@ def demo_line_projection():
     display(Math(solver.get_steps_latex()))
 
     # 示例2: 投影到斜线
-    solver.step_counter = 0
     v2 = '[2,3]'
     line2 = '[1,1]'  # 45 度线
 
@@ -481,7 +398,6 @@ def demo_plane_projection():
     display(Math(solver.get_steps_latex()))
 
     # 示例2: 投影到斜平面
-    solver.step_counter = 0
     v2 = '[1,1,1]'
     plane2 = '[[1,0],[0,1],[1,1]]'  # 斜平面
 
@@ -515,7 +431,7 @@ def demo_gram_schmidt_process():
     basis = '[[1,1,0],[1,0,1],[0,1,1]]'
 
     solver.step_generator.add_step(r"\textbf{正交化过程}")
-    Q, R = solver.gram_schmidt_orthogonalization(basis)
+    solver.gram_schmidt_orthogonalization(basis)
     display(Math(solver.get_steps_latex()))
 
 

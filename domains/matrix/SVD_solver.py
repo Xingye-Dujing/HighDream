@@ -1,69 +1,10 @@
-from sympy import Matrix, sympify, latex, zeros, eye, simplify, nsimplify, symbols, solve, sqrt, sin, cos, Symbol, I
+from sympy import Matrix, latex, zeros, eye, simplify, symbols, solve, sqrt, sin, cos, Symbol, I
 from IPython.display import display, Math
-from domains.matrix import CommonStepGenerator
+
+from core import CommonMatrixCalculator
 
 
-class SVDSolver:
-    """
-    奇异值分解求解器
-    """
-
-    def __init__(self):
-        self.step_counter = 0
-        self.step_generator = CommonStepGenerator()
-
-    def add_step(self, title):
-        """显示步骤标题"""
-        self.step_counter += 1
-        self.step_generator.add_step(
-            f"\\textbf{{步骤 {self.step_counter}: }} \\text{{{title}}}")
-
-    def add_matrix(self, matrix, name="A"):
-        """显示矩阵"""
-        self.step_generator.add_step(f"{name} = {latex(matrix)}")
-
-    def add_equation(self, equation):
-        """显示方程"""
-        self.step_generator.add_step(equation)
-
-    def get_steps_latex(self):
-        return self.step_generator.get_steps_latex()
-
-    def simplify_matrix(self, matrix, method='auto'):
-        """
-        对矩阵的每个元素进行化简
-        """
-        if method == 'auto':
-            has_symbols = any(any(element.free_symbols for element in row)
-                              for row in matrix.tolist())
-            method = 'simplify' if has_symbols else 'nsimplify'
-
-        simplified_matrix = zeros(matrix.rows, matrix.cols)
-
-        for i in range(matrix.rows):
-            for j in range(matrix.cols):
-                element = matrix[i, j]
-                if method == 'simplify':
-                    simplified_element = simplify(element)
-                elif method == 'nsimplify':
-                    simplified_element = nsimplify(element, rational=True)
-                else:
-                    simplified_element = element
-
-                simplified_matrix[i, j] = simplified_element
-
-        return simplified_matrix
-
-    def parse_matrix_input(self, matrix_input):
-        """解析矩阵输入"""
-        try:
-            if isinstance(matrix_input, str):
-                matrix = Matrix(sympify(matrix_input))
-            else:
-                matrix = matrix_input
-            return matrix
-        except Exception as e:
-            raise ValueError(f"无法解析矩阵输入: {matrix_input}, 错误: {str(e)}") from e
+class SVDSolver(CommonMatrixCalculator):
 
     def compute_eigenpairs(self, matrix):
         """
@@ -168,7 +109,6 @@ class SVDSolver:
         计算矩阵的奇异值分解
         """
         self.step_generator.clear()
-        self.step_counter = 0
 
         A = self.parse_matrix_input(matrix_input)
 
@@ -202,12 +142,12 @@ class SVDSolver:
             eigenpairs = self.compute_eigenpairs(ATA)
 
             if show_steps:
-                eig_list = ',\;'.join([latex(eig) for eig, _ in eigenpairs])
-                self.step_generator.add_step(f"A^T A\;的特征值:\;{eig_list}")
+                eig_list = rf',\;'.join([latex(eig) for eig, _ in eigenpairs])
+                self.step_generator.add_step(rf"A^T A\;的特征值:\;{eig_list}")
 
                 for i, (eig, vec) in enumerate(eigenpairs):
                     self.step_generator.add_step(
-                        f"\\text{{特征值 }} {latex(eig)}: \; \\boldsymbol{{v}}_{{{i+1}}} = {latex(vec)}")
+                        rf"\text{{特征值 }} {latex(eig)}: \; \boldsymbol{{v}}_{{{i+1}}} = {latex(vec)}")
 
         except Exception as e:
             if show_steps:
@@ -237,8 +177,8 @@ class SVDSolver:
 
         # 奇异值已经按从大到小排序
         if show_steps:
-            sorted_sigmas = ',\;'.join([f'\\sigma_{{{i+1}}} = {latex(sigma)}'
-                                        for i, sigma in enumerate(singular_values)])
+            sorted_sigmas = rf',\;'.join([f'\\sigma_{{{i+1}}} = {latex(sigma)}'
+                                          for i, sigma in enumerate(singular_values)])
             self.step_generator.add_step(
                 f"\\text{{排序后的奇异值: }} {sorted_sigmas}")
 
@@ -377,7 +317,6 @@ class SVDSolver:
         仅计算奇异值
         """
         self.step_generator.clear()
-        self.step_counter = 0
 
         A = self.parse_matrix_input(matrix_input)
 
@@ -399,7 +338,7 @@ class SVDSolver:
 
         if show_steps:
             self.add_step("计算 $A^T A$ 的特征值")
-            eig_list = ',\;'.join([latex(eig) for eig in eigenvalues])
+            eig_list = rf',\;'.join([latex(eig) for eig in eigenvalues])
             self.step_generator.add_step(f"\\text{{特征值: }} {eig_list}")
 
         # 计算奇异值
@@ -413,8 +352,8 @@ class SVDSolver:
                 singular_values.append(sigma)
         if show_steps:
             self.add_step("计算奇异值")
-            sigma_list = ',\;'.join([f'\\sigma_{{{i+1}}} = {latex(sigma)}'
-                                     for i, sigma in enumerate(singular_values)])
+            sigma_list = rf',\;'.join([f'\\sigma_{{{i+1}}} = {latex(sigma)}'
+                                       for i, sigma in enumerate(singular_values)])
             self.step_generator.add_step(f"\\text{{奇异值: }} {sigma_list}")
 
         return singular_values
@@ -528,7 +467,7 @@ def demo_zero_singular_values():
     for name, matrix in matrices:
         svd_solver.step_generator.add_step(f"\\textbf{{{name}}}")
         try:
-            U, Sigma, V = svd_solver.compute_svd(matrix)
+            _, Sigma, _ = svd_solver.compute_svd(matrix)
             # 显示奇异值
             singular_values = [Sigma[i, i]
                                for i in range(min(Sigma.rows, Sigma.cols))]

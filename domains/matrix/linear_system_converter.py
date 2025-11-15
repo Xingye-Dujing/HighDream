@@ -2,29 +2,10 @@ from typing import List
 from sympy import Eq, latex, symbols, Matrix, zeros, Rational, sympify
 from IPython.display import display, Math
 
-from domains.matrix import CommonStepGenerator
+from core import CommonMatrixCalculator
 
 
-class LinearSystemConverter:
-
-    def __init__(self):
-        self.step_counter = 0
-        self.step_generator = CommonStepGenerator()
-
-    def add_step(self, title):
-        """显示步骤标题"""
-        self.step_counter += 1
-        self.step_generator.add_step(
-            f"\\textbf{{步骤 {self.step_counter}: }} \\text{{{title}}}")
-
-    def clear_steps(self):
-        """清除步骤记录"""
-        self.step_counter = 0
-        self.step_generator.clear()
-
-    def get_steps_latex(self):
-        """获取步骤的LaTeX格式"""
-        return self.step_generator.get_steps_latex()
+class LinearSystemConverter(CommonMatrixCalculator):
 
     @staticmethod
     def str_to_Eq(expressions: List[str], get_unknowns=False):
@@ -127,7 +108,7 @@ class LinearSystemConverter:
         print(equations)
 
         if show_steps:
-            self.clear_steps()
+            self.step_generator.clear()
             self.add_step("方程组到矩阵的转换")
 
         A, x, b, params = self.equations_to_matrix(
@@ -174,7 +155,7 @@ class LinearSystemConverter:
     def show_matrix_to_equations(self, A, x, b, show_steps=True):
         """显示矩阵到方程组的转换过程，支持参数"""
         if show_steps:
-            self.clear_steps()
+            self.step_generator.clear()
             self.add_step("矩阵到方程组的转换")
 
         equations = self.matrix_to_equations(A, x, b)
@@ -211,7 +192,7 @@ def demo():
         Eq(a*x + b*y, c),
         Eq(d*x - b*y, k)
     ]
-    A1, x1, b1, params1 = converter.show_equations_to_matrix(
+    converter.show_equations_to_matrix(
         equations1, unknowns=[x, y])
     display(Math(converter.get_steps_latex()))
 
@@ -221,7 +202,7 @@ def demo():
         Eq(2*x + a*y, b + 1),
         Eq(b*x - 3*y, c)
     ]
-    A2, x2, b2, params2 = converter.show_equations_to_matrix(
+    converter.show_equations_to_matrix(
         equations2, unknowns=[x, y])
     display(Math(converter.get_steps_latex()))
 
@@ -232,13 +213,13 @@ def demo():
         Eq(2*x + k*y - z, m),
         Eq(x + y + z, n)
     ]
-    A3, x3, b3, params3 = converter.show_equations_to_matrix(
+    A3, x3, b3, _ = converter.show_equations_to_matrix(
         equations3, unknowns=[x, y, z])
     display(Math(converter.get_steps_latex()))
 
     # 示例4：从矩阵形式转回方程组（带参数）
     converter.step_generator.add_step(rf"\textbf{{示例4: 矩阵形式转回方程组(带参数)}}")
-    equations4_back = converter.show_matrix_to_equations(A3, x3, b3)
+    converter.show_matrix_to_equations(A3, x3, b3)
     display(Math(converter.get_steps_latex()))
 
     # 示例5：明确指定参数
@@ -247,7 +228,7 @@ def demo():
         Eq(k*x + m*y, n),
         Eq(2*k*x - y, 3*m)
     ]
-    A5, x5, b5, params5 = converter.show_equations_to_matrix(
+    converter.show_equations_to_matrix(
         equations5, unknowns=[x, y], parameters=[k, m, n])
     display(Math(converter.get_steps_latex()))
 
@@ -260,7 +241,7 @@ def demo():
         Eq((k1 + k2)*x1_sym - k2*x2_sym, F1),
         Eq(-k2*x1_sym + (k2 + k3)*x2_sym, F2)
     ]
-    A6, x6, b6, params6 = converter.show_equations_to_matrix(
+    converter.show_equations_to_matrix(
         equations6, unknowns=[x1_sym, x2_sym])
     display(Math(converter.get_steps_latex()))
 
@@ -271,7 +252,7 @@ def demo():
         Eq(8*x - 3*y, 6),
         Eq(10*x + 2*y, 8)
     ]
-    A7, x7, b7, params7 = converter.show_equations_to_matrix(
+    converter.show_equations_to_matrix(
         equations7, unknowns=[x, y])
     display(Math(converter.get_steps_latex()))
 
@@ -282,7 +263,7 @@ def demo():
         Eq(8*x - Rational(5, 6)*y - 6*a, 0),
         Eq(10*x + 2*y, 8)
     ]
-    A8, x8, b8, params8 = converter.show_equations_to_matrix(
+    converter.show_equations_to_matrix(
         equations8, unknowns=[x, y])
     display(Math(converter.get_steps_latex()))
 

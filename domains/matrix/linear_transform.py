@@ -1,37 +1,10 @@
 from sympy import Matrix, latex, sympify, symbols
 from IPython.display import display, Math
 
-from domains.matrix import CommonStepGenerator
+from core import CommonMatrixCalculator
 
 
-class LinearTransform:
-
-    def __init__(self):
-        self.step_counter = 0
-        self.step_generator = CommonStepGenerator()
-
-    def add_step(self, title):
-        """显示步骤标题"""
-        self.step_counter += 1
-        self.step_generator.add_step(
-            f"\\textbf{{步骤 {self.step_counter}: }} \\text{{{title}}}")
-
-    def clear_steps(self):
-        """清除步骤记录"""
-        self.step_counter = 0
-        self.step_generator.clear()
-
-    def get_steps_latex(self):
-        """获取步骤的LaTeX格式"""
-        return self.step_generator.get_steps_latex()
-
-    def add_matrix(self, matrix, name="A"):
-        """添加矩阵到步骤"""
-        self.step_generator.add_step(f"{name} = {latex(matrix)}")
-
-    def add_vector(self, vector, name="x"):
-        """添加向量到步骤"""
-        self.step_generator.add_step(f"{name} = {latex(vector)}")
+class LinearTransform(CommonMatrixCalculator):
 
     def parse_basis_input(self, basis_matrix, name="B", vector_names=None):
         """解析基输入"""
@@ -63,7 +36,7 @@ class LinearTransform:
     def find_linear_transform_matrix(self, transformation_input, basis_input, show_steps=True):
         """求线性变换在给定基下的矩阵表示"""
         if show_steps:
-            self.clear_steps()
+            self.step_generator.clear()
             self.step_generator.add_step(r"\textbf{求线性变换在给定基下的矩阵表示}")
 
         # 解析基
@@ -121,7 +94,7 @@ class LinearTransform:
     def change_transform_basis(self, transform_matrix, from_basis_input, to_basis_input, show_steps=True):
         """将线性变换矩阵从一组基转换到另一组基"""
         if show_steps:
-            self.clear_steps()
+            self.step_generator.clear()
             self.step_generator.add_step(r"\textbf{线性变换矩阵的基变换}")
 
         # 解析输入
@@ -156,7 +129,7 @@ class LinearTransform:
                 r"\text{新基下的线性变换矩阵为: } A' = P^{-1} A P")
 
             P_inv = P.inv()
-            self.add_matrix(P_inv, "其中,\;P^{-1}")
+            self.add_matrix(P_inv, rf"其中,\;P^{{-1}}")
 
             A_prime = P_inv * transform_matrix * P
             self.add_matrix(A_prime, "A'")

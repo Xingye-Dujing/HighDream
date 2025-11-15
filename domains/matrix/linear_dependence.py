@@ -1,54 +1,10 @@
-from sympy import Matrix, sympify, latex, zeros, simplify, nsimplify, symbols, solve
+from sympy import Matrix, sympify, latex, zeros, simplify, symbols, solve
 from IPython.display import display, Math
 
-from domains.matrix import CommonStepGenerator
+from core import CommonMatrixCalculator
 
 
-class LinearDependence:
-
-    def __init__(self):
-        self.step_generator = CommonStepGenerator()
-
-    def add_step(self, title):
-        """显示步骤标题"""
-        self.step_generator.add_step(
-            f"\\text{{{title}}}")
-
-    def add_matrix(self, matrix, name="A"):
-        """显示矩阵"""
-        self.step_generator.add_step(f"{name} = {latex(matrix)}")
-
-    def add_equation(self, equation):
-        """显示方程"""
-        self.step_generator.add_step(equation)
-
-    def get_steps_latex(self):
-        return self.step_generator.get_steps_latex()
-
-    def simplify_matrix(self, matrix, method='auto'):
-        """
-        对矩阵的每个元素进行化简
-        """
-        if method == 'auto':
-            has_symbols = any(any(element.free_symbols for element in row)
-                              for row in matrix.tolist())
-            method = 'simplify' if has_symbols else 'nsimplify'
-
-        simplified_matrix = zeros(matrix.rows, matrix.cols)
-
-        for i in range(matrix.rows):
-            for j in range(matrix.cols):
-                element = matrix[i, j]
-                if method == 'simplify':
-                    simplified_element = simplify(element)
-                elif method == 'nsimplify':
-                    simplified_element = nsimplify(element, rational=True)
-                else:
-                    simplified_element = element
-
-                simplified_matrix[i, j] = simplified_element
-
-        return simplified_matrix
+class LinearDependence(CommonMatrixCalculator):
 
     def parse_vector_input(self, vectors_input):
         """解析向量输入"""
@@ -99,7 +55,7 @@ class LinearDependence:
             vector_strs.append(
                 f"\\boldsymbol{{{name}_{{{i+1}}}}} = {latex(vec)}")
 
-        vector_strs = ',\;'.join(vector_strs)
+        vector_strs = rf',\;'.join(vector_strs)
         self.step_generator.add_step(f"\\text{{向量组: }}{vector_strs}")
 
     def check_special_cases(self, vectors_input, show_steps=True, is_clear=True):
@@ -358,8 +314,6 @@ class LinearDependence:
             self.display_vectors(vectors)
             self.step_generator.add_step(
                 r"\text{原理: Gram 行列式} \neq 0 \Leftrightarrow \text{线性无关}")
-
-        m, n = A.rows, A.cols
 
         if show_steps:
             self.add_step("构造 Gram 矩阵:")
