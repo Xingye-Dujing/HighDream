@@ -1,18 +1,39 @@
-from sympy import Matrix, latex, eye, symbols, simplify, diag, factor, I
-from IPython.display import display, Math
+from typing import Dict, List, Tuple
+from sympy import I, Matrix, diag, eye, factor, latex, simplify, symbols
+from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
+Result = Tuple[Matrix, Matrix, Matrix]
+
 
 class Diagonalization(CommonMatrixCalculator):
+    """A class for matrix diagonalization operations.
 
-    def is_square(self, matrix):
-        """检查是否为方阵"""
+    This class provides methods to check diagonalizability conditions,
+    compute eigenvectors, and perform various types of matrix diagonalization.
+    """
+
+    def is_square(self, matrix: Matrix) -> bool:
+        """Check if the matrix is square."""
         return matrix.rows == matrix.cols
 
-    def check_diagonalizable_conditions(self, matrix_input, show_steps=True, is_clear=True):
+    def check_diagonalizable_conditions(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Tuple[bool, Dict, List]:
         """
-        检查矩阵是否满足对角化条件
+        Check if a matrix satisfies diagonalization conditions.
+
+        Returns
+        -------
+        tuple
+            A tuple containing:
+            - bool: Whether the matrix is diagonalizable
+            - dict: Eigenvalues with their multiplicities
+            - list: Conditions for each eigenvalue
+
+        Raises
+        ------
+        ValueError
+            If the matrix is not square.
         """
         if is_clear:
             self.step_generator.clear()
@@ -30,7 +51,7 @@ class Diagonalization(CommonMatrixCalculator):
             self.step_generator.add_step(f"\\text{{矩阵维度: }} {n} \\times {n}")
             self.step_generator.add_step(r"\text{矩阵是方阵，可以进行对角化分析}")
 
-        # 计算特征多项式
+        # Calculate characteristic polynomial
         if show_steps:
             self.add_step("计算特征多项式")
 
@@ -43,7 +64,7 @@ class Diagonalization(CommonMatrixCalculator):
             self.step_generator.add_step(
                 f"\\text{{特征多项式可写为: }} p(\\lambda) = {latex(factor(char_poly.as_expr()))}")
 
-        # 计算特征值
+        # Calculate eigenvalues
         if show_steps:
             self.add_step("计算特征值")
 
@@ -57,7 +78,7 @@ class Diagonalization(CommonMatrixCalculator):
             self.step_generator.add_step(
                 f"\\text{{特征值: }} \\lambda = " + ", ".join(eigen_display))
 
-        # 检查每个特征值的代数重数和几何重数
+        # Check algebraic and geometric multiplicity for each eigenvalue
         if show_steps:
             self.add_step("检查每个特征值的代数重数和几何重数")
 
@@ -65,7 +86,7 @@ class Diagonalization(CommonMatrixCalculator):
         conditions = []
 
         for eigenval, algebraic_multiplicity in eigenvalues.items():
-            # 计算几何重数(特征空间的维数)
+            # Calculate geometric multiplicity (dimension of eigenspace)
             eigen_space = A - eigenval * eye(n)
             geometric_multiplicity = n - eigen_space.rank()
 
@@ -91,7 +112,7 @@ class Diagonalization(CommonMatrixCalculator):
                         f"\\text{{不满足条件: 代数重数 $\\neq$ 几何重数}}")
                     diagonalizable = False
 
-        # 检查特征向量总数
+        # Check total number of linearly independent eigenvectors
         total_geometric = sum(cond['geometric'] for cond in conditions)
         has_enough_eigenvectors = total_geometric == n
 
@@ -114,9 +135,13 @@ class Diagonalization(CommonMatrixCalculator):
 
         return diagonalizable, eigenvalues, conditions
 
-    def compute_eigenvectors(self, matrix_input, show_steps=True, is_clear=True):
-        """
-        计算特征向量
+    def compute_eigenvectors(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Dict:
+        """Compute eigenvectors of a matrix.
+
+        Returns
+        -------
+        dict
+            Dictionary mapping eigenvalues to their eigenvectors.
         """
         if is_clear:
             self.step_generator.clear()
@@ -128,7 +153,7 @@ class Diagonalization(CommonMatrixCalculator):
 
         eigenvectors_dict = {}
 
-        # 获取特征值和特征向量
+        # Get eigenvalues and eigenvectors
         eigenvects = A.eigenvects()
 
         for eigenval, _, eigenvectors in eigenvects:
@@ -139,7 +164,7 @@ class Diagonalization(CommonMatrixCalculator):
             eigenvectors_dict[eigenval] = []
 
             for i, eigenvector in enumerate(eigenvectors):
-                # 规范化特征向量
+                # Normalize eigenvector
                 eigenvector_norm = eigenvector / eigenvector.norm()
 
                 eigenvectors_dict[eigenval].append({
@@ -157,9 +182,21 @@ class Diagonalization(CommonMatrixCalculator):
 
         return eigenvectors_dict
 
-    def diagonalize_matrix(self, matrix_input, show_steps=True, normalize=True, is_clear=True):
-        """
-        对角化矩阵
+    def diagonalize_matrix(self, matrix_input: str, show_steps: bool = True, normalize: bool = True, is_clear: bool = True) -> Result:
+        """Diagonalize a matrix.
+
+        Returns
+        -------
+        tuple
+            A tuple containing:
+            - Matrix: Transformation matrix P
+            - Matrix: Diagonal matrix D
+            - Matrix: Inverse of transformation matrix P^(-1)
+
+        Raises
+        ------
+        ValueError
+            If the matrix is not diagonalizable or if P is not invertible.
         """
         if is_clear:
             self.step_generator.clear()
@@ -170,7 +207,7 @@ class Diagonalization(CommonMatrixCalculator):
             self.add_step("矩阵对角化分解")
             self.add_matrix(A, "A")
 
-        # 检查对角化条件
+        # Check diagonalization conditions
         diagonalizable, eigenvalues, _ = self.check_diagonalizable_conditions(
             matrix_input, show_steps, is_clear=False
         )
@@ -178,14 +215,14 @@ class Diagonalization(CommonMatrixCalculator):
         if not diagonalizable:
             raise ValueError("矩阵不可对角化")
 
-        # 计算特征向量
+        # Compute eigenvectors
         eigenvectors_dict = self.compute_eigenvectors(
             matrix_input, show_steps, is_clear=False)
 
         if show_steps:
             self.add_step("构造变换矩阵 P 和对角矩阵 D")
 
-        # 构造变换矩阵 P 和对角矩阵 D
+        # Construct transformation matrix P and diagonal matrix D
         P_columns = []
         D_diag = []
 
@@ -205,7 +242,7 @@ class Diagonalization(CommonMatrixCalculator):
             self.add_matrix(P, "P")
             self.add_matrix(D, "D")
 
-            # 显示特征值在D中的排列
+            # Show eigenvalue arrangement in D
             self.add_step("对角矩阵 D 中特征值的排列")
             eigenval_positions = []
             pos = 1
@@ -216,7 +253,7 @@ class Diagonalization(CommonMatrixCalculator):
                     pos += 1
             self.step_generator.add_step(", ".join(eigenval_positions))
 
-        # 计算 P 的逆矩阵
+        # Calculate inverse of P
         if show_steps:
             self.add_step("计算变换矩阵的逆矩阵 $P^{-1}$")
 
@@ -230,17 +267,17 @@ class Diagonalization(CommonMatrixCalculator):
                     r"\text{警告: 矩阵 P 不可逆, 这可能意味着特征向量线性相关}")
             raise ValueError("特征向量矩阵不可逆") from e
 
-        # 验证分解
+        # Verify decomposition
         if show_steps:
             self.add_step("验证对角化分解")
             self.add_equation(r"\text{验证: } A = P D P^{-1}")
 
-            # 计算 P D P^{-1}
+            # Calculate P D P^{-1}
             PDP_inv = P * D * P_inv
             self.add_matrix(PDP_inv, "P D P^{-1}")
             self.add_matrix(A, "A")
 
-            # 简化比较
+            # Simplify comparison
             PDP_inv_simplified = simplify(PDP_inv)
             if PDP_inv_simplified == A:
                 self.step_generator.add_step(r"\text{对角化分解正确}")
@@ -249,9 +286,16 @@ class Diagonalization(CommonMatrixCalculator):
 
         return P, D, P_inv
 
-    def diagonalize_symmetric(self, matrix_input, show_steps=True, is_clear=True):
-        """
-        对称矩阵的特殊对角化(正交对角化)
+    def diagonalize_symmetric(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Result:
+        """Diagonalize a symmetric matrix (orthogonal diagonalization).
+
+        Returns
+        -------
+        tuple
+            A tuple containing:
+            - Matrix: Orthogonal matrix Q
+            - Matrix: Diagonal matrix D
+            - Matrix: Transpose of orthogonal matrix Q^T
         """
         if is_clear:
             self.step_generator.clear()
@@ -262,7 +306,7 @@ class Diagonalization(CommonMatrixCalculator):
             self.add_step("对称矩阵的正交对角化")
             self.add_matrix(A, "A")
 
-        # 检查对称性
+        # Check symmetry
         if A != A.T:
             if show_steps:
                 self.step_generator.add_step(r"\text{警告: 矩阵不是对称矩阵, 但继续尝试对角化}")
@@ -274,11 +318,11 @@ class Diagonalization(CommonMatrixCalculator):
             self.step_generator.add_step(r"\text{1. 所有特征值都是实数}")
             self.step_generator.add_step(r"\text{2. 存在正交矩阵 Q 使得 } A = Q D Q^T")
 
-        # 进行标准对角化
+        # Perform standard diagonalization
         P, D, _ = self.diagonalize_matrix(
             matrix_input, show_steps, normalize=True, is_clear=False)
 
-        # 对于对称矩阵, P 应该是正交矩阵
+        # For symmetric matrices, P should be an orthogonal matrix
         Q = P
         Q_T = Q.T
 
@@ -288,7 +332,7 @@ class Diagonalization(CommonMatrixCalculator):
             self.add_matrix(D, "D")
             self.add_matrix(Q_T, "Q^T")
 
-            # 验证正交性
+            # Verify orthogonality
             QQT = Q * Q_T
             QTQ = Q_T * Q
 
@@ -299,7 +343,7 @@ class Diagonalization(CommonMatrixCalculator):
             if QQT == eye(A.rows) and QTQ == eye(A.rows):
                 self.step_generator.add_step(r"\text{Q 是正交矩阵}")
 
-            # 验证分解
+            # Verify decomposition
             self.add_step("验证正交对角化")
             self.add_equation(r"\text{验证: } A = Q D Q^T")
             QDQ_T = Q * D * Q_T
@@ -311,9 +355,16 @@ class Diagonalization(CommonMatrixCalculator):
 
         return Q, D, Q_T
 
-    def diagonalize_complex(self, matrix_input, show_steps=True, is_clear=True):
-        """
-        复矩阵的对角化
+    def diagonalize_complex(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Result:
+        """Diagonalize a complex matrix.
+
+        Returns
+        -------
+        tuple
+            A tuple containing:
+            - Matrix: Transformation matrix P
+            - Matrix: Diagonal matrix D
+            - Matrix: Inverse of transformation matrix P^(-1)
         """
         if is_clear:
             self.step_generator.clear()
@@ -325,7 +376,7 @@ class Diagonalization(CommonMatrixCalculator):
             self.add_matrix(A, "A")
             self.step_generator.add_step(r"\text{注意: 允许特征值和特征向量为复数}")
 
-        # 检查是否有复数元素
+        # Check for complex elements
         has_complex = any(val.has(I) for val in A)
 
         if not has_complex and show_steps:
@@ -333,9 +384,13 @@ class Diagonalization(CommonMatrixCalculator):
 
         return self.diagonalize_matrix(matrix_input, show_steps, normalize=True, is_clear=False)
 
-    def auto_diagonalization(self, matrix_input, show_steps=True, is_clear=True):
-        """
-        自动选择对角化方法
+    def auto_diagonalization(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Result:
+        """Automatically select diagonalization method based on matrix properties.
+
+        Raises
+        ------
+        ValueError
+            If the matrix is not diagonalizable.
         """
         if is_clear:
             self.step_generator.clear()
@@ -346,15 +401,15 @@ class Diagonalization(CommonMatrixCalculator):
             self.add_step("自动对角化分析")
             self.add_matrix(A, "A")
 
-        # 检查是否可对角化
+        # Check if diagonalizable
         diagonalizable, eigenvalues, _ = self.check_diagonalizable_conditions(
             matrix_input, show_steps=False, is_clear=False
         )
 
-        # 检查是否为对称矩阵
+        # Check if symmetric
         is_symmetric = A == A.T
 
-        # 检查是否有复数
+        # Check for complex numbers
         has_complex = any(val.has(I) for val in A) or any(
             eigenval.has(I) for eigenval in eigenvalues.keys()
         )
@@ -370,34 +425,33 @@ class Diagonalization(CommonMatrixCalculator):
             self.step_generator.add_step(
                 f"\\text{{矩阵特性: }} {', '.join(method_info)}")
 
-        # 选择方法
+        # Select method
         if diagonalizable:
             self.add_step("自动选择分解方法")
             if is_symmetric:
                 if show_steps:
                     self.step_generator.add_step(r"\text{选择: 正交对角化}")
                 return self.diagonalize_symmetric(matrix_input, show_steps, is_clear=False)
-            elif has_complex:
+            if has_complex:
                 if show_steps:
                     self.step_generator.add_step(r"\text{选择: 复矩阵对角化}")
                 return self.diagonalize_complex(matrix_input, show_steps, is_clear=False)
-            else:
-                if show_steps:
-                    self.step_generator.add_step(r"\text{选择: 标准对角化}")
-                return self.diagonalize_matrix(matrix_input, show_steps, is_clear=False)
-        else:
-            raise ValueError("矩阵不可对角化")
+            if show_steps:
+                self.step_generator.add_step(r"\text{选择: 标准对角化}")
+            return self.diagonalize_matrix(matrix_input, show_steps, is_clear=False)
+
+        raise ValueError("矩阵不可对角化")
 
 
-# 演示函数
+# Demo functions
 def demo_diagonalization():
-    """演示对角化分解"""
+    """Demonstrate diagonalizable matrix examples."""
     diag_1 = Diagonalization()
 
-    # 可对角化矩阵示例
+    # Examples of diagonalizable matrices
     A1 = '[[4, -2], [1, 1]]'
-    A2 = '[[2, 0, 0], [0, 3, 0], [0, 0, 1]]'  # 对角矩阵
-    A3 = '[[1, 2, 0], [2, 1, 0], [0, 0, 3]]'  # 对称矩阵
+    A2 = '[[2, 0, 0], [0, 3, 0], [0, 0, 1]]'  # Diagonal matrix
+    A3 = '[[1, 2, 0], [2, 1, 0], [0, 0, 3]]'  # Symmetric matrix
 
     diag_1.step_generator.add_step(r"\textbf{可对角化矩阵演示}")
 
@@ -418,10 +472,10 @@ def demo_diagonalization():
 
 
 def demo_non_diagonalizable():
-    """演示不可对角化矩阵"""
+    """Demonstrate non-diagonalizable matrix examples."""
     diag_2 = Diagonalization()
 
-    # 不可对角化矩阵示例
+    # Examples of non-diagonalizable matrices
     A1 = '[[1, 1], [0, 1]]'
     A2 = '[[2, 1, 0], [0, 2, 1], [0, 0, 2]]'
 
@@ -443,12 +497,12 @@ def demo_non_diagonalizable():
 
 
 def demo_complex():
-    """演示复数矩阵对角化"""
+    """Demonstrate complex matrix diagonalization examples."""
     diag_3 = Diagonalization()
 
-    # 复数矩阵示例
-    A1 = '[[0, -1], [1, 0]]'  # 旋转矩阵
-    A2 = '[[1, -2], [2, 1]]'  # 有复特征值
+    # Complex matrix examples
+    A1 = '[[0, -1], [1, 0]]'  # Rotation matrix
+    A2 = '[[1, -2], [2, 1]]'  # Matrix with complex eigenvalues
 
     diag_3.step_generator.add_step(r"\textbf{复数矩阵对角化演示}")
 
@@ -468,13 +522,13 @@ def demo_complex():
 
 
 def demo_special_cases():
-    """演示特殊情况"""
+    """Demonstrate special case examples."""
     diag_4 = Diagonalization()
 
-    # 特殊情况示例
-    A1 = '[[1, 0, 0], [0, 1, 0], [0, 0, 1]]'  # 单位矩阵
-    A2 = '[[2, 1], [0, 2]]'  # 不可对角化
-    A3 = '[[3, 1, 0], [0, 3, 0], [0, 0, 4]]'  # 不可对角化
+    # Special case examples
+    A1 = '[[1, 0, 0], [0, 1, 0], [0, 0, 1]]'  # Identity matrix
+    A2 = '[[2, 1], [0, 2]]'  # Non-diagonalizable
+    A3 = '[[3, 1, 0], [0, 3, 0], [0, 0, 4]]'  # Non-diagonalizable
 
     diag_4.step_generator.add_step(r"\textbf{特殊情况演示}")
 
@@ -495,7 +549,7 @@ def demo_special_cases():
 
 
 if __name__ == "__main__":
-    # 运行各种演示
+    # Run all demonstrations
     demo_diagonalization()
     demo_non_diagonalizable()
     demo_complex()

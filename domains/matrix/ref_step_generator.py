@@ -1,20 +1,30 @@
-from sympy import Matrix, latex, simplify
+from typing import List, Union
+from sympy import Expr, Matrix, latex, simplify
 
 from core import BaseStepGenerator
 
 
 class RefStepGenerator(BaseStepGenerator):
+    """Generator for Row Echelon Form (REF) step-by-step solutions."""
 
-    def get_latex(self, steps, explanations):
-        """生成适合矩阵的 Latex 格式(支持分支标题等)"""
+    def get_latex(self, steps: List[Union[Expr, Matrix]], explanations: List[str]) -> str:
+        """Generate LaTeX formatted output suitable for matrices (supports branch titles, etc.)
+
+        Args:
+            steps (list): List of computational steps, can contain Matrix objects or strings
+            explanations (list): Corresponding list of explanatory text for each step
+
+        Returns:
+            str: LaTeX formatted string with aligned equations and explanations
+        """
         latex_str = "\\begin{align}\n"
         for i, (step, explanation) in enumerate(zip(steps, explanations)):
-            # step 可能是字符串(分支标题或说明)或 Matrix
+            # Step can be a string (branch title or note) or a Matrix
             if isinstance(step, str):
-                # 作为整行说明
+                # Render as a full line note
                 step_str = f"& \\text{{{step}}} \\quad & \\text{{{explanation}}}"
             else:
-                # 处理矩阵或一般表达式
+                # Process matrix or general expression
                 try:
                     if isinstance(step, Matrix):
                         m_latex = self._matrix_to_latex(step)
@@ -22,7 +32,7 @@ class RefStepGenerator(BaseStepGenerator):
                         m_latex = latex(step)
                 except Exception:
                     m_latex = str(step)
-                # 如果说明包含 "合并/分支" 之类字样, 直接显示矩阵与说明
+                # If explanation contains branching keywords, display matrix with explanation directly
                 if i == 0:
                     step_str = f"& {m_latex} \\quad & \\text{{{explanation}}}"
                 elif '分支' in explanation or '合并' in explanation or '条件' in explanation:
@@ -35,7 +45,15 @@ class RefStepGenerator(BaseStepGenerator):
         latex_str += "\\end{align}"
         return latex_str
 
-    def _matrix_to_latex(self, matrix) -> str:
+    def _matrix_to_latex(self, matrix: Matrix) -> str:
+        """Convert a matrix to its LaTeX representation with simplified elements.
+
+        Args:
+            matrix (Matrix): The matrix to convert
+
+        Returns:
+            str: LaTeX representation of the simplified matrix
+        """
         simplified_matrix = matrix.applyfunc(
             lambda x: simplify(x) if x != 0 else 0)
         return latex(simplified_matrix)

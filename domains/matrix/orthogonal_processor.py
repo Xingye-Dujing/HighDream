@@ -1,19 +1,34 @@
-from sympy import latex, zeros, simplify, eye, Symbol
-from IPython.display import display, Math
+from typing import Dict, Tuple
+from sympy import Matrix, Symbol, eye, latex, simplify, zeros
+from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
 
 class OrthogonalProcessor(CommonMatrixCalculator):
+    """
+    A class for processing orthogonal-related operations on matrices and vector sets.
 
-    def check_special_cases_orthogonal_set(self, vectors_input, show_steps=True):
-        """检查正交集的特殊情况"""
+    This class provides methods for checking orthogonal properties of vector sets and matrices,
+    performing Gram-Schmidt orthonormalization, and QR decomposition.
+    """
+
+    def check_special_cases_orthogonal_set(self, vectors_input: str, show_steps: bool = True) -> str:
+        """Check special cases for orthogonal sets.
+
+        Args:
+            vectors_input: Input vectors to check
+            show_steps (bool): Whether to show calculation steps
+
+        Returns:
+            str: Result identifier for special cases
+        """
         A = self.parse_matrix_input(vectors_input)
 
         if show_steps:
             self.add_step("特殊情况检查")
 
-        # 检查零向量
+        # Check for zero vectors
         zero_vectors = []
         for i in range(A.cols):
             if all(A[j, i] == 0 for j in range(A.rows)):
@@ -26,7 +41,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                 self.step_generator.add_step(r"\text{包含零向量的向量集不可能是正交集或规范正交集}")
             return "has_zero"
 
-        # 检查单个向量
+        # Check for single vector case
         if A.cols == 1:
             if show_steps:
                 self.step_generator.add_step(r"\text{单个向量}")
@@ -34,14 +49,25 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                 if norm == 1:
                     self.step_generator.add_step(r"\text{单位向量，是规范正交集}")
                     return "orthonormal_single"
-                else:
-                    self.step_generator.add_step(r"\text{非单位向量，是正交集但不是规范正交集}")
-                    return "orthogonal_single"
+
+                self.step_generator.add_step(r"\text{非单位向量，是正交集但不是规范正交集}")
+                return "orthogonal_single"
 
         return None
 
-    def is_orthogonal_set(self, vectors_input, show_steps=True, is_clear=True):
-        """判断向量集是否为正交集"""
+    def is_orthogonal_set(self, vectors_input: str, show_steps: bool = True, is_clear: bool = True) -> bool:
+        """Determine whether a set of vectors forms an orthogonal set.
+
+        An orthogonal set is one where every pair of distinct vectors has a dot product of zero.
+
+        Args:
+            vectors_input: Input vectors to check
+            show_steps (bool): Whether to show calculation steps
+            is_clear (bool): Whether to clear previous steps
+
+        Returns:
+            bool: True if the vectors form an orthogonal set, False otherwise
+        """
         if is_clear:
             self.step_generator.clear()
         if show_steps:
@@ -54,12 +80,12 @@ class OrthogonalProcessor(CommonMatrixCalculator):
             self.add_matrix(A, "A")
             self.step_generator.add_step(r"\text{原理: 任意两个不同向量的内积为 0}")
 
-        # 检查特殊情况
+        # Check special cases
         special_result = self.check_special_cases_orthogonal_set(
             vectors_input, show_steps)
         if special_result == "has_zero":
             return False
-        elif special_result in ["orthogonal_single", "orthonormal_single"]:
+        if special_result in ["orthogonal_single", "orthonormal_single"]:
             return True
 
         n = A.cols
@@ -91,14 +117,25 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                 self.step_generator.add_step(r"\text{所有向量对都正交}")
                 self.step_generator.add_step(r"\text{结论: 向量集是正交集}")
             return True
-        else:
-            if show_steps:
-                self.step_generator.add_step(r"\text{存在不正交的向量对}")
-                self.step_generator.add_step(r"\text{结论: 向量集不是正交集}")
-            return False
 
-    def is_orthonormal_set(self, vectors_input, show_steps=True, is_clear=True):
-        """判断向量集是否为规范正交集"""
+        if show_steps:
+            self.step_generator.add_step(r"\text{存在不正交的向量对}")
+            self.step_generator.add_step(r"\text{结论: 向量集不是正交集}")
+        return False
+
+    def is_orthonormal_set(self, vectors_input: str, show_steps: bool = True, is_clear: bool = True) -> bool:
+        """Determine whether a set of vectors forms an orthonormal set.
+
+        An orthonormal set is an orthogonal set where each vector has unit norm.
+
+        Args:
+            vectors_input: Input vectors to check
+            show_steps (bool): Whether to show calculation steps
+            is_clear (bool): Whether to clear previous steps
+
+        Returns:
+            bool: True if the vectors form an orthonormal set, False otherwise
+        """
         if is_clear:
             self.step_generator.clear()
         if show_steps:
@@ -111,17 +148,17 @@ class OrthogonalProcessor(CommonMatrixCalculator):
             self.add_matrix(A, "A")
             self.step_generator.add_step(r"\text{原理: 向量两两正交且每个向量的范数为 1}")
 
-        # 检查特殊情况
+        # Check special cases
         special_result = self.check_special_cases_orthogonal_set(
             vectors_input, show_steps)
         if special_result == "has_zero":
             return False
-        elif special_result == "orthonormal_single":
+        if special_result == "orthonormal_single":
             return True
-        elif special_result == "orthogonal_single":
+        if special_result == "orthogonal_single":
             return False
 
-        # 首先检查是否正交
+        # First check if it's orthogonal
         if not self.is_orthogonal_set(vectors_input, False, False):
             if show_steps:
                 self.step_generator.add_step(r"\text{向量集不正交，因此不是规范正交集}")
@@ -154,14 +191,25 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                 self.step_generator.add_step(r"\text{所有向量范数都为 1}")
                 self.step_generator.add_step(r"\text{结论: 向量集是规范正交集}")
             return True
-        else:
-            if show_steps:
-                self.step_generator.add_step(r"\text{存在范数不为 1 的向量}")
-                self.step_generator.add_step(r"\text{结论: 向量集是正交集但不是规范正交集}")
-            return False
 
-    def is_orthogonal_matrix(self, matrix_input, show_steps=True, is_clear=True):
-        """判断矩阵是否为正交矩阵"""
+        if show_steps:
+            self.step_generator.add_step(r"\text{存在范数不为 1 的向量}")
+            self.step_generator.add_step(r"\text{结论: 向量集是正交集但不是规范正交集}")
+        return False
+
+    def is_orthogonal_matrix(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> bool:
+        """Determine whether a matrix is orthogonal.
+
+        A matrix is orthogonal if its transpose equals its inverse (A^T * A = I).
+
+        Args:
+            matrix_input: Input matrix to check
+            show_steps (bool): Whether to show calculation steps
+            is_clear (bool): Whether to clear previous steps
+
+        Returns:
+            bool: True if the matrix is orthogonal, False otherwise
+        """
         if is_clear:
             self.step_generator.clear()
         if show_steps:
@@ -176,7 +224,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
 
         m, n = A.rows, A.cols
 
-        # 检查是否为方阵
+        # Check if it's a square matrix
         if m != n:
             if show_steps:
                 self.step_generator.add_step(r"\text{不是方阵，因此不是正交矩阵}")
@@ -192,7 +240,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
             self.add_matrix(A_T, "A^T")
             self.add_matrix(ATA, "A^T A")
 
-        # 检查 A^T A 是否等于单位矩阵
+        # Check if A^T A equals the identity matrix
         I = eye(n)
         is_orthogonal = True
 
@@ -213,14 +261,26 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                 self.step_generator.add_step(r"A^T A = I")
                 self.step_generator.add_step(r"\text{结论: 矩阵是正交矩阵}")
             return True
-        else:
-            if show_steps:
-                self.step_generator.add_step(r"A^T A \neq I")
-                self.step_generator.add_step(r"\text{结论: 矩阵不是正交矩阵}")
-            return False
 
-    def gram_schmidt_orthonormalization(self, vectors_input, show_steps=True, is_clear=True):
-        """使用 Gram-Schmidt 过程构建规范正交基"""
+        if show_steps:
+            self.step_generator.add_step(r"A^T A \neq I")
+            self.step_generator.add_step(r"\text{结论: 矩阵不是正交矩阵}")
+        return False
+
+    def gram_schmidt_orthonormalization(self, vectors_input: str, show_steps: bool = True, is_clear: bool = True) -> Tuple[Matrix, Matrix]:
+        """Perform Gram-Schmidt orthonormalization process to construct an orthonormal basis.
+
+        The Gram-Schmidt process takes a set of linearly independent vectors and produces
+        an orthogonal set that spans the same subspace, then normalizes them to unit vectors.
+
+        Args:
+            vectors_input: Input vectors to orthogonalize
+            show_steps (bool): Whether to show calculation steps
+            is_clear (bool): Whether to clear previous steps
+
+        Returns:
+            tuple: (Q, R) where Q contains orthonormal vectors and R is the upper triangular matrix
+        """
         if is_clear:
             self.step_generator.clear()
         if show_steps:
@@ -233,10 +293,10 @@ class OrthogonalProcessor(CommonMatrixCalculator):
             self.step_generator.add_step(r"\text{原理: 逐步正交化并单位化向量}")
 
         m, n = A.rows, A.cols
-        Q = zeros(m, n)  # 规范正交向量矩阵
-        R = zeros(n, n)  # 上三角矩阵
+        Q = zeros(m, n)  # Orthonormal vector matrix
+        R = zeros(n, n)  # Upper triangular matrix
 
-        # 复制原始向量
+        # Copy original vectors
         vectors = [A.col(i) for i in range(n)]
         orthogonal_vectors = []
 
@@ -253,7 +313,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                 else:
                     self.add_vector(vectors[i], f"a_{i+1}")
 
-            # 开始正交化
+            # Start orthogonalization
             v = vectors[i].copy()
 
             if show_steps and i > 0:
@@ -261,7 +321,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
 
             projection_terms = []
             for j in range(i):
-                # 计算投影系数
+                # Calculate projection coefficient
                 r_ji = vectors[i].dot(orthogonal_vectors[j])
                 R[j, i] = r_ji
 
@@ -273,7 +333,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                         f"\\text{{投影分量: }} {latex(r_ji)} \\cdot \\boldsymbol{{q_{j+1}}} = {latex(r_ji * orthogonal_vectors[j])}"
                     )
 
-                # 减去投影
+                # Subtract projection
                 v = v - r_ji * orthogonal_vectors[j]
                 projection_terms.append(
                     f"{latex(r_ji)}\\boldsymbol{{q_{j+1}}}")
@@ -284,7 +344,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                     f"\\boldsymbol{{v_{i+1}}} = \\boldsymbol{{a_{i+1}}} - ({projection_str})")
                 self.add_vector(v, f"v_{i+1}")
 
-            # 计算范数
+            # Calculate norm
             norm_v = v.norm()
             R[i, i] = norm_v
 
@@ -292,13 +352,13 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                 self.step_generator.add_step(
                     f"\\text{{正交向量的范数: }} \\|\\boldsymbol{{v_{i+1}}}\\| = {latex(norm_v)}")
 
-            # 如果范数含有符号, 则假定其为正值(不为 0)
+            # If norm contains symbols, assume it's positive (non-zero)
             if norm_v.has(Symbol) or norm_v > 0:
-                # 单位化
+                # Normalize
                 q_i = v / norm_v
                 orthogonal_vectors.append(q_i)
 
-                # 存储到 Q 矩阵
+                # Store in Q matrix
                 for k in range(m):
                     Q[k, i] = q_i[k]
 
@@ -311,18 +371,18 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                 if show_steps:
                     self.step_generator.add_step(
                         f"\\text{{警告: 第 {i+1} 个向量与前面向量线性相关，无法添加到规范正交基}}")
-                # 对于线性相关的情况，我们添加零向量
+                # For linearly dependent cases, add a zero vector
                 orthogonal_vectors.append(zeros(m, 1))
 
         if show_steps:
             self.add_step("Gram-Schmidt 过程完成")
-            # 化简矩阵
+            # Simplify matrices
             Q = self.simplify_matrix(Q)
             R = self.simplify_matrix(R)
             self.add_matrix(Q, "Q")
             self.add_matrix(R, "R")
 
-            # 验证结果
+            # Verify results
             self.add_step("验证结果")
             if self.is_orthonormal_set(Q, False, False):
                 self.step_generator.add_step(r"\text{生成的向量集是规范正交集}")
@@ -331,8 +391,20 @@ class OrthogonalProcessor(CommonMatrixCalculator):
 
         return Q, R
 
-    def qr_decomposition(self, matrix_input, show_steps=True, is_clear=True):
-        """矩阵的 QR 分解"""
+    def qr_decomposition(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Tuple[Matrix, Matrix]:
+        """Perform QR decomposition of a matrix.
+
+        QR decomposition expresses a matrix A as the product of an orthogonal matrix Q
+        and an upper triangular matrix R.
+
+        Args:
+            matrix_input: Input matrix to decompose
+            show_steps (bool): Whether to show calculation steps
+            is_clear (bool): Whether to clear previous steps
+
+        Returns:
+            tuple: (Q, R) matrices from the QR decomposition
+        """
         if is_clear:
             self.step_generator.clear()
         if show_steps:
@@ -347,7 +419,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
 
         m, n = A.rows, A.cols
 
-        # 使用 Gram-Schmidt 过程
+        # Use Gram-Schmidt process
         if show_steps:
             self.step_generator.add_step(r"\text{使用 Gram-Schmidt 过程进行 QR 分解}")
 
@@ -357,11 +429,11 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         if show_steps:
             self.add_step("验证分解结果")
 
-            # 计算 Q * R
+            # Calculate Q * R
             QR = Q * R
             self.add_matrix(QR, "QR")
 
-            # 检查是否等于 A
+            # Check if it equals A
             is_correct = True
             for i in range(m):
                 for j in range(n):
@@ -377,8 +449,8 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                 self.step_generator.add_step(
                     r"QR \neq A \Rightarrow \text{分解可能有误}")
 
-            # 检查 Q 是否正交
-            if m == n:  # 只有方阵才能是正交矩阵
+            # Check if Q is orthogonal
+            if m == n:  # Only square matrices can be orthogonal
                 if self.is_orthogonal_matrix(Q, False, False):
                     self.step_generator.add_step(r"Q \text{ 是正交矩阵}")
                 else:
@@ -389,7 +461,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                 else:
                     self.step_generator.add_step(r"Q \text{ 的列不是规范正交的}")
 
-            # 检查 R 是否上三角
+            # Check if R is upper triangular
             is_upper_triangular = True
             for i in range(R.rows):
                 for j in range(i):
@@ -406,8 +478,18 @@ class OrthogonalProcessor(CommonMatrixCalculator):
 
         return Q, R
 
-    def auto_orthogonal_analysis(self, input_data, show_steps=True):
-        """自动进行正交性分析"""
+    def auto_orthogonal_analysis(self, input_data: str, show_steps: bool = True) -> Dict:
+        """Automatically perform orthogonal analysis on input data.
+
+        This method analyzes various orthogonal properties of the input vectors or matrix.
+
+        Args:
+            input_data: Input vectors or matrix to analyze
+            show_steps (bool): Whether to show calculation steps
+
+        Returns:
+            dict: Dictionary containing analysis results
+        """
         self.step_generator.clear()
         if show_steps:
             self.step_generator.add_step(r"\textbf{自动正交性分析}")
@@ -415,16 +497,16 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         try:
             A = self.parse_matrix_input(input_data)
         except Exception:
-            # 可能是单个向量
+            # Might be a single vector
             A = self.parse_vector_input(input_data)
-            A = A.T  # 转换为行向量以便统一处理
+            A = A.T  # Transpose to row vector for uniform processing
 
         if show_steps:
             self.add_matrix(A, "A")
 
         results = {}
 
-        # 分析向量集的正交性
+        # Analyze orthogonal properties of vector set
         if show_steps:
             self.add_step("向量集正交性分析")
 
@@ -434,7 +516,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         results["orthogonal_set"] = is_orthogonal
         results["orthonormal_set"] = is_orthonormal
 
-        # 分析矩阵的正交性(如果是方阵)
+        # Analyze matrix orthogonality (for square matrices only)
         if A.rows == A.cols:
             if show_steps:
                 self.add_step("矩阵正交性分析")
@@ -443,7 +525,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                 A, show_steps, False)
             results["orthogonal_matrix"] = is_orthogonal_matrix
 
-        # 进行 QR 分解
+        # Perform QR decomposition
         if show_steps:
             self.add_step("QR 分解")
 
@@ -458,19 +540,19 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         return results
 
 
-# 演示函数
+# Demo functions
 def demo_orthogonal_sets():
-    """演示正交集判断"""
+    """Demonstrate orthogonal set checking."""
     processor = OrthogonalProcessor()
 
     processor.step_generator.add_step(r"\textbf{正交集判断演示}")
 
-    # 各种情况的示例
-    orthogonal_set = '[[1,0],[0,1]]'  # 规范正交集
-    orthogonal_not_normal = '[[2,0],[0,3]]'  # 正交但不规范
-    not_orthogonal = '[[1,1,2],[1,0,1],[3,1,2]]'  # 不正交
-    single_vector = '[[1,0]]'  # 单个向量
-    zero_vector = '[[0,0],[1,0]]'  # 包含零向量
+    # Examples for different cases
+    orthogonal_set = '[[1,0],[0,1]]'  # Orthonormal set
+    orthogonal_not_normal = '[[2,0],[0,3]]'  # Orthogonal but not normalized
+    not_orthogonal = '[[1,1,2],[1,0,1],[3,1,2]]'  # Not orthogonal
+    single_vector = '[[1,0]]'  # Single vector
+    zero_vector = '[[0,0],[1,0]]'  # Contains zero vector
 
     test_cases = [
         ("规范正交集", orthogonal_set),
@@ -491,16 +573,16 @@ def demo_orthogonal_sets():
 
 
 def demo_orthogonal_matrices():
-    """演示正交矩阵判断"""
+    """Demonstrate orthogonal matrix checking."""
     processor = OrthogonalProcessor()
 
     processor.step_generator.add_step(r"\textbf{正交矩阵判断演示}")
 
-    # 各种情况的示例
-    identity = '[[1,0],[0,1]]'  # 单位矩阵
-    rotation = '[[0,-1],[1,0]]'  # 旋转矩阵
-    not_orthogonal = '[[1,2],[3,4]]'  # 非正交矩阵
-    reflection = '[[1,0],[0,-1]]'  # 反射矩阵
+    # Examples for different cases
+    identity = '[[1,0],[0,1]]'  # Identity matrix
+    rotation = '[[0,-1],[1,0]]'  # Rotation matrix
+    not_orthogonal = '[[1,2],[3,4]]'  # Non-orthogonal matrix
+    reflection = '[[1,0],[0,-1]]'  # Reflection matrix
 
     test_cases = [
         ("单位矩阵", identity),
@@ -520,15 +602,15 @@ def demo_orthogonal_matrices():
 
 
 def demo_gram_schmidt():
-    """演示 Gram-Schmidt 过程"""
+    """Demonstrate Gram-Schmidt orthonormalization process."""
     processor = OrthogonalProcessor()
 
     processor.step_generator.add_step(r"\textbf{Gram-Schmidt 规范正交化演示}")
 
-    # 各种情况的示例
+    # Examples for different cases
     independent_2d = '[[1,1],[2,0]]'
     independent_3d = '[[1,1,0],[1,0,1],[0,1,1]]'
-    dependent_vectors = '[[1,2],[2,4],[3,6]]'  # 线性相关
+    dependent_vectors = '[[1,2],[2,4],[3,6]]'  # Linearly dependent
 
     test_cases = [
         ("二维独立向量", independent_2d),
@@ -546,12 +628,12 @@ def demo_gram_schmidt():
 
 
 def demo_qr_decomposition():
-    """演示 QR 分解"""
+    """Demonstrate QR decomposition."""
     processor = OrthogonalProcessor()
 
     processor.step_generator.add_step(r"\textbf{QR 分解演示}")
 
-    # 各种情况的示例
+    # Examples for different cases
     square_matrix = '[[1,1],[2,0]]'
     rectangular = '[[1,2,3],[4,5,6]]'
     symmetric = '[[2,1],[1,2]]'
@@ -573,13 +655,13 @@ def demo_qr_decomposition():
 
 
 def demo_symbolic_cases():
-    """演示符号情况"""
+    """Demonstrate symbolic cases."""
     processor = OrthogonalProcessor()
 
     display(Math(r"\textbf{符号情况演示}"))
     display(Math(r"\textbf{假设所有符号表达式各自满足一定的条件}"))
 
-    # 符号示例
+    # Symbolic examples
     symbolic_orthogonal = '[[a,0],[0,b]]'
     symbolic_matrix = '[[a,b],[c,d]]'
 

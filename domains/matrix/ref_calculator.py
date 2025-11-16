@@ -1,31 +1,66 @@
-from sympy import Matrix, sympify, simplify, Eq, Ne, latex
-from domains.matrix import (RefStepGenerator, BranchManager, BranchNode,
-                            apply_swap_rule, apply_scale_rule, apply_elimination_rule)
+from typing import List, Tuple, Union
+from sympy import Eq, Expr, Matrix, Ne, latex, simplify, sympify
+from sympy.core.relational import Relational
+
+from domains.matrix import (
+    BranchManager, BranchNode, RefStepGenerator, apply_elimination_rule,
+    apply_scale_rule, apply_swap_rule
+)
 
 
 class RefCalculator():
+    """A calculator for computing Row Echelon Form (REF) or Reduced Row Echelon Form (RREF)
+    of matrices with symbolic entries, handling branching cases when denominators may be zero.
 
-    def __init__(self):
+    This class systematically handles the computation of REF/RREF forms by:
+    1. Tracking potential zero denominators during elimination
+    2. Creating branches for different cases (denominator = 0 vs ≠ 0)
+    3. Processing each branch under its specific conditions
+    4. Merging equivalent results from different branches
+    """
+
+    def __init__(self) -> None:
+        """Initialize the REF calculator with default components."""
         self.step_generator = RefStepGenerator()
         self.target_form: str = None
-        # 全局记录检测到的可能为 0 的表达式(即分母候选)
+        # Global record of expressions that might be zero (denominator candidates)
         self.denominators = set()
         self.branch_manager = BranchManager()
 
-    def _reset_process(self):
+    def _reset_process(self) -> None:
+        """Reset the calculation process by clearing steps and denominators."""
         self.step_generator.reset()
         self.denominators.clear()
 
-    def _parse_matrix_input(self, matrix_input: str):
+    def _parse_matrix_input(self, matrix_input: str) -> Matrix:
+        """Parse string input into a SymPy Matrix.
+
+        Args:
+            matrix_input (str): String representation of a matrix in format like '[[1, 2], [3, 4]]'
+
+        Returns:
+            Matrix: Parsed SymPy Matrix object
+
+        Raises:
+            ValueError: If the matrix cannot be parsed from the input string
+        """
         try:
             return Matrix(sympify(matrix_input))
         except Exception as e:
             raise ValueError("无法解析矩阵输入. 请使用有效的矩阵格式 '[[1, 2], [3, 4]]'") from e
 
-    # 条件下的零/非零判定
+    # Zero/non-zero determination under conditions
     @staticmethod
-    def _apply_equalities_to_expr(expr, conditions):
-        """把条件集合中的等式替换到表达式上, 返回替换结果并 simplify"""
+    def _apply_equalities_to_expr(expr: Expr, conditions: List[Relational]) -> Expr:
+        """Apply equality substitutions from conditions to an expression.
+
+        Args:
+            expr: The expression to apply substitutions to
+            conditions: List of condition objects, potentially containing Eq instances
+
+        Returns:
+            The expression after applying substitutions and simplification
+        """
         subs_map = {}
         for c in conditions:
             try:
@@ -41,8 +76,16 @@ class RefCalculator():
         return expr
 
     @staticmethod
-    def _is_zero_under(expr, conditions) -> bool:
-        """判断在给定条件下 expr 是否确定为 0"""
+    def _is_zero_under(expr: Expr, conditions: List[Relational]) -> bool:
+        """Determine if an expression is definitely zero under given conditions.
+
+        Args:
+            expr: Expression to evaluate
+            conditions: List of conditions that may affect the expression value
+
+        Returns:
+            bool: True if expression is definitely zero under conditions, False otherwise
+        """
         expr_sub = RefCalculator._apply_equalities_to_expr(expr, conditions)
         try:
             s = simplify(expr_sub)
@@ -51,8 +94,16 @@ class RefCalculator():
             return False
 
     @staticmethod
-    def _is_nonzero_under(expr, conditions) -> bool:
-        """判断在给定条件下 expr 是否确定非 0(若不能确定返回 False)"""
+    def _is_nonzero_under(expr: Expr, conditions: List[Relational]) -> bool:
+        """Determine if an expression is definitely non-zero under given conditions.
+
+        Args:
+            expr: Expression to evaluate
+            conditions: List of conditions that may affect the expression value
+
+        Returns:
+            bool: True if expression is definitely non-zero under conditions, False otherwise
+        """
         expr_sub = RefCalculator._apply_equalities_to_expr(expr, conditions)
         try:
             s = simplify(expr_sub)
@@ -60,7 +111,7 @@ class RefCalculator():
                 return False
             if len(s.free_symbols) == 0:
                 return True
-            # 若条件中已有明确 Ne(expr,0), 则视为非零
+            # If conditions explicitly state Ne(expr,0), consider it non-zero
             for c in conditions:
                 try:
                     if isinstance(c, (Ne,)) and c.lhs == expr:
@@ -71,12 +122,19 @@ class RefCalculator():
         except Exception:
             return False
 
-    # 分支内处理单个分支
+    # Process a single branch within its conditions
     def _process_branch(self, branch: BranchNode, target_form: str) -> BranchNode:
-        """
-        在 branch 的条件下处理矩阵（尝试完成到 target_form）。
-        如果遇到需要分裂的分母，会把 branch.finished 设为 False 并返回，
-        由外层进行分裂处理。
+        """Process a matrix under branch conditions to attempt completion to target form.
+
+        If a denominator requiring case analysis is encountered, the branch.finished flag
+        will be set to False and returned for outer-level splitting processing.
+
+        Args:
+            branch (BranchNode): The branch node containing matrix, conditions and steps
+            target_form (str): Target form, either 'ref' or 'rref'
+
+        Returns:
+            BranchNode: The processed branch node, possibly unfinished
         """
         matrix = branch.matrix.copy()
         rows, cols = matrix.rows, matrix.cols
@@ -86,31 +144,32 @@ class RefCalculator():
             for col in range(cols):
                 if pivot_row >= rows:
                     break
-                # 搜寻可作为主元的行：优先选当前条件下确定非零的行；否则挑选可能非零的一行
+                # Search for a suitable pivot row: prefer definitely non-zero, then possibly non-zero
                 swap_r = None
                 possible_r = None
                 for r in range(pivot_row, rows):
                     elem = matrix[r, col]
-                    # 确定非零
+                    # Definitely non-zero
                     if self._is_nonzero_under(elem, branch.conditions):
                         swap_r = r
                         break
-                    # 不确定是非零(break), 也不确定是零 -> 可能为 0(取第一个可能行)
+                    # Uncertain whether zero or non-zero -> possibly non-zero (take first such row)
                     if not self._is_zero_under(elem, branch.conditions) and possible_r is None:
                         possible_r = r
                 if swap_r is None:
                     swap_r = possible_r
 
                 if swap_r is None:
-                    # 该列没有主元，继续下列
+                    # No pivot in this column, continue to next column
                     continue
 
-                # 若需换行
+                # Swap rows if needed
                 if swap_r != pivot_row:
                     matrix, expl = apply_swap_rule(
                         matrix, pivot_row, swap_r)
                     branch.add_step(matrix.copy(), expl)
-                # 若 pivot_elem 含符号且当前条件不足以判定非零, 则记录为需讨论分母
+                # If pivot element contains symbols and current conditions are insufficient
+                # to determine it's non-zero, record it as a denominator for case analysis
                 if swap_r == possible_r:
                     pivot_elem = matrix[pivot_row, col]
                     self.denominators.add(pivot_elem)
@@ -119,13 +178,13 @@ class RefCalculator():
                     branch.finished = False
                     return branch
 
-                # 放缩主元至 1(若需要)
+                # Scale pivot to 1 (if needed)
                 matrix, expl = apply_scale_rule(matrix, pivot_row, col)
                 if expl:
                     branch.matrix = matrix.copy()
                     branch.add_step(matrix.copy(), expl)
 
-                # 消去其它行或下方行, 取决于 target_form
+                # Eliminate other rows depending on target_form
                 if target_form == 'rref':
                     for r in range(rows):
                         if r == pivot_row or matrix[r, col] == 0:
@@ -137,7 +196,7 @@ class RefCalculator():
                             branch.add_step(matrix.copy(), expl)
                 else:  # ref
                     for r in range(pivot_row + 1, rows):
-                        # 本身为 0, 跳过
+                        # Skip if already zero
                         if matrix[r, col] == 0:
                             continue
                         matrix, expl = apply_elimination_rule(
@@ -154,12 +213,19 @@ class RefCalculator():
             matrix.copy(), rf"$最终\;{target_form.upper()}\;形式(在分支条件下)$")
         return branch
 
-    def _split_branch_on_denominator(self, branch: BranchNode, denom_expr):
-        """
-        在 denom_expr 上对 branch 做二分裂:
-          denom != 0 分支(直接继续)
-          denom == 0 分支(在矩阵中代入 denom=0, 再继续)
-        返回生成的新分支列表(仅返回可满足的分支)
+    def _split_branch_on_denominator(self, branch: BranchNode, denom_expr: Expr) -> List[BranchNode]:
+        """Split a branch into two based on a denominator expression:
+          - denom != 0 branch (continue directly)
+          - denom == 0 branch (substitute denom=0 in matrix, then continue)
+
+        Only returns satisfiable branches.
+
+        Args:
+            branch (BranchNode): The branch to split
+            denom_expr: The denominator expression to split on
+
+        Returns:
+            list: New branch nodes generated from splitting
         """
         den = denom_expr
         baseconds = branch.conditions.copy()
@@ -173,7 +239,7 @@ class RefCalculator():
         bA.conditions.append(BranchManager.cond_ne(den))
         bA.add_step(bA.matrix.copy(), f"假设 ${latex(den)} \\neq 0$(分支)")
 
-        # B: den == 0 -> 对矩阵进行代入
+        # B: den == 0 -> substitute den=0 in matrix
         bB.conditions.append(BranchManager.cond_eq(den))
         try:
             bB.matrix = bB.matrix.applyfunc(lambda x: simplify(x.subs(den, 0)))
@@ -191,26 +257,32 @@ class RefCalculator():
             out.append(bB)
         return out
 
-    def _compute_branches(self, original_matrix: Matrix, target_form: str):
-        """
-        使用 BFS(队列) 展开分支:
-          每次处理队列头的分支，调用 _process_branch
-          若分支未 finished, 则依据 self.denominators 找到可用于分裂的表达式并分裂(优先最早出现的)
-          最终收集所有 finished 的叶子并调用 BranchManager.merge_leaves 合并等价结果
+    def _compute_branches(self, original_matrix: Matrix, target_form: str) -> List[BranchNode]:
+        """Expand branches using BFS (queue-based):
+          1. Process the front branch in queue using _process_branch
+          2. If branch is unfinished, split based on self.denominators (prioritizing earliest appearing)
+          3. Collect all finished leaves and merge equivalent results using BranchManager.merge_leaves
+
+        Args:
+            original_matrix (Matrix): The original matrix to process
+            target_form (str): Target form ('ref' or 'rref')
+
+        Returns:
+            list: Merged finished branch leaves
         """
         root = BranchNode(
             conditions=[], matrix=original_matrix.copy(), steps=[])
         queue = [root]
         finished_leaves = []
 
-        # 清空 denominators(确保从 0 开始收集)
+        # Clear denominators (ensure fresh collection from start)
         self.denominators = set()
 
         while queue:
             branch = queue.pop(0)
             processed = self._process_branch(branch, target_form)
             if not processed.finished:
-                # 找到需要分裂的 denominators(排除该分支已有条件涵盖的表达式)
+                # Find denominators requiring splitting (excluding those already covered by branch conditions)
                 to_split = []
                 for den in list(self.denominators):
                     already = any((hasattr(c, 'lhs') and c.lhs == den)
@@ -218,25 +290,34 @@ class RefCalculator():
                     if not already:
                         to_split.append(den)
                 if not to_split:
-                    # 若没有可分裂的表达式, 则该分支卡住 -> 标记为不可行
+                    # No splittable expressions -> branch stuck, mark as unsatisfiable
                     branch.reason = "无可分裂的表达式但未完成"
                     continue
-                # 取第一个表达式分裂
+                # Split on first available expression
                 den = to_split[0]
                 new_branches = self._split_branch_on_denominator(branch, den)
                 for nb in new_branches:
                     queue.append(nb)
                 continue
+
+            if BranchManager.is_satisfiable(branch.conditions):
+                finished_leaves.append(branch)
             else:
-                if BranchManager.is_satisfiable(branch.conditions):
-                    finished_leaves.append(branch)
-                else:
-                    continue
+                continue
 
         merged = self.branch_manager.merge_leaves(finished_leaves)
         return merged
 
-    def compute_list(self, matrix_input: str, target_form='rref'):
+    def compute_list(self, matrix_input: str, target_form='rref') -> Tuple[List[Union[Expr, Matrix]], List[str]]:
+        """Compute the REF/RREF form with detailed steps and explanations.
+
+        Args:
+            matrix_input (str): String representation of matrix
+            target_form (str): Target form, either 'ref' or 'rref'. Defaults to 'rref'.
+
+        Returns:
+            tuple: (steps, explanations) lists containing the computation steps
+        """
         self._reset_process()
         self.target_form = target_form
         original_matrix = self._parse_matrix_input(matrix_input)
@@ -245,15 +326,15 @@ class RefCalculator():
 
         self.step_generator.add_step(original_matrix, "初始矩阵")
 
-        # 将每个叶子的步骤写入 step_generator(带分支标题与条件)
+        # Write each leaf's steps to step_generator (with branch title and conditions)
         for i, leaf in enumerate(leaves):
             cond_latex = BranchManager.conditions_to_latex(leaf.conditions)
-            # 换行
+            # Line break
             self.step_generator.add_step("", "")
             self.step_generator.add_step(
                 f"\\quad\\quad 分支 {i+1}", f"条件：${cond_latex}$")
             for mat_or_str, expl in leaf.steps:
-                # 换行
+                # Line break
                 self.step_generator.add_step("", "")
                 self.step_generator.add_step(mat_or_str, expl)
 
@@ -261,7 +342,7 @@ class RefCalculator():
             self.step_generator.add_step(
                 original_matrix, "在所有划分下均无可行解(所有分支均不可满足)")
         else:
-            # 换行
+            # Line break
             self.step_generator.add_step("", "")
             self.step_generator.add_step(
                 "\\quad\\quad 最终结果汇总",
@@ -269,12 +350,12 @@ class RefCalculator():
             )
             for i, leaf in enumerate(leaves):
                 cond_latex = BranchManager.conditions_to_latex(leaf.conditions)
-                # 取该分支的最后一步矩阵
+                # Get final matrix from last step of branch
                 if isinstance(leaf.steps[-1][0], str):
                     final_matrix = leaf.steps[-2][0]
                 else:
                     final_matrix = leaf.steps[-1][0]
-                # 换行
+                # Line break
                 self.step_generator.add_step("", "")
                 self.step_generator.add_step(
                     final_matrix,
@@ -284,6 +365,15 @@ class RefCalculator():
         steps, explanations = self.step_generator.get_steps()
         return steps, explanations
 
-    def compute_latex(self, matrix_input: str, target_form='rref'):
+    def compute_latex(self, matrix_input: str, target_form='rref') -> str:
+        """Compute the REF/RREF form and return LaTeX formatted output.
+
+        Args:
+            matrix_input (str): String representation of matrix
+            target_form (str): Target form, either 'ref' or 'rref'. Defaults to 'rref'.
+
+        Returns:
+            str: LaTeX formatted computation steps and explanations
+        """
         steps, explanations = self.compute_list(matrix_input, target_form)
         return self.step_generator.get_latex(steps, explanations)

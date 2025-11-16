@@ -1,4 +1,4 @@
-from typing import List, Tuple, Callable, Set, Optional
+from typing import Dict, List, Tuple, Callable, Set, Optional
 from sympy import (
     Expr, preorder_traversal, srepr, sympify, expand, factor,
     expand_trig, logcombine, expand_log, apart, cancel, radsimp, tan, sin, cos,
@@ -6,12 +6,25 @@ from sympy import (
 )
 from matplotlib import pyplot as plt
 from matplotlib import rcParams
-rcParams["font.sans-serif"] = ["SimHei"]  # 中文字体
-rcParams["axes.unicode_minus"] = False    # 解决负号 '-' 显示问题
+
+rcParams["font.sans-serif"] = ["SimHei"]  # Chinese font
+rcParams["axes.unicode_minus"] = False    # Support negative sign
 
 
 class ExpressionParser:
-    def __init__(self, max_depth: int = 3, sort_strategy: Optional[Callable[[Expr], float]] = None):
+    """A class for parsing and transforming mathematical expressions using various symbolic computation rules.
+
+    This parser applies transformation rules to generate equivalent forms of an expression up to a specified depth.
+    It can also visualize the derivation tree of transformations applied to an expression.
+    """
+
+    def __init__(self, max_depth: int = 3, sort_strategy: Optional[Callable[[Expr], float]] = None) -> None:
+        """Initialize the ExpressionParser with maximum derivation depth and optional sorting strategy.
+
+        Args:
+            max_depth: Maximum depth of derivation tree (default: 3)
+            sort_strategy: Optional function to sort derived expressions by a custom criterion
+        """
         self.max_depth = max_depth
         self.sort_strategy = sort_strategy
         self.transform_rules: List[Tuple[str,
@@ -20,6 +33,17 @@ class ExpressionParser:
 
     @staticmethod
     def _try_transform(expr: Expr, func: Callable, *args, **kwargs) -> List[Expr]:
+        """Safely apply a transformation function to an expression.
+
+        Args:
+            expr: The expression to transform
+            func: The transformation function to apply
+            *args: Positional arguments for the function
+            **kwargs: Keyword arguments for the function
+
+        Returns:
+            List containing the transformed expression if successful, otherwise empty list
+        """
         try:
             result = func(expr, *args, **kwargs)
             if result is not None and result != expr:
@@ -28,7 +52,9 @@ class ExpressionParser:
             return []
         return []
 
-    def _initialize_rules(self):
+    def _initialize_rules(self) -> None:
+        """Initialize the list of transformation rules with their names and corresponding functions."""
+
         self.transform_rules.extend([
             ("三角展开", self._expand_trig_transform),
             ("积化和差", self._product_or_trig_expand_transform),
@@ -45,6 +71,14 @@ class ExpressionParser:
         ])
 
     def parse(self, expression: str) -> List[Tuple[Expr, str]]:
+        """Parse an expression and generate all possible derivations within the maximum depth.
+
+        Args:
+            expression: String representation of the mathematical expression
+
+        Returns:
+            List of tuples containing derived expressions and their derivation steps
+        """
         expr = sympify(expression)
 
         def canonical_key(expr: Expr) -> str:
@@ -73,7 +107,15 @@ class ExpressionParser:
 
         return derivations
 
-    def parse_tree(self, expression: str):
+    def parse_tree(self, expression: str) -> Dict:
+        """Generate a derivation tree for an expression.
+
+        Args:
+            expression: String representation of the mathematical expression
+
+        Returns:
+            Dictionary representing the derivation tree structure
+        """
         expr = sympify(expression)
 
         def canonical_key(expr: Expr) -> str:
@@ -108,7 +150,14 @@ class ExpressionParser:
 
         return tree
 
-    def draw_expr_tree(self, tree, save_path: Optional[str] = None):
+    def draw_expr_tree(self, tree: Dict, save_path: Optional[str] = None) -> None:
+        """
+        Visualize the derivation tree using matplotlib.
+
+        Args:
+            tree: The derivation tree structure to visualize
+            save_path: Optional path to save the visualization as an image file
+        """
         def _count_nodes(node):
             return 1 + sum(_count_nodes(child) for child in node.get("children", []))
 
@@ -120,16 +169,16 @@ class ExpressionParser:
         num_nodes = _count_nodes(tree)
         depth = _tree_depth(tree)
 
-        # 动态调整画布大小
-        width = num_nodes * 1.5    # 宽度按节点数调整
-        height = depth * 1.5       # 高度按树深度调整
+        # Dynamically adjust canvas size
+        width = num_nodes * 1.5    # Width adjusted by number of nodes
+        height = depth * 1.5       # Height adjusted by tree depth
 
-        _fig, ax = plt.subplots(figsize=(width, height))
+        _, ax = plt.subplots(figsize=(width, height))
         ax.axis('off')
 
         positions = {}
         edges = []
-        x_counter = [0]  # 用于水平布局
+        x_counter = [0]  # Used for horizontal layout
 
         def assign_positions(node, depth_level=0):
             if not node["children"]:
@@ -148,26 +197,35 @@ class ExpressionParser:
 
         assign_positions(tree)
 
-        # 绘制边
+        # Draw edges
         for parent_id, child_id in edges:
             x0, y0 = positions[parent_id]
             x1, y1 = positions[child_id]
             ax.plot([x0, x1], [y0, y1], color="black")
 
-        # 绘制节点
+        # Draw nodes
         for node_id, (x, y) in positions.items():
             node = self._find_node_by_id(tree, node_id)
             label = f"${latex(node['expr'])}$\n({node['reason']})"
             ax.text(x, y, label, ha="center", va="center",
-                    bbox=dict(boxstyle="round,pad=0.5", fc="lightblue", ec="black"))
+                    bbox={"boxstyle": "round,pad=0.5", "fc": "lightblue", "ec": "black"})
 
         if save_path:
-            plt.savefig(save_path, bbox_inches="tight")  # 保存到文件
+            plt.savefig(save_path, bbox_inches="tight")  # Save to file
             print(f"可视化树已保存到：{save_path}")
 
         plt.show()
 
-    def _find_node_by_id(self, node, node_id):
+    def _find_node_by_id(self, node: Dict, node_id: int) -> Dict:
+        """Find a node in the tree by its ID.
+
+        Args:
+            node: The root node to start searching from
+            node_id: The ID of the node to find
+
+        Returns:
+            The node with the matching ID or None if not found
+        """
         if node["id"] == node_id:
             return node
         for child in node.get("children", []):
@@ -177,6 +235,15 @@ class ExpressionParser:
         return None
 
     def _apply_rule_to_subexpressions(self, rule: Callable[[Expr], List[Expr]], expr: Expr) -> List[Expr]:
+        """Apply a transformation rule to all subexpressions of an expression.
+
+        Args:
+            rule: The transformation rule function to apply
+            expr: The expression to which the rule will be applied
+
+        Returns:
+            List of all valid transformed expressions
+        """
         results = []
         added_keys = set()
 
@@ -210,41 +277,49 @@ class ExpressionParser:
 
         return results
 
-    # 变换规则
+    # Transformation rules
     def _polynomial_expand_transform(
-        self, expr): return self._try_transform(expr, expand)
+        self, expr: Expr) -> List[Expr]: return self._try_transform(expr, expand)
 
-    def _factor_transform(self, expr):
+    def _factor_transform(self, expr: Expr) -> List[Expr]:
         return self._try_transform(expr, factor)
 
     def _product_or_trig_expand_transform(
-        self, expr): return self._try_transform(expr, expand_trig)
+        self, expr: Expr) -> List[Expr]: return self._try_transform(expr, expand_trig)
 
     def _expand_trig_transform(
-        self, expr): return self._try_transform(expr, expand_trig)
+        self, expr: Expr) -> List[Expr]: return self._try_transform(expr, expand_trig)
 
     def _combine_logarithms_transform(
-        self, expr): return self._try_transform(expr, logcombine, force=True)
+        self, expr: Expr) -> List[Expr]: return self._try_transform(expr, logcombine, force=True)
 
     def _expand_logarithmic_transform(
-        self, expr): return self._try_transform(expr, expand_log, force=True)
+        self, expr: Expr) -> List[Expr]: return self._try_transform(expr, expand_log, force=True)
 
-    def _apart_transform(self, expr):
+    def _apart_transform(self, expr: Expr) -> List[Expr]:
         return self._try_transform(expr, apart)
 
-    def _cancel_transform(self, expr):
+    def _cancel_transform(self, expr: Expr) -> List[Expr]:
         return self._try_transform(expr, cancel)
 
     def _radsimp_transform(
-        self, expr): return self._try_transform(expr, radsimp)
+        self, expr: Expr) -> List[Expr]: return self._try_transform(expr, radsimp)
 
-    def _powsimp_transform(self, expr):
+    def _powsimp_transform(self, expr: Expr) -> List[Expr]:
         return self._try_transform(expr, powsimp, force=True)
 
-    def _reciprocal_trig_transform(self, expr):
+    def _reciprocal_trig_transform(self, expr: Expr) -> List[Expr]:
         return self._try_transform(expr, trigsimp, reciprocal=True)
 
-    def _tan_to_sin_cos_transform(self, expr):
+    def _tan_to_sin_cos_transform(self, expr: Expr) -> List[Expr]:
+        """Transform tangent functions into sine over cosine ratios.
+
+        Args:
+            expr: The expression potentially containing tangent functions
+
+        Returns:
+            List containing the transformed expression or empty list if no transformation occurred
+        """
         try:
             replaced = expr.replace(lambda e: getattr(e, "func", None) == tan,
                                     lambda e: sin(e.args[0]) / cos(e.args[0]))

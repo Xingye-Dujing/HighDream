@@ -1,13 +1,30 @@
-from sympy import Matrix, latex, sympify, symbols
-from IPython.display import display, Math
+from typing import List
+from sympy import Matrix, latex, symbols, sympify
+from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
 
 class LinearTransform(CommonMatrixCalculator):
+    """A class for handling linear transformations and their matrix representations.
 
-    def parse_basis_input(self, basis_matrix, name="B", vector_names=None):
-        """解析基输入"""
+    This class provides methods to:
+    - Find matrix representation of linear transformations in given bases
+    - Change basis of linear transformation matrices
+    - Handle symbolic computations with parameters
+    """
+
+    def parse_basis_input(self, basis_matrix: Matrix, name: str = "B", vector_names: List[str] = None) -> None:
+        """Parse basis input and add to step generator.
+
+        Args:
+            basis_matrix: The matrix representing the basis vectors
+            name (str): Name of the basis (default: "B")
+            vector_names (list): Names for individual basis vectors (optional)
+
+        Raises:
+            ValueError: If the basis input cannot be parsed
+        """
         try:
             self.add_step(f"{name}组成的矩阵")
             if vector_names is None:
@@ -25,32 +42,53 @@ class LinearTransform(CommonMatrixCalculator):
         except Exception as e:
             raise ValueError(f"无法解析基输入: {basis_matrix}") from e
 
-    def parse_input(self, transformation_input):
-        """解析线性变换输入"""
+    def parse_input(self, transformation_input: str) -> Matrix:
+        """Parse linear transformation input.
+
+        Args:
+            transformation_input: Input representing a linear transformation
+
+        Returns:
+            Matrix: The parsed transformation matrix
+
+        Raises:
+            ValueError: If the transformation input cannot be parsed
+        """
         try:
             return Matrix(sympify(transformation_input))
         except Exception as e:
             raise ValueError(
                 f"无法解析线性变换输入: {transformation_input}") from e
 
-    def find_linear_transform_matrix(self, transformation_input, basis_input, show_steps=True):
-        """求线性变换在给定基下的矩阵表示"""
+    def find_linear_transform_matrix(self, transformation_input: str, basis_input: str, show_steps: bool = True) -> Matrix:
+        """Find the matrix representation of a linear transformation in a given basis.
+
+        For a linear transformation T and basis B, finds matrix A such that T(B) = B*A.
+
+        Args:
+            transformation_input: The linear transformation (in standard basis)
+            basis_input: The basis vectors as a matrix
+            show_steps (bool): Whether to show computation steps (default: True)
+
+        Returns:
+            Matrix: The transformation matrix in the given basis, or None if computation fails
+        """
         if show_steps:
             self.step_generator.clear()
             self.step_generator.add_step(r"\textbf{求线性变换在给定基下的矩阵表示}")
 
-        # 解析基
+        # Parse the basis
         basis = self.parse_input(basis_input)
         self.parse_basis_input(basis, "给定基")
 
-        # 解析线性变换
+        # Parse the linear transformation
         self.add_step("线性变换(标准基下)")
         transformation = self.parse_input(transformation_input)
 
         if isinstance(transformation, Matrix):
             self.add_matrix(transformation, "T")
 
-        # 应用线性变换到基向量
+        # Apply linear transformation to basis vectors
         transformed_basis_vectors = []
 
         for i in range(basis.cols):
@@ -65,7 +103,7 @@ class LinearTransform(CommonMatrixCalculator):
                             f"T(\\boldsymbol{{b}}_{{{i+1}}})")
             transformed_basis_vectors.append(transformed_vector)
 
-        # 构建变换后的基向量矩阵
+        # Build matrix of transformed basis vectors
         T_basis_matrix = transformed_basis_vectors[0]
         for i in range(1, len(transformed_basis_vectors)):
             T_basis_matrix = T_basis_matrix.row_join(
@@ -73,7 +111,7 @@ class LinearTransform(CommonMatrixCalculator):
 
         self.add_matrix(T_basis_matrix, "T(B)")
 
-        # 求解线性变换矩阵 A, 使得 T(B) = B * A
+        # Solve for linear transformation matrix A, such that T(B) = B * A
         self.add_step("求解线性变换矩阵")
         self.step_generator.add_step(
             r"\text{设线性变换矩阵为 } A \text{, 满足: } A = B^{-1} T(B)")
@@ -91,13 +129,26 @@ class LinearTransform(CommonMatrixCalculator):
             self.step_generator.add_step(f"\\text{{计算失败: {str(e)}}}")
             return None
 
-    def change_transform_basis(self, transform_matrix, from_basis_input, to_basis_input, show_steps=True):
-        """将线性变换矩阵从一组基转换到另一组基"""
+    def change_transform_basis(self, transform_matrix: str, from_basis_input: str, to_basis_input: str, show_steps: bool = True) -> Matrix:
+        """Change the basis of a linear transformation matrix.
+
+        Given a transformation matrix A in basis B, computes A' in basis C using
+        the similarity transformation A' = P^{-1} A P where P is the transition matrix.
+
+        Args:
+            transform_matrix: The transformation matrix in the original basis
+            from_basis_input: The original basis vectors as a matrix
+            to_basis_input: The target basis vectors as a matrix
+            show_steps (bool): Whether to show computation steps (default: True)
+
+        Returns:
+            Matrix: The transformation matrix in the new basis, or None if computation fails
+        """
         if show_steps:
             self.step_generator.clear()
             self.step_generator.add_step(r"\textbf{线性变换矩阵的基变换}")
 
-        # 解析输入
+        # Parse inputs
         transform_matrix = self.parse_input(transform_matrix)
 
         if isinstance(transform_matrix, Matrix):
@@ -109,7 +160,7 @@ class LinearTransform(CommonMatrixCalculator):
         self.parse_basis_input(to_basis, "新基", [
             f"\\boldsymbol{{c}}_{{{i+1}}}" for i in range(to_basis.rows)])
 
-        # 计算基变换矩阵
+        # Calculate basis change matrix
         self.add_step("计算基变换矩阵")
         self.step_generator.add_step(
             r"\text{设从原基 } B \text{ 到新基 } C \text{ 的过渡矩阵为 } P")
@@ -123,7 +174,7 @@ class LinearTransform(CommonMatrixCalculator):
             P = from_basis_inv * to_basis
             self.add_matrix(P, "P")
 
-            # 计算新基下的线性变换矩阵
+            # Calculate linear transformation matrix in new basis
             self.add_step("计算新基下的线性变换矩阵")
             self.step_generator.add_step(
                 r"\text{新基下的线性变换矩阵为: } A' = P^{-1} A P")
@@ -140,7 +191,16 @@ class LinearTransform(CommonMatrixCalculator):
             self.step_generator.add_step(f"\\text{{计算失败: {str(e)}}}")
             return None
 
-    def compute(self, expression, operation):
+    def compute(self, expression: str, operation: str) -> str:
+        """Process computational requests based on expression and operation type.
+
+        Args:
+            expression (str): Input expressions separated by newlines
+            operation (str): Type of operation to perform
+
+        Returns:
+            str: LaTeX formatted computation steps
+        """
         expressions = expression.split('\n')
 
         if operation in ['find_matrix', 'find_transform_matrix']:
@@ -161,15 +221,15 @@ class LinearTransform(CommonMatrixCalculator):
 
 
 def demo_linear_transform():
-    """演示线性变换矩阵求解"""
+    """Demonstrate solving linear transformation matrices."""
     transformer = LinearTransform()
 
     transformer.step_generator.add_step(r"\textbf{线性变换矩阵求解演示}")
 
-    # 示例 1: 二维旋转变换
+    # Example 1: 2D rotation transformation
     transformer.step_generator.add_step(r"\text{例 1: 二维旋转变换(90 度)}")
     rotation_matrix = [[0, -1], [1, 0]]
-    basis1 = [[1, 0], [0, 1]]  # 标准基
+    basis1 = [[1, 0], [0, 1]]  # Standard basis
 
     try:
         transformer.find_linear_transform_matrix(rotation_matrix, basis1)
@@ -178,7 +238,7 @@ def demo_linear_transform():
         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(transformer.get_steps_latex()))
 
-    # 示例 2: 三维旋转变换
+    # Example 2: 3D rotation transformation
     transformer.step_generator.add_step(r"\text{例 2: 三维变换}")
     matrix1 = [[2, 2, 0], [1, 1, 2], [1, 1, 2]]
     basis1 = [[1, -2, 1], [-1, 1, 1], [0, 1, 1]]
@@ -190,7 +250,7 @@ def demo_linear_transform():
         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(transformer.get_steps_latex()))
 
-    # 示例 3: 投影变换
+    # Example 3: Projection transformation
     transformer.step_generator.add_step(r"\text{例 3: 到 $x$ 轴的投影变换}")
     projection_matrix = [[1, 0], [0, 0]]
     basis2 = [[2, 1], [1, 2]]
@@ -205,14 +265,14 @@ def demo_linear_transform():
 
 
 def demo_basis_change():
-    """演示线性变换矩阵的基变换"""
+    """Demonstrate basis change for linear transformation matrices."""
     transformer = LinearTransform()
 
     transformer.step_generator.add_step(r"\textbf{线性变换矩阵基变换演示}")
 
-    # 示例 1: 旋转变换在不同基下的表示
+    # Example 1: Rotation transformation representation in different bases
     transformer.step_generator.add_step(r"\text{例 1: 旋转变换在不同基下的表示}")
-    rotation_matrix = [[0, -1], [1, 0]]  # 90度旋转
+    rotation_matrix = [[0, -1], [1, 0]]  # 90 degree rotation
     standard_basis = [[1, 0], [0, 1]]
     new_basis = [[1, 1], [1, -1]]
 
@@ -224,7 +284,7 @@ def demo_basis_change():
         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(transformer.get_steps_latex()))
 
-    # 示例 2: 投影变换的基变换
+    # Example 2: Basis change for projection transformation
     transformer.step_generator.add_step(r"\text{例 2: 投影变换的基变换}")
     projection_matrix = [[1, 0], [0, 0]]
     from_basis = [[1, 0], [0, 1]]
@@ -238,7 +298,7 @@ def demo_basis_change():
         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(transformer.get_steps_latex()))
 
-    # 示例 3: 三维空间的基变换
+    # Example 3: Basis change in 3D space
     transformer.step_generator.add_step(r"\text{例 3: 三维空间的基变换}")
     transform_3d = [[1, 2, 0], [0, 1, 1], [1, 0, 1]]
     from_basis_3d = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
@@ -254,19 +314,19 @@ def demo_basis_change():
 
 
 def demo_symbolic_transform():
-    """演示包含符号元素的线性变换"""
+    """Demonstrate linear transformations with symbolic elements."""
     transformer = LinearTransform()
 
     transformer.step_generator.add_step(r"\textbf{符号线性变换演示}")
     transformer.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0}")
 
-    # 示例 1: 带参数的二维线性变换
+    # Example 1: 2D linear transformation with parameters
     transformer.step_generator.add_step(r"\text{例 1: 带参数的二维线性变换}")
 
-    # 定义符号
+    # Define symbols
     a, b, c, d = symbols('a b c d')
 
-    # 符号矩阵
+    # Symbolic matrix
     symbolic_matrix = Matrix([
         [a, b],
         [c, d]
@@ -281,13 +341,13 @@ def demo_symbolic_transform():
         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(transformer.get_steps_latex()))
 
-    # 示例 2: 符号基下的线性变换
+    # Example 2: Linear transformation in symbolic basis
     transformer.step_generator.add_step(r"\text{例 2: 符号基下的线性变换}")
 
-    # 固定变换矩阵
+    # Fixed transformation matrix
     fixed_matrix = [[2, 1], [1, 3]]
 
-    # 符号基
+    # Symbolic basis
     k, m = symbols('k m')
     symbolic_basis = Matrix([
         [1, k],
@@ -301,17 +361,17 @@ def demo_symbolic_transform():
         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(transformer.get_steps_latex()))
 
-    # 示例 3: 符号基变换
+    # Example 3: Symbolic basis change
     transformer.step_generator.add_step(r"\text{例 3: 符号基变换}")
 
-    # 符号变换矩阵
+    # Symbolic transformation matrix
     p, q, r, s = symbols('p q r s')
     symbolic_transform = Matrix([
         [p, q],
         [r, s]
     ])
 
-    # 符号基
+    # Symbolic basis
     alpha, beta = symbols('alpha beta')
     from_basis = Matrix([
         [1, 0],
@@ -330,7 +390,7 @@ def demo_symbolic_transform():
         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(transformer.get_steps_latex()))
 
-    # 示例 4: 三维符号变换
+    # Example 4: 3D symbolic transformation
     transformer.step_generator.add_step(r"\text{例 4: 三维符号变换}")
 
     t, u, v = symbols('t u v')
@@ -354,11 +414,11 @@ def demo_symbolic_transform():
         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(transformer.get_steps_latex()))
 
-    # 示例 5: 函数形式的符号变换
+    # Example 5: Function-form symbolic transformation
     transformer.step_generator.add_step(r"\text{例 5: 函数形式的符号变换}")
 
     def symbolic_function_transform(vector):
-        """符号线性变换: T(x,y) = (ax + by, cx + dy)"""
+        """Symbolic linear transformation: T(x,y) = (ax + by, cx + dy)"""
         x, y = vector[0], vector[1]
         result = Matrix([a*x + b*y, c*x + d*y])
         desc = f'T(x,y) = ({a}x + {b}y, {c}x + {d}y)'

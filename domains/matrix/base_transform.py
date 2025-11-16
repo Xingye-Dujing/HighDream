@@ -1,17 +1,24 @@
-from sympy import Matrix, latex, sympify, symbols
-from IPython.display import display, Math
+from typing import Dict
+from sympy import Matrix, latex, symbols
+from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
 
 class BaseTransform(CommonMatrixCalculator):
+    """A class for performing basis transformations and coordinate conversions in linear algebra.
 
-    def show_input(self, basis_matrix, name="基", vector_names=None):
-        self.add_step(f"{name}组成的矩阵")
+    This class provides methods for computing transition matrices between different bases,
+    converting vector coordinates between bases, and handling both numeric and symbolic calculations.
+    """
+
+    def show_input(self, basis_matrix: Matrix, name: str = "基", vector_names: str = None):
+        """Display the input basis matrix with appropriate formatting."""
         if vector_names is None:
             vector_names = [
                 f"\\boldsymbol{{v}}_{{{i+1}}}" for i in range(basis_matrix.cols)]
 
+        self.add_step(f"{name}组成的矩阵")
         for i in range(basis_matrix.rows):
             vector_latex = latex(basis_matrix.col(i))
             self.step_generator.add_step(
@@ -19,30 +26,18 @@ class BaseTransform(CommonMatrixCalculator):
         name = 'U' if name == '新基' else 'V'
         self.add_matrix(basis_matrix, name)
 
-    def parse_vector_input(self, vector_input, name="向量"):
-        """解析向量输入"""
-        try:
-            if isinstance(vector_input, str):
-                vector = Matrix(sympify(vector_input))
-            elif isinstance(vector_input, list):
-                vector = Matrix(vector_input)
-            else:
-                vector = vector_input
+    def basis_change_matrix(self, old_basis: str, new_basis: str, show_steps: bool = True, need_parse: bool = True, is_clear: bool = True) -> Matrix:
+        """Calculate the transition matrix from old basis to new basis.
 
-            self.add_vector(vector, name)
-            return vector
-        except Exception as e:
-            raise ValueError(f"无法解析向量输入: {vector_input}, 错误: {str(e)}") from e
+        Computes the transition matrix P such that new_basis = old_basis * P
+        """
 
-    def basis_change_matrix(self, old_basis, new_basis, show_steps=True, need_parse=True, is_clear=True):
-        """计算从旧基到新基的过渡矩阵"""
         if is_clear:
             self.step_generator.clear()
         if show_steps:
-            self.step_generator.add_step(
-                r"\textbf{基变换: 从旧基到新基的过渡矩阵}")
+            self.step_generator.add_step(r"\textbf{基变换: 从旧基到新基的过渡矩阵}")
 
-        # 解析输入
+        # Parse inputs
         if need_parse:
             old_basis = self.parse_matrix_input(old_basis)
             new_basis = self.parse_matrix_input(new_basis)
@@ -51,7 +46,7 @@ class BaseTransform(CommonMatrixCalculator):
             self.show_input(new_basis, "新基",
                             [f"\\boldsymbol{{u}}_{{{i+1}}}" for i in range(new_basis.cols)])
 
-        # 计算过渡矩阵 P, 使得 new_basis = old_basis * P
+        # Calculate transition matrix P, where new_basis = old_basis * P
         self.add_step("计算过渡矩阵")
         self.step_generator.add_step(
             r"\text{设过渡矩阵 } P \text{, 其满足: } U = VP (右乘)")
@@ -75,17 +70,19 @@ class BaseTransform(CommonMatrixCalculator):
 
         except Exception as e:
             self.step_generator.add_step(f"\\text{{错误: {e}}}")
+            return None
 
-    def coordinate_transform(self, vector_input, from_basis_input, to_basis_input, show_steps=True):
-        """在不同基之间转换向量坐标"""
+    def coordinate_transform(self, vector_input: str, from_basis_input: str, to_basis_input: str, show_steps: bool = True) -> Dict[str, Matrix]:
+        """Transform vector coordinates from one basis to another."""
         self.step_generator.clear()
         to_coords = None
         if show_steps:
             self.step_generator.add_step(
                 r"\textbf{坐标变换: 向量在不同基下的坐标转换}")
 
-        # 解析输入
-        vector = self.parse_vector_input(vector_input, "[\\boldsymbol{x}]_{V}")
+        # Parse inputs
+        vector = self.parse_vector_input(vector_input)
+        self.add_vector(vector, "[\\boldsymbol{x}]_{V}")
         from_basis = self.parse_matrix_input(from_basis_input)
         to_basis = self.parse_matrix_input(to_basis_input)
         self.show_input(from_basis, "旧基")
@@ -93,14 +90,14 @@ class BaseTransform(CommonMatrixCalculator):
                         f"\\boldsymbol{{u}}_{{{i+1}}}" for i in range(to_basis.rows)])
 
         self.step_generator.add_step(r"\textbf{方法一: 利用过渡矩阵转换坐标}")
-        # 计算从旧基到新基的过渡矩阵
+        # Calculate transition matrix from old basis to new basis
         P = self.basis_change_matrix(
             from_basis, to_basis, show_steps=False, need_parse=False, is_clear=False)
 
         if P is None:
             return None
 
-        # 计算向量在新基下的坐标
+        # Calculate vector coordinates in new basis
         self.add_step("计算向量在新基下的坐标")
         self.step_generator.add_step(
             r"\text{利用过渡矩阵转换坐标: } [\boldsymbol{x}]_{U} = P^{-1} [\boldsymbol{x}]_{V}")
@@ -132,13 +129,15 @@ class BaseTransform(CommonMatrixCalculator):
             'transition_matrix': P
         }
 
-    def standard_to_basis(self, vector_input, basis_input, show_steps=True):
-        """从标准基转换到给定基"""
+    def standard_to_basis(self, vector_input: str, basis_input: str, show_steps: bool = True) -> Matrix:
+        """Convert vector coordinates from standard basis to a given basis."""
+
         self.step_generator.clear()
         if show_steps:
             self.step_generator.add_step(r"\textbf{坐标变换: 从标准基到给定基}")
 
-        vector = self.parse_vector_input(vector_input, "\\boldsymbol{x}")
+        vector = self.parse_vector_input(vector_input)
+        self.add_vector(vector, "\\boldsymbol{x}")
         basis = self.parse_matrix_input(basis_input)
         self.show_input(basis, "目标基")
 
@@ -156,14 +155,14 @@ class BaseTransform(CommonMatrixCalculator):
 
         return coords
 
-    def basis_to_standard(self, coordinates_input, basis_input, show_steps=True):
-        """从给定基转换到标准基"""
+    def basis_to_standard(self, coordinates_input: str, basis_input: str, show_steps: bool = True) -> Matrix:
+        """Convert vector coordinates from a given basis to standard basis."""
         self.step_generator.clear()
         if show_steps:
             self.step_generator.add_step(r"\textbf{坐标变换: 从给定基到标准基}")
 
-        coordinates = self.parse_vector_input(
-            coordinates_input, r"[\boldsymbol{x}]_{V}")
+        coordinates = self.parse_vector_input(coordinates_input)
+        self.add_vector(coordinates, r"[\boldsymbol{x}]_{V}")
         basis = self.parse_matrix_input(basis_input)
         self.show_input(basis, "当前基")
 
@@ -176,7 +175,9 @@ class BaseTransform(CommonMatrixCalculator):
 
         return vector
 
-    def compute_transform(self, expression, operation):
+    def compute_transform(self, expression: str, operation: str) -> str:
+        """Compute various transformations based on provided expressions and operation type."""
+
         expressions = expression.split('\n')
 
         if operation in ['basis_change', 'change_basis']:
@@ -204,12 +205,17 @@ class BaseTransform(CommonMatrixCalculator):
 
 
 def demo_coordinate_transform():
-    """演示坐标变换"""
+    """Demonstrate coordinate transformations with various examples.
+
+    Shows how to transform coordinates between different bases in 2D and 3D spaces,
+    including both numeric and symbolic examples.
+    """
     transformer = BaseTransform()
 
     transformer.step_generator.add_step(r"\textbf{坐标变换演示}")
 
-    # 示例 1: 二维空间坐标变换
+    # Example 1: 2D space coordinate transformation
+
     transformer.step_generator.add_step(r"\text{例 1: 二维空间坐标变换}")
     vector1 = [3, 2]
     old_basis1 = [[2, 1], [1, 2]]
@@ -224,7 +230,7 @@ def demo_coordinate_transform():
 
     display(Math(transformer.get_steps_latex()))
 
-    # 示例 2: 从标准基到给定基
+    # Example 2: From standard basis to given basis
 
     transformer.step_generator.add_step(r"\text{例 2: 从标准基到给定基}")
     vector2 = [4, 3]
@@ -238,7 +244,7 @@ def demo_coordinate_transform():
 
     display(Math(transformer.get_steps_latex()))
 
-    # 示例 3: 从给定基到标准基
+    # Example 3: From given basis to standard basis
 
     transformer.step_generator.add_step(r"\text{例 3: 从给定基到标准基}")
     coords3 = [2, 1]
@@ -252,11 +258,11 @@ def demo_coordinate_transform():
 
     display(Math(transformer.get_steps_latex()))
 
-    # 示例 4: 三维空间坐标变换
+    # Example 4: 3D space coordinate transformation
 
     transformer.step_generator.add_step(r"\text{例 4: 三维空间坐标变换}")
     vector4 = [1, 2, 3]
-    old_basis4 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]  # 标准基
+    old_basis4 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]  # Standard basis
     new_basis4 = [[1, 1, 0], [1, -1, 0], [0, 0, 2]]
 
     try:
@@ -269,12 +275,16 @@ def demo_coordinate_transform():
 
 
 def demo_basis_change():
-    """演示基变换"""
+    """Demonstrate basis change computations.
+
+    Shows how to calculate transition matrices between different bases in 2D and 3D spaces.
+    """
     transformer = BaseTransform()
 
     transformer.step_generator.add_step(r"\textbf{基变换演示}")
 
-    # 示例 1: 标准基到另一组基
+    # Example 1: Standard basis to another basis
+
     old_basis1 = [[2, 1], [1, 2]]
     new_basis1 = [[1, 1], [1, -1]]
 
@@ -286,7 +296,8 @@ def demo_basis_change():
 
     display(Math(transformer.get_steps_latex()))
 
-    # 示例 2: 三维空间基变换
+    # Example 2: 3D space basis change
+
     old_basis2 = [[1, 1, 0], [0, 1, 1], [1, 0, 1]]
     new_basis2 = [[1, 1, 0], [1, -1, 0], [0, 0, 2]]
 
@@ -299,20 +310,23 @@ def demo_basis_change():
 
 
 def demo_symbolic_basis_transform():
-    """演示包含符号元素的基变换和坐标变换"""
+    """Demonstrate basis transformations with symbolic elements.
+
+    Shows how to work with symbolic expressions in basis transformations and coordinate conversions.
+    """
     transformer = BaseTransform()
 
     transformer.step_generator.add_step(r"\textbf{符号基变换和坐标变换演示}")
     transformer.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0}")
 
-    # 示例 1: 符号基变换
+    # Example 1: Symbolic basis change
 
     transformer.step_generator.add_step(r"\text{例 1: 符号基变换}")
 
-    # 定义符号
+    # Define symbols
     a, b, c, d = symbols('a b c d')
 
-    # 符号基
+    # Symbolic bases
     old_basis_symbolic = Matrix([
         [1, a],
         [b, 1]
@@ -331,15 +345,15 @@ def demo_symbolic_basis_transform():
 
     display(Math(transformer.get_steps_latex()))
 
-    # 示例 2: 符号坐标变换
+    # Example 2: Symbolic coordinate transformation
 
     transformer.step_generator.add_step(r"\text{例 2: 符号坐标变换}")
 
-    # 符号向量坐标
+    # Symbolic vector coordinates
     x, y = symbols('x y')
     vector_symbolic = Matrix([x, y])
 
-    # 符号基
+    # Symbolic basis
     basis_symbolic = Matrix([
         [1, 2],
         [3, 4]
@@ -353,7 +367,7 @@ def demo_symbolic_basis_transform():
 
     display(Math(transformer.get_steps_latex()))
 
-    # 示例 3: 符号基之间的坐标变换
+    # Example 3: Coordinate transformation between symbolic bases
 
     transformer.step_generator.add_step(r"\text{例 3: 符号基之间的坐标变换}")
 
@@ -379,7 +393,7 @@ def demo_symbolic_basis_transform():
 
     display(Math(transformer.get_steps_latex()))
 
-    # 示例 4: 三维符号基变换
+    # Example 4: 3D symbolic basis change
 
     transformer.step_generator.add_step(r"\text{例 4: 三维符号基变换}")
 

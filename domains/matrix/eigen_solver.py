@@ -1,14 +1,30 @@
+from typing import Dict, List, Tuple
 from collections import Counter
-from sympy import sympify, latex, zeros, eye, simplify, symbols, solve, factor, I
-from IPython.display import display, Math
+from sympy import Expr, I, Matrix, eye, factor, latex, simplify, solve, symbols, sympify, zeros
+from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
 
 class EigenSolver(CommonMatrixCalculator):
+    """A class for solving eigenvalue and eigenvector problems with step-by-step solutions.
 
-    def format_lambda_I(self, eigenvalue):
-        """为复数或符号特征值添加括号"""
+    This solver provides methods to calculate eigenvalues and eigenvectors of matrices
+    using characteristic polynomial method and displays detailed solution steps.
+    """
+
+    def format_lambda_I(self, eigenvalue: Expr) -> str:
+        """Add parentheses for complex or symbolic eigenvalues.
+
+        Parameters
+        ----------
+        eigenvalue (Expr) : The eigenvalue to format
+
+        Returns
+        -------
+        str
+            Formatted string representation with appropriate parentheses
+        """
         has_complex = eigenvalue.has(I)
 
         is_symbolic = (isinstance(eigenvalue, sympify(
@@ -24,18 +40,24 @@ class EigenSolver(CommonMatrixCalculator):
                 needs_parentheses = True
 
         if has_complex or is_symbolic or needs_parentheses:
-            return f"({latex(eigenvalue)})I"
-        else:
-            return f"{latex(eigenvalue)}I"
+            return f"\\left({latex(eigenvalue)}\\right)I"
+        return f"{latex(eigenvalue)}I"
 
-    def analyze_matrix_structure(self, matrix, show_steps=True):
-        """
-        分析矩阵的特殊结构
+    def analyze_matrix_structure(self, matrix: Matrix, show_steps: str = True) -> List[str]:
+        """Analyze special structures of the matrix.
+
+        Identifies matrix types such as diagonal, triangular, symmetric, etc.,
+        which can simplify eigenvalue computation.
+
+        Returns
+        -------
+        list
+            List of identified matrix types
         """
         n = matrix.rows
         special_types = []
 
-        # 检查对角矩阵
+        # Check for diagonal matrix
         is_diagonal = True
         for i in range(n):
             for j in range(n):
@@ -47,7 +69,7 @@ class EigenSolver(CommonMatrixCalculator):
         if is_diagonal:
             special_types.append("对角矩阵")
 
-        # 检查上三角矩阵
+        # Check for upper triangular matrix
         is_upper_triangular = True
         for i in range(1, n):
             for j in range(i):
@@ -59,7 +81,7 @@ class EigenSolver(CommonMatrixCalculator):
         if is_upper_triangular:
             special_types.append("上三角矩阵")
 
-        # 检查下三角矩阵
+        # Check for lower triangular matrix
         is_lower_triangular = True
         for i in range(n):
             for j in range(i+1, n):
@@ -71,7 +93,7 @@ class EigenSolver(CommonMatrixCalculator):
         if is_lower_triangular:
             special_types.append("下三角矩阵")
 
-        # 检查对称矩阵
+        # Check for symmetric matrix
         is_symmetric = True
         for i in range(n):
             for j in range(i+1, n):
@@ -83,12 +105,12 @@ class EigenSolver(CommonMatrixCalculator):
         if is_symmetric:
             special_types.append("对称矩阵")
 
-        # 检查反对称矩阵
+        # Check for skew-symmetric matrix
         is_skew_symmetric = True
         for i in range(n):
             for j in range(i, n):
                 if i == j:
-                    # 对角线元素应该为0
+                    # Diagonal elements should be zero
                     if matrix[i, i] != 0:
                         is_skew_symmetric = False
                         break
@@ -101,7 +123,7 @@ class EigenSolver(CommonMatrixCalculator):
         if is_skew_symmetric:
             special_types.append("反对称矩阵")
 
-        # 检查正交矩阵
+        # Check for orthogonal matrix
         try:
             if n > 0:
                 A_T = matrix.T
@@ -111,16 +133,16 @@ class EigenSolver(CommonMatrixCalculator):
         except Exception:
             pass
 
-        # 检查幂等矩阵
+        # Check for idempotent matrix
         try:
             if simplify(matrix * matrix - matrix) == zeros(n, n):
                 special_types.append("幂等矩阵")
         except Exception:
             pass
 
-        # 检查幂零矩阵
+        # Check for nilpotent matrix
         try:
-            # 检查是否存在 k 使得A^k = 0
+            # Check if there exists k such that A^k = 0
             is_nilpotent = False
             current_power = matrix
             for _ in range(1, n+1):
@@ -134,23 +156,22 @@ class EigenSolver(CommonMatrixCalculator):
             pass
 
         if show_steps and special_types:
-            # 去重并排序：更特殊的性质优先显示
+            # Deduplicate and sort: more special properties displayed first
             priority_order = ["对角矩阵", "上三角矩阵", "下三角矩阵", "对称矩阵",
                               "反对称矩阵", "正交矩阵", "幂等矩阵", "幂零矩阵"]
             sorted_types = [st for st in priority_order if st in special_types]
 
             self.step_generator.add_step(
                 f"\\text{{矩阵类型: }} {', '.join(sorted_types)}")
-            # 只显示最高优先级的性质
+            # Only display the highest priority property
             if sorted_types:
-                self.display_special_properties(sorted_types[0], matrix)
+                self.display_special_properties(sorted_types[0])
 
         return special_types
 
-    def display_special_properties(self, matrix_type, _matrix):
-        """
-        显示特殊矩阵的性质(每个类型只显示一次)
-        """
+    def display_special_properties(self, matrix_type: str) -> None:
+        """Display properties of special matrices (each type displayed only once)."""
+
         properties = {
             "对角矩阵": [
                 r"\text{性质: 特征值就是对角线元素}",
@@ -185,9 +206,13 @@ class EigenSolver(CommonMatrixCalculator):
             for prop in properties[matrix_type]:
                 self.step_generator.add_step(prop)
 
-    def characteristic_polynomial_method(self, matrix_input, show_steps=True, is_clear=True):
-        """
-        特征多项式法求解特征值和特征向量
+    def characteristic_polynomial_method(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Tuple[List, Matrix]:
+        """Solve eigenvalues and eigenvectors using characteristic polynomial method.
+
+        Returns
+        -------
+        tuple
+            Tuple containing eigenvalues and eigenvectors
         """
         if is_clear:
             self.step_generator.clear()
@@ -207,10 +232,10 @@ class EigenSolver(CommonMatrixCalculator):
 
         n = A.rows
 
-        # 分析矩阵结构
+        # Analyze matrix structure
         self.analyze_matrix_structure(A, show_steps)
 
-        # 步骤1: 构造特征矩阵
+        # Step 1: Construct characteristic matrix
         if show_steps:
             self.add_step("构造特征矩阵 A - $\\lambda$I")
 
@@ -222,7 +247,7 @@ class EigenSolver(CommonMatrixCalculator):
             self.step_generator.add_step(
                 f"A - \\lambda I = {latex(A_minus_lambda_I)}")
 
-        # 步骤2: 计算特征多项式
+        # Step 2: Calculate characteristic polynomial
         if show_steps:
             self.add_step("计算特征多项式")
 
@@ -236,7 +261,7 @@ class EigenSolver(CommonMatrixCalculator):
             self.step_generator.add_step(
                 f"\\text{{化简后: }} \\det(A - \\lambda I) = {latex(char_poly_simplified)}")
 
-        # 因式分解特征多项式
+        # Factor characteristic polynomial
         try:
             char_poly_factored = factor(char_poly_simplified)
             if show_steps and char_poly_factored != char_poly_simplified:
@@ -247,7 +272,7 @@ class EigenSolver(CommonMatrixCalculator):
             if show_steps:
                 self.step_generator.add_step(r"\text{无法进行因式分解}")
 
-        # 步骤3: 求解特征值
+        # Step 3: Solve for eigenvalues
         if show_steps:
             self.add_step("求解特征值")
             self.step_generator.add_step(
@@ -255,12 +280,12 @@ class EigenSolver(CommonMatrixCalculator):
 
         eigenvalues = solve(char_poly_simplified, lambda_sym, dict=False)
 
-        # 处理复数特征值
+        # Handle complex eigenvalues
         complex_eigenvalues = any(eig.has(I) for eig in eigenvalues)
         if complex_eigenvalues and show_steps:
             self.step_generator.add_step(r"\text{注意: 存在复数特征值}")
 
-        # 处理重根情况
+        # Handle repeated roots
         eigenvalue_counts = Counter(eigenvalues)
 
         if show_steps:
@@ -268,13 +293,13 @@ class EigenSolver(CommonMatrixCalculator):
                 [f'\\lambda_{{{i+1}}} = {latex(eig)}' for i, eig in enumerate(eigenvalues)])
             self.step_generator.add_step(f"\\text{{特征值: }} {part}")
 
-            # 显示代数重数
+            # Show algebraic multiplicity
             for eig, count in eigenvalue_counts.items():
                 if count > 1:
                     self.step_generator.add_step(
                         f"\\text{{特征值 }} {latex(eig)} \\text{{ 的代数重数为 }} {count}")
 
-        # 步骤4: 对每个特征值求解特征向量
+        # Step 4: Solve eigenvectors for each eigenvalue
         if show_steps:
             self.add_step("求解特征向量")
 
@@ -312,16 +337,26 @@ class EigenSolver(CommonMatrixCalculator):
 
             eigenvectors[eigenvalue] = nullspace
 
-        # 显示特征值和特征向量的总结
+        # Display summary of eigenvalues and eigenvectors
         if show_steps:
             self.display_eigen_summary(
                 eigenvalues, eigenvectors, eigenvalue_counts, geometric_multiplicities)
 
         return eigenvalues, eigenvectors
 
-    def display_eigen_summary(self, eigenvalues, eigenvectors, eigenvalue_counts, geometric_multiplicities):
-        """
-        显示特征值和特征向量的总结
+    def display_eigen_summary(self, eigenvalues: List, eigenvectors: Dict, eigenvalue_counts: Counter, geometric_multiplicities: Dict) -> None:
+        """Display summary of eigenvalues and eigenvectors.
+
+        Parameters
+        ----------
+        eigenvalues : list
+            List of computed eigenvalues
+        eigenvectors : dict
+            Dictionary mapping eigenvalues to their eigenvectors
+        eigenvalue_counts : Counter
+            Counter of eigenvalue multiplicities
+        geometric_multiplicities : dict
+            Dictionary of geometric multiplicities for each eigenvalue
         """
         self.add_step("特征分析总结")
 
@@ -333,11 +368,11 @@ class EigenSolver(CommonMatrixCalculator):
             self.step_generator.add_step(
                 f"\\lambda_{{{i+1}}} = {latex(eigenvalue)}, \\text{{代数重数: }} {algebraic}, \\text{{几何重数: }} {geometric}")
 
-            # 检查是否可对角化
+            # Check if diagonalizable
             if algebraic != geometric:
                 is_diagonalizable = False
 
-        # 显示是否可对角化的结论
+        # Display diagonalizability conclusion
         if is_diagonalizable:
             self.step_generator.add_step(r"\textbf{结论: 矩阵可对角化}")
             self.step_generator.add_step(r"\text{原因: 所有特征值的代数重数等于几何重数}")
@@ -354,9 +389,13 @@ class EigenSolver(CommonMatrixCalculator):
                     self.step_generator.add_step(
                         f"\\boldsymbol{{v}}_{{{j+1}}} = {latex(vec)}")
 
-    def auto_eigen_solver(self, matrix_input, show_steps=True, is_clear=True):
-        """
-        自动求解矩阵的特征值和特征向量
+    def auto_eigen_solver(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Tuple[List, Dict]:
+        """Automatically solve eigenvalues and eigenvectors of a matrix.
+
+        Returns
+        -------
+        tuple
+            Tuple containing eigenvalues and eigenvectors, or (None, None) if failed
         """
         if is_clear:
             self.step_generator.clear()
@@ -382,7 +421,7 @@ class EigenSolver(CommonMatrixCalculator):
 
 
 def demo_diagonal_and_triangular():
-    """演示对角矩阵和三角矩阵"""
+    """Demonstrate diagonal and triangular matrices."""
     eigen_solver = EigenSolver()
 
     eigen_solver.step_generator.add_step(r"\textbf{对角矩阵和三角矩阵演示}")
@@ -404,7 +443,7 @@ def demo_diagonal_and_triangular():
 
 
 def demo_special_matrices():
-    """演示特殊矩阵"""
+    """Demonstrate special matrices."""
     eigen_solver = EigenSolver()
 
     eigen_solver.step_generator.add_step(r"\textbf{特殊矩阵演示}")
@@ -412,8 +451,8 @@ def demo_special_matrices():
     matrices = [
         ("对称矩阵", "[[2,1,0],[1,3,1],[0,1,2]]"),
         ("反对称矩阵", "[[0,1,-2],[-1,0,3],[2,-3,0]]"),
-        ("幂等矩阵", "[[1,0],[0,1]]"),  # 单位矩阵是幂等矩阵
-        ("正交矩阵", "[[0,-1],[1,0]]")  # 旋转矩阵
+        ("幂等矩阵", "[[1,0],[0,1]]"),  # Identity matrix is idempotent
+        ("正交矩阵", "[[0,-1],[1,0]]")  # Rotation matrix
     ]
 
     for name, matrix in matrices:
@@ -427,7 +466,7 @@ def demo_special_matrices():
 
 
 def demo_complex_eigenvalues():
-    """演示复数特征值"""
+    """Demonstrate complex eigenvalues."""
     eigen_solver = EigenSolver()
 
     eigen_solver.step_generator.add_step(r"\textbf{复数特征值演示}")
@@ -448,7 +487,7 @@ def demo_complex_eigenvalues():
 
 
 def demo_defective_matrices():
-    """演示亏损矩阵"""
+    """Demonstrate defective matrices."""
     eigen_solver = EigenSolver()
 
     eigen_solver.step_generator.add_step(r"\textbf{亏损矩阵演示}")
@@ -469,7 +508,7 @@ def demo_defective_matrices():
 
 
 def demo_symbolic_matrices():
-    """演示符号矩阵"""
+    """Demonstrate symbolic matrices."""
     eigen_solver = EigenSolver()
 
     eigen_solver.step_generator.add_step(r"\textbf{符号矩阵演示}")
@@ -490,7 +529,7 @@ def demo_symbolic_matrices():
 
 
 def demo_general_matrices():
-    """演示普通矩阵的特征值求解"""
+    """Demonstrate eigenvalue solving for general matrices."""
     eigen_solver = EigenSolver()
 
     eigen_solver.step_generator.add_step(r"\textbf{普通矩阵特征值求解演示}")
@@ -516,7 +555,7 @@ def demo_general_matrices():
 
 
 def demo_mixed_matrices():
-    """演示混合类型的矩阵"""
+    """Demonstrate mixed type matrices."""
     eigen_solver = EigenSolver()
 
     eigen_solver.step_generator.add_step(r"\textbf{混合类型矩阵演示}")

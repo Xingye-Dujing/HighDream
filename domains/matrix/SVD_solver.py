@@ -1,90 +1,132 @@
-from sympy import Matrix, latex, zeros, eye, simplify, symbols, solve, sqrt, sin, cos, Symbol, I
-from IPython.display import display, Math
+from typing import List, Tuple
+from sympy import Expr, I, Matrix, Symbol, cos, eye, latex, simplify, sin, solve, sqrt, symbols, zeros
+from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
 
 class SVDSolver(CommonMatrixCalculator):
+    """A class for computing Singular Value Decomposition (SVD) of matrices.
 
-    def compute_eigenpairs(self, matrix):
-        """
-        计算实对称矩阵的特征值和特征向量
-        返回排序后的(特征值, 特征向量)列表
+    This class provides methods to compute the SVD of a matrix, which decomposes
+    a matrix A into the product U * Sigma * V^T, where U and V are orthogonal
+    matrices and Sigma is a diagonal matrix containing the singular values.
+    """
+
+    def compute_eigenpairs(self, matrix: Matrix) -> List[Tuple[Expr, Matrix]]:
+        """Compute eigenvalues and eigenvectors of a real symmetric matrix.
+
+        Returns sorted eigenpairs (eigenvalue, eigenvector) list.
+
+        Parameters
+        ----------
+        matrix : sympy.Matrix
+            The input matrix (must be square and symmetric)
+
+        Returns
+        -------
+        list
+            List of tuples (eigenvalue, normalized eigenvector)
+
+        Raises
+        ------
+        ValueError
+            If matrix is not square or not symmetric
         """
         try:
-            # 对于实对称矩阵，使用更稳定的方法
+            # For real symmetric matrices, use more stable method
             if matrix.rows != matrix.cols:
-                raise ValueError("矩阵必须是方阵")
+                raise ValueError("Matrix must be square")
 
-            # 检查矩阵是否对称
+            # Check if matrix is symmetric
             if simplify(matrix - matrix.T) != zeros(matrix.rows, matrix.cols):
-                raise ValueError("矩阵必须是对称的")
+                raise ValueError("Matrix must be symmetric")
 
-            # 使用 sympy 的特征值分解
+            # Use SymPy's eigenvalue decomposition
             eigenpairs = []
 
-            # 计算特征多项式
+            # Calculate characteristic polynomial
             lambda_sym = symbols('lambda')
             char_poly = (matrix - lambda_sym * eye(matrix.rows)).det()
             eigenvalues = solve(char_poly, lambda_sym)
 
-            # 对每个特征值计算特征空间
+            # Compute eigenspace for each eigenvalue
             for eig in eigenvalues:
-                # 计算零空间(特征空间)
+                # Compute null space (eigenspace)
                 eig_matrix = matrix - eig * eye(matrix.rows)
                 nullspace = eig_matrix.nullspace()
 
-                # 对每个特征向量进行单位化
+                # Normalize each eigenvector
                 for vec in nullspace:
                     if vec.norm() != 0:
                         unit_vec = vec / vec.norm()
                         eigenpairs.append((eig, unit_vec))
 
-            # 按特征值大小排序(降序), 但如果包含符号则按添加顺序
+            # Sort by eigenvalue magnitude (descending), but keep original order for symbolic values
             try:
                 eigenpairs.sort(key=lambda x: x[0], reverse=True)
             except TypeError:
-                # 如果不能比较(例如符号表达式), 则按原先顺序
+                # Cannot compare if contains symbolic expressions
                 self.step_generator.add_step(
-                    r"\textbf{警告: 无法对含符号的特征值进行准确的大小排序, 以下假设在前的大于在后的}")
+                    r"\textbf{Warning: Cannot accurately sort eigenvalues with symbols, assuming earlier ones are larger}")
 
             return eigenpairs
 
         except Exception as e:
-            raise ValueError(f"特征值计算错误: {str(e)}") from e
+            raise ValueError(f"Eigenvalue computation error: {str(e)}") from e
 
-    def gram_schmidt(self, vectors):
-        """
-        Gram-Schmidt 正交化过程
+    def gram_schmidt(self, vectors: List[Matrix]) -> List[Matrix]:
+        """Perform Gram-Schmidt orthogonalization process.
+
+        Parameters
+        ----------
+        vectors : list
+            List of vectors to orthogonalize
+
+        Returns
+        -------
+        list
+            List of orthonormalized vectors
         """
         ortho_vectors = []
         for v in vectors:
             w = v.copy()
             for u in ortho_vectors:
-                # 检查分母是否为零
+                # Check for zero denominator
                 u_norm_sq = u.dot(u)
                 if u_norm_sq != 0:
                     projection = (v.dot(u) / u_norm_sq) * u
                     w -= projection
-            # 检查向量是否为零向量
+            # Check for zero vector
             if w.norm() != 0:
                 ortho_vectors.append(w / w.norm())
         return ortho_vectors
 
-    def complete_orthogonal_basis(self, existing_vectors, target_dim):
-        """
-        补充正交基到目标维度
+    def complete_orthogonal_basis(self, existing_vectors: List[Matrix], target_dim: int) -> List[Matrix]:
+        """Complete an orthogonal basis to reach target dimension.
+
+        Parameters
+        ----------
+        existing_vectors : list
+            List of existing orthogonal vectors
+        target_dim : int
+            Target dimension for the completed basis
+
+        Returns
+        -------
+        list
+            List of orthogonal vectors spanning the full space
         """
         current_dim = len(existing_vectors)
         if current_dim >= target_dim:
             return existing_vectors
 
-        # 创建标准基向量
+        # Create standard basis vectors
         standard_basis = [zeros(target_dim, 1) for _ in range(target_dim)]
         for i in range(target_dim):
             standard_basis[i][i] = 1
 
-        # 使用改进的 Gram-Schmidt 过程
+        # Use improved Gram-Schmidt process
         ortho_vectors = existing_vectors.copy()
 
         for basis_vec in standard_basis:
@@ -104,9 +146,24 @@ class SVDSolver(CommonMatrixCalculator):
 
         return ortho_vectors
 
-    def compute_svd(self, matrix_input, show_steps=True):
-        """
-        计算矩阵的奇异值分解
+    def compute_svd(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix, Matrix]:
+        """Compute the Singular Value Decomposition of a matrix.
+
+        Computes the decomposition A = U * Sigma * V^T where U and V are
+        orthogonal matrices and Sigma is a diagonal matrix of singular values.
+
+        Parameters
+        ----------
+        matrix_input : str or sympy.Matrix
+            Input matrix as string representation or sympy Matrix
+        show_steps : bool, optional
+            Whether to show detailed computation steps (default is True)
+
+        Returns
+        -------
+        tuple
+            Tuple of (U, Sigma, V) matrices representing the SVD decomposition,
+            or (None, None, None) if computation fails
         """
         self.step_generator.clear()
 
@@ -121,7 +178,7 @@ class SVDSolver(CommonMatrixCalculator):
 
         m, n = A.rows, A.cols
 
-        # 步骤1: 计算 A^T A
+        # Step 1: Compute A^T A
         if show_steps:
             self.add_step("计算 $A^T A$")
 
@@ -134,7 +191,7 @@ class SVDSolver(CommonMatrixCalculator):
             self.add_matrix(ATA, "A^T A")
             self.add_equation(r"\text{注意: } A^TA \text{ 是实对称矩阵，特征值都是实数}")
 
-        # 步骤2: 计算 A^T A 的特征值和特征向量
+        # Step 2: Compute eigenvalues and eigenvectors of A^T A
         if show_steps:
             self.add_step("计算 $A^T A$ 的特征值和特征向量")
 
@@ -154,7 +211,7 @@ class SVDSolver(CommonMatrixCalculator):
                 self.step_generator.add_step(f"\\text{{特征值计算错误: }} {str(e)}")
             return None, None, None
 
-        # 步骤3: 计算奇异值
+        # Step 3: Compute singular values
         if show_steps:
             self.add_step("计算奇异值")
             self.add_equation(r"\text{奇异值 } \sigma_i = \sqrt{\lambda_i}")
@@ -164,7 +221,7 @@ class SVDSolver(CommonMatrixCalculator):
             if eig.has(Symbol):
                 self.step_generator.add_step(f"\\textbf{{特征值含符号, 无法再进行操作}}")
                 return None, None, None
-            if eig >= 0:  # 只取非负特征值的平方根
+            if eig >= 0:  # Only take square root of non-negative eigenvalues
                 sigma = sqrt(eig)
                 singular_values.append(sigma)
                 if show_steps:
@@ -175,7 +232,7 @@ class SVDSolver(CommonMatrixCalculator):
                     self.step_generator.add_step(
                         f"\\text{{忽略负特征值: }} {latex(eig)}")
 
-        # 奇异值已经按从大到小排序
+        # Singular values are already sorted in descending order
         if show_steps:
             sorted_sigmas = rf',\;'.join([f'\\sigma_{{{i+1}}} = {latex(sigma)}'
                                           for i, sigma in enumerate(singular_values)])
@@ -195,19 +252,19 @@ class SVDSolver(CommonMatrixCalculator):
             self.add_matrix(Sigma, "\\Sigma")
             self.add_equation(r"\Sigma \text{ 是对角矩阵，对角线元素是奇异值}")
 
-        # 步骤5: 计算 V 矩阵(右奇异向量)
+        # Step 5: Compute V matrix (right singular vectors)
         if show_steps:
             self.add_step("计算 V 矩阵")
             self.add_equation(r"\text{V 的列向量是 } A^TA \text{ 的特征向量}")
 
-        # 构造 V 矩阵
+        # Construct V matrix
         V = zeros(n, n)
         for i, (_, vec) in enumerate(eigenpairs):
             if i < n:
                 for j in range(n):
                     V[j, i] = vec[j]
 
-        # 如果特征向量数量不足, 补充正交基
+        # If insufficient eigenvectors, complete orthogonal basis
         if len(eigenpairs) < n:
             existing_vectors = [V[:, i] for i in range(len(eigenpairs))]
             complete_basis = self.complete_orthogonal_basis(
@@ -220,7 +277,7 @@ class SVDSolver(CommonMatrixCalculator):
             self.add_matrix(V, "V")
             self.add_equation(r"\text{V 是正交矩阵: } V^T V = I")
 
-        # 步骤6: 计算 U 矩阵(左奇异向量)
+        # Step 6: Compute U matrix (left singular vectors)
         if show_steps:
             self.add_step("计算 U 矩阵")
             self.add_equation(
@@ -228,7 +285,7 @@ class SVDSolver(CommonMatrixCalculator):
 
         U = zeros(m, m)
 
-        # 计算非零奇异值对应的左奇异向量
+        # Compute left singular vectors for non-zero singular values
         computed_u_vectors = []
         for i, sigma in enumerate(singular_values):
             if i < min(m, n) and sigma != 0:
@@ -241,7 +298,7 @@ class SVDSolver(CommonMatrixCalculator):
                 self.step_generator.add_step(
                     f"\\text{{跳过零奇异值 }} \\sigma_{{{i+1}}}")
 
-        # 如果 U 的列向量不足，补充正交基
+        # If U columns are insufficient, complete orthogonal basis
         if len(computed_u_vectors) < m:
             if show_steps:
                 self.step_generator.add_step(r"\text{补充 U 的正交基}")
@@ -258,7 +315,7 @@ class SVDSolver(CommonMatrixCalculator):
             self.add_matrix(U, "U")
             self.add_equation(r"\text{U 是正交矩阵: } U^T U = I")
 
-        # 步骤7: 验证分解
+        # Step 7: Verify decomposition
         if show_steps:
             self.add_step("验证分解")
             self.add_equation(r"\text{验证: } A = U \Sigma V^T")
@@ -276,15 +333,22 @@ class SVDSolver(CommonMatrixCalculator):
                 self.step_generator.add_step(r"\text{验证失败}")
                 self.step_generator.add_step(f"\\text{{误差矩阵: }}{latex(diff)}")
 
-        # 显示总结
+        # Display summary
         if show_steps:
             self.display_svd_summary(A, U, Sigma, V, singular_values)
 
         return U, Sigma, V
 
-    def display_svd_summary(self, A, U, Sigma, V, singular_values):
-        """
-        显示 SVD 分解的总结
+    def display_svd_summary(self, A: Matrix, U: Matrix, Sigma: Matrix, V: Matrix, singular_values):
+        """Display a summary of the SVD decomposition.
+
+        Parameters
+        ----------
+        A (Matrix): Original matrix
+        U (Matrix): Left singular vectors matrix
+        Sigma (Matrix): Singular values matrix
+        V (Matrix): Right singular vectors matrix
+        singular_values (List): List of computed singular values
         """
         self.add_step("奇异值分解总结")
 
@@ -312,9 +376,20 @@ class SVDSolver(CommonMatrixCalculator):
         else:
             self.step_generator.add_step(r"\textbf{分解有误}")
 
-    def compute_singular_values_only(self, matrix_input, show_steps=True):
-        """
-        仅计算奇异值
+    def compute_singular_values_only(self, matrix_input: str, show_steps: bool = True) -> List[Expr]:
+        """Compute only the singular values without full SVD.
+
+        Parameters
+        ----------
+        matrix_input : str or sympy.Matrix
+            Input matrix as string representation or sympy Matrix
+        show_steps : bool, optional
+            Whether to show detailed computation steps (default is True)
+
+        Returns
+        -------
+        list
+            List of singular values
         """
         self.step_generator.clear()
 
@@ -324,14 +399,14 @@ class SVDSolver(CommonMatrixCalculator):
             self.step_generator.add_step(r"\textbf{奇异值计算}")
             self.add_matrix(A, "A")
 
-        # 计算 A^T A
+        # Compute A^T A
         ATA = A.T * A
 
         if show_steps:
             self.add_step("计算 $A^T A$")
             self.add_matrix(ATA, "A^T A")
 
-        # 计算特征值
+        # Compute eigenvalues
         lambda_sym = symbols('lambda')
         char_poly = (ATA - lambda_sym * eye(ATA.rows)).det()
         eigenvalues = solve(char_poly, lambda_sym)
@@ -341,13 +416,13 @@ class SVDSolver(CommonMatrixCalculator):
             eig_list = rf',\;'.join([latex(eig) for eig in eigenvalues])
             self.step_generator.add_step(f"\\text{{特征值: }} {eig_list}")
 
-        # 计算奇异值
+        # Compute singular values
         singular_values = []
         for eig in eigenvalues:
-            if eig.has(I):  # 复数特征值
+            if eig.has(I):  # Complex eigenvalue
                 sigma = abs(eig)
                 singular_values.append(sigma)
-            elif eig >= 0:  # 非负实数特征值
+            elif eig >= 0:  # Non-negative real eigenvalue
                 sigma = sqrt(eig)
                 singular_values.append(sigma)
         if show_steps:
@@ -360,7 +435,7 @@ class SVDSolver(CommonMatrixCalculator):
 
 
 def demo_svd_basic():
-    """演示基本的 SVD 计算"""
+    """Demonstrate basic SVD computation."""
     svd_solver = SVDSolver()
 
     svd_solver.step_generator.add_step(r"\textbf{基本 SVD 计算演示}")
@@ -385,7 +460,7 @@ def demo_svd_basic():
 
 
 def demo_singular_values_only():
-    """演示仅计算奇异值"""
+    """Demonstrate computation of singular values only."""
     svd_solver = SVDSolver()
 
     svd_solver.step_generator.add_step(r"\textbf{仅计算奇异值演示}")
@@ -411,7 +486,7 @@ def demo_singular_values_only():
 
 
 def demo_svd_applications():
-    """演示 SVD 的应用"""
+    """Demonstrate applications of SVD."""
     svd_solver = SVDSolver()
 
     svd_solver.step_generator.add_step(r"\textbf{SVD 应用演示}")
@@ -426,12 +501,12 @@ def demo_svd_applications():
         try:
             U, Sigma, V = svd_solver.compute_svd(matrix)
 
-            # 显示低秩近似
+            # Show low-rank approximation
             svd_solver.step_generator.add_step(r"\text{低秩近似演示}")
             singular_values = [Sigma[i, i] for i in range(
                 min(Sigma.rows, Sigma.cols)) if Sigma[i, i] != 0]
             if len(singular_values) > 1:
-                # 使用前 k 个奇异值进行近似
+                # Approximate using first k singular values
                 k = len(singular_values) - 1
                 Sigma_approx = zeros(Sigma.rows, Sigma.cols)
                 for i in range(k):
@@ -451,12 +526,12 @@ def demo_svd_applications():
 
 
 def demo_zero_singular_values():
-    """演示零奇异值的情况"""
+    """Demonstrate handling of zero singular values."""
     svd_solver = SVDSolver()
 
     svd_solver.step_generator.add_step(r"\textbf{零奇异值情况演示}")
 
-    # 测试包含零奇异值的矩阵
+    # Test matrices with zero singular values
     matrices = [
         ("秩亏矩阵", "[[1,1,1],[1,1,1],[1,1,1]]"),
         ("零矩阵", "[[0,0,0],[0,0,0]]"),
@@ -468,7 +543,7 @@ def demo_zero_singular_values():
         svd_solver.step_generator.add_step(f"\\textbf{{{name}}}")
         try:
             _, Sigma, _ = svd_solver.compute_svd(matrix)
-            # 显示奇异值
+            # Display singular values
             singular_values = [Sigma[i, i]
                                for i in range(min(Sigma.rows, Sigma.cols))]
             zero_sv_count = sum(1 for sv in singular_values if sv == 0)
@@ -482,7 +557,7 @@ def demo_zero_singular_values():
 
 
 def demo_symbolic_svd():
-    """演示包含符号元素的奇异值分解"""
+    """Demonstrate SVD with symbolic elements."""
     svd_solver = SVDSolver()
 
     display(Math(r"\textbf{符号奇异值分解演示}"))
@@ -523,6 +598,7 @@ def demo_symbolic_svd():
 
 
 def demo_hard_svd():
+    """Demonstrate SVD on a challenging matrix."""
     svd_solver = SVDSolver()
     display(Math(r"\textbf{困难奇异值分解演示}"))
     demo_hard_matrix = '[[1, 2, 3],[4, 5, 6],[7, 8, 9]]'

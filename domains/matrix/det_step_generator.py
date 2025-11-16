@@ -4,15 +4,22 @@ from core import BaseStepGenerator
 
 class DetStepGenerator(BaseStepGenerator):
     def get_latex(self) -> str:
-        """生成 Latex 格式的推导过程"""
+        """Generate the derivation process in LaTeX format.
+
+        This method converts the stored steps and explanations into a properly
+        formatted LaTeX align environment for mathematical expressions.
+
+        Returns:
+            str: A LaTeX formatted string containing all steps with explanations
+        """
         latex_str = "\\begin{align}"
 
-        # 匹配对应的变换和原理
+        # Match corresponding transformations and principles
         for i, (step, explanation) in enumerate(zip(self.steps, self._explanations)):
             if i == 0:
                 latex_str += '&' + latex(step)
             else:
-                # 对齐符号
+                # Alignment symbol
                 latex_str += "\\\\ &=" + latex(step)
 
             if explanation:

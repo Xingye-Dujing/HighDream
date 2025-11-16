@@ -1,67 +1,70 @@
 from abc import ABC
-
-from sympy import Matrix, latex, simplify, sympify, zeros
+from sympy import Matrix, latex, simplify, sympify
 
 from core import MatrixStepGenerator
 
 
 class CommonMatrixCalculator(ABC):
+    """Abstract base class for matrix calculation operations.
 
-    def __init__(self):
+    Provides common functionality for matrix calculations including step tracking,
+    matrix parsing, and simplification utilities.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the calculator with a step generator."""
         self.step_generator = MatrixStepGenerator()
 
-    def add_step(self, title):
-        """显示步骤标题"""
+    def add_step(self, title: str) -> None:
+        """Add a step title to the calculation process."""
         self.step_generator.add_step(f"\\text{{{title}}}")
 
-    def add_matrix(self, matrix, name="A"):
-        """显示矩阵"""
+    def add_matrix(self, matrix: Matrix, name: str = "A") -> None:
+        """Add a matrix to the calculation steps display."""
         self.step_generator.add_step(f"{name} = {latex(matrix)}")
 
-    def add_vector(self, vector, name="x"):
-        """显示向量"""
+    def add_vector(self, vector: Matrix, name: str = "x") -> None:
+        """Add a vector to the calculation steps display."""
         self.step_generator.add_step(f"{name} = {latex(vector)}")
 
-    def add_equation(self, equation):
-        """显示方程"""
+    def add_equation(self, equation: str) -> None:
+        """Add an equation to the calculation steps display.
+
+        Parameters:
+            equation (str): The LaTeX representation of the equation.
+        """
         self.step_generator.add_step(equation)
 
-    def get_steps_latex(self):
+    def get_steps_latex(self) -> str:
+        """Get the complete calculation steps in LaTeX format."""
         return self.step_generator.get_steps_latex()
 
-    def parse_matrix_input(self, matrix_input):
-        """解析矩阵输入"""
+    def parse_matrix_input(self, matrix_input: str) -> Matrix:
+        """Parse matrix input string into a SymPy Matrix."""
         try:
             return Matrix(sympify(matrix_input))
         except Exception as e:
-            raise ValueError(f"无法解析矩阵输入: {matrix_input}, 错误: {str(e)}") from e
+            raise ValueError(
+                f"Unable to parse matrix input: {matrix_input}, Error: {str(e)}") from e
 
-    def parse_vector_input(self, vector_input):
-        """解析向量输入"""
+    def parse_vector_input(self, vector_input: str) -> Matrix:
+        """Parse vector input string into a SymPy Matrix (column vector)."""
         try:
-            # 处理向量输入，如 '[1,2,3]' 或 '[[1],[2],[3]]'
+            # Handle column vector format, e.g. '[[1],[2],[3]]'
             if vector_input.startswith('[[') and vector_input.endswith(']]'):
                 vector = Matrix(sympify(vector_input))
+            # Handle row vector format, e.g. '[1,2,3]'
             else:
-                # 转换为列向量格式
+                # Convert to column vector format
                 vector_str = vector_input.strip('[]')
                 elements = [sympify(x.strip())
                             for x in vector_str.split(',')]
                 vector = Matrix(elements)
             return vector
         except Exception as e:
-            raise ValueError(f"无法解析向量输入: {vector_input}, 错误: {str(e)}") from e
+            raise ValueError(
+                f"Unable to parse vector input: {vector_input}, Error: {str(e)}") from e
 
-    def simplify_matrix(self, matrix):
-        """
-        对矩阵的每个元素进行化简
-        """
-        simplified_matrix = zeros(matrix.rows, matrix.cols)
-
-        for i in range(matrix.rows):
-            for j in range(matrix.cols):
-                element = matrix[i, j]
-
-                simplified_matrix[i, j] = simplify(element)
-
-        return simplified_matrix
+    def simplify_matrix(self, matrix: Matrix) -> Matrix:
+        """Simplify each element in a matrix."""
+        return matrix.applyfunc(lambda x: simplify(x) if x != 0 else 0)

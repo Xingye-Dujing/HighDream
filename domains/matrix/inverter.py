@@ -1,17 +1,26 @@
-from sympy import latex, zeros, eye
-from IPython.display import display, Math
+from sympy import Matrix, eye, latex, zeros
+from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
 
 class Inverter(CommonMatrixCalculator):
+    """Matrix inversion calculator with multiple methods.
 
-    def is_square(self, matrix):
-        """检查是否为方阵"""
+    This class provides various approaches to compute matrix inverses including
+    augmented matrix method, adjugate method, LU decomposition method, and
+    Gauss-Jordan elimination method. It also handles special matrix types.
+    """
+
+    def is_square(self, matrix: Matrix) -> bool:
+        """Check if a matrix is square."""
         return matrix.rows == matrix.cols
 
-    def is_invertible(self, matrix, show_steps=True, is_clear=True):
-        """检查矩阵是否可逆"""
+    def is_invertible(self, matrix: Matrix, show_steps: bool = True, is_clear: bool = True) -> bool:
+        """Check if a matrix is invertible by computing its determinant.
+
+        A matrix is invertible if and only if its determinant is non-zero.
+        """
         if is_clear:
             self.step_generator.clear()
 
@@ -33,20 +42,26 @@ class Inverter(CommonMatrixCalculator):
             if show_steps:
                 self.step_generator.add_step(r"\text{矩阵行列式为 0, 不可逆}")
             return False
-        else:
-            if show_steps:
-                self.step_generator.add_step(r"\text{矩阵行列式不为 0, 可逆}")
-            return True
 
-    def check_special_matrix(self, matrix):
-        """检查特殊矩阵类型"""
+        if show_steps:
+            self.step_generator.add_step(r"\text{矩阵行列式不为 0, 可逆}")
+        return True
+
+    def check_special_matrix(self, matrix: Matrix) -> str:
+        """Identify special types of matrices that have optimized inversion methods.
+
+
+        Returns:
+            str: Type of special matrix ('identity', 'diagonal', 'permutation',
+                 'upper_triangular', 'lower_triangular', or 'general')
+        """
         n = matrix.rows
 
-        # 检查是否为单位矩阵
+        # Check if it's an identity matrix
         if matrix == eye(n):
             return "identity"
 
-        # 检查是否为对角矩阵
+        # Check if it's a diagonal matrix
         is_diagonal = True
         for i in range(n):
             for j in range(n):
@@ -58,7 +73,7 @@ class Inverter(CommonMatrixCalculator):
         if is_diagonal:
             return "diagonal"
 
-        # 检查是否为置换矩阵(每行每列只有一个1, 其余为 0)
+        # Check if it's a permutation matrix (only one 1 per row/column, rest 0)
         is_permutation = True
         for i in range(n):
             row_ones = 0
@@ -77,7 +92,7 @@ class Inverter(CommonMatrixCalculator):
         if is_permutation:
             return "permutation"
 
-        # 检查是否为三角矩阵
+        # Check if it's a triangular matrix
         is_upper_triangular = True
         is_lower_triangular = True
         for i in range(n):
@@ -93,8 +108,15 @@ class Inverter(CommonMatrixCalculator):
 
         return "general"
 
-    def inverse_by_augmented(self, matrix_input, show_steps=True, simplify_result=True, is_clear=True):
-        """方法一：增广矩阵法求逆"""
+    def inverse_by_augmented(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True, is_clear: bool = True) -> Matrix:
+        """Compute matrix inverse using the augmented matrix method.
+
+        This method creates an augmented matrix [A|I] and applies Gauss-Jordan
+        elimination to transform it into [I|A^-1].
+
+        Returns:
+            Matrix: The inverse of the input matrix, or None if not invertible
+        """
         if is_clear:
             self.step_generator.clear()
 
@@ -104,32 +126,32 @@ class Inverter(CommonMatrixCalculator):
             self.step_generator.add_step(r"\textbf{方法一: 增广矩阵法}")
             self.add_matrix(A, "A")
 
-        # 检查是否可逆
+        # Check if matrix is invertible
         if not self.is_invertible(A, show_steps, is_clear=False):
             return None
 
         n = A.rows
 
-        # 创建增广矩阵 [A | I]
+        # Create augmented matrix [A | I]
         augmented = A.row_join(eye(n))
         if show_steps:
             self.add_step("构造增广矩阵:")
             self.add_matrix(augmented, "[A|I]")
 
-        # 高斯-约当消元
+        # Gauss-Jordan elimination
         for i in range(n):
             if show_steps:
                 self.step_generator.add_step(
                     f"\\text{{第 {i+1} 步: 处理第 {i+1} 列}}")
 
-            # 寻找主元
+            # Find pivot element
             pivot_row = i
             for r in range(i, n):
                 if augmented[r, i] != 0:
                     pivot_row = r
                     break
 
-            # 行交换(如果需要)
+            # Row swap if needed
             if pivot_row != i:
                 if show_steps:
                     self.step_generator.add_step(
@@ -138,7 +160,7 @@ class Inverter(CommonMatrixCalculator):
                 if show_steps:
                     self.add_matrix(augmented, f"[A|I]")
 
-            # 归一化主元行
+            # Normalize pivot row
             pivot = augmented[i, i]
             if pivot != 1:
                 if show_steps:
@@ -148,7 +170,7 @@ class Inverter(CommonMatrixCalculator):
                 if show_steps:
                     self.add_matrix(augmented, f"[A|I]")
 
-            # 消元其他行
+            # Eliminate other rows
             for j in range(n):
                 if j != i and augmented[j, i] != 0:
                     factor = augmented[j, i]
@@ -161,10 +183,10 @@ class Inverter(CommonMatrixCalculator):
                     if show_steps:
                         self.add_matrix(augmented, f"[A|I]")
 
-        # 提取逆矩阵
+        # Extract inverse matrix from right half of augmented matrix
         A_inv = augmented[:, n:]
 
-        # 化简结果
+        # Simplify result if requested
         if simplify_result:
             A_inv_simplified = self.simplify_matrix(A_inv)
         else:
@@ -178,7 +200,7 @@ class Inverter(CommonMatrixCalculator):
             else:
                 self.add_matrix(A_inv_simplified, "A^{-1}")
 
-            # 验证
+            # Verification
             self.add_step("验证:")
             identity_check = A * A_inv_simplified
             identity_check_simplified = self.simplify_matrix(identity_check)
@@ -191,8 +213,16 @@ class Inverter(CommonMatrixCalculator):
 
         return A_inv_simplified
 
-    def inverse_by_adjugate(self, matrix_input, show_steps=True, simplify_result=True, is_clear=True):
-        """方法二：伴随矩阵法求逆"""
+    def inverse_by_adjugate(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True, is_clear: bool = True) -> Matrix:
+        """
+        Compute matrix inverse using the adjugate method.
+
+        This method uses the formula: A^-1 = (1/det(A)) * adj(A)
+        where adj(A) is the adjugate matrix (transpose of cofactor matrix).
+
+        Returns:
+            Matrix: The inverse of the input matrix, or None if not invertible
+        """
         if is_clear:
             self.step_generator.clear()
 
@@ -202,7 +232,7 @@ class Inverter(CommonMatrixCalculator):
             self.step_generator.add_step(r"\textbf{方法二: 伴随矩阵法}")
             self.add_matrix(A, "A")
 
-        # 检查是否可逆
+        # Check if matrix is invertible
         if not self.is_invertible(A, show_steps, is_clear=False):
             return None
 
@@ -213,14 +243,14 @@ class Inverter(CommonMatrixCalculator):
             self.add_step("步骤 1: 计算行列式")
             self.step_generator.add_step(f"\\det(A) = {latex(det_A)}")
 
-        # 计算余子式矩阵
+        # Calculate cofactor matrix
         if show_steps:
             self.add_step("步骤 2: 计算余子式矩阵")
 
         cofactor_matrix = zeros(n)
         for i in range(n):
             for j in range(n):
-                # 计算代数余子式
+                # Calculate algebraic cofactor
                 minor = A.minor_submatrix(i, j)
                 cofactor = (-1)**(i+j) * minor.det()
                 cofactor_matrix[i, j] = cofactor
@@ -234,16 +264,16 @@ class Inverter(CommonMatrixCalculator):
         if show_steps:
             self.add_matrix(cofactor_matrix, "C")
 
-        # 计算伴随矩阵(余子式矩阵的转置)
+        # Calculate adjugate matrix (transpose of cofactor matrix)
         adjugate = cofactor_matrix.T
         if show_steps:
             self.add_step("步骤 3: 计算伴随矩阵(余子式矩阵的转置)")
             self.add_matrix(adjugate, "\\text{adj}(A)=C^T")
 
-        # 计算逆矩阵
+        # Calculate inverse matrix
         A_inv = adjugate / det_A
 
-        # 化简结果
+        # Simplify result if requested
         if simplify_result:
             A_inv_simplified = self.simplify_matrix(A_inv)
         else:
@@ -262,7 +292,7 @@ class Inverter(CommonMatrixCalculator):
             else:
                 self.add_matrix(A_inv_simplified, "A^{-1}")
 
-            # 验证
+            # Verification
             self.add_step("验证:")
             identity_check = A * A_inv_simplified
             identity_check_simplified = self.simplify_matrix(identity_check)
@@ -275,8 +305,15 @@ class Inverter(CommonMatrixCalculator):
 
         return A_inv_simplified
 
-    def inverse_by_lu_decomposition(self, matrix_input, show_steps=True, simplify_result=True, is_clear=True):
-        """方法三: LU 分解法求逆"""
+    def inverse_by_lu_decomposition(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True, is_clear: bool = True) -> Matrix:
+        """Compute matrix inverse using LU decomposition method.
+
+        This method decomposes A into L*U and then solves AX = I column by column,
+        where X will be A^-1.
+
+        Returns:
+            Matrix: The inverse of the input matrix, or None if not invertible
+        """
         if is_clear:
             self.step_generator.clear()
 
@@ -286,23 +323,23 @@ class Inverter(CommonMatrixCalculator):
             self.step_generator.add_step(r"\textbf{方法三: LU 分解法}")
             self.add_matrix(A, "A")
 
-        # 检查是否可逆
+        # Check if matrix is invertible
         if not self.is_invertible(A, show_steps, is_clear=False):
             return None
 
-        # 进行 LU 分解(使用 Doolittle 方法)
+        # Perform LU decomposition using Doolittle method
         n = A.rows
 
         L = eye(n)
         U = zeros(n)
 
         for i in range(n):
-            # 计算 U 的第 i 行
+            # Calculate U's i-th row
             for j in range(i, n):
                 sum_val = sum(L[i, k] * U[k, j] for k in range(i))
                 U[i, j] = A[i, j] - sum_val
 
-            # 计算 L 的第 i 列
+            # Calculate L's i-th column
             for j in range(i+1, n):
                 sum_val = sum(L[j, k] * U[k, i] for k in range(i))
                 if U[i, i] == 0:
@@ -315,7 +352,7 @@ class Inverter(CommonMatrixCalculator):
             self.add_matrix(L, "L")
             self.add_matrix(U, "U")
 
-            # 验证 LU 分解
+            # Verify LU decomposition
             self.add_step("验证 LU 分解:")
             LU_product = L * U
             self.add_matrix(LU_product, "L \\times U")
@@ -324,7 +361,7 @@ class Inverter(CommonMatrixCalculator):
             else:
                 self.step_generator.add_step(r"\text{LU 分解错误}")
 
-        # 解方程组 L * Y = I 和 U * X = Y 来求逆
+        # Solve equation systems L * Y = I and U * X = Y to find inverse
         if show_steps:
             self.add_step("步骤 2: 解方程组求逆")
             self.step_generator.add_step(
@@ -333,12 +370,12 @@ class Inverter(CommonMatrixCalculator):
 
         A_inv = zeros(n)
 
-        # 对每一列求解
+        # Solve for each column
         for col in range(n):
             if show_steps:
                 self.step_generator.add_step(f"\\text{{求解第 {col+1} 列}}")
 
-            # 前代法解 L * y = e_col
+            # Forward substitution to solve L * y = e_col
             y = zeros(n, 1)
             e = zeros(n, 1)
             e[col] = 1
@@ -353,7 +390,7 @@ class Inverter(CommonMatrixCalculator):
                 y[i] = (e[i] - sum_val) / L[i, i]
 
                 if show_steps:
-                    # 显示前代法每一步的计算过程
+                    # Show forward substitution steps
                     if i == 0:
                         self.step_generator.add_step(
                             f"y_{{{i+1}}} = \\frac{{e_{{{i+1}}}}}{{L_{{{i+1}{i+1}}}}} = \\frac{{{latex(e[i])}}}{{{latex(L[i, i])}}} = {latex(y[i])}")
@@ -366,7 +403,7 @@ class Inverter(CommonMatrixCalculator):
             if show_steps:
                 self.add_matrix(y, f"\\boldsymbol{{y_{{{col+1}}}}}")
 
-            # 回代法解 U * x = y
+            # Backward substitution to solve U * x = y
             x = zeros(n, 1)
             if show_steps:
                 self.step_generator.add_step(
@@ -390,11 +427,11 @@ class Inverter(CommonMatrixCalculator):
                 self.add_matrix(x, f"\\boldsymbol{{x_{{{col+1}}}}}")
                 self.step_generator.add_step(f"\\text{{第 {col+1} 列求解完成}}")
 
-            # 将解存入逆矩阵
+            # Store solution in inverse matrix
             for i in range(n):
                 A_inv[i, col] = x[i]
 
-        # 化简结果
+        # Simplify result if requested
         if simplify_result:
             A_inv_simplified = self.simplify_matrix(A_inv)
         else:
@@ -408,7 +445,7 @@ class Inverter(CommonMatrixCalculator):
             else:
                 self.add_matrix(A_inv_simplified, "A^{-1}")
 
-            # 验证
+            # Verification
             self.add_step("验证:")
             identity_check = A * A_inv_simplified
             identity_check_simplified = self.simplify_matrix(identity_check)
@@ -421,8 +458,15 @@ class Inverter(CommonMatrixCalculator):
 
         return A_inv_simplified
 
-    def inverse_by_gauss_jordan(self, matrix_input, show_steps=True, simplify_result=True, is_clear=True):
-        """方法四：高斯-约当消元法(直接求逆)"""
+    def inverse_by_gauss_jordan(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True, is_clear: bool = True) -> Matrix:
+        """Compute matrix inverse using Gauss-Jordan elimination method.
+
+        Directly applies Gauss-Jordan elimination on matrix A while simultaneously
+        applying the same operations on an identity matrix to produce A^-1.
+
+        Returns:
+            Matrix: The inverse of the input matrix, or None if not invertible
+        """
         if is_clear:
             self.step_generator.clear()
 
@@ -432,7 +476,7 @@ class Inverter(CommonMatrixCalculator):
             self.step_generator.add_step(r"\textbf{方法四: 高斯-约当消元法}")
             self.add_matrix(A, "A")
 
-        # 检查是否可逆
+        # Check if matrix is invertible
         if not self.is_invertible(A, show_steps, is_clear=False):
             return None
 
@@ -449,14 +493,14 @@ class Inverter(CommonMatrixCalculator):
             if show_steps:
                 self.step_generator.add_step(f"\\text{{处理第 {col+1} 列}}")
 
-            # 寻找主元
+            # Find pivot element
             pivot_row = col
             for r in range(col, n):
                 if A_work[r, col] != 0:
                     pivot_row = r
                     break
 
-            # 行交换
+            # Row swap
             if pivot_row != col:
                 if show_steps:
                     self.step_generator.add_step(
@@ -467,7 +511,7 @@ class Inverter(CommonMatrixCalculator):
                     self.add_matrix(A_work, "A")
                     self.add_matrix(A_inv, "A^{-1}")
 
-            # 归一化主元行
+            # Normalize pivot row
             pivot = A_work[col, col]
             if pivot != 1:
                 if show_steps:
@@ -479,7 +523,7 @@ class Inverter(CommonMatrixCalculator):
                     self.add_matrix(A_work, "A")
                     self.add_matrix(A_inv, "A^{-1}")
 
-            # 消元其他行
+            # Eliminate other rows
             for row in range(n):
                 if row != col and A_work[row, col] != 0:
                     factor = A_work[row, col]
@@ -493,7 +537,7 @@ class Inverter(CommonMatrixCalculator):
                         self.add_matrix(A_work, "A")
                         self.add_matrix(A_inv, "A^{-1}")
 
-        # 化简结果
+        # Simplify result if requested
         if simplify_result:
             A_inv_simplified = self.simplify_matrix(A_inv)
         else:
@@ -507,7 +551,7 @@ class Inverter(CommonMatrixCalculator):
             else:
                 self.add_matrix(A_inv_simplified, "A^{-1}")
 
-            # 验证
+            # Verification
             self.add_step("验证:")
             identity_check = A * A_inv_simplified
             identity_check_simplified = self.simplify_matrix(identity_check)
@@ -520,8 +564,15 @@ class Inverter(CommonMatrixCalculator):
 
         return A_inv_simplified
 
-    def inverse_special_matrices(self, matrix_input, show_steps=True, simplify_result=True, is_clear=True):
-        """特殊矩阵求逆方法"""
+    def inverse_special_matrices(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True, is_clear: bool = True) -> Matrix:
+        """Compute inverse of special matrices using optimized methods.
+
+        Handles specific matrix types like identity, diagonal, permutation,
+        triangular matrices with specialized algorithms for better efficiency.
+
+        Returns:
+            Matrix: The inverse of the input matrix, or None if not invertible
+        """
         if is_clear:
             self.step_generator.clear()
 
@@ -569,7 +620,7 @@ class Inverter(CommonMatrixCalculator):
         elif matrix_type == "upper_triangular":
             if show_steps:
                 self.step_generator.add_step(r"\text{上三角矩阵的逆(通过回代法求解)}")
-            # 使用回代法求上三角矩阵的逆
+            # Use backward substitution to find inverse of upper triangular matrix
             A_inv = zeros(n)
             for col in range(n):
                 e = zeros(n, 1)
@@ -581,7 +632,7 @@ class Inverter(CommonMatrixCalculator):
                         f"\\text{{回代法求解 }} A \\cdot \\boldsymbol{{x_{{{col+1}}}}} = \\boldsymbol{{e_{{{col+1}}}}}")
                     self.add_matrix(e, f"\\boldsymbol{{e_{{{col+1}}}}}")
 
-                # 回代过程
+                # Backward substitution process
                 for i in range(n-1, -1, -1):
                     sum_val = sum(A[i, j] * x[j] for j in range(i+1, n))
                     x[i] = (e[i] - sum_val) / A[i, i]
@@ -606,7 +657,7 @@ class Inverter(CommonMatrixCalculator):
         elif matrix_type == "lower_triangular":
             if show_steps:
                 self.step_generator.add_step(r"\text{下三角矩阵的逆(通过前代法求解)}")
-            # 使用前代法求下三角矩阵的逆
+            # Use forward substitution to find inverse of lower triangular matrix
             A_inv = zeros(n)
             for col in range(n):
                 e = zeros(n, 1)
@@ -618,7 +669,7 @@ class Inverter(CommonMatrixCalculator):
                         f"\\text{{前代法求解 }} A \\cdot \\boldsymbol{{x_{{{col+1}}}}} = \\boldsymbol{{e_{{{col+1}}}}}")
                     self.add_matrix(e, f"\\boldsymbol{{e_{{{col+1}}}}}")
 
-                # 前代过程
+                # Forward substitution process
                 for i in range(n):
                     sum_val = sum(A[i, j] * x[j] for j in range(i))
                     x[i] = (e[i] - sum_val) / A[i, i]
@@ -640,7 +691,7 @@ class Inverter(CommonMatrixCalculator):
                 for i in range(n):
                     A_inv[i, col] = x[i]
 
-        # 化简结果
+        # Simplify result if requested
         if simplify_result and A_inv is not None:
             A_inv_simplified = self.simplify_matrix(A_inv)
         else:
@@ -654,7 +705,7 @@ class Inverter(CommonMatrixCalculator):
             else:
                 self.add_matrix(A_inv_simplified, "A^{-1}")
 
-            # 验证
+            # Verification
             self.add_step("验证:")
             identity_check = A * A_inv_simplified
             identity_check_simplified = self.simplify_matrix(identity_check)
@@ -667,8 +718,17 @@ class Inverter(CommonMatrixCalculator):
 
         return A_inv_simplified
 
-    def auto_matrix_inverse(self, matrix_input, show_steps=True, simplify_result=True, is_clear=True):
-        """自动选择求逆方法"""
+    def auto_matrix_inverse(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True, is_clear: bool = True) -> Matrix:
+        """
+        Automatically select the best method to compute matrix inverse.
+
+        This function analyzes the matrix type and chooses the most appropriate
+        inversion method. For special matrices, optimized methods are used.
+        For general matrices, multiple methods are attempted.
+
+        Returns:
+            Matrix: The inverse of the input matrix, or None if not invertible
+        """
         if is_clear:
             self.step_generator.clear()
 
@@ -678,7 +738,7 @@ class Inverter(CommonMatrixCalculator):
             self.step_generator.add_step(r"\textbf{自动矩阵求逆}")
             self.add_matrix(A, "A")
 
-        # 检查特殊矩阵
+        # Check for special matrix types
         matrix_type = self.check_special_matrix(A)
         if matrix_type != "general":
             if show_steps:
@@ -686,13 +746,13 @@ class Inverter(CommonMatrixCalculator):
                     f"\\text{{检测到特殊矩阵: {matrix_type}, 使用特殊方法求逆}}")
             return self.inverse_special_matrices(matrix_input, show_steps, simplify_result, is_clear=False)
 
-        # 对于一般矩阵, 提供多种方法
+        # For general matrices, provide multiple methods
         if show_steps:
             self.step_generator.add_step(r"\text{检测到一般矩阵, 提供多种求逆方法}")
 
         results = {}
 
-        # 方法1: 增广矩阵法
+        # Method 1: Augmented matrix method
         try:
             results["augmented"] = self.inverse_by_augmented(
                 matrix_input, show_steps, simplify_result, is_clear=False)
@@ -700,7 +760,7 @@ class Inverter(CommonMatrixCalculator):
             if show_steps:
                 self.step_generator.add_step(f"\\text{{增广矩阵法失败: {str(e)}}}")
 
-        # 方法2: 伴随矩阵法
+        # Method 2: Adjugate method
         try:
             results["adjugate"] = self.inverse_by_adjugate(
                 matrix_input, show_steps, simplify_result, is_clear=False)
@@ -708,7 +768,7 @@ class Inverter(CommonMatrixCalculator):
             if show_steps:
                 self.step_generator.add_step(f"\\text{{伴随矩阵法失败: {str(e)}}}")
 
-        # 方法3: LU分解法
+        # Method 3: LU decomposition method
         try:
             results["lu"] = self.inverse_by_lu_decomposition(
                 matrix_input, show_steps, simplify_result, is_clear=False)
@@ -716,7 +776,7 @@ class Inverter(CommonMatrixCalculator):
             if show_steps:
                 self.step_generator.add_step(f"\\text{{LU 分解法失败: {str(e)}}}")
 
-        # 方法4: 高斯-约当消元法
+        # Method 4: Gauss-Jordan elimination method
         try:
             results["gauss_jordan"] = self.inverse_by_gauss_jordan(
                 matrix_input, show_steps, simplify_result, is_clear=False)
@@ -724,7 +784,7 @@ class Inverter(CommonMatrixCalculator):
             if show_steps:
                 self.step_generator.add_step(f"\\text{{高斯-约当消元法失败: {str(e)}}}")
 
-        # 检查所有结果是否一致
+        # Check consistency of results
         if show_steps and len(results) > 1:
             self.add_step("方法一致性检查:")
             methods = list(results.keys())
@@ -743,7 +803,7 @@ class Inverter(CommonMatrixCalculator):
             else:
                 self.step_generator.add_step(r"\text{警告: 不同方法结果不一致}")
 
-        # 返回第一个成功的结果
+        # Return first successful result
         for _, result in results.items():
             if result is not None:
                 return result
@@ -751,12 +811,16 @@ class Inverter(CommonMatrixCalculator):
         return None
 
 
-# 演示函数
+# Demo functions
 def demo_basic_inverse():
-    """演示基本矩阵求逆"""
+    """
+    Demonstrate basic matrix inversion with regular matrices.
+
+    Shows how to use the auto_matrix_inverse method with various examples.
+    """
     inverter = Inverter()
 
-    # 可逆矩阵示例
+    # Invertible matrix examples
     A1 = '[[0,1,1],[4,3,3],[8,7,9]]'
     A2 = '[[1,2,3],[0,1,4],[5,6,0]]'
     A3 = '[[1,1],[2,3]]'
@@ -776,10 +840,15 @@ def demo_basic_inverse():
 
 
 def demo_special_matrices():
-    """演示特殊矩阵求逆"""
+    """
+    Demonstrate matrix inversion with special matrix types.
+
+    Shows optimized inversion methods for identity, diagonal, permutation,
+    and triangular matrices.
+    """
     inverter = Inverter()
 
-    # 特殊矩阵示例
+    # Special matrix examples
     identity = '[[1,0,0],[0,1,0],[0,0,1]]'
     diagonal = '[[2,0,0],[0,3,0],[0,0,5]]'
     permutation = '[[0,1,0],[0,0,1],[1,0,0]]'
@@ -807,12 +876,16 @@ def demo_special_matrices():
 
 
 def demo_singular_matrix():
-    """演示奇异矩阵情况"""
+    """
+    Demonstrate handling of singular (non-invertible) matrices.
+
+    Shows how the system detects and handles matrices with zero determinant.
+    """
     inverter = Inverter()
 
-    # 奇异矩阵示例
-    singular1 = '[[1,2,3],[4,5,6],[7,8,9]]'  # 行线性相关
-    singular2 = '[[1,1],[1,1]]'  # 两行相同
+    # Singular matrix examples
+    singular1 = '[[1,2,3],[4,5,6],[7,8,9]]'  # Linearly dependent rows
+    singular2 = '[[1,1],[1,1]]'  # Identical rows
 
     inverter.step_generator.add_step(r"\textbf{奇异矩阵演示}")
 
@@ -829,10 +902,14 @@ def demo_singular_matrix():
 
 
 def demo_symbolic_matrix():
-    """演示符号矩阵求逆"""
+    """
+    Demonstrate matrix inversion with symbolic expressions.
+
+    Shows how the system handles matrices containing variables.
+    """
     inverter = Inverter()
 
-    # 符号矩阵
+    # Symbolic matrices
     symbolic_2x2 = '[[a,b],[c,d]]'
     symbolic_3x3 = '[[a,b,c],[d,e,f],[g,h,i]]'
 
@@ -857,7 +934,7 @@ def demo_symbolic_matrix():
 
 
 if __name__ == "__main__":
-    # 运行演示
+    # Run demonstrations
     demo_basic_inverse()
     demo_special_matrices()
     demo_singular_matrix()

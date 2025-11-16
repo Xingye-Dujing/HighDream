@@ -1,30 +1,55 @@
-from sympy import latex, zeros, eye, symbols, simplify, sqrt
-from IPython.display import display, Math
+from typing import Dict, List, Tuple
+from sympy import Expr, Matrix, eye, latex, simplify, sqrt, symbols, zeros
+from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
 
 class SchurDecomposition(CommonMatrixCalculator):
+    """A class for performing Schur decomposition on matrices.
 
-    def is_square(self, matrix):
-        """检查是否为方阵"""
+    This class provides various methods to compute the Schur decomposition of different
+    types of matrices including general, Hermitian, and normal matrices.
+    """
+
+    def is_square(self, matrix: Matrix) -> bool:
+        """Check if the matrix is square."""
         return matrix.rows == matrix.cols
 
-    def is_hermitian(self, matrix):
-        """检查矩阵是否为Hermitian矩阵"""
+    def is_hermitian(self, matrix: Matrix) -> bool:
+        """Check if the matrix is Hermitian.
+
+        A matrix is Hermitian if it equals its conjugate transpose.
+        """
         return matrix == matrix.conjugate().transpose()
 
-    def is_normal(self, matrix):
-        """检查矩阵是否为正规矩阵"""
+    def is_normal(self, matrix: Matrix) -> bool:
+        """Check if the matrix is normal.
+
+        A matrix is normal if it commutes with its conjugate transpose.
+        """
         A_H = matrix.conjugate().transpose()
         return matrix * A_H == A_H * matrix
 
-    def compute_eigenvalues(self, matrix, show_steps=True):
-        """计算特征值并显示详细过程"""
+    def compute_eigenvalues(self, matrix: Matrix, show_steps: bool = True) -> Dict:
+        """Compute eigenvalues with detailed steps.
+
+        Parameters
+        ----------
+        matrix : Matrix
+            The matrix to compute eigenvalues for.
+        show_steps : bool, optional
+            Whether to show computation steps (default is True).
+
+        Returns
+        -------
+        dict
+            Dictionary with eigenvalues as keys and their multiplicities as values.
+        """
         if show_steps:
             self.add_step("计算特征多项式")
 
-        # 计算特征多项式
+        # Calculate characteristic polynomial
         n = matrix.rows
         lambda_symbol = symbols('lambda')
         char_poly_matrix = matrix - lambda_symbol * eye(n)
@@ -40,7 +65,7 @@ class SchurDecomposition(CommonMatrixCalculator):
             self.step_generator.add_step(
                 f"\\text{{化简: }} {latex(simplify(char_poly))}")
 
-        # 求解特征值
+        # Solve for eigenvalues
         if show_steps:
             self.add_step("求解特征方程")
 
@@ -56,19 +81,34 @@ class SchurDecomposition(CommonMatrixCalculator):
 
         return eigenvalues
 
-    def compute_eigenvector(self, matrix, eigenvalue, show_steps=True):
-        """计算特征向量并显示详细过程"""
+    def compute_eigenvector(self, matrix: Matrix, eigenvalue: Expr, show_steps: bool = True) -> List[Matrix]:
+        """Compute eigenvectors with detailed steps.
+
+        Parameters
+        ----------
+        matrix : Matrix
+            The matrix to compute eigenvectors for.
+        eigenvalue : scalar
+            The eigenvalue to compute corresponding eigenvectors.
+        show_steps : bool, optional
+            Whether to show computation steps (default is True).
+
+        Returns
+        -------
+        list
+            List of eigenvectors corresponding to the given eigenvalue.
+        """
         if show_steps:
             self.add_step(f"计算特征值 {latex(eigenvalue)} 对应的特征向量")
 
         n = matrix.rows
-        # 构造特征系统
+        # Construct eigen system
         eigen_system = matrix - eigenvalue * eye(n)
 
         if show_steps:
             self.add_matrix(eigen_system, f"A - {latex(eigenvalue)}I")
 
-        # 求解零空间
+        # Solve null space
         nullspace = eigen_system.nullspace()
 
         if show_steps:
@@ -82,8 +122,21 @@ class SchurDecomposition(CommonMatrixCalculator):
 
         return nullspace
 
-    def gram_schmidt(self, vectors, show_steps=True):
-        """Gram-Schmidt 正交化过程"""
+    def gram_schmidt(self, vectors: List[Matrix], show_steps: bool = True) -> List[Matrix]:
+        """Perform Gram-Schmidt orthogonalization process.
+
+        Parameters
+        ----------
+        vectors : list
+            List of vectors to orthogonalize.
+        show_steps : bool, optional
+            Whether to show computation steps (default is True).
+
+        Returns
+        -------
+        list
+            List of orthogonalized and normalized vectors.
+        """
         if show_steps:
             self.add_step("Gram-Schmidt 正交化")
 
@@ -94,11 +147,11 @@ class SchurDecomposition(CommonMatrixCalculator):
                 self.add_step(f"处理向量 $\\boldsymbol{{v_{i+1}}}$")
                 self.add_vector(v, f"\\boldsymbol{{v_{i+1}^{{(0)}}}}")
 
-            # 开始正交化
+            # Start orthogonalization
             u = v.copy()
 
             for j in range(i):
-                # 计算投影
+                # Calculate projection
                 projection = (v.dot(orthogonal_vectors[j]) /
                               orthogonal_vectors[j].dot(orthogonal_vectors[j])) * orthogonal_vectors[j]
 
@@ -115,7 +168,7 @@ class SchurDecomposition(CommonMatrixCalculator):
                     self.add_vector(
                         u, f"\\boldsymbol{{v_{{{i+1}}}^{{({j+1})}}}}")
 
-            # 归一化
+            # Normalize
             norm = sqrt(u.dot(u))
             if norm != 0:
                 u_normalized = u / norm
@@ -135,14 +188,35 @@ class SchurDecomposition(CommonMatrixCalculator):
 
         return orthogonal_vectors
 
-    def schur_decomposition_iterative(self, matrix_input, show_steps=True, max_iterations=100):
-        """迭代法进行 Schur 分解(适用于一般矩阵)"""
+    def schur_decomposition_iterative(self, matrix_input: str, show_steps: bool = True, max_iterations: int = 100) -> Tuple[Matrix, Matrix]:
+        """Iterative method for Schur decomposition (applicable to general matrices).
+
+        Parameters
+        ----------
+        matrix_input : Matrix or str
+            The matrix to decompose.
+        show_steps : bool, optional
+            Whether to show computation steps (default is True).
+        max_iterations : int, optional
+            Maximum number of iterations (default is 100).
+
+        Returns
+        -------
+        tuple
+            Tuple containing (Q, T) where Q is unitary and T is upper triangular.
+
+        Raises
+        ------
+        ValueError
+            If the input matrix is not square.
+        """
         self.step_generator.clear()
 
         A = self.parse_matrix_input(matrix_input)
 
         if not self.is_square(A):
-            raise ValueError("Schur 分解只适用于方阵")
+            raise ValueError(
+                "Schur decomposition only applies to square matrices")
 
         n = A.rows
 
@@ -151,7 +225,7 @@ class SchurDecomposition(CommonMatrixCalculator):
             self.add_matrix(A, "A")
             self.step_generator.add_step(f"\\text{{矩阵维度: }} {n} \\times {n}")
 
-        # 初始化为A和单位矩阵
+        # Initialize with A and identity matrix
         T = A.copy()
         Q = eye(n)
 
@@ -164,7 +238,7 @@ class SchurDecomposition(CommonMatrixCalculator):
             if show_steps:
                 self.add_step(f"迭代 {iteration + 1}")
 
-            # 选择右下角子矩阵进行 QR 分解
+            # Select bottom-right submatrix for QR decomposition
             submatrix_size = n - iteration
             sub_T = T[iteration:, iteration:]
 
@@ -174,7 +248,7 @@ class SchurDecomposition(CommonMatrixCalculator):
                 self.add_matrix(
                     sub_T, f"T_{iteration}[{iteration}:, {iteration}:]")
 
-            # QR 分解
+            # QR decomposition
             Q_sub, R_sub = sub_T.QRdecomposition()
 
             if show_steps:
@@ -182,7 +256,7 @@ class SchurDecomposition(CommonMatrixCalculator):
                 self.add_matrix(Q_sub, f"Q_{iteration}^{{sub}}")
                 self.add_matrix(R_sub, f"R_{iteration}^{{sub}}")
 
-                # 验证 QR 分解
+                # Verify QR decomposition
                 Q_times_R = Q_sub * R_sub
                 self.add_matrix(
                     Q_times_R, f"Q_{iteration}^{{sub}} R_{iteration}^{{sub}}")
@@ -191,14 +265,14 @@ class SchurDecomposition(CommonMatrixCalculator):
                 else:
                     self.step_generator.add_step("\\text{QR 分解验证错误}")
 
-            # 更新 T 矩阵
-            # 构造完整的 Q 旋转矩阵
+            # Update T matrix
+            # Construct full Q rotation matrix
             Q_full = eye(n)
             for i in range(submatrix_size):
                 for j in range(submatrix_size):
                     Q_full[iteration+i, iteration+j] = Q_sub[i, j]
 
-            # 更新: T = Q^H * T * Q
+            # Update: T = Q^H * T * Q
             T_new = Q_full.transpose().conjugate() * T * Q_full
 
             if show_steps:
@@ -207,7 +281,7 @@ class SchurDecomposition(CommonMatrixCalculator):
                     f"T_{iteration+1} = Q_{iteration}^H T_{iteration} Q_{iteration}")
                 self.add_matrix(T_new, f"T_{iteration+1}")
 
-            # 更新累积的 Q 矩阵
+            # Update accumulated Q matrix
             Q = Q * Q_full
 
             if show_steps:
@@ -218,11 +292,11 @@ class SchurDecomposition(CommonMatrixCalculator):
 
             T = T_new
 
-            # 检查收敛性(下三角部分是否接近 0)
+            # Check convergence (whether lower triangular part approaches 0)
             convergence = True
             for i in range(iteration+2, n):
                 for j in range(iteration+1):
-                    if abs(T[i, j]) > 1e-10:  # 收敛阈值
+                    if abs(T[i, j]) > 1e-10:  # Convergence threshold
                         convergence = False
                         break
                 if not convergence:
@@ -233,7 +307,7 @@ class SchurDecomposition(CommonMatrixCalculator):
                     f"\\text{{在第 {iteration+1} 次迭代后收敛}}")
                 break
 
-        # 最终验证
+        # Final verification
         if show_steps:
             self.add_step("最终结果验证")
             self.add_matrix(Q, "Q")
@@ -257,14 +331,28 @@ class SchurDecomposition(CommonMatrixCalculator):
 
         return Q, T
 
-    def schur_decomposition_direct(self, matrix_input, show_steps=True):
-        """直接法进行 Schur 分解(适用于可对角化矩阵)"""
+    def schur_decomposition_direct(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix]:
+        """Direct method for Schur decomposition (applicable to diagonalizable matrices).
+
+        Parameters
+        ----------
+        matrix_input : Matrix or str
+            The matrix to decompose.
+        show_steps : bool, optional
+            Whether to show computation steps (default is True).
+
+        Returns
+        -------
+        tuple
+            Tuple containing (Q, T) where Q is unitary and T is upper triangular.
+        """
         self.step_generator.clear()
 
         A = self.parse_matrix_input(matrix_input)
 
         if not self.is_square(A):
-            raise ValueError("Schur 分解只适用于方阵")
+            raise ValueError(
+                "Schur decomposition only applies to square matrices")
 
         n = A.rows
 
@@ -272,7 +360,7 @@ class SchurDecomposition(CommonMatrixCalculator):
             self.step_generator.add_step("Schur 分解 - 直接法")
             self.add_matrix(A, "A")
 
-        # 步骤1: 计算特征值和特征向量
+        # Step 1: Compute eigenvalues and eigenvectors
         eigenvalues = self.compute_eigenvalues(A, show_steps)
 
         if show_steps:
@@ -283,13 +371,13 @@ class SchurDecomposition(CommonMatrixCalculator):
             eigenvectors = self.compute_eigenvector(A, eigenval, show_steps)
             all_eigenvectors.extend(eigenvectors)
 
-        # 检查是否有足够的特征向量
+        # Check if we have enough eigenvectors
         if len(all_eigenvectors) < n:
             if show_steps:
                 self.step_generator.add_step("\\text{警告: 矩阵不可对角化, 使用迭代法}")
             return self.schur_decomposition_iterative(A, show_steps)
 
-        # 步骤2: 正交化特征向量
+        # Step 2: Orthogonalize eigenvectors
         orthogonal_basis = self.gram_schmidt(all_eigenvectors, show_steps)
 
         if len(orthogonal_basis) < n:
@@ -297,7 +385,7 @@ class SchurDecomposition(CommonMatrixCalculator):
                 self.step_generator.add_step("\\text{警告: 无法找到完整的正交基, 使用迭代法}")
             return self.schur_decomposition_iterative(A, show_steps)
 
-        # 构造Q矩阵
+        # Construct Q matrix
         Q = zeros(n)
         for i in range(n):
             for j in range(n):
@@ -307,7 +395,7 @@ class SchurDecomposition(CommonMatrixCalculator):
             self.add_step("构造酉矩阵 Q")
             self.add_matrix(Q, "Q")
 
-        # 计算T矩阵: T = Q^H A Q
+        # Compute T matrix: T = Q^H A Q
         Q_H = Q.transpose().conjugate()
         T = Q_H * A * Q
 
@@ -316,7 +404,7 @@ class SchurDecomposition(CommonMatrixCalculator):
             self.add_equation("T = Q^H A Q")
             self.add_matrix(T, "T")
 
-        # 验证
+        # Verification
         if show_steps:
             self.add_step("验证")
             reconstruction = Q * T * Q_H
@@ -330,14 +418,32 @@ class SchurDecomposition(CommonMatrixCalculator):
 
         return Q, T
 
-    def schur_decomposition_hermitian(self, matrix_input, show_steps=True):
-        """Hermitian矩阵的特殊处理(得到对角矩阵)"""
+    def schur_decomposition_hermitian(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix]:
+        """Special handling for Hermitian matrices (results in diagonal matrix).
+
+        Parameters
+        ----------
+        matrix_input : Matrix or str
+            The Hermitian matrix to decompose.
+        show_steps : bool, optional
+            Whether to show computation steps (default is True).
+
+        Returns
+        -------
+        tuple
+            Tuple containing (Q, T) where Q is unitary and T is diagonal.
+
+        Raises
+        ------
+        ValueError
+            If the input matrix is not Hermitian.
+        """
         self.step_generator.clear()
 
         A = self.parse_matrix_input(matrix_input)
 
         if not self.is_hermitian(A):
-            raise ValueError("此方法只适用于 Hermitian 矩阵")
+            raise ValueError("This method only applies to Hermitian matrices")
 
         if show_steps:
             self.step_generator.add_step(r"\text{Hermitian 矩阵的 Schur 分解}")
@@ -347,7 +453,7 @@ class SchurDecomposition(CommonMatrixCalculator):
 
         n = A.rows
 
-        # 计算特征值和特征向量
+        # Compute eigenvalues and eigenvectors
         eigenvalues = self.compute_eigenvalues(A, show_steps)
 
         all_eigenvectors = []
@@ -355,17 +461,17 @@ class SchurDecomposition(CommonMatrixCalculator):
             eigenvectors = self.compute_eigenvector(A, eigenval, show_steps)
             all_eigenvectors.extend(eigenvectors)
 
-        # 正交化
+        # Orthogonalize
         orthogonal_basis = self.gram_schmidt(all_eigenvectors, show_steps)
 
-        # 构造 Q 和 T
+        # Construct Q and T
         Q = zeros(n)
         T = zeros(n)
 
         for i in range(n):
             for j in range(n):
                 Q[j, i] = orthogonal_basis[i][j]
-            T[i, i] = list(eigenvalues.keys())[i]  # 特征值在对角线上
+            T[i, i] = list(eigenvalues.keys())[i]  # Eigenvalues on diagonal
 
         if show_steps:
             self.add_matrix(Q, "Q")
@@ -373,8 +479,21 @@ class SchurDecomposition(CommonMatrixCalculator):
 
         return Q, T
 
-    def auto_schur_decomposition(self, matrix_input, show_steps=True):
-        """自动选择 Schur 分解方法"""
+    def auto_schur_decomposition(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix]:
+        """Automatically select the appropriate Schur decomposition method.
+
+        Parameters
+        ----------
+        matrix_input : Matrix or str
+            The matrix to decompose.
+        show_steps : bool, optional
+            Whether to show computation steps (default is True).
+
+        Returns
+        -------
+        tuple
+            Tuple containing (Q, T) where Q is unitary and T is upper triangular.
+        """
         self.step_generator.clear()
 
         A = self.parse_matrix_input(matrix_input)
@@ -383,7 +502,7 @@ class SchurDecomposition(CommonMatrixCalculator):
             self.step_generator.add_step("自动 Schur 分解")
             self.add_matrix(A, "A")
 
-        # 检查矩阵类型
+        # Check matrix type
         is_hermitian = self.is_hermitian(A)
         is_normal = self.is_normal(A)
 
@@ -398,7 +517,7 @@ class SchurDecomposition(CommonMatrixCalculator):
                 self.step_generator.add_step(
                     "\\text{检测到 Hermitian 矩阵, 使用特殊方法}")
             return self.schur_decomposition_hermitian(matrix_input, show_steps)
-        elif is_normal:
+        if is_normal:
             if show_steps:
                 self.step_generator.add_step("\\text{检测到正规矩阵, 尝试直接法}")
             try:
@@ -407,17 +526,18 @@ class SchurDecomposition(CommonMatrixCalculator):
                 if show_steps:
                     self.step_generator.add_step("\\text{直接法失败, 使用迭代法}")
                 return self.schur_decomposition_iterative(matrix_input, show_steps)
-        else:
-            if show_steps:
-                self.step_generator.add_step("\\text{一般矩阵, 使用迭代法}")
-            return self.schur_decomposition_iterative(matrix_input, show_steps)
+
+        if show_steps:
+            self.step_generator.add_step("\\text{一般矩阵, 使用迭代法}")
+        return self.schur_decomposition_iterative(matrix_input, show_steps)
 
 
 def demo_schur():
-    """演示 Schur 分解"""
+    """Demonstrate Schur decomposition on various matrices."""
+
     schur = SchurDecomposition()
 
-    # 示例矩阵
+    # Example matrix
     schur.step_generator.add_step(r"\text{Hermitian 矩阵示例}")
     A_hermitian = '[[2,1],[1,2]]'
     schur.auto_schur_decomposition(A_hermitian)
@@ -426,7 +546,7 @@ def demo_schur():
     schur.step_generator.add_step("\\" + "\\")
 
     schur.step_generator.add_step(r"\text{正规矩阵示例}")
-    A_normal = '[[0,-1],[1,0]]'  # 旋转矩阵
+    A_normal = '[[0,-1],[1,0]]'  # Rotation matrix
     schur.auto_schur_decomposition(A_normal)
     display(Math(schur.get_steps_latex()))
 
@@ -441,7 +561,8 @@ def demo_schur():
 
 
 def demo_special_cases():
-    """演示特殊情况"""
+    """Demonstrate special cases of Schur decomposition."""
+
     schur = SchurDecomposition()
 
     schur.step_generator.add_step(r"\text{对角矩阵}")
@@ -467,7 +588,8 @@ def demo_special_cases():
 
 
 def demo_convergence():
-    """演示收敛性"""
+    """Demonstrate convergence properties."""
+
     schur = SchurDecomposition()
 
     schur.step_generator.add_step(r"\text{收敛性测试}")
@@ -477,7 +599,7 @@ def demo_convergence():
     schur.step_generator.add_step(r"\text{最终上三角矩阵 T: }")
     schur.add_matrix(T, "T")
 
-    # 检查上三角性质
+    # Check upper triangular property
     n = T.rows
     is_upper_triangular = True
     for i in range(n):
@@ -497,7 +619,7 @@ def demo_convergence():
 
 
 if __name__ == "__main__":
-    # 运行演示
+    # Run demonstrations
     demo_schur()
     demo_special_cases()
     demo_convergence()

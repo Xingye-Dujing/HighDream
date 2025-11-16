@@ -1,15 +1,20 @@
-from sympy import Matrix, sympify, latex, zeros, symbols
-from IPython.display import display, Math
+from sympy import Matrix, latex, symbols, sympify, zeros
+from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
 
 class BasicOperations(CommonMatrixCalculator):
+    """A class for performing basic matrix operations with step-by-step solutions.
 
-    def matrix_addition(self, A_input, B_input, show_steps=True, is_clear=True):
-        """
-        矩阵加法 A + B
-        """
+    This class provides methods for common matrix operations including addition,
+    subtraction, multiplication, scalar multiplication, transpose, and vector operations.
+    All operations can optionally show detailed calculation steps.
+    """
+
+    def matrix_addition(self, A_input: str, B_input: str, show_steps: bool = True, is_clear: bool = True) -> Matrix:
+        """Perform matrix addition A + B."""
+
         if is_clear:
             self.step_generator.clear()
 
@@ -25,11 +30,9 @@ class BasicOperations(CommonMatrixCalculator):
             self.add_matrix(A, "A")
             self.add_matrix(B, "B")
 
-            # 显示维度信息
             self.step_generator.add_step(
                 f"\\text{{维度: }} {A.rows} \\times {A.cols}")
 
-            # 显示逐元素相加过程
             self.add_step("逐元素相加过程")
             result = zeros(A.rows, A.cols)
 
@@ -43,10 +46,8 @@ class BasicOperations(CommonMatrixCalculator):
                     row_steps.append(step)
                     result[i, j] = A[i, j] + B[i, j]
 
-                # 显示当前行的计算过程
                 self.step_generator.add_step(r",\quad ".join(row_steps))
 
-        # 最终结果
         result = A + B
         if show_steps:
             self.add_step("最终结果")
@@ -54,10 +55,9 @@ class BasicOperations(CommonMatrixCalculator):
 
         return result
 
-    def matrix_subtraction(self, A_input, B_input, show_steps=True, is_clear=True):
-        """
-        矩阵减法 A - B
-        """
+    def matrix_subtraction(self, A_input: str, B_input: str, show_steps: bool = True, is_clear: bool = True) -> Matrix:
+        """Perform matrix subtraction A - B."""
+
         if is_clear:
             self.step_generator.clear()
 
@@ -73,11 +73,9 @@ class BasicOperations(CommonMatrixCalculator):
             self.add_matrix(A, "A")
             self.add_matrix(B, "B")
 
-            # 显示维度信息
             self.step_generator.add_step(
                 f"\\text{{维度: }} {A.rows} \\times {A.cols}")
 
-            # 显示逐元素相减过程
             self.add_step("逐元素相减过程")
             result = zeros(A.rows, A.cols)
 
@@ -91,10 +89,8 @@ class BasicOperations(CommonMatrixCalculator):
                     row_steps.append(step)
                     result[i, j] = A[i, j] - B[i, j]
 
-                # 显示当前行的计算过程
                 self.step_generator.add_step(r",\quad ".join(row_steps))
 
-        # 最终结果
         result = A - B
         if show_steps:
             self.add_step("最终结果")
@@ -102,10 +98,9 @@ class BasicOperations(CommonMatrixCalculator):
 
         return result
 
-    def matrix_multiplication(self, A_input, B_input, show_steps=True, is_clear=True):
-        """
-        矩阵乘法 A * B
-        """
+    def matrix_multiplication(self, A_input: str, B_input: str, show_steps: bool = True, is_clear: bool = True) -> Matrix:
+        """Perform matrix multiplication A * B."""
+
         if is_clear:
             self.step_generator.clear()
 
@@ -121,19 +116,17 @@ class BasicOperations(CommonMatrixCalculator):
             self.add_matrix(A, "A")
             self.add_matrix(B, "B")
 
-            # 显示维度信息
             self.step_generator.add_step(
                 f"\\text{{维度: }} A: {A.rows} \\times {A.cols}, \\quad B: {B.rows} \\times {B.cols}")
             self.step_generator.add_step(
                 f"\\text{{结果维度: }} {A.rows} \\times {B.cols}")
 
-            # 显示乘法过程
             self.add_step("乘法过程 (行 × 列)")
             result = zeros(A.rows, B.cols)
 
             for i in range(A.rows):
                 for j in range(B.cols):
-                    # 计算当前元素
+                    # Calculate current element
                     steps = []
                     total = 0
 
@@ -143,7 +136,6 @@ class BasicOperations(CommonMatrixCalculator):
                         steps.append(step)
                         total += product
 
-                    # 显示当前元素的计算过程
                     self.step_generator.add_step(f"c_{{{i+1}{j+1}}} = " + " + ".join(
                         [f"a_{{{i+1}{k+1}}} \\cdot b_{{{k+1}{j+1}}}" for k in range(A.cols)]))
                     part_1 = f"= " + \
@@ -156,7 +148,6 @@ class BasicOperations(CommonMatrixCalculator):
 
                     result[i, j] = total
 
-        # 最终结果
         result = A * B
         if show_steps:
             self.add_step("最终结果")
@@ -164,10 +155,9 @@ class BasicOperations(CommonMatrixCalculator):
 
         return result
 
-    def scalar_multiplication(self, scalar_input, matrix_input, show_steps=True, is_clear=True):
-        """
-        标量乘法 k * A
-        """
+    def scalar_multiplication(self, scalar_input: str, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Matrix:
+        """Perform scalar multiplication k * A."""
+
         if is_clear:
             self.step_generator.clear()
 
@@ -182,11 +172,9 @@ class BasicOperations(CommonMatrixCalculator):
             self.step_generator.add_step(f"k = {latex(scalar)}")
             self.add_matrix(matrix, "A")
 
-            # 显示维度信息
             self.step_generator.add_step(
                 f"\\text{{维度: }} {matrix.rows} \\times {matrix.cols}")
 
-            # 显示逐元素相乘过程
             self.add_step("逐元素相乘过程")
             result = zeros(matrix.rows, matrix.cols)
 
@@ -197,10 +185,8 @@ class BasicOperations(CommonMatrixCalculator):
                     row_steps.append(step)
                     result[i, j] = scalar * matrix[i, j]
 
-                # 显示当前行的计算过程
                 self.step_generator.add_step(r",\quad ".join(row_steps))
 
-        # 最终结果
         result = scalar * matrix
         if show_steps:
             self.add_step("最终结果")
@@ -208,10 +194,9 @@ class BasicOperations(CommonMatrixCalculator):
 
         return result
 
-    def transpose(self, matrix_input, show_steps=True, is_clear=True):
-        """
-        矩阵转置 A^T
-        """
+    def transpose(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Matrix:
+        """Compute matrix transpose A^T."""
+
         if is_clear:
             self.step_generator.clear()
 
@@ -221,13 +206,11 @@ class BasicOperations(CommonMatrixCalculator):
             self.add_step("矩阵转置: $A^T$")
             self.add_matrix(matrix, "A")
 
-            # 显示维度信息
             self.step_generator.add_step(
                 f"\\text{{原矩阵维度: }} {matrix.rows} \\times {matrix.cols}")
             self.step_generator.add_step(
                 f"\\text{{转置矩阵维度: }} {matrix.cols} \\times {matrix.rows}")
 
-            # 显示转置过程
             self.add_step("转置过程(行变列，列变行)")
 
             for i in range(matrix.rows):
@@ -235,7 +218,6 @@ class BasicOperations(CommonMatrixCalculator):
                     self.step_generator.add_step(
                         f"a^T_{{{j+1}{i+1}}} = a_{{{i+1}{j+1}}} = {latex(matrix[i,j])}")
 
-        # 最终结果
         result = matrix.T
         if show_steps:
             self.add_step("最终结果")
@@ -243,22 +225,21 @@ class BasicOperations(CommonMatrixCalculator):
 
         return result
 
-    def dot_product(self, vectorA_input, vectorB_input, show_steps=True, is_clear=True):
-        """
-        向量点积 A dot B
-        """
+    def dot_product(self, vectorA_input: str, vectorB_input: str, show_steps: bool = True, is_clear: bool = True) -> Matrix:
+        """Compute vector dot product A dot B."""
+
         if is_clear:
             self.step_generator.clear()
 
         A = self.parse_matrix_input(vectorA_input)
         B = self.parse_matrix_input(vectorB_input)
 
-        # 确保是向量
+        # Ensure inputs are vectors
         if not (A.rows == 1 or A.cols == 1) or not (B.rows == 1 or B.cols == 1):
             self.add_step("输入必须是向量")
             return
 
-        # 转换为列向量形式
+        # Convert to column vector format
         if A.rows == 1:
             A = A.T
         if B.rows == 1:
@@ -273,10 +254,8 @@ class BasicOperations(CommonMatrixCalculator):
             self.add_vector(A, "A")
             self.add_vector(B, "B")
 
-            # 显示维度信息
             self.step_generator.add_step(f"\\text{{向量长度: }} {A.rows}")
 
-            # 显示点积计算过程
             self.add_step("点积计算过程")
             steps = ''
             total = 0
@@ -295,7 +274,6 @@ class BasicOperations(CommonMatrixCalculator):
                 f"= " + " + ".join([latex(A[i, 0] * B[i, 0]) for i in range(A.rows)]))
             self.step_generator.add_step(f"= {latex(total)}")
 
-        # 最终结果
         result = A.dot(B)
         if show_steps:
             self.add_step("最终结果")
@@ -303,25 +281,24 @@ class BasicOperations(CommonMatrixCalculator):
 
         return result
 
-    def cross_product(self, vectorA_input, vectorB_input, show_steps=True, is_clear=True):
-        """
-        三维向量叉积 A × B
-        """
+    def cross_product(self, vectorA_input: str, vectorB_input: str, show_steps: bool = True, is_clear: bool = True) -> Matrix:
+        """Compute 3D vector cross product A x B."""
+
         if is_clear:
             self.step_generator.clear()
 
         A = self.parse_matrix_input(vectorA_input)
         B = self.parse_matrix_input(vectorB_input)
 
-        # 确保是三维向量
-        if A.shape != (3, 1) and A.shape != (1, 3):
+        # Ensure inputs are 3D vectors
+        if A.shape not in ((3, 1), (1, 3)):
             self.add_step("叉积只适用于三维向量")
             return
-        if B.shape != (3, 1) and B.shape != (1, 3):
+        if B.shape not in ((3, 1), (1, 3)):
             self.add_step("叉积只适用于三维向量")
             return
 
-        # 转换为列向量
+        # Convert to column vectors
         if A.rows == 1:
             A = A.T
         if B.rows == 1:
@@ -332,30 +309,29 @@ class BasicOperations(CommonMatrixCalculator):
             self.add_vector(A, "A")
             self.add_vector(B, "B")
 
-            # 显示叉积公式
+            # Show cross product formula
             self.add_step("叉积公式")
             self.step_generator.add_step(
                 r"A \times B = \begin{vmatrix} \boldsymbol{i} & \boldsymbol{j} & \boldsymbol{k} \\ a_1 & a_2 & a_3 \\ b_1 & b_2 & b_3 \end{vmatrix}")
 
-            # 显示计算过程
+            # Show calculation process
             self.add_step("计算过程")
 
-            # i 分量
+            # i component
             i_component = A[1, 0]*B[2, 0] - A[2, 0]*B[1, 0]
             self.step_generator.add_step(
                 f"i_{{}} = (a_2 \\cdot b_3 - a_3 \\cdot b_2) = ({latex(A[1,0])} \\cdot {latex(B[2,0])} - {latex(A[2,0])} \\cdot {latex(B[1,0])}) = {latex(i_component)}")
 
-            # j 分量
+            # j component
             j_component = A[2, 0]*B[0, 0] - A[0, 0]*B[2, 0]
             self.step_generator.add_step(
                 f"j_{{}} = (a_3 \\cdot b_1 - a_1 \\cdot b_3) = ({latex(A[2,0])} \\cdot {latex(B[0,0])} - {latex(A[0,0])} \\cdot {latex(B[2,0])}) = {latex(j_component)}")
 
-            # k 分量
+            # k component
             k_component = A[0, 0]*B[1, 0] - A[1, 0]*B[0, 0]
             self.step_generator.add_step(
                 f"k_{{}} = (a_1 \\cdot b_2 - a_2 \\cdot b_1) = ({latex(A[0,0])} \\cdot {latex(B[1,0])} - {latex(A[1,0])} \\cdot {latex(B[0,0])}) = {latex(k_component)}")
 
-        # 最终结果
         result = A.cross(B)
         if show_steps:
             self.add_step("最终结果")
@@ -363,7 +339,9 @@ class BasicOperations(CommonMatrixCalculator):
 
         return result
 
-    def compute(self, expression, operation):
+    def compute(self, expression: str, operation: str) -> str:
+        """Compute matrix operation based on string expression and operation type."""
+
         expression = expression.split('\n')
         if operation in ['add', '+']:
             self.matrix_addition(expression[0], expression[1])
@@ -383,20 +361,21 @@ class BasicOperations(CommonMatrixCalculator):
 
 
 def demo():
-    """演示所有基础运算"""
+    """Demonstrate all basic operations with example matrices."""
     ops = BasicOperations()
 
-    # 示例矩阵
+    # Example matrices
     A_str = '[[1,2,3],[4,5,6],[7,8,9]]'
     B_str = '[[9,8,7],[6,5,4],[3,2,1]]'
     C_str = '[[1,0,2],[-1,3,1]]'
     D_str = '[[3,1],[2,1],[1,0]]'
 
-    # 示例向量
+    # Example vectors
     v1_str = '[1,2,3]'
     v2_str = '[4,5,6]'
 
-    # 1. 矩阵加法
+    # 1. Matrix addition
+
     ops.step_generator.add_step(r"\textbf{1. 矩阵加法}")
     try:
         ops.matrix_addition(A_str, B_str)
@@ -405,7 +384,8 @@ def demo():
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(ops.get_steps_latex()))
 
-    # 2. 矩阵减法
+    # 2. Matrix subtraction
+
     ops.step_generator.clear()
     ops.step_generator.add_step(r"\textbf{2. 矩阵减法}")
     try:
@@ -415,7 +395,8 @@ def demo():
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(ops.get_steps_latex()))
 
-    # 3. 矩阵乘法
+    # 3. Matrix multiplication
+
     ops.step_generator.clear()
     ops.step_generator.add_step(r"\textbf{3. 矩阵乘法}")
     try:
@@ -425,7 +406,8 @@ def demo():
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(ops.get_steps_latex()))
 
-    # 4. 标量乘法
+    # 4. Scalar multiplication
+
     ops.step_generator.clear()
     ops.step_generator.add_step(r"\textbf{4. 标量乘法}")
     try:
@@ -435,7 +417,8 @@ def demo():
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(ops.get_steps_latex()))
 
-    # 5. 矩阵转置
+    # 5. Matrix transpose
+
     ops.step_generator.clear()
     ops.step_generator.add_step(r"\textbf{5. 矩阵转置}")
     try:
@@ -445,7 +428,8 @@ def demo():
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(ops.get_steps_latex()))
 
-    # 6. 向量点积
+    # 6. Vector dot product
+
     ops.step_generator.clear()
     ops.step_generator.add_step(r"\textbf{6. 向量点积}")
     try:
@@ -455,7 +439,8 @@ def demo():
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(ops.get_steps_latex()))
 
-    # 7. 向量叉积
+    # 7. Vector cross product
+
     ops.step_generator.clear()
     ops.step_generator.add_step(r"\textbf{7. 向量叉积}")
     try:
@@ -467,7 +452,7 @@ def demo():
 
 
 def demo_symbolic():
-    """演示符号运算"""
+    """Demonstrate symbolic operations with example symbolic matrices."""
     ops = BasicOperations()
 
     a, b, c, d = symbols('a b c d')
@@ -477,7 +462,7 @@ def demo_symbolic():
 
     ops.step_generator.add_step(r"\textbf{符号矩阵运算}")
 
-    # 符号矩阵加法
+    # Symbolic matrix addition
     ops.step_generator.add_step(r"\textbf{符号矩阵加法}")
     try:
         ops.matrix_addition(A_sym, B_sym)
@@ -502,7 +487,7 @@ def demo_symbolic():
         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
         display(Math(ops.get_steps_latex()))
 
-    # 符号矩阵乘法
+    # Symbolic matrix multiplication
     ops.step_generator.add_step(r"\textbf{符号矩阵乘法}")
     try:
         ops.matrix_multiplication(
@@ -522,7 +507,7 @@ def demo_symbolic():
 
 
 if __name__ == "__main__":
-    # 运行数值演示
+    # Run numerical demonstration
     demo()
-    # 运行符号演示
+    # Run symbolic demonstration
     demo_symbolic()

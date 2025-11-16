@@ -7,11 +7,11 @@ from domains.matrix import DetStepGenerator, MATCHER_LIST, RULE_DICT
 
 
 class DetCalculator(BaseCalculator):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.step_generator = DetStepGenerator()
 
-    def init_key_property(self):
+    def init_key_property(self) -> None:
         self.operation: Operation = Determinant
         self.rule_dict: RuleDict = RULE_DICT
         self.matcher_list: MatcherList = MATCHER_LIST
