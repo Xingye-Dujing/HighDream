@@ -4,7 +4,10 @@
 from typing import Dict, Union
 from sympy import latex
 
-from domains import DetCalculator, DeterminantCalculator, EigenSolver, Rank, SVDSolver
+from domains import DetCalculator, DeterminantCalculator, EigenSolver
+from .rank import Rank
+from .SVD_solver import SVDSolver
+
 det_cal_1 = DeterminantCalculator()
 det_cal_2 = DetCalculator()
 rank = Rank()

@@ -1,7 +1,8 @@
 from typing import Dict
 from sympy import Matrix, latex, sympify
 
-from domains import RefCalculator, SVDSolver
+from .ref_calculator import RefCalculator
+from .SVD_solver import SVDSolver
 
 svd_solver = SVDSolver()
 ref_calculator = RefCalculator()
