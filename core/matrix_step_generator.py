@@ -36,6 +36,6 @@ class MatrixStepGenerator():
             step_str = f"& {step}"
             latex_str += step_str
             # Add line break for next step
-            latex_str += r"\\"
+            latex_str += r"\\\\"
         latex_str += "\\end{align}"
         return latex_str
