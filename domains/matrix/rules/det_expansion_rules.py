@@ -1,4 +1,4 @@
-from sympy import Determinant, Matrix, Mul, Add, Pow
+from sympy import Add, Determinant, Matrix, Mul, Pow
 
 from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
 
