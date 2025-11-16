@@ -27,7 +27,6 @@
 
 .matrix-preview {
   padding: 16px;
-  background-color: rgba(0, 0, 0, 0.02);
   border-radius: 6px;
   min-height: 52px;
   border: 1px dashed var(--jp-border-color1);
