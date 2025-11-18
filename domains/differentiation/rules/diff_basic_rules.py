@@ -1,4 +1,4 @@
-from sympy import Add, Derivative, Expr, Mul, Symbol
+from sympy import Add, Derivative, Expr, Mul, Symbol, latex
 
 from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
 from utils.latex_formatter import wrap_latex
@@ -43,8 +43,9 @@ def mul_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
         u, v = terms
         u_latex, v_latex = wrap_latex(u, v)
         # Special case one: constant * variable
-        if u.is_number and v == var:
-            return u, f"应用常数乘法规则: $\\frac{{d}}{{d{var_latex}}} {expr_latex} = {wrap_latex(u)}$"
+        if u.is_number:
+            v_diff = Derivative(v, var)
+            return u * v_diff, f"应用常数乘法规则: $\\frac{{d}}{{d{var_latex}}} {expr_latex} = {wrap_latex(u)}{latex(v_diff)}$"
         # Special case two: x * f(x)
         if u == var:
             deriv_v = Derivative(v, var)
@@ -168,7 +169,7 @@ def mul_div_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn:
 
     _, den = expr.as_numer_denom()
     # If denominator is 1, it's a pure product
-    return 'mul' if den == 1 else 'div'
+    return 'mul' if den == 1 or den.is_constant else 'div'
 
 
 def chain_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
