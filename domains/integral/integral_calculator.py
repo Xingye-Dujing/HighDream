@@ -52,7 +52,7 @@ class IntegralCalculator(BaseCalculator):
             # When no rule applies to the remaining Integral, fall back to SymPy's Integral.doit() and
             # the result experiences simplification without assumptions and simplification with assumptions.
             # add C to the third-to-last expression.
-            if not self.step_generator.steps[-3].has(C):
+            if len(self.step_generator.steps) > 3 and not self.step_generator.steps[-3].has(C):
                 self.step_generator.steps[-3] += C
         except IndexError:
             pass
