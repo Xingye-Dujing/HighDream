@@ -2,3 +2,4 @@ sympy
 flask
 matplotlib
 IPython
+gevent
