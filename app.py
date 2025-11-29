@@ -1,9 +1,12 @@
 # NOTE: This import is required when packaging with PyInstaller !!!
-# import matplotlib.backends.backend_svg
+import matplotlib.backends.backend_svg
+
 
 from flask import Flask
 from config import TEMPLATE_FOLDER, STATIC_FOLDER
 from routes import main, api
+
+matplotlib.use('Agg')
 
 
 def create_app():
@@ -24,4 +27,4 @@ if __name__ == '__main__':
     # It doesn't work when both phone and computer are connected to the campus network;
     # you can share the hotspot from the phone to the computer, then access via the phone's local network
     # Note: Currently, I haven't considered mobile adaptation, it's better not to use mobile devices to access this website
-    create_app().run(debug=True, host='0.0.0.0', port=5000)
+    create_app().run(host='0.0.0.0', port=5000)

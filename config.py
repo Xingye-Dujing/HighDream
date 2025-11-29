@@ -3,7 +3,7 @@ import os
 # Path settings
 TEMPLATE_FOLDER = 'templates'
 STATIC_FOLDER = 'static'
-TREES_DIR = os.path.join(STATIC_FOLDER, "trees")
+TREES_DIR = STATIC_FOLDER + "/trees"
 os.makedirs(TREES_DIR, exist_ok=True)
 
 # Input render settings

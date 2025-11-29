@@ -28,7 +28,7 @@ HighDream Notebook 是一个基于 **Python** 和 **SymPy** 的符号计算工�
 ### 技术栈
 
 - **编程语言**：Python 3.11.6
-- **核心库**：SymPy（符号计算库）、Flask（Web 可视化）、matplotlib（绘制表达式推导树）
+- **核心库**：SymPy（符号计算库）、Flask（Web 可视化）、matplotlib（绘制表达式推导树）、IPython
 - **输出格式**：LaTeX
 
 ### 特别致谢
@@ -88,7 +88,7 @@ As mentioned above, this idea originated in high school **(The Dream of High Sch
 ### Tech Stack
 
 - **Programming Language**: Python 3.11.6
-- **Core Libraries**: SymPy (symbolic computation library), Flask (web visualization), matplotlib (drawing expression derivation trees)
+- **Core Libraries**: SymPy (symbolic computation library), Flask (web visualization), matplotlib (drawing expression derivation trees), IPython
 - **Output Format**: LaTeX
 
 ### Special Acknowledgments

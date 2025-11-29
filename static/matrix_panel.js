@@ -1,11 +1,11 @@
-// 全局变量
+// Global variables
 let cellCounter = 0;
 let activeCellId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
 let isKeyboardVisible = false;
 let kernelStatus = 'idle';
 
-// 页面加载完成后初始化
+// Initialize after page loads
 document.addEventListener("DOMContentLoaded", function () {
   applyTheme(isDarkTheme);
   addNewCell();
@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
   animateMathBackground();
 });
 
-// 数学背景动画函数
+// Mathematical background animation function
 function animateMathBackground() {
   const elements = document.querySelectorAll('.math-bg-element');
   elements.forEach(el => {
@@ -23,7 +23,7 @@ function animateMathBackground() {
   });
 }
 
-// 绑定事件
+// Bind events
 function bindEvents() {
   document.getElementById("addCellBtn").addEventListener("click", () => addNewCell());
   document.getElementById("addMdCellBtn").addEventListener("click", () => addNewCell("markdown"));
@@ -36,7 +36,7 @@ function bindEvents() {
   document.getElementById("saveNotebookBtn").addEventListener("click", saveNotebook);
   document.getElementById("loadNotebookBtn").addEventListener("click", loadNotebook);
 
-  // 点击文档其他区域时取消活动单元格
+  // Cancel active cell when clicking elsewhere in the document
   document.addEventListener("click", function (e) {
     if (!e.target.closest(".cell") && !e.target.closest("#math-keyboard") && !e.target.closest("#header") && !e.target.closest("#toolbar")) {
       document.querySelectorAll(".cell").forEach((cell) => {
@@ -54,7 +54,7 @@ function bindEvents() {
     }
   });
 
-  // 键盘快捷键
+  // Keyboard shortcuts
   document.addEventListener("keydown", function (e) {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       const activeCell = document.querySelector(".cell-active");
@@ -98,7 +98,7 @@ function bindEvents() {
     }
   });
 
-  // 绑定虚拟键盘按钮
+  // Bind virtual keyboard buttons
   document.querySelectorAll(".keyboard-key").forEach((key) => {
     key.addEventListener("click", function () {
       const value = this.getAttribute("data-value");
@@ -129,7 +129,7 @@ function bindEvents() {
   });
 }
 
-// 设置单元格事件
+// Set up cell events
 function setupCellEvents(cell) {
   const textarea = cell.querySelector("textarea");
   const runButton = cell.querySelector(".run-cell-button");
@@ -140,47 +140,47 @@ function setupCellEvents(cell) {
   const cellType = cell.dataset.cellType;
 
   if (cellType === "code") {
-    // 分析
+    // Analyze
     runButton.addEventListener("click", function () {
       runCell(cell);
     });
 
-    // 操作
+    // Operation
     opretationButton.addEventListener("click", function () {
       runOpretation(cell);
     });
 
-    // 文本框输入事件 - 实时预览
+    // Textbox input event - real-time preview
     textarea.addEventListener("input", function () {
       debounce(() => {
         renderMathPreview(cell);
       }, 500)();
     });
 
-    // 虚拟键盘按钮
+    // Virtual keyboard button
     keyboardButton.addEventListener("click", function () {
       toggleKeyboard();
     });
   }
 
   const cellPrompt = cell.querySelector(".cell-prompt");
-  // 点击事件 - 设置活动单元格
+  // Click event - set active cell
   cellPrompt.addEventListener("click", function () {
     setActiveCell(cell);
   });
 
-  // 添加单元格按钮
+  // Add cell button
   addCellButton.addEventListener("click", function () {
     addCellBelow(cell);
   });
 
-  // 文本框点击事件 - 设置活动单元格
+  // Textbox click event - set active cell
   textarea.addEventListener("click", function () {
     setActiveCell(cell);
   });
 }
 
-// 防抖函数
+// Debounce function
 function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
@@ -193,12 +193,12 @@ function debounce(func, wait) {
   };
 }
 
-// 设置活动单元格
+// Set active cell
 function setActiveCell(cell) {
   document.querySelectorAll(".cell").forEach((c) => {
     c.classList.remove("cell-active");
 
-    // 对于 markdown 单元格, 非激活时隐藏输入框显示渲染内容
+    // For markdown cells, hide input box and show rendered content when inactive
     if (c.dataset.cellType === "markdown") {
       const input = c.querySelector(".markdown-input");
       const render = c.querySelector(".markdown-render");
@@ -212,7 +212,7 @@ function setActiveCell(cell) {
   cell.classList.add("cell-active");
   activeCellId = cell.dataset.cellId;
 
-  // 对于 markdown 单元格, 激活时显示输入框隐藏渲染内容
+  // For markdown cells, show input box and hide rendered content when activated
   if (cell.dataset.cellType === "markdown") {
     const input = cell.querySelector(".markdown-input");
     const rendered = cell.querySelector(".markdown-render");
@@ -220,7 +220,7 @@ function setActiveCell(cell) {
       input.style.display = "block";
       rendered.style.display = "none";
 
-      // 聚焦到输入框
+      // Focus on input box
       input.focus();
       cell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -233,7 +233,7 @@ function setActiveCell(cell) {
   }
 }
 
-// 添加新单元格
+// Add new cell
 function addNewCell(type = "code") {
   const notebook = document.getElementById("notebook");
   const newCell = createCellElement(cellCounter, type);
@@ -252,7 +252,7 @@ function addNewCell(type = "code") {
   }, 10);
 }
 
-// 创建单元格元素
+// Create cell element
 function createCellElement(id, type) {
   const cell = document.createElement("div");
   cell.className = `cell ${type}-cell`;
@@ -305,7 +305,7 @@ function createCellElement(id, type) {
   return cell;
 }
 
-// 在上面添加单元格
+// Add cell above
 function addCellAbove(cell) {
   const notebook = document.getElementById("notebook");
   const newCell = createCellElement(cellCounter, cell.dataset.cellType);
@@ -324,7 +324,7 @@ function addCellAbove(cell) {
   }, 10);
 }
 
-// 在下面添加单元格
+// Add cell below
 function addCellBelow(cell) {
   const notebook = document.getElementById("notebook");
   const newCell = createCellElement(cellCounter, cell.dataset.cellType);
@@ -349,7 +349,7 @@ function addCellBelow(cell) {
   }, 10);
 }
 
-// 分析矩阵
+// Analyze matrix
 function runCell(cell) {
   const expression = cell.querySelector("textarea").value.trim();
 
@@ -358,12 +358,12 @@ function runCell(cell) {
     return;
   }
 
-  // 传递数据给后端
+  // Pass data to backend
   const payload = {
     expression: expression,
   };
 
-  // 通过 POST 方法打开新页面并传递数据
+  // Open a new page with POST method and pass data
   const form = document.createElement('form');
   form.method = 'POST';
   form.action = '/matrix_analysis';
@@ -382,7 +382,7 @@ function runCell(cell) {
   document.body.removeChild(form);
 }
 
-// 操作矩阵
+// Operate matrix
 function runOpretation(cell) {
   const expression = cell.querySelector("textarea").value.trim();
 
@@ -391,12 +391,12 @@ function runOpretation(cell) {
     return;
   }
 
-  // 传递数据给后端
+  // Pass data to backend
   const payload = {
     expression: expression,
   };
 
-  // 通过 POST 方法打开新页面并传递数据
+  // Open a new page with POST method and pass data
   const form = document.createElement('form');
   form.method = 'POST';
   form.action = '/matrix_lab';
@@ -415,7 +415,7 @@ function runOpretation(cell) {
   document.body.removeChild(form);
 }
 
-// 渲染数学预览
+// Render math preview
 function renderMathPreview(cell) {
   const textarea = cell.querySelector("textarea");
   const content = textarea.value.trim();
@@ -449,11 +449,11 @@ function renderMathPreview(cell) {
       }
     })
     .catch((error) => {
-      previewArea.innerHTML = `<span span class="preview-error" > 请求错误: ${error.message}</span > `;
+      previewArea.innerHTML = `<span span class="preview-error" > Request Error: ${error.message}</span > `;
     });
 }
 
-// 显示通知
+// Show notification
 function showNotification(message, type = "success") {
   const notification = document.createElement("div");
   notification.className = `notification notification-${type} `;
@@ -486,20 +486,20 @@ function toggleKeyboard() {
   const helpfulArea = document.getElementById("helpful-area");
 
   if (isKeyboardVisible) {
-    // 隐藏键盘
+    // Hide keyboard
     keyboard.classList.remove("keyboard-visible");
     isKeyboardVisible = false;
     helpfulArea.style.display = "none";
   } else {
-    // 显示键盘
+    // Show keyboard
     keyboard.classList.add("keyboard-visible");
     isKeyboardVisible = true;
-    // 用于占据页面底部, 在键盘打开时, 将页面向下延伸, 防止键盘挡住单元格
+    // Used to occupy the bottom of the page, when the keyboard is open, extend the page downward to prevent the keyboard from blocking the cell
     helpfulArea.style.display = "flex";
   }
 }
 
-// 应用主题设置
+// Apply theme settings
 function applyTheme(isDark) {
   const themeBtn = document.getElementById("toggleThemeBtn");
   if (isDark) {
@@ -532,12 +532,12 @@ function applyTheme(isDark) {
   localStorage.setItem('darkTheme', isDarkTheme);
 }
 
-// 切换主题
+// Toggle theme
 function toggleTheme() {
   applyTheme(!isDarkTheme);
 }
 
-// 移动活动单元格向上
+// Move active cell up
 function moveActiveCellUp() {
   const activeCell = document.querySelector(".cell-active");
   if (activeCell && activeCell.previousElementSibling) {
@@ -555,7 +555,7 @@ function moveActiveCellUp() {
   }
 }
 
-// 移动活动单元格向下
+// Move active cell down
 function moveActiveCellDown() {
   const activeCell = document.querySelector(".cell-active");
   if (activeCell && activeCell.nextElementSibling) {
@@ -592,7 +592,7 @@ function deleteActiveCell() {
   }
 }
 
-// 保存笔记本
+// Save notebook
 function saveNotebook() {
   const cells = [];
   document.querySelectorAll(".cell").forEach((cell) => {
@@ -600,17 +600,10 @@ function saveNotebook() {
     const textarea = cell.querySelector("textarea");
     const content = textarea ? textarea.value : "";
 
-    if (type === "code") {
-      cells.push({
-        type: type,
-        content: content,
-      });
-    } else {
-      cells.push({
-        type: type,
-        content: content,
-      });
-    }
+    cells.push({
+      type: type,
+      content: content,
+    });
   });
 
   const notebookData = JSON.stringify(cells, null, 2);
@@ -619,14 +612,13 @@ function saveNotebook() {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "mathtool-notebook.json";
+  a.download = "matrix_panel.json";
   a.click();
-
   URL.revokeObjectURL(url);
   showNotification("笔记本已保存", "success");
 }
 
-// 加载笔记本
+// Load notebook
 function loadNotebook() {
   const input = document.createElement("input");
   input.type = "file";
@@ -634,6 +626,8 @@ function loadNotebook() {
 
   input.onchange = function (e) {
     const file = e.target.files[0];
+    if (!file) return; // Handle case where user cancels file selection
+
     const reader = new FileReader();
 
     reader.onload = function (e) {
@@ -645,14 +639,9 @@ function loadNotebook() {
         cells.forEach((cellData, index) => {
           const cell = createCellElement(index, cellData.type);
 
-          if (cellData.type === "code") {
-            const textarea = cell.querySelector("textarea");
-
-            if (textarea) textarea.value = cellData.content || "";
-          } else {
-            const textarea = cell.querySelector("textarea");
-            if (textarea) textarea.value = cellData.content || "";
-          }
+          // Unified handling for both code and markdown cells
+          const textarea = cell.querySelector("textarea");
+          if (textarea) textarea.value = cellData.content || "";
 
           notebook.appendChild(cell);
           setupCellEvents(cell);
@@ -669,13 +658,17 @@ function loadNotebook() {
       }
     };
 
+    reader.onerror = function () {
+      showNotification("文件读取失败", "error");
+    };
+
     reader.readAsText(file);
   };
 
   input.click();
 }
 
-// 渲染 Markdown 内容
+// Render Markdown content
 function renderMarkdown(cell) {
   const markdownInput = cell.querySelector(".markdown-input");
   const markdownRendered = cell.querySelector(".markdown-render");
@@ -684,33 +677,33 @@ function renderMarkdown(cell) {
 
   const content = markdownInput.value;
 
-  // 简单的 Markdown 渲染实现
+  // Simple Markdown rendering implementation
   let html = content
-    // 标题
+    // Headers
     .replace(/^###### (.*$)/gim, '<h6>$1</h6>')
     .replace(/^##### (.*$)/gim, '<h5>$1</h5>')
     .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    // 粗体
+    // Bold
     .replace(/__(.*?)__/gim, '<strong>$1</strong>')
-    // 斜体
+    // Italic
     .replace(/_(.*?)_/gim, '<em>$1</em>')
-    // 代码
+    // Code
     .replace(/`(.*?)`/gim, '<code>$1</code>')
-    // 换行
+    // Line break
     .replace(/\n/gim, '<br>')
-    // 链接
+    // Link
     .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank">$1</a>')
-    // 无序列表
+    // Unordered list
     .replace(/^\s*[-*] (.*$)/gim, '<li>$1</li>')
-    // 处理列表包装
+    // Handle list wrapping
     .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-    // 引用
+    // Quote
     .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
 
-  // 处理多个连续换行(段落)
+  // Handle multiple consecutive line breaks (paragraphs)
   html = html.replace(/(<br>\s*){2,}/gim, '</p><p>');
   html = '<p>' + html + '</p>';
 

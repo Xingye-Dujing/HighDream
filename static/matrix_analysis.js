@@ -1,8 +1,8 @@
 let data_copy = {};
 
-// 当文档加载完成后执行
+// Execute when document is loaded
 document.addEventListener('DOMContentLoaded', function () {
-  // 获取表达式
+  // Get expression
   const expressionElement = document.querySelector('.matrix-preview p');
 
   if (expressionElement) {
@@ -15,58 +15,58 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   renderMathPreview();
 
-  // 设置事件监听器
+  // Set event listeners
   setupEventListeners();
 });
 
-// 为所有 math-output 区域添加控制按钮
+// Add control buttons for all math-output areas
 function addMathOutputControls() {
   const mathOutputs = document.querySelectorAll('.math-output');
 
   mathOutputs.forEach(output => {
-    // 检查是否已经添加了控制按钮
+    // Check if control buttons have already been added
     if (!output.querySelector('.math-controls')) {
-      // 创建控制按钮容器
+      // Create control button container
       const controls = document.createElement('div');
       controls.className = 'math-controls';
 
-      // 创建折叠按钮
+      // Create collapse button
       const collapseBtn = document.createElement('button');
       collapseBtn.className = 'math-control-btn';
       collapseBtn.title = '折叠/展开';
       collapseBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
 
-      // 创建全屏按钮
+      // Create fullscreen button
       const fullscreenBtn = document.createElement('button');
       fullscreenBtn.className = 'math-control-btn';
       fullscreenBtn.title = '全屏显示';
       fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
 
-      // 添加按钮到容器
+      // Add buttons to container
       controls.appendChild(collapseBtn);
       controls.appendChild(fullscreenBtn);
 
-      // 添加容器到 math-output
+      // Add container to math-output
       output.appendChild(controls);
 
-      // 添加折叠功能
+      // Add collapse functionality
       collapseBtn.addEventListener('click', function () {
         output.classList.toggle('collapsed');
 
-        // 更新图标
+        // Update icon
         if (output.classList.contains('collapsed')) {
           collapseBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
         } else {
           collapseBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
         }
 
-        // 重新渲染MathJax
+        // Re-render MathJax
         if (window.MathJax) {
           MathJax.typesetPromise([output]);
         }
       });
 
-      // 添加全屏功能
+      // Add fullscreen functionality
       fullscreenBtn.addEventListener('click', function () {
         openFullscreen(output);
       });
@@ -74,15 +74,15 @@ function addMathOutputControls() {
   });
 }
 
-// 打开全屏显示
+// Open fullscreen display
 function openFullscreen(mathOutput) {
   const overlay = document.querySelector('.math-fullscreen-overlay');
   const content = overlay.querySelector('.math-fullscreen-body');
 
-  // 复制内容到全屏显示区域, 但保留原始内容
+  // Copy content to fullscreen display area, but preserve original content
   const originalContent = mathOutput.cloneNode(true);
 
-  // 移除控制按钮
+  // Remove control buttons
   const controls = originalContent.querySelector('.math-controls');
   if (controls) {
     controls.remove();
@@ -90,18 +90,18 @@ function openFullscreen(mathOutput) {
 
   content.innerHTML = originalContent.innerHTML;
 
-  // 显示全屏遮罩
+  // Show fullscreen overlay
   overlay.classList.add('active');
 
-  // 重新渲染 MathJax
+  // Re-render MathJax
   if (window.MathJax) {
     MathJax.typesetPromise([content]);
   }
 }
 
-// 设置事件监听器
+// Set up event listeners
 function setupEventListeners() {
-  // 运行 Ref
+  // Run Ref
   const runRefElement = document.querySelector('.run-ref');
   if (runRefElement) {
     runRefElement.addEventListener("click", function () {
@@ -110,7 +110,7 @@ function setupEventListeners() {
     });
   }
 
-  // 运行 Det
+  // Run Det
   const runDetElement1 = document.querySelector('.run-det-1');
   if (runDetElement1) {
     runDetElement1.addEventListener("click", function () {
@@ -126,7 +126,7 @@ function setupEventListeners() {
     });
   }
 
-  // 运行 Rank
+  // Run Rank
   const runRankElement = document.querySelector('.run-rank');
   if (runRankElement) {
     runRankElement.addEventListener("click", function () {
@@ -135,7 +135,7 @@ function setupEventListeners() {
     });
   }
 
-  // 运行 Eigen
+  // Run Eigen
   const runEigenElement = document.querySelector('.run-eigen');
   if (runEigenElement) {
     runEigenElement.addEventListener("click", function () {
@@ -144,7 +144,7 @@ function setupEventListeners() {
     });
   }
 
-  // 运行 SVD
+  // Run SVD
   const runSvdElement = document.querySelector('.run-svd');
   if (runSvdElement) {
     runSvdElement.addEventListener("click", function () {
@@ -153,7 +153,7 @@ function setupEventListeners() {
     });
   }
 
-  // 关闭全屏按钮
+  // Close fullscreen button
   const closeBtn = document.querySelector('.math-fullscreen-close');
   if (closeBtn) {
     closeBtn.addEventListener('click', function () {
@@ -162,7 +162,7 @@ function setupEventListeners() {
     });
   }
 
-  // 点击遮罩背景关闭全屏
+  // Click overlay background to close fullscreen
   const overlay = document.querySelector('.math-fullscreen-overlay');
   if (overlay) {
     overlay.addEventListener('click', function (e) {
@@ -172,7 +172,7 @@ function setupEventListeners() {
     });
   }
 
-  // ESC 键关闭全屏
+  // ESC key to close fullscreen
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       const overlay = document.querySelector('.math-fullscreen-overlay');
@@ -183,12 +183,12 @@ function setupEventListeners() {
   });
 }
 
-// 分析矩阵函数
+// Matrix analysis function
 function analyzeMatrix(expression) {
-  // 显示加载状态
+  // Show loading state
   showLoadingState();
 
-  // 构建请求数据
+  // Build request data
   const requestData = {
     expression: expression,
     analysis_types: ['rank', 'determinant', 'eigenvalues', 'eigenvectors', 'svd']
@@ -205,21 +205,21 @@ function analyzeMatrix(expression) {
     .then(data => {
       data_copy = data;
       data_copy['expression'] = expression;
-      // 更新页面显示分析结果
+      // Update page display analysis results
       updateAnalysisResults(data);
     })
     .catch(error => {
       console.error('分析矩阵时出错: ', error);
     })
     .finally(() => {
-      // 隐藏加载状态
+      // Hide loading state
       hideLoadingState();
     });
 }
 
-// 显示加载状态
+// Show loading state
 function showLoadingState() {
-  // 创建或显示加载指示器
+  // Create or show loading indicator
   let loadingIndicator = document.getElementById('loading-indicator');
   if (!loadingIndicator) {
     loadingIndicator = document.createElement('div');
@@ -238,7 +238,7 @@ function showLoadingState() {
             text-align: center;
         `;
 
-    // 添加简单的 CSS 动画
+    // Add simple CSS animation
     const style = document.createElement('style');
     style.textContent = `
             .spinner {
@@ -262,7 +262,7 @@ function showLoadingState() {
   }
 }
 
-// 隐藏加载状态
+// Hide loading state
 function hideLoadingState() {
   const loadingIndicator = document.getElementById('loading-indicator');
   if (loadingIndicator) {
@@ -308,73 +308,75 @@ function renderMathPreview() {
     });
 }
 
-// 更新分析结果显示
+// Update analysis results display
 function updateAnalysisResults(data) {
-  // 更新秩
+  // Update rank
   if (data.rank !== undefined) {
     const rankElement = document.querySelector('.rank');
     if (rankElement) {
       rankElement.innerHTML = `\\( \\text{rank}(A) = ${data.rank} \\)`;
-      // 重新添加控制按钮
+      // Re-add control buttons
       addMathOutputControls();
     }
   }
 
-  // 更新行列式
+  // Update determinant
   if (data.determinant !== undefined) {
     const detElement = document.querySelector('.det');
     if (detElement) {
       detElement.innerHTML = `\\( \\det(A) = ${data.determinant} \\)`;
-      // 重新添加控制按钮
+      // Re-add control buttons
       addMathOutputControls();
     }
   }
 
-  // 更新特征值
+  // Update eigenvalues
   if (data.eigenvalues) {
     const eigenValuesElement = document.querySelector('.eigenvalues');
     if (eigenValuesElement && typeof data.eigenvalues == 'object') {
-      // 根据返回的数据格式构建矩阵显示
+      // Construct matrix display based on returned data format
       let matrixLatex = '';
       data.eigenvalues.forEach((value, idx) => {
         matrixLatex += '\\lambda_{' + (idx + 1) + '} = ' + value;
         matrixLatex += idx < data.eigenvalues.length - 1 ? ',\\quad' : '';
       })
       eigenValuesElement.innerHTML = `\\( ${matrixLatex} \\)`
-      // 重新添加控制按钮
+      // Re-add control buttons
       addMathOutputControls();
     }
     else if (data.eigenvalues) {
       if (eigenValuesElement) {
         eigenValuesElement.innerHTML = `\\( ${data.eigenvalues} \\)`;
-        // 重新添加控制按钮
+        // Re-add control buttons
         addMathOutputControls();
       }
     }
   }
 
-  // 更新特征向量
+  // Update eigenvectors
   if (data.eigenvectors) {
     const eigenVectorsElement = document.querySelector('.eigenvectors');
     if (eigenVectorsElement && typeof data.eigenvectors == 'object') {
-      // 根据返回的数据格式构建矩阵显示
+      // Construct matrix display based on returned data format
       let matrixLatex = '';
       data.eigenvectors.forEach((vector, idx) => {
         matrixLatex += '\\boldsymbol{v}_{' + (idx + 1) + '} = ' + vector;
         matrixLatex += idx < data.eigenvectors.length - 1 ? ',\\quad' : '';
       });
       eigenVectorsElement.innerHTML = `\\( ${matrixLatex} \\)`;
-      // 重新添加控制按钮
+      // Re-add control buttons
       addMathOutputControls();
     }
-    else if (eigenVectorsElement) {
-      eigenVectorsElement.innerHTML = `\\( ${data.eigenvectors} \\)`;
-      // 重新添加控制按钮
-      addMathOutputControls();
+    else if (data.eigenvectors) {
+      if (eigenVectorsElement) {
+        eigenVectorsElement.innerHTML = `\\( ${data.eigenvectors} \\)`;
+        // Re-add control buttons
+        addMathOutputControls();
+      }
     }
   }
 
-  // 重新渲染 MathJax
+  // Re-render MathJax
   if (window.MathJax) {
     MathJax.typeset();
   }
@@ -385,7 +387,7 @@ function runRef() {
     const refElement = document.querySelector('.ref');
     if (refElement) {
       refElement.textContent = data_copy.ref;
-      // 重新添加控制按钮
+      // Re-add control buttons
       addMathOutputControls();
     }
 
@@ -410,7 +412,7 @@ function runDet1() {
     .then((data) => {
       const detStepElement1 = document.querySelector('.det-steps-1');
       detStepElement1.innerHTML = `\\( ${data.process} \\)`;
-      // 重新添加控制按钮
+      // Re-add control buttons
       addMathOutputControls();
 
       if (window.MathJax) {
@@ -434,7 +436,7 @@ function runDet2() {
     .then((data) => {
       const detStepElement2 = document.querySelector('.det-steps-2');
       detStepElement2.innerHTML = `\\( ${data.process} \\)`;
-      // 重新添加控制按钮
+      // Re-add control buttons
       addMathOutputControls();
 
       if (window.MathJax) {
@@ -458,7 +460,7 @@ function runRank() {
     .then((data) => {
       const rankStepElement = document.querySelector('.rank-steps');
       rankStepElement.innerHTML = `\\( ${data.process} \\)`;
-      // 添加控制按钮
+      // Add control buttons
       addMathOutputControls();
 
       if (window.MathJax) {
@@ -482,7 +484,7 @@ function runEigen() {
     .then((data) => {
       const eigenStepElement = document.querySelector('.eigen-steps');
       eigenStepElement.innerHTML = `\\( ${data.process} \\)`;
-      // 添加控制按钮
+      // Add control buttons
       addMathOutputControls();
       if (window.MathJax) {
         MathJax.typesetPromise([eigenStepElement]);
@@ -519,7 +521,7 @@ function runSVD() {
         VElement.innerHTML = `\\(V = ${data.V} \\)`;
       }
 
-      // 添加控制按钮
+      // Add control buttons
       addMathOutputControls();
 
       if (window.MathJax) {

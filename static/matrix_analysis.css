@@ -38,7 +38,7 @@ mjx-container {
   margin: 10px !important;
 }
 
-/* 避免在渲染区下方产生多余的空白 */
+/* Avoid extra blank space below the rendering area */
 mjx-assistive-mml {
   top: -10000px !important;
   left: -10000px !important;
@@ -232,7 +232,6 @@ body:hover .math-bg-element {
   border-radius: 8px;
 }
 
-/* 重设边距 */
 .result-section {
   margin-top: 20px;
 }
@@ -272,7 +271,6 @@ body:hover .math-bg-element {
   position: relative;
 }
 
-/* 折叠状态 */
 .math-output.collapsed {
   max-height: 40px;
   overflow: hidden;
@@ -329,7 +327,6 @@ body:hover .math-bg-element {
   transform: scale(1.1);
 }
 
-/* 新增：数学输出区域控制按钮 */
 .math-controls {
   position: absolute;
   top: 8px;
@@ -363,7 +360,6 @@ body:hover .math-bg-element {
   transform: scale(1.1);
 }
 
-/* 全屏遮罩 */
 .math-fullscreen-overlay {
   position: fixed;
   top: 0;

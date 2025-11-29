@@ -1,4 +1,4 @@
-// 全局变量
+// Global variables
 let cellCounter = 0;
 let activeCellId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
@@ -8,54 +8,53 @@ let kernelStatus = 'idle';
 let data_copy = {};
 let is_record_all_steps = 'True';
 
-// 为所有 math-output 区域添加控制按钮
+// Add control buttons for all math-output areas
 function addMathOutputControls() {
   const mathOutputs = document.querySelectorAll('.math-output');
 
   mathOutputs.forEach(output => {
-    // 检查是否已经添加了控制按钮
     if (!output.querySelector('.math-controls')) {
-      // 创建控制按钮容器
+      // Create control button container
       const controls = document.createElement('div');
       controls.className = 'math-controls';
 
-      // 创建折叠按钮
+      // Create collapse button
       const collapseBtn = document.createElement('button');
       collapseBtn.className = 'math-control-btn';
       collapseBtn.title = '折叠/展开';
       collapseBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
 
-      // 创建全屏按钮
+      // Create fullscreen button
       const fullscreenBtn = document.createElement('button');
       fullscreenBtn.className = 'math-control-btn';
       fullscreenBtn.title = '全屏显示';
       fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
 
-      // 添加按钮到容器
+      // Add buttons to container
       controls.appendChild(collapseBtn);
       controls.appendChild(fullscreenBtn);
 
-      // 添加容器到math-output
+      // Add container to math-output
       output.appendChild(controls);
 
-      // 添加折叠功能
+      // Add collapse functionality
       collapseBtn.addEventListener('click', function () {
         output.classList.toggle('collapsed');
 
-        // 更新图标
+        // Update icon
         if (output.classList.contains('collapsed')) {
           collapseBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
         } else {
           collapseBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
         }
 
-        // 重新渲染 MathJax
+        // Re-render MathJax
         if (window.MathJax) {
           MathJax.typesetPromise([output]);
         }
       });
 
-      // 添加全屏功能
+      // Add fullscreen functionality
       fullscreenBtn.addEventListener('click', function () {
         openFullscreen(output);
       });
@@ -63,15 +62,15 @@ function addMathOutputControls() {
   });
 }
 
-// 打开全屏显示
+// Open fullscreen display
 function openFullscreen(mathOutput) {
   const overlay = document.querySelector('.math-fullscreen-overlay');
   const content = overlay.querySelector('.math-fullscreen-body');
 
-  // 复制内容到全屏显示区域，但保留原始内容
+  // Copy content to fullscreen display area, but preserve original content
   const originalContent = mathOutput.cloneNode(true);
 
-  // 移除控制按钮
+  // Remove control buttons
   const controls = originalContent.querySelector('.math-controls');
   if (controls) {
     controls.remove();
@@ -79,16 +78,16 @@ function openFullscreen(mathOutput) {
 
   content.innerHTML = originalContent.innerHTML;
 
-  // 显示全屏遮罩
+  // Show fullscreen overlay
   overlay.classList.add('active');
 
-  // 重新渲染 MathJax
+  // Re-render MathJax
   if (window.MathJax) {
     MathJax.typesetPromise([content]);
   }
 }
 
-// 页面加载完成后初始化
+// Initialize after page loads
 document.addEventListener("DOMContentLoaded", function () {
   applyTheme(isDarkTheme);
   addNewCell();
@@ -96,7 +95,7 @@ document.addEventListener("DOMContentLoaded", function () {
   animateMathBackground();
 });
 
-// 数学背景动画函数
+// Mathematical background animation function
 function animateMathBackground() {
   const elements = document.querySelectorAll('.math-bg-element');
   elements.forEach(el => {
@@ -106,7 +105,7 @@ function animateMathBackground() {
   });
 }
 
-// 绑定事件
+// Bind events
 function bindEvents() {
   document.getElementById("addCellBtn").addEventListener("click", () => addNewCell());
   document.getElementById("addMdCellBtn").addEventListener("click", () => addNewCell("markdown"));
@@ -119,7 +118,7 @@ function bindEvents() {
   document.getElementById("saveNotebookBtn").addEventListener("click", saveNotebook);
   document.getElementById("loadNotebookBtn").addEventListener("click", loadNotebook);
 
-  // 全屏相关事件
+  // Fullscreen related events
   const closeBtn = document.querySelector('.math-fullscreen-close');
   if (closeBtn) {
     closeBtn.addEventListener('click', function () {
@@ -128,7 +127,7 @@ function bindEvents() {
     });
   }
 
-  // 点击遮罩背景关闭全屏
+  // Click overlay background to close fullscreen
   const overlay = document.querySelector('.math-fullscreen-overlay');
   if (overlay) {
     overlay.addEventListener('click', function (e) {
@@ -138,7 +137,7 @@ function bindEvents() {
     });
   }
 
-  // ESC 键关闭全屏
+  // ESC key to close fullscreen
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       const overlay = document.querySelector('.math-fullscreen-overlay');
@@ -148,7 +147,7 @@ function bindEvents() {
     }
   });
 
-  // 点击文档其他区域时取消活动单元格
+  // Cancel active cell when clicking other areas of the document
   document.addEventListener("click", function (e) {
     if (!e.target.closest(".cell") && !e.target.closest("#math-keyboard") && !e.target.closest("#header") && !e.target.closest("#toolbar")) {
       document.querySelectorAll(".cell").forEach((cell) => {
@@ -166,7 +165,7 @@ function bindEvents() {
     }
   });
 
-  // 键盘快捷键
+  // Keyboard shortcuts
   document.addEventListener("keydown", function (e) {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       const activeCell = document.querySelector(".cell-active");
@@ -210,7 +209,7 @@ function bindEvents() {
     }
   });
 
-  // 绑定虚拟键盘按钮
+  // Bind virtual keyboard buttons
   document.querySelectorAll(".keyboard-key").forEach((key) => {
     key.addEventListener("click", function () {
       const value = this.getAttribute("data-value");
@@ -240,7 +239,7 @@ function bindEvents() {
     });
   });
 
-  // 获取表达式
+  // Get expression
   const expressionElement = document.querySelector('.matrix-preview p');
 
   if (expressionElement) {
@@ -250,7 +249,7 @@ function bindEvents() {
   renderMathPreview();
 }
 
-// 设置单元格事件
+// Set up cell events
 function setupCellEvents(cell) {
   const textarea = cell.querySelector("textarea");
   const runButton = cell.querySelector(".run-cell-button");
@@ -260,42 +259,42 @@ function setupCellEvents(cell) {
   const cellType = cell.dataset.cellType;
 
   if (cellType === "code") {
-    // 运行
+    // Run
     runButton.addEventListener("click", function () {
       runCell(cell);
     });
 
-    // 文本框输入事件 - 实时预览
+    // Textbox input event - live preview
     textarea.addEventListener("input", function () {
       debounce(() => {
         renderMathPreview(cell);
       }, 500)();
     });
 
-    // 虚拟键盘按钮
+    // Virtual keyboard button
     keyboardButton.addEventListener("click", function () {
       toggleKeyboard();
     });
   } else if (cellType === "markdown") {
     const cellPrompt = cell.querySelector(".cell-prompt");
-    // 文本框点击事件 - 设置活动单元格
+    // Textbox click event - set active cell
     cellPrompt.addEventListener("click", function () {
       setActiveCell(cell);
     });
   }
 
-  // 添加单元格按钮
+  // Add cell button
   addCellButton.addEventListener("click", function () {
     addCellBelow(cell);
   });
 
-  // 文本框点击事件 - 设置活动单元格
+  // Textbox click event - set active cell
   textarea.addEventListener("click", function () {
     setActiveCell(cell);
   });
 }
 
-// 防抖函数
+// Debounce function
 function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
@@ -308,12 +307,12 @@ function debounce(func, wait) {
   };
 }
 
-// 设置活动单元格
+// Set active cell
 function setActiveCell(cell) {
   document.querySelectorAll(".cell").forEach((c) => {
     c.classList.remove("cell-active");
 
-    // 对于 markdown 单元格, 非激活时隐藏输入框显示渲染内容
+    // For markdown cells, hide input box and show rendered content when inactive
     if (c.dataset.cellType === "markdown") {
       const input = c.querySelector(".markdown-input");
       const render = c.querySelector(".markdown-render");
@@ -327,7 +326,7 @@ function setActiveCell(cell) {
   cell.classList.add("cell-active");
   activeCellId = cell.dataset.cellId;
 
-  // 对于 markdown 单元格, 激活时显示输入框隐藏渲染内容
+  // For markdown cells, show input box and hide rendered content when active
   if (cell.dataset.cellType === "markdown") {
     const input = cell.querySelector(".markdown-input");
     const rendered = cell.querySelector(".markdown-render");
@@ -335,7 +334,7 @@ function setActiveCell(cell) {
       input.style.display = "block";
       rendered.style.display = "none";
 
-      // 聚焦到输入框
+      // Focus on input box
       input.focus();
       cell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -348,7 +347,7 @@ function setActiveCell(cell) {
   }
 }
 
-// 添加新单元格
+// Add new cell
 function addNewCell(type = "code") {
   const notebook = document.getElementById("notebook");
   const newCell = createCellElement(cellCounter, type);
@@ -367,7 +366,7 @@ function addNewCell(type = "code") {
   }, 10);
 }
 
-// 创建单元格元素
+// Create cell element
 function createCellElement(id, type) {
   const cell = document.createElement("div");
   cell.className = `cell ${type}-cell`;
@@ -428,7 +427,7 @@ function createCellElement(id, type) {
   return cell;
 }
 
-// 在上面添加单元格
+// Add cell above
 function addCellAbove(cell) {
   const notebook = document.getElementById("notebook");
   const newCell = createCellElement(cellCounter, cell.dataset.cellType);
@@ -447,7 +446,7 @@ function addCellAbove(cell) {
   }, 10);
 }
 
-// 在下面添加单元格
+// Add cell below
 function addCellBelow(cell) {
   const notebook = document.getElementById("notebook");
   const newCell = createCellElement(cellCounter, cell.dataset.cellType);
@@ -472,7 +471,7 @@ function addCellBelow(cell) {
   }, 10);
 }
 
-// 运行
+// Run
 function runCell(cell) {
   const runButton = cell.querySelector(".run-cell-button");
   runButton.classList.add("running");
@@ -493,7 +492,7 @@ function runCell(cell) {
     is_record_all_steps = 'False'
   }
 
-  // 传递数据给后端
+  // Send data to backend
   const payload = {
     expression: data_copy['expression'],
     operations: operations,
@@ -510,7 +509,7 @@ function runCell(cell) {
     .then((response) => response.json())
     .then((data) => {
       outputArea.innerHTML = `<div class="math-output">${data.steps}</div>`;
-      // 添加控制按钮
+      // Add control buttons
       addMathOutputControls();
       if (typeof MathJax !== "undefined") {
         MathJax.typesetPromise([outputArea]);
@@ -526,7 +525,7 @@ function runCell(cell) {
     });
 }
 
-// 渲染数学预览
+// Render math preview
 function renderMathPreview(cell) {
   const textarea = cell.querySelector("textarea");
   const content = textarea.value.trim();
@@ -564,7 +563,7 @@ function renderMathPreview(cell) {
     });
 }
 
-// 显示通知
+// Show notification
 function showNotification(message, type = "success") {
   const notification = document.createElement("div");
   notification.className = `notification notification-${type}`;
@@ -597,20 +596,20 @@ function toggleKeyboard() {
   const helpfulArea = document.getElementById("helpful-area");
 
   if (isKeyboardVisible) {
-    // 隐藏键盘
+    // Hide keyboard
     keyboard.classList.remove("keyboard-visible");
     isKeyboardVisible = false;
     helpfulArea.style.display = "none";
   } else {
-    // 显示键盘
+    // Show keyboard
     keyboard.classList.add("keyboard-visible");
     isKeyboardVisible = true;
-    // 用于占据页面底部, 在键盘打开时, 将页面向下延伸, 防止键盘挡住单元格
+    // Used to occupy the bottom of the page, extend the page downward when keyboard is open, preventing keyboard from covering cells
     helpfulArea.style.display = "flex";
   }
 }
 
-// 应用主题设置
+// Apply theme settings
 function applyTheme(isDark) {
   const themeBtn = document.getElementById("toggleThemeBtn");
   if (isDark) {
@@ -643,12 +642,12 @@ function applyTheme(isDark) {
   localStorage.setItem('darkTheme', isDarkTheme);
 }
 
-// 切换主题
+// Toggle theme
 function toggleTheme() {
   applyTheme(!isDarkTheme);
 }
 
-// 移动活动单元格向上
+// Move active cell up
 function moveActiveCellUp() {
   const activeCell = document.querySelector(".cell-active");
   if (activeCell && activeCell.previousElementSibling) {
@@ -666,7 +665,7 @@ function moveActiveCellUp() {
   }
 }
 
-// 移动活动单元格向下
+// Move active cell down
 function moveActiveCellDown() {
   const activeCell = document.querySelector(".cell-active");
   if (activeCell && activeCell.nextElementSibling) {
@@ -684,7 +683,7 @@ function moveActiveCellDown() {
   }
 }
 
-// 删除活动单元格
+// Delete active cell
 function deleteActiveCell() {
   const activeCell = document.querySelector(".cell-active");
   if (activeCell && document.querySelectorAll(".cell").length > 1) {
@@ -704,7 +703,7 @@ function deleteActiveCell() {
   }
 }
 
-// 保存笔记本
+// Save notebook
 function saveNotebook() {
   const cells = [];
   document.querySelectorAll(".cell").forEach((cell) => {
@@ -712,19 +711,10 @@ function saveNotebook() {
     const textarea = cell.querySelector("textarea");
     const content = textarea ? textarea.value : "";
 
-    if (type === "code") {
-      cells.push({
-        type: type,
-        content: content,
-        operationType: operationType,
-        variable: variable,
-      });
-    } else {
-      cells.push({
-        type: type,
-        content: content,
-      });
-    }
+    cells.push({
+      type: type,
+      content: content,
+    });
   });
 
   const notebookData = JSON.stringify(cells, null, 2);
@@ -733,14 +723,14 @@ function saveNotebook() {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "mathtool-notebook.json";
+  a.download = "matrix_lab.json";
   a.click();
 
   URL.revokeObjectURL(url);
   showNotification("笔记本已保存", "success");
 }
 
-// 加载笔记本
+// Load notebook
 function loadNotebook() {
   const input = document.createElement("input");
   input.type = "file";
@@ -756,23 +746,19 @@ function loadNotebook() {
         const notebook = document.getElementById("notebook");
         notebook.innerHTML = "";
 
-        cells.forEach((cellData, index) => {
-          const cell = createCellElement(index, cellData.type);
+        cellCounter = 0; // Reset cell counter
 
-          if (cellData.type === "code") {
-            const textarea = cell.querySelector("textarea");
+        cells.forEach((cellData, _index) => {
+          const cell = createCellElement(cellCounter, cellData.type);
 
-            if (textarea) textarea.value = cellData.content || "";
-          } else {
-            const textarea = cell.querySelector("textarea");
-            if (textarea) textarea.value = cellData.content || "";
-          }
+          const textarea = cell.querySelector("textarea");
+          if (textarea) textarea.value = cellData.content || "";
 
           notebook.appendChild(cell);
           setupCellEvents(cell);
+          cellCounter++;
         });
 
-        cellCounter = cells.length;
         if (cells.length > 0) {
           setActiveCell(document.querySelector(".cell"));
         }
@@ -827,7 +813,7 @@ function renderMathPreview() {
     });
 }
 
-// 渲染 Markdown 内容
+// Render Markdown content
 function renderMarkdown(cell) {
   const markdownInput = cell.querySelector(".markdown-input");
   const markdownRendered = cell.querySelector(".markdown-render");
@@ -836,33 +822,33 @@ function renderMarkdown(cell) {
 
   const content = markdownInput.value;
 
-  // 简单的 Markdown 渲染实现
+  // Simple Markdown rendering implementation
   let html = content
-    // 标题
+    // Headers
     .replace(/^###### (.*$)/gim, '<h6>$1</h6>')
     .replace(/^##### (.*$)/gim, '<h5>$1</h5>')
     .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    // 粗体
+    // Bold
     .replace(/__(.*?)__/gim, '<strong>$1</strong>')
-    // 斜体
+    // Italic
     .replace(/_(.*?)_/gim, '<em>$1</em>')
-    // 代码
+    // Code
     .replace(/`(.*?)`/gim, '<code>$1</code>')
-    // 换行
+    // Line break
     .replace(/\n/gim, '<br>')
-    // 链接
+    // Links
     .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank">$1</a>')
-    // 无序列表
+    // Unordered lists
     .replace(/^\s*[-*] (.*$)/gim, '<li>$1</li>')
-    // 处理列表包装
+    // Handle list wrapping
     .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-    // 引用
+    // Quotes
     .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
 
-  // 处理多个连续换行(段落)
+  // Handle multiple consecutive line breaks (paragraphs)
   html = html.replace(/(<br>\s*){2,}/gim, '</p><p>');
   html = '<p>' + html + '</p>';
 

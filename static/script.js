@@ -1,4 +1,4 @@
-// 全局变量
+// Global variables
 let cellCounter = 0;
 let activeCellId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
@@ -7,7 +7,7 @@ let kernelStatus = 'idle';
 
 let foreverVisible = true;
 
-// 页面加载完成后初始化
+// Initialize after page loads
 document.addEventListener("DOMContentLoaded", function () {
   applyTheme(isDarkTheme);
   addNewCell();
@@ -15,54 +15,54 @@ document.addEventListener("DOMContentLoaded", function () {
   animateMathBackground();
 });
 
-// 为所有 math-output 区域添加控制按钮
+// Add control buttons to all math-output areas
 function addMathOutputControls() {
   const mathOutputs = document.querySelectorAll('.math-output');
 
   mathOutputs.forEach(output => {
-    // 检查是否已经添加了控制按钮
+    // Check if control buttons have already been added
     if (!output.querySelector('.math-controls')) {
-      // 创建控制按钮容器
+      // Create control button container
       const controls = document.createElement('div');
       controls.className = 'math-controls';
 
-      // 创建折叠按钮
+      // Create collapse button
       const collapseBtn = document.createElement('button');
       collapseBtn.className = 'math-control-btn';
       collapseBtn.title = '折叠/展开';
       collapseBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
 
-      // 创建全屏按钮
+      // Create fullscreen button
       const fullscreenBtn = document.createElement('button');
       fullscreenBtn.className = 'math-control-btn';
       fullscreenBtn.title = '全屏显示';
       fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
 
-      // 添加按钮到容器
+      // Add buttons to container
       controls.appendChild(collapseBtn);
       controls.appendChild(fullscreenBtn);
 
-      // 添加容器到 math-output
+      // Add container to math-output
       output.appendChild(controls);
 
-      // 添加折叠功能
+      // Add collapse functionality
       collapseBtn.addEventListener('click', function () {
         output.classList.toggle('collapsed');
 
-        // 更新图标
+        // Update icon
         if (output.classList.contains('collapsed')) {
           collapseBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
         } else {
           collapseBtn.innerHTML = '<i class="fas fa-chevron-up"></i>';
         }
 
-        // 重新渲染 MathJax
+        // Re-render MathJax
         if (window.MathJax) {
           MathJax.typesetPromise([output]);
         }
       });
 
-      // 添加全屏功能
+      // Add fullscreen functionality
       fullscreenBtn.addEventListener('click', function () {
         openFullscreen(output);
       });
@@ -70,15 +70,15 @@ function addMathOutputControls() {
   });
 }
 
-// 打开全屏显示
+// Open fullscreen display
 function openFullscreen(mathOutput) {
   const overlay = document.querySelector('.math-fullscreen-overlay');
   const content = overlay.querySelector('.math-fullscreen-body');
 
-  // 复制内容到全屏显示区域，但保留原始内容
+  // Copy content to fullscreen display area, but keep original content
   const originalContent = mathOutput.cloneNode(true);
 
-  // 移除控制按钮
+  // Remove control buttons
   const controls = originalContent.querySelector('.math-controls');
   if (controls) {
     controls.remove();
@@ -86,16 +86,16 @@ function openFullscreen(mathOutput) {
 
   content.innerHTML = originalContent.innerHTML;
 
-  // 显示全屏遮罩
+  // Show fullscreen overlay
   overlay.classList.add('active');
 
-  // 重新渲染 MathJax
+  // Re-render MathJax
   if (window.MathJax) {
     MathJax.typesetPromise([content]);
   }
 }
 
-// 数学背景动画函数
+// Math background animation function
 function animateMathBackground() {
   const elements = document.querySelectorAll('.math-bg-element');
   elements.forEach(el => {
@@ -105,20 +105,20 @@ function animateMathBackground() {
   });
 }
 
-// 切换可见性
+// Toggle visibility
 function toggleCodeCellInputs() {
   foreverVisible = !foreverVisible;
   setVisibility(foreverVisible);
 }
 
-// 设置全部 Cell 的可见性
+// Set visibility for all Cells
 function setVisibility(visible) {
   document.querySelectorAll(".code-cell").forEach(cell => {
     setSingleVisibility(cell, visible);
   });
 }
 
-// 设置单个 Cell 的可见性
+// Set visibility for a single Cell
 function setSingleVisibility(cell, visible) {
   const mathControls = cell.querySelector(".math-controls");
   const mjxContainer = cell.querySelector(".cell-output mjx-container")
@@ -139,7 +139,7 @@ function setSingleVisibility(cell, visible) {
   }
 }
 
-// 绑定事件
+// Bind events
 function bindEvents() {
   document.getElementById("addCellBtn").addEventListener("click", () => addNewCell());
   document.getElementById("addMdCellBtn").addEventListener("click", () => addNewCell("markdown"));
@@ -155,7 +155,7 @@ function bindEvents() {
   document.getElementById("saveNotebookBtn").addEventListener("click", saveNotebook);
   document.getElementById("loadNotebookBtn").addEventListener("click", loadNotebook);
 
-  // 点击文档其他区域时取消活动单元格
+  // Cancel active cell when clicking on other areas of the document
   document.addEventListener("click", function (e) {
     if (!e.target.closest(".cell") && !e.target.closest("#math-keyboard") && !e.target.closest("#header") && !e.target.closest("#toolbar")) {
       document.querySelectorAll(".cell").forEach((cell) => {
@@ -175,7 +175,7 @@ function bindEvents() {
     }
   });
 
-  // 键盘快捷键
+  // Keyboard shortcuts
   document.addEventListener("keydown", function (e) {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       const activeCell = document.querySelector(".cell-active");
@@ -219,7 +219,7 @@ function bindEvents() {
     }
   });
 
-  // 绑定虚拟键盘按钮
+  // Bind virtual keyboard buttons
   document.querySelectorAll(".keyboard-key").forEach((key) => {
     key.addEventListener("click", function () {
       const value = this.getAttribute("data-value");
@@ -249,7 +249,7 @@ function bindEvents() {
     });
   });
 
-  // 全屏相关事件
+  // Fullscreen related events
   const closeBtn = document.querySelector('.math-fullscreen-close');
   if (closeBtn) {
     closeBtn.addEventListener('click', function () {
@@ -258,7 +258,7 @@ function bindEvents() {
     });
   }
 
-  // 点击遮罩背景关闭全屏
+  // Click overlay background to close fullscreen
   const overlay = document.querySelector('.math-fullscreen-overlay');
   if (overlay) {
     overlay.addEventListener('click', function (e) {
@@ -268,7 +268,7 @@ function bindEvents() {
     });
   }
 
-  // ESC 键关闭全屏
+  // ESC key to close fullscreen
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       const overlay = document.querySelector('.math-fullscreen-overlay');
@@ -279,7 +279,7 @@ function bindEvents() {
   });
 }
 
-// 设置单元格事件
+// Set cell events
 function setupCellEvents(cell) {
   const operationSelector = cell.querySelector(".operation-type");
   const textarea = cell.querySelector("textarea");
@@ -290,12 +290,12 @@ function setupCellEvents(cell) {
   const cellType = cell.dataset.cellType;
 
   if (cellType === "code") {
-    // 操作类型变化事件
+    // Operation type change event
     operationSelector.addEventListener("change", function () {
-      // 更新输入区域的渲染
+      // Update input area rendering
       renderMathPreview(cell);
 
-      // 如果选择 diff, integral, limit 显示变量输入框
+      // If diff, integral, limit is selected, show variable input box
       const varInput = cell.querySelector(".var-input");
       if (this.value === "diff" || this.value === "integral" || this.value === "limit") {
         if (varInput) varInput.style.display = "flex";
@@ -303,7 +303,7 @@ function setupCellEvents(cell) {
         if (varInput) varInput.style.display = "none";
       }
 
-      // 如果选择 ref, 显示矩阵的目标形式输入框
+      // If ref is selected, show target form input box for matrix
       const refControls = cell.querySelector(".ref-controls");
       if (this.value === "ref") {
         if (refControls) refControls.style.display = "flex";
@@ -339,7 +339,7 @@ function setupCellEvents(cell) {
         if (detControls) detControls.style.display = "none";
       }
 
-      // 如果选择 limit, 显示额外选项
+      // If limit is selected, show additional options
       const limitControls = cell.querySelector(".limit-controls");
       if (this.value === "limit") {
         if (limitControls) limitControls.style.display = "flex";
@@ -347,7 +347,7 @@ function setupCellEvents(cell) {
         if (limitControls) limitControls.style.display = "none";
       }
 
-      // 如果选择 expr, 显示额外选项
+      // If expr is selected, show additional options
       const expressionControls = cell.querySelector(".expression-controls");
       if (this.value === "expr") {
         if (expressionControls) expressionControls.style.display = "flex";
@@ -356,42 +356,42 @@ function setupCellEvents(cell) {
       }
     });
 
-    // 运行单元格
+    // Run cell
     runButton.addEventListener("click", function () {
       runCell(cell);
     });
 
-    // 文本框输入事件 - 实时预览
+    // Textbox input event - real-time preview
     textarea.addEventListener("input", function () {
       debounce(() => {
         renderMathPreview(cell);
       }, 500)();
     });
 
-    // 虚拟键盘按钮
+    // Virtual keyboard button
     keyboardButton.addEventListener("click", function () {
       toggleKeyboard();
     });
   }
 
   const cellPrompt = cell.querySelector(".cell-prompt");
-  // 点击事件 - 设置活动单元格
+  // Click event - set active cell
   cellPrompt.addEventListener("click", function () {
     setActiveCell(cell);
   });
 
-  // 添加单元格按钮
+  // Add cell button
   addCellButton.addEventListener("click", function () {
     addCellBelow(cell);
   });
 
-  // 文本框点击事件 - 设置活动单元格
+  // Textbox click event - set active cell
   textarea.addEventListener("click", function () {
     setActiveCell(cell);
   });
 }
 
-// 防抖函数
+// Debounce function
 function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
@@ -404,14 +404,14 @@ function debounce(func, wait) {
   };
 }
 
-// 设置活动单元格
+// Set active cell
 function setActiveCell(cell) {
   document.querySelectorAll(".cell").forEach((c) => {
     c.classList.remove("cell-active");
     if (c.dataset.cellType === "code" && !foreverVisible) {
       setSingleVisibility(c, false);
     } else if (c.dataset.cellType === "markdown") {
-      // 对于 markdown 单元格, 非激活时隐藏输入框显示渲染内容
+      // For markdown cells, hide input box and show rendered content when inactive
       const input = c.querySelector(".markdown-input");
       const render = c.querySelector(".markdown-render");
       renderMarkdown(c);
@@ -426,14 +426,14 @@ function setActiveCell(cell) {
   if (cell.dataset.cellType === "code" && !foreverVisible) {
     setSingleVisibility(cell, true);
   } else if (cell.dataset.cellType === "markdown") {
-    // 对于 markdown 单元格, 激活时显示输入框隐藏渲染内容
+    // For markdown cells, show input box and hide rendered content when active
     const input = cell.querySelector(".markdown-input");
     const rendered = cell.querySelector(".markdown-render");
     if (input && rendered) {
       input.style.display = "block";
       rendered.style.display = "none";
 
-      // 聚焦到输入框
+      // Focus on input box
       input.focus();
       cell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -446,7 +446,7 @@ function setActiveCell(cell) {
   }
 }
 
-// 添加新单元格
+// Add new cell
 function addNewCell(type = "code") {
   const notebook = document.getElementById("notebook");
   const newCell = createCellElement(cellCounter, type);
@@ -465,7 +465,7 @@ function addNewCell(type = "code") {
   }, 10);
 }
 
-// 创建单元格元素
+// Create cell element
 function createCellElement(id, type) {
   const cell = document.createElement("div");
   cell.className = `cell ${type}-cell`;
@@ -637,7 +637,7 @@ function createCellElement(id, type) {
   return cell;
 }
 
-// 在上面添加单元格
+// Add cell above
 function addCellAbove(cell) {
   const notebook = document.getElementById("notebook");
   const newCell = createCellElement(cellCounter, cell.dataset.cellType);
@@ -656,7 +656,7 @@ function addCellAbove(cell) {
   }, 10);
 }
 
-// 在下面添加单元格
+// Add cell below
 function addCellBelow(cell) {
   const notebook = document.getElementById("notebook");
   const newCell = createCellElement(cellCounter, cell.dataset.cellType);
@@ -681,7 +681,7 @@ function addCellBelow(cell) {
   }, 10);
 }
 
-// 运行所有单元格
+// Run all cells
 function runAllCells() {
   updateKernelStatus('busy');
 
@@ -694,7 +694,7 @@ function runAllCells() {
   }, 500);
 }
 
-// 重启内核
+// Restart kernel
 function restartKernel() {
   document.querySelectorAll(".cell-output").forEach((output) => {
     output.innerHTML = "";
@@ -711,7 +711,7 @@ function restartKernel() {
   showNotification("内核已重启", "success");
 }
 
-// 更新内核状态
+// Update kernel status
 function updateKernelStatus(status) {
   kernelStatus = status;
   const statusElement = document.getElementById("kernel-status");
@@ -733,7 +733,7 @@ function updateKernelStatus(status) {
   }
 }
 
-// 运行单个单元格
+// Run single cell
 function runCell(cell) {
   const operationType = cell.querySelector(".operation-type").value;
   const expression = cell.querySelector("textarea").value.trim();
@@ -760,7 +760,7 @@ function runCell(cell) {
   const runButton = cell.querySelector(".run-cell-button");
   runButton.classList.add("running");
 
-  // 传递数据给后端
+  // Pass data to backend
   const payload = {
     operation_type: operationType,
     expression: expression,
@@ -801,7 +801,7 @@ function runCell(cell) {
     payload.type = det_type;
   }
 
-  // 如果是求解等价表达式, 则添加排序和深度参数
+  // If solving for equivalent expressions, add sorting and depth parameters
   if (operationType === 'expr') {
     const sort = cell.querySelector(".expr-sort").value || "complexity";
     const depth = cell.querySelector(".expr-depth").value || "3";
@@ -824,14 +824,14 @@ function runCell(cell) {
       updateKernelStatus('idle');
 
       if (data.success) {
-        // 等价表达式的结果渲染需要单独处理
+        // Rendering results from ExpressionParser (equivalent expression list + visualization derivation tree) needs special handling
         if (operationType == "expr") {
           renderExpressionResult(outputArea, data);
         }
         else {
           outputArea.innerHTML = `<div class="math-output"> ${data.result}</> `;
 
-          // 添加控制按钮
+          // Add control buttons
           addMathOutputControls();
 
           if (typeof MathJax !== "undefined") {
@@ -855,7 +855,7 @@ function runCell(cell) {
     });
 }
 
-// 渲染 ExpressionParser 返回的结果(等价表达式列表 + 可视化推导树)
+// Render results returned by ExpressionParser (equivalent expression list + visualization derivation tree)
 function renderExpressionResult(outputArea, data) {
   // data.expected: { expressions: [{latex, reason}, ...], tree_svg_url: '/static/trees/....svg' }
   const expressions = data.result || [];
@@ -873,15 +873,15 @@ function renderExpressionResult(outputArea, data) {
   }
 
   if (treeUrl) {
-    html += `<div class="expr-tree"><h3>推导树</h3><img src="${treeUrl}" alt="expression tree" style="max-width:100%; border:1px solid var(--jp-border-color0); border-radius:8px;"/></> `;
+    html += `<div class="expr-tree"><h3>推导树</h3><img src="${treeUrl}" alt="expression tree" style="max-width:100%; border:1px solid var(--jp-border-color0); border-radius:8px;"/></div>`;
   } else {
-    html += `<div class="expr-tree"><h3>推导树</h3><div class="note">没有可用的推导树(后端未生成).</div></> `;
+    html += `<div class="expr-tree"><h3>推导树</h3><div class="note">没有可用的推导树(后端未生成).</div></div>`;
   }
 
   html += `</> `;
   outputArea.innerHTML = html;
 
-  // 添加控制按钮
+  // Add control buttons
   addMathOutputControls();
 
   if (typeof MathJax !== "undefined") {
@@ -889,7 +889,7 @@ function renderExpressionResult(outputArea, data) {
   }
 }
 
-// 渲染数学预览
+// Render math preview
 function renderMathPreview(cell) {
   const textarea = cell.querySelector("textarea");
   const content = textarea.value.trim();
@@ -927,7 +927,7 @@ function renderMathPreview(cell) {
     });
 }
 
-// 渲染 Markdown 内容
+// Render Markdown content
 function renderMarkdown(cell) {
   const markdownInput = cell.querySelector(".markdown-input");
   const markdownRendered = cell.querySelector(".markdown-render");
@@ -936,40 +936,40 @@ function renderMarkdown(cell) {
 
   const content = markdownInput.value;
 
-  // 简单的 Markdown 渲染实现
+  // Simple Markdown rendering implementation
   let html = content
-    // 标题
+    // Headers
     .replace(/^###### (.*$)/gim, '<h6>$1</h6>')
     .replace(/^##### (.*$)/gim, '<h5>$1</h5>')
     .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    // 粗体
+    // Bold
     .replace(/__(.*?)__/gim, '<strong>$1</strong>')
-    // 斜体
+    // Italic
     .replace(/_(.*?)_/gim, '<em>$1</em>')
-    // 代码
+    // Code
     .replace(/`(.*?)`/gim, '<code>$1</code>')
-    // 换行
+    // Line breaks
     .replace(/\n/gim, '<br>')
-    // 链接
+    // Links
     .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank">$1</a>')
-    // 无序列表
+    // Unordered lists
     .replace(/^\s*[-*] (.*$)/gim, '<li>$1</li>')
-    // 处理列表包装
+    // Handle list wrapping
     .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-    // 引用
+    // Quotes
     .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
 
-  // 处理多个连续换行(段落)
+  // Handle multiple consecutive line breaks (paragraphs)
   html = html.replace(/(<br>\s*){2,}/gim, '</p><p>');
   html = '<p>' + html + '</p>';
 
   markdownRendered.innerHTML = html;
 }
 
-// 显示通知
+// Show notification
 function showNotification(message, type = "success") {
   const notification = document.createElement("div");
   notification.className = `notification notification-${type} `;
@@ -1002,20 +1002,20 @@ function toggleKeyboard() {
   const helpfulArea = document.getElementById("helpful-area");
 
   if (isKeyboardVisible) {
-    // 隐藏键盘
+    // Hide keyboard
     keyboard.classList.remove("keyboard-visible");
     isKeyboardVisible = false;
     helpfulArea.style.display = "none";
   } else {
-    // 显示键盘
+    // Show keyboard
     keyboard.classList.add("keyboard-visible");
     isKeyboardVisible = true;
-    // 用于占据页面底部, 在键盘打开时, 将页面向下延伸, 防止键盘挡住单元格
+    // Used to occupy the bottom of the page, when the keyboard is open, extend the page downward to prevent the keyboard from blocking the cell
     helpfulArea.style.display = "flex";
   }
 }
 
-// 应用主题设置
+// Apply theme settings
 function applyTheme(isDark) {
   const themeBtn = document.getElementById("toggleThemeBtn");
   if (isDark) {
@@ -1048,12 +1048,12 @@ function applyTheme(isDark) {
   localStorage.setItem('darkTheme', isDarkTheme);
 }
 
-// 切换主题
+// Toggle theme
 function toggleTheme() {
   applyTheme(!isDarkTheme);
 }
 
-// 移动活动单元格向上
+// Move active cell up
 function moveActiveCellUp() {
   const activeCell = document.querySelector(".cell-active");
   if (activeCell && activeCell.previousElementSibling) {
@@ -1071,7 +1071,7 @@ function moveActiveCellUp() {
   }
 }
 
-// 移动活动单元格向下
+// Move active cell down
 function moveActiveCellDown() {
   const activeCell = document.querySelector(".cell-active");
   if (activeCell && activeCell.nextElementSibling) {
@@ -1089,7 +1089,7 @@ function moveActiveCellDown() {
   }
 }
 
-// 删除活动单元格
+// Delete active cell
 function deleteActiveCell() {
   const activeCell = document.querySelector(".cell-active");
   if (activeCell && document.querySelectorAll(".cell").length > 1) {
@@ -1109,7 +1109,7 @@ function deleteActiveCell() {
   }
 }
 
-// 保存笔记本
+// Save notebook with improved data capture
 function saveNotebook() {
   const cells = [];
   document.querySelectorAll(".cell").forEach((cell) => {
@@ -1123,12 +1123,48 @@ function saveNotebook() {
         ? cell.querySelector(".var-input input").value
         : "x";
 
-      cells.push({
+      // Prepare cell data object
+      const cellData = {
         type: type,
         content: content,
         operationType: operationType,
         variable: variable,
-      });
+      };
+
+      // Save additional parameters based on operation type
+      if (operationType === "limit") {
+        cellData.point = cell.querySelector(".point").value || "0";
+        cellData.direction = cell.querySelector(".limit-sort").value || "+";
+        cellData.maxLhopitalCount = cell.querySelector(".max-lhopital-count").value || "5";
+      }
+
+      if (operationType === "ref") {
+        cellData.targetForm = cell.querySelector(".ref-sort").value || "ref";
+      }
+
+      if (operationType === "operations") {
+        cellData.operationSymbol = cell.querySelector(".operations-sort").value || "+";
+      }
+
+      if (operationType === "transform-1") {
+        cellData.transform1Type = cell.querySelector(".transform-1-sort").value || "basis_change";
+      }
+
+      if (operationType === "transform-2") {
+        cellData.transform2Type = cell.querySelector(".transform-2-sort").value || "find_matrix";
+      }
+
+      if (operationType === "det") {
+        cellData.detType = cell.querySelector(".det-sort").value || "1";
+      }
+
+      if (operationType === "expr") {
+        cellData.exprSort = cell.querySelector(".expr-sort").value || "complexity";
+        cellData.exprDepth = cell.querySelector(".expr-depth").value || "3";
+        cellData.geneSort = cell.querySelector(".gene-sort").value || "false";
+      }
+
+      cells.push(cellData);
     } else {
       cells.push({
         type: type,
@@ -1143,14 +1179,14 @@ function saveNotebook() {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "mathtool-notebook.json";
+  a.download = "highdream-notebook.json";
   a.click();
 
   URL.revokeObjectURL(url);
   showNotification("笔记本已保存", "success");
 }
 
-// 加载笔记本
+// Load notebook with improved data restoration
 function loadNotebook() {
   const input = document.createElement("input");
   input.type = "file";
@@ -1171,13 +1207,63 @@ function loadNotebook() {
 
           if (cellData.type === "code") {
             const textarea = cell.querySelector("textarea");
-            const operationType = cell.querySelector(".operation-type");
+            const operationTypeSelect = cell.querySelector(".operation-type");
             const varInputField = cell.querySelector(".var-input input");
 
             if (textarea) textarea.value = cellData.content || "";
-            if (operationType) operationType.value = cellData.operationType || "diff";
+            if (operationTypeSelect) operationTypeSelect.value = cellData.operationType || "diff";
             if (varInputField) varInputField.value = cellData.variable || "x";
 
+            // Restore additional parameters based on operation type
+            if (cellData.operationType === "limit") {
+              const pointInput = cell.querySelector(".point");
+              const directionSelect = cell.querySelector(".limit-sort");
+              const maxLhopitalInput = cell.querySelector(".max-lhopital-count");
+
+              if (pointInput) pointInput.value = cellData.point || "0";
+              if (directionSelect) directionSelect.value = cellData.direction || "+";
+              if (maxLhopitalInput) maxLhopitalInput.value = cellData.maxLhopitalCount || "5";
+            }
+
+            if (cellData.operationType === "ref") {
+              const refSort = cell.querySelector(".ref-sort");
+              if (refSort) refSort.value = cellData.targetForm || "ref";
+            }
+
+            if (cellData.operationType === "operations") {
+              const operationsSort = cell.querySelector(".operations-sort");
+              if (operationsSort) operationsSort.value = cellData.operationSymbol || "+";
+            }
+
+            if (cellData.operationType === "transform-1") {
+              const transform1Sort = cell.querySelector(".transform-1-sort");
+              if (transform1Sort) transform1Sort.value = cellData.transform1Type || "basis_change";
+            }
+
+            if (cellData.operationType === "transform-2") {
+              const transform2Sort = cell.querySelector(".transform-2-sort");
+              if (transform2Sort) transform2Sort.value = cellData.transform2Type || "find_matrix";
+            }
+
+            if (cellData.operationType === "det") {
+              const detSort = cell.querySelector(".det-sort");
+              if (detSort) detSort.value = cellData.detType || "1";
+            }
+
+            if (cellData.operationType === "expr") {
+              const exprSort = cell.querySelector(".expr-sort");
+              const exprDepth = cell.querySelector(".expr-depth");
+              const geneSort = cell.querySelector(".gene-sort");
+
+              if (exprSort) exprSort.value = cellData.exprSort || "complexity";
+              if (exprDepth) exprDepth.value = cellData.exprDepth || "3";
+              if (geneSort) geneSort.value = cellData.geneSort || "false";
+            }
+
+            // Trigger change event to show/hide appropriate controls
+            if (operationTypeSelect) {
+              operationTypeSelect.dispatchEvent(new Event('change'));
+            }
           } else {
             const textarea = cell.querySelector("textarea");
             if (textarea) textarea.value = cellData.content || "";
