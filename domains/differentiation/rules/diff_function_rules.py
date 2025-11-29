@@ -4,7 +4,7 @@ from sympy import (
 )
 
 from core import RuleRegistry
-from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
+from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 from utils.latex_formatter import wrap_latex
 
 _create_matcher = RuleRegistry.create_common_matcher
@@ -14,19 +14,21 @@ def _create_rule(func_name):
     return RuleRegistry.create_common_rule(Derivative, func_name)
 
 
-def const_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     return Integer(0), f"常数导数为 0 : $\\frac{{d}}{{d{var_latex}}} {wrap_latex(expr)} = 0$"
 
 
-def var_rule(_expr: Expr, context: Context) -> RuleFunctionReturn:
+def var_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
-    return Integer(1), f"变量导数为 1 : $\\frac{{d}}{{d{var_latex}}} {var_latex} = 1$"
+    if expr.equals(var):
+        return Integer(1), f"变量导数为 1 : $\\frac{{d}}{{d{var_latex}}} {var_latex} = 1$"
+    return Integer(0), f"无关变量视为常数, 导数为 0 : $\\frac{{d}}{{d{var_latex}}} {wrap_latex(expr)} = 0$"
 
 
-def pow_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def pow_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Differentiate power expressions u(x)**v(x) using appropriate rules:
 
       1. x^n (n constant)           power rule
@@ -135,16 +137,22 @@ atan_matcher = _create_matcher(atan)
 sinh_matcher = _create_matcher(sinh)
 cosh_matcher = _create_matcher(cosh)
 tanh_matcher = _create_matcher(tanh)
-pow_matcher = _create_matcher(Pow)
 
 
-def const_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn:
+def const_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     if expr.is_constant():
         return 'const'
     return None
 
 
-def var_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
-    if expr == context['variable']:
+def var_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+    if expr.is_Symbol:
         return 'var'
+    return None
+
+
+def pow_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+    # Don't restrict to var == context['variable']
+    if isinstance(expr, Pow):
+        return 'pow'
     return None

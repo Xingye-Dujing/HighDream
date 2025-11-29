@@ -1,15 +1,5 @@
-@font-face {
-  font-family: "JetBrains";
-  src: url("./fonts/JetBrainsMono-Bold.ttf");
-}
-
-@font-face {
-  font-family: "LXGW";
-  src: url("./fonts/LXGWWenKaiGB-Medium.ttf");
-}
-
 :root {
-  --font-family: "JetBrains", "LXGW", Arial, serif;
+  --font-family: serif;
   --jp-border-width: 1px;
   --jp-border-color0: #e0e0e0;
   --jp-border-color1: #bdbdbd;
@@ -300,6 +290,7 @@ a {
   flex-shrink: 0;
   user-select: none;
   transition: all var(--transition-speed);
+  font-weight: bold;
 }
 
 .cell.cell-active .cell-prompt {
@@ -323,7 +314,7 @@ a {
 }
 
 .cell-active .cell-content {
-  border: 3px dashed var(--jp-cell-editor-active-border-color);
+  border: 2px dashed var(--jp-cell-editor-active-border-color);
 }
 
 .cell-input {
@@ -354,6 +345,7 @@ a {
 }
 
 .expr-sort,
+.gene-sort,
 .limit-sort,
 .sort {
   padding: 6px 10px;
@@ -386,6 +378,7 @@ a {
 
 .var-label,
 .expr-label,
+.gene-label,
 .limit-label,
 .label {
   white-space: nowrap;
@@ -620,11 +613,11 @@ a {
   background-color: transparent;
   border: none;
   box-shadow: none;
-  font-family: "LXGW";
+  font-family: var(--font-family);
 }
 
 .cell.markdown-cell.cell-active .cell-content {
-  border: 3px dashed #952d8b;
+  border: 2px dashed #952d8b;
 }
 
 #math-keyboard {

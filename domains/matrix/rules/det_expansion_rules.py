@@ -1,9 +1,9 @@
 from sympy import Add, Determinant, Matrix, Mul, Pow
 
-from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
+from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 
 
-def laplace_expansion_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
+def laplace_expansion_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     """Laplace expansion rule for determinant evaluation.
 
     Performs cofactor expansion along the row or column that maximizes a heuristic
@@ -85,7 +85,7 @@ def laplace_expansion_rule(matrix: Matrix, _context: Context) -> RuleFunctionRet
     return result, explanation
 
 
-def laplace_expansion_matcher(_matrix: Matrix, _context: Context) -> MatcherFunctionReturn:
+def laplace_expansion_matcher(_matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Matcher for Laplace expansion applicability.
 
     This matcher assumes that Laplace expansion is always a fallback strategy

@@ -1,4 +1,4 @@
-from typing import Dict, List, Protocol, Tuple, Union
+from typing import Dict, List, Optional, Protocol, Tuple, Union
 from sympy import Derivative, Determinant, Expr, Integral, Limit, Symbol
 
 # The operation to be performed.
@@ -6,8 +6,8 @@ Operation = Union[Derivative, Determinant, Integral, Limit]
 # The evaluation context providing additional information.
 Context = Union[Symbol, Expr, str]
 RuleContext = Dict[str, Context]
-RuleFunctionReturn = Union[Tuple[Expr, str], None]
-MatcherFunctionReturn = Union[str, None]
+RuleFunctionReturn = Optional[Tuple[Expr, str]]
+MatcherFunctionReturn = Optional[str]
 
 
 class RuleFunction(Protocol):
@@ -19,7 +19,8 @@ class RuleFunction(Protocol):
         - str: The description of the rule applied.
     """
 
-    def __call__(self, expr: Expr, context: Context) -> RuleFunctionReturn: ...
+    def __call__(self, expr: Expr,
+                 context: RuleContext) -> RuleFunctionReturn: ...
 
 
 class MatcherFunction(Protocol):
@@ -30,7 +31,7 @@ class MatcherFunction(Protocol):
     """
 
     def __call__(self, expr: Expr,
-                 context: Context) -> MatcherFunctionReturn: ...
+                 context: RuleContext) -> MatcherFunctionReturn: ...
 
 
 # Mapping of rule names to functions.

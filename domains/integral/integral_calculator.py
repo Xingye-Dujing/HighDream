@@ -1,7 +1,3 @@
-# TODO 对输入表达式进行最适合积分的等价变换(如三角恒等变形、部分分式分解等), 再求值 - expression_parser.py
-# TODO 支持定积分计算(增加上下限参数)
-# TODO 支持多重积分(偏积分)
-
 from typing import List, Tuple
 from sympy import Expr, Integral, Symbol
 

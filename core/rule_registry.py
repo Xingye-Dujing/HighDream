@@ -4,8 +4,8 @@ from sympy import Expr, exp, latex, log
 from sympy.functions.elementary.trigonometric import InverseTrigonometricFunction, TrigonometricFunction
 
 from utils import (
-    Context, MatcherFunction, MatcherFunctionReturn, MatcherList,
-    Operation, RuleDict, RuleFunction, RuleFunctionReturn, RuleList
+    MatcherFunction, MatcherFunctionReturn, MatcherList,
+    Operation, RuleContext, RuleDict, RuleFunction, RuleFunctionReturn, RuleList
 )
 
 
@@ -39,7 +39,7 @@ class RuleRegistry:
         self._register_all_rules(rules)
         self._register_all_matchers(matchers)
 
-    def get_applicable_rules(self, expr: Expr, context: Context) -> RuleList:
+    def get_applicable_rules(self, expr: Expr, context: RuleContext) -> RuleList:
         """Return all rules applicable to the given expression."""
         applicable = []
         for matcher in self._matchers:
@@ -51,7 +51,7 @@ class RuleRegistry:
     @staticmethod
     def create_common_rule(operation: Operation, func_name: str) -> RuleFunction:
         """Creates a commom rule function."""
-        def rule_function(expr: Expr, context: Context) -> RuleFunctionReturn:
+        def rule_function(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
             var = context['variable']
             expr_diff = operation(expr, var)
             result = expr_diff.doit()
@@ -62,7 +62,7 @@ class RuleRegistry:
     @staticmethod
     def create_common_matcher(func: Union[exp, log, InverseTrigonometricFunction, TrigonometricFunction]) -> MatcherFunction:
         """Creates a commom matcher function for a given function."""
-        def matcher_function(expr: Expr, context: Context) -> MatcherFunctionReturn:
+        def matcher_function(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
             if isinstance(expr, func) and expr.args[0] == context['variable']:
                 # Return the lowercase name of the function
                 return func.__name__.lower()

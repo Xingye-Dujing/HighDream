@@ -4,7 +4,7 @@ from sympy import (
 )
 
 from utils import (
-    Context, MatcherFunctionReturn, RuleFunctionReturn,
+    MatcherFunctionReturn, RuleContext, RuleFunctionReturn,
     has_radical, is_exp, is_inv_trig, is_log, is_poly, is_trig
 )
 from utils.latex_formatter import wrap_latex
@@ -16,7 +16,7 @@ from domains.integral import (
 )
 
 
-def parts_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def parts_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply integration by parts: u dv = u v − v du.
 
     Uses the LIATE heuristic to select u from a product of two factors:
@@ -42,7 +42,7 @@ def parts_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     )
 
 
-def substitution_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply substitution (u-substitution) for integration.
 
     Tries the following strategies in order:
@@ -79,7 +79,7 @@ def substitution_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return None
 
 
-def parts_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def parts_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Heuristic matcher for integration by parts.
 
     Returns 'parts' if the expression is a product of two factors
@@ -126,7 +126,7 @@ def parts_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
     return None
 
 
-def substitution_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Heuristic matcher for u-substitution in integration.
 
     Returns 'substitution' if the expression exhibits one of:

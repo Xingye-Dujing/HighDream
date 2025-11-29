@@ -7,7 +7,7 @@ from sympy import (
 from sympy.functions.elementary.trigonometric import InverseTrigonometricFunction, TrigonometricFunction
 
 from core import RuleRegistry
-from utils import Context, RuleFunction, MatcherFunctionReturn, RuleFunctionReturn
+from utils import MatcherFunctionReturn, RuleContext, RuleFunction, RuleFunctionReturn
 from domains.limit import get_limit_args
 
 _create_matcher = RuleRegistry.create_common_matcher
@@ -15,7 +15,7 @@ _create_matcher = RuleRegistry.create_common_matcher
 
 def _create_rule(func: Union[exp, log, InverseTrigonometricFunction, TrigonometricFunction], func_name: str) -> RuleFunction:
     """Special create rule function."""
-    def rule_function(expr: Expr, context: Context) -> RuleFunctionReturn:
+    def rule_function(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         var, point, direction = get_limit_args(context)
 
         arg = expr.args[0]
@@ -45,7 +45,7 @@ cosh_rule = _create_rule(cosh, "双曲余弦")
 tanh_rule = _create_rule(tanh, "双曲正切")
 
 
-def pow_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def pow_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Applies limit rules for expressions of the form `base ** exponent`.
 
     Handles three cases:
@@ -132,7 +132,7 @@ cosh_matcher = _create_matcher(cosh)
 tanh_matcher = _create_matcher(tanh)
 
 
-def pow_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn:
+def pow_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     # Don't restrict to var == context['variable']
     if isinstance(expr, Pow):
         return 'pow'

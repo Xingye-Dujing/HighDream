@@ -1,13 +1,10 @@
-# TODO 下面都有 乘法形式 和 分式形式 两种. 深入研究分式形式是否是不必要的, 即仅 乘法形式 是否就涵盖所有情况
-# TODO 另外想一个好办法去提出 exp(f(x))-1, 现在写的太死，局限性很高
-
 from sympy import E, Expr, Integer, Pow, exp, latex, log, sin, simplify
 
-from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
+from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 from domains.limit import check_function_tends_to_zero
 
 
-def _get_limit_args(context: Context) -> tuple:
+def _get_limit_args(context: RuleContext) -> tuple:
     """Special for dir_sup."""
     var, point = context['variable'], context['point']
     direction = context.get('direction', '+')
@@ -15,7 +12,7 @@ def _get_limit_args(context: Context) -> tuple:
     return var, point, direction, dir_sup
 
 
-def sin_over_x_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def sin_over_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Applies the standard limit rule: u to 0, sin(u)/u to 1.
 
     To expressions of the form:
@@ -75,7 +72,7 @@ def sin_over_x_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return result, f"重要极限: ${rule_text}$"
 
 
-def one_plus_one_over_x_pow_x_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def one_plus_one_over_x_pow_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Applies the standard exponential limit: u to 0, (1+u)^(1/u) = e,
 
     To expressions of the form:
@@ -112,7 +109,7 @@ def one_plus_one_over_x_pow_x_rule(expr: Expr, context: Context) -> RuleFunction
     return result, rule_text
 
 
-def ln_one_plus_x_over_x_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def ln_one_plus_x_over_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Applies the standard logarithmic limit: u to 0, ln(1+u)/u = 1.
 
     To expressions of the form:
@@ -166,7 +163,7 @@ def ln_one_plus_x_over_x_rule(expr: Expr, context: Context) -> RuleFunctionRetur
     return result, f"重要极限: ${rule_text}$"
 
 
-def g_over_exp_minus_one_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def g_over_exp_minus_one_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Applies the standard exponential limit: u to 0, u/(e^u-1) = 1.
 
     To expressions of the form:
@@ -211,7 +208,7 @@ def g_over_exp_minus_one_rule(expr: Expr, context: Context) -> RuleFunctionRetur
     return result, f"重要极限: ${rule_text}$"
 
 
-def g_over_ln_one_plus_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def g_over_ln_one_plus_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Applies the standard logarithmic limit: u to 0, u/ln(1+u) = 1.
 
     To expressions of the form:
@@ -255,7 +252,7 @@ def g_over_ln_one_plus_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return result, f"重要极限: ${rule_text}$"
 
 
-def g_over_sin_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def g_over_sin_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Applies the standard trigonometric limit: u to 0, u/sin(u) = 1.
 
     To expressions of the form:
@@ -298,7 +295,7 @@ def g_over_sin_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return result, f"重要极限: ${rule_text}$"
 
 
-def exp_minus_one_over_x_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def exp_minus_one_over_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Applies the standard exponential limit: u to 0, (e^u-1)/u = 1.
 
     To expressions of the form:
@@ -355,7 +352,7 @@ def exp_minus_one_over_x_rule(expr: Expr, context: Context) -> RuleFunctionRetur
     return result, f"重要极限: ${rule_text}$"
 
 
-def sin_over_x_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def sin_over_x_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matches expressions that can be reduced to the standard limit: u to 0, sin(u)/u = 1.
 
     i.e., forms like:
@@ -394,7 +391,7 @@ def sin_over_x_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
     return None
 
 
-def one_plus_one_over_x_pow_x_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def one_plus_one_over_x_pow_x_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matches expressions that reduce to the standard exponential limit:
         u to 0, (1+u)^(1/u) = e,
     or equivalently,
@@ -420,7 +417,7 @@ def one_plus_one_over_x_pow_x_matcher(expr: Expr, context: Context) -> MatcherFu
     return None
 
 
-def ln_one_plus_x_over_x_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def ln_one_plus_x_over_x_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matches expressions that reduce to the standard logarithmic limit: u to 0, ln(1+u)/u = 1.
 
     This includes forms like:
@@ -459,7 +456,7 @@ def ln_one_plus_x_over_x_matcher(expr: Expr, context: Context) -> MatcherFunctio
     return None
 
 
-def exp_minus_one_over_x_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def exp_minus_one_over_x_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matches expressions that reduce to the standard exponential limit: u to 0, (e^u-1)/u = 1.
 
     This includes forms like:
@@ -503,7 +500,7 @@ def exp_minus_one_over_x_matcher(expr: Expr, context: Context) -> MatcherFunctio
     return None
 
 
-def g_over_sin_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def g_over_sin_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matches expressions that reduce to the reciprocal of the standard sine limit: u to 0, u/sin(u) = 1,
 
     i.e., forms like:
@@ -528,7 +525,7 @@ def g_over_sin_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
     return None
 
 
-def g_over_ln_one_plus_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def g_over_ln_one_plus_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matches expressions that reduce to the reciprocal of the standard logarithmic limit: u to 0, u/ln(1+u) = 1,
 
     i.e., forms like:
@@ -553,7 +550,7 @@ def g_over_ln_one_plus_matcher(expr: Expr, context: Context) -> MatcherFunctionR
     return None
 
 
-def g_over_exp_minus_one_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def g_over_exp_minus_one_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matches expressions that reduce to the reciprocal of the standard exponential limit: u to 0, u/(e^u-1) = 1,
 
     i.e., forms like:

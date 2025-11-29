@@ -471,7 +471,7 @@ function createCellElement(id, type) {
   cell.className = `cell ${type}-cell`;
   cell.dataset.cellId = id;
   cell.dataset.cellType = type;
-  // TODO 外部新建 html 文件, 进行导入
+
   if (type === "code") {
     cell.innerHTML = `
       <div class="cell-prompt">Calculator:</div>
@@ -581,7 +581,7 @@ function createCellElement(id, type) {
                 <label style="font-size:12px;">趋于:</label>
                 <input class="point" value="0" style="width:50px;">
                 <label style="font-size:12px;">最多使用洛必达的次数</label>
-                <input class="max-lhopital-count" value="1" style="width:50px;">
+                <input class="max-lhopital-count" value="5" style="width:50px;">
               </div>
 
               <!-- ExpressionParser 专有 -->
@@ -594,6 +594,11 @@ function createCellElement(id, type) {
                 </select>
                 <label style="font-size:12px;">深度:</label>
                 <input type="number" class="expr-depth" value="3" min="1" max="10" style="width:50px;">
+                <span class="gene-label">生成推导树:</label>
+                <select class="gene-sort">
+                  <option value="false">否</option>
+                  <option value="true">是</option>
+                </select>
               </div>
 
               <button class="keyboard-button" title="打开虚拟键盘">
@@ -764,7 +769,7 @@ function runCell(cell) {
 
   if (operationType === "limit") {
     const point = cell.querySelector(".point").value || 0;
-    const max_lhopital_count = cell.querySelector(".max-lhopital-count").value || 1;
+    const max_lhopital_count = cell.querySelector(".max-lhopital-count").value || 5;
     const direction = cell.querySelector(".limit-sort").value || '+';
     payload.point = point;
     payload.direction = direction;
@@ -800,8 +805,10 @@ function runCell(cell) {
   if (operationType === 'expr') {
     const sort = cell.querySelector(".expr-sort").value || "complexity";
     const depth = cell.querySelector(".expr-depth").value || "3";
+    const is_draw_tree = cell.querySelector(".gene-sort").value;
     payload.max_depth = depth;
     payload.sort_strategy = sort;
+    payload.is_draw_tree = is_draw_tree;
   }
 
   fetch("/compute", {
@@ -1091,8 +1098,13 @@ function deleteActiveCell() {
 
     setTimeout(() => {
       const previousCell = activeCell.previousElementSibling;
+      const nextCell = activeCell.nextElementSibling;
       activeCell.parentNode.removeChild(activeCell);
-      setActiveCell(previousCell);
+      if (previousCell) {
+        setActiveCell(previousCell);
+      } else if (nextCell) {
+        setActiveCell(nextCell);
+      }
     }, 300);
   }
 }

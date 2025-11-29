@@ -67,7 +67,7 @@ class ExpressionParser:
             ("分式约分", self._cancel_transform),
             ("有理化", self._radsimp_transform),
             ("幂化简", self._powsimp_transform),
-            ("倒数化简", self._reciprocal_trig_transform),
+            ("三角化简", self._reciprocal_trig_transform),
         ])
 
     def parse(self, expression: str) -> List[Tuple[Expr, str]]:
@@ -213,8 +213,6 @@ class ExpressionParser:
         if save_path:
             plt.savefig(save_path, bbox_inches="tight")  # Save to file
             print(f"可视化树已保存到：{save_path}")
-
-        plt.show()
 
     def _find_node_by_id(self, node: Dict, node_id: int) -> Dict:
         """Find a node in the tree by its ID.

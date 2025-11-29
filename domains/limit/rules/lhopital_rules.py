@@ -1,5 +1,3 @@
-# TODO f-string 里都是单 $ 包裹
-
 from typing import Tuple
 
 from sympy import (
@@ -8,7 +6,7 @@ from sympy import (
     sin, sinh, tan, tanh, together
 )
 
-from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
+from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 from domains.limit import get_limit_args
 
 
@@ -434,7 +432,7 @@ def _choose_best_conversion(f: Expr, g: Expr, var: Symbol) -> str:
     return "inf_over_inf"
 
 
-def lhopital_direct_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def lhopital_direct_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply Lhopital's Rule directly to a limit expression in 0/0 or oo/oo form.
 
     This rule transforms:
@@ -469,7 +467,7 @@ def lhopital_direct_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
         return None
 
 
-def lhopital_zero_times_inf_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def lhopital_zero_times_inf_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply Lhopital's Rule to indeterminate forms of type 0 * +-oo.
 
     This function handles expressions like f * g where one factor tends to 0
@@ -519,7 +517,7 @@ def lhopital_zero_times_inf_rule(expr: Expr, context: Context) -> RuleFunctionRe
     return diff_limit, explanation
 
 
-def lhopital_inf_minus_inf_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def lhopital_inf_minus_inf_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply Lhopital's Rule to indeterminate forms of type oo-oo.
 
     This function handles expressions like f-g where both f to +-oo and g to +-oo
@@ -561,7 +559,7 @@ def lhopital_inf_minus_inf_rule(expr: Expr, context: Context) -> RuleFunctionRet
         return None
 
 
-def lhopital_power_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def lhopital_power_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Handle indeterminate power forms: 0^0, 1^oo, and oo^0.
 
     This function applies the standard logarithmic transformation:
@@ -601,7 +599,7 @@ def lhopital_power_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return limit_exp_expr, explanation
 
 
-def lhopital_direct_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def lhopital_direct_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Match expressions that are directly in 0/0 or oo/oo indeterminate forms.
 
     This matcher checks whether the given expression is a non-trivial quotient (i.e., not just a single term)
@@ -617,7 +615,7 @@ def lhopital_direct_matcher(expr: Expr, context: Context) -> MatcherFunctionRetu
     return 'lhopital_direct' if typ in ("0/0", rf"\infty/\infty") else None
 
 
-def lhopital_zero_times_inf_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def lhopital_zero_times_inf_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Match expressions of the indeterminate form 0*oo.
 
     This matcher identifies products f*g where exactly two factors are present,
@@ -640,7 +638,7 @@ def lhopital_zero_times_inf_matcher(expr: Expr, context: Context) -> MatcherFunc
     return None
 
 
-def lhopital_inf_minus_inf_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def lhopital_inf_minus_inf_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Match expressions of the indeterminate form oo-oo.
 
     This matcher identifies binary additive expressions f+g (which may represent f-h
@@ -659,7 +657,7 @@ def lhopital_inf_minus_inf_matcher(expr: Expr, context: Context) -> MatcherFunct
     return 'lhopital_inf_minus_inf' if _is_infinite(lim_f) and _is_infinite(lim_g) else None
 
 
-def lhopital_power_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def lhopital_power_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Match power expressions of indeterminate forms: 0^0, oo^0, and 1^oo.
 
     This matcher identifies expressions base^exponent where the asymptotic behavior

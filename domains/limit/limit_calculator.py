@@ -1,10 +1,3 @@
-# TODO 对每一个表达式先进行最适合求极限的等价变换，再求值 - expression_parser.py
-# TODO 有些规则的使用是具有前提条件的, 可现在并不是所有规则的前提条件均已全面判断
-# TODO 增加等价无穷小和泰勒展开的解法
-# TODO 将 x-> a 通过换元换为 t-> 0, t = x-a 的解法. 这种方法的匹配器放在最后一个
-# TODO 阶乘极限, 数列极限
-# TODO 想办法优化步骤, 有些步骤太过冗余
-
 from typing import List, Tuple
 from sympy import AccumBounds, Expr, Limit, S, Symbol, latex, sympify, zoo
 

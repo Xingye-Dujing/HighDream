@@ -1,3 +1,12 @@
+"""Computation Service Module
+
+This module provides a centralized interface for various mathematical computations
+including calculus, linear algebra, and expression parsing operations.
+
+The service routes requests to appropriate calculators based on operation type
+and handles data processing, error handling, and result formatting.
+"""
+
 import os
 import uuid
 from typing import Any, Dict, Tuple
@@ -13,6 +22,7 @@ from domains import (
     LinearSystemConverter, LinearSystemSolver, BaseTransform
 )
 
+# Registry of available calculators mapped by operation type
 _calculators = {
     'diff': DiffCalculator(),
     'expr': ExpressionParser(),
@@ -39,6 +49,43 @@ _calculators = {
 
 
 def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]:
+    """Execute mathematical computation based on operation type and input data.
+
+    This function serves as the main entry point for all computational operations,
+    routing requests to appropriate calculators and handling result formatting.
+
+    Args:
+        operation_type (str): Type of mathematical operation to perform
+        data (Dict[str, Any]): Input parameters for the computation
+
+    Returns:
+        Tuple[bool, Any]: A tuple containing:
+            - success flag (bool)
+            - result data or error message (Any)
+
+    Supported Operations:
+        - diff: Differentiation
+        - integral: Integration
+        - limit: Limit calculation
+        - ref: Row echelon form
+        - operations: Basic matrix operations
+        - invert: Matrix inversion
+        - rank: Matrix rank calculation
+        - LU: LU decomposition
+        - diag: Matrix diagonalization
+        - svd: Singular value decomposition
+        - eigen: Eigenvalue/eigenvector calculation
+        - schur: Schur decomposition
+        - det: Determinant calculation
+        - orthogonal: Orthogonality analysis
+        - projection: Vector projection
+        - dependence: Linear dependence check
+        - linear-system: Linear system conversion
+        - linear-solver: Linear system solving
+        - transform-1: Basis transformation
+        - transform-2: Linear transformation
+        - expr: Expression parsing and analysis
+    """
     try:
         expression = data.get('expression', '')
         variable = data.get('variable', 'x')
@@ -116,7 +163,7 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
         if operation_type == 'projection':
             lines = expression.split('\n')
             if len(lines) < 2:
-                return False, "需要两行: 向量和基"
+                return False, "Requires two lines: vector and basis"
             calc = _calculators['projection']
             calc.auto_project_vector(lines[0], lines[1])
             return True, calc.get_steps_latex()
@@ -135,7 +182,7 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
         if operation_type == 'linear-solver':
             parts = expression.split('\n')
             if len(parts) < 2:
-                return False, "第一行应为矩阵 A, 第二行为向量 b"
+                return False, "First line should be matrix A, second line vector b"
             A, b = parts[0], parts[1]
             solver = _calculators['linear_solver']
             solver.solve(A, b)
@@ -156,14 +203,16 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
         if operation_type == 'expr':
             max_depth = int(
                 data.get('max_depth', DEFAULT_PARSER_MAX_DEPTH))
-            is_draw_tree = data.get('is_draw_tree', False)
+            is_draw_tree = data.get('is_draw_tree') == 'true'
             sort_strategy = data.get('sort_strategy', 'complexity')
 
             def length_sort(expr):
+                """Sort expressions by string length."""
                 return len(str(expr))
 
             def complexity_sort(expr):
-                # 简单复杂度估计：子节点计数
+                """Sort expressions by complexity (node count)."""
+                # Simple complexity estimate: node counting
                 return sum(1 for _ in preorder_traversal(expr))
 
             strategy = None
@@ -175,7 +224,7 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
             parser = ExpressionParser(
                 max_depth=max_depth, sort_strategy=strategy)
 
-            # parse 返回列表 (expr, reason)
+            # Parse returns list of (expr, reason) tuples
             results = parser.parse(expression)
             expressions_out = []
             for expr_obj, reason in results:
@@ -183,11 +232,11 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
                 expressions_out.append(
                     {'latex': expr_latex, 'reason': str(reason)})
 
-            # 绘制推导树并保存为 SVG, 返回可访问的静态路径
+            # Generate derivation tree SVG and return accessible static path
             tree_svg_url = None
             if is_draw_tree:
                 tree = parser.parse_tree(expression)
-                # 生成唯一文件名
+                # Generate unique filename
                 file_name = f"{uuid.uuid4().hex}.svg"
                 save_path = os.path.join(TREES_DIR, file_name)
 
@@ -196,7 +245,7 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
 
             return True, (expressions_out, tree_svg_url)
 
-        return False, f"不支持的操作类型: {operation_type}"
+        return False, f"Unsupported operation type: {operation_type}"
 
     except Exception as e:
         return False, str(e)

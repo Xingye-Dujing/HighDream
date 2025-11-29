@@ -1,9 +1,9 @@
 from sympy import Determinant, Integer, Matrix, Mul, gcd, latex
 
-from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
+from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 
 
-def is_upper_triangular(matrix):
+def is_upper_triangular(matrix: Matrix):
     """Check whether a matrix is upper triangular.
 
     A matrix is upper triangular if all entries below the main diagonal are zero.
@@ -17,7 +17,7 @@ def is_upper_triangular(matrix):
     return True
 
 
-def is_lower_triangular(matrix):
+def is_lower_triangular(matrix: Matrix):
     """Check whether a matrix is lower triangular.
 
     A matrix is lower triangular if all entries above the main diagonal are zero.
@@ -31,7 +31,7 @@ def is_lower_triangular(matrix):
     return True
 
 
-def zero_row_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
+def zero_row_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     """Zero-row rule for determinant evaluation.
 
     If the input matrix contains any row consisting entirely of zeros,
@@ -45,7 +45,7 @@ def zero_row_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
     return None
 
 
-def zero_column_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
+def zero_column_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     """Zero-col rule for determinant evaluation.
 
     If the input matrix contains any xol consisting entirely of zeros,
@@ -60,7 +60,7 @@ def zero_column_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
     return None
 
 
-def duplicate_row_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
+def duplicate_row_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     """Duplicate-row rule for determinant evaluation.
 
     If the input matrix contains two identical rows, its determinant is zero.
@@ -77,7 +77,7 @@ def duplicate_row_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
     return None
 
 
-def duplicate_column_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
+def duplicate_column_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     """Duplicate-col rule for determinant evaluation.
 
     If the input matrix contains two identical cols, its determinant is zero.
@@ -95,7 +95,7 @@ def duplicate_column_rule(matrix: Matrix, _context: Context) -> RuleFunctionRetu
     return None
 
 
-def diagonal_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
+def diagonal_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     """Diagonal rule for determinant evaluation.
 
     For a diagonal matrix, the determinant is equal to the product of its
@@ -106,7 +106,7 @@ def diagonal_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
     return product, f"对角矩阵的行列式等于对角线元素的乘积: ${latex(product)}$"
 
 
-def triangular_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
+def triangular_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     """Triangular rule for determinant evaluation.
 
     The determinant of a triangular matrix (either upper or lower) is equal to
@@ -126,7 +126,7 @@ def triangular_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
     return None
 
 
-def scalar_multiple_row_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
+def scalar_multiple_row_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     """Scalar multiple row rule for determinant simplification.
 
     If a row of the matrix has a nontrivial common factor among its nonzero
@@ -177,7 +177,7 @@ def scalar_multiple_row_rule(matrix: Matrix, _context: Context) -> RuleFunctionR
     return None
 
 
-def scalar_multiple_column_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
+def scalar_multiple_column_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     """Scalar multiple column rule for determinant simplification.
 
     If a column of the matrix has a nontrivial common factor among its nonzero
@@ -226,7 +226,7 @@ def scalar_multiple_column_rule(matrix: Matrix, _context: Context) -> RuleFuncti
     return None
 
 
-def linear_combination_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
+def linear_combination_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     """Linear combination rule for determinant-preserving simplification.
 
     This rule searches for an elementary row or column operation of the form
@@ -346,7 +346,7 @@ def linear_combination_rule(matrix: Matrix, _context: Context) -> RuleFunctionRe
     return new_matrix, explanation
 
 
-def zero_row_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn:
+def zero_row_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Matches matrix containing at least one all-zero row."""
 
     for row in matrix.tolist():
@@ -355,7 +355,7 @@ def zero_row_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn
     return None
 
 
-def zero_column_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn:
+def zero_column_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Matches matrix containing at least one all-zero col."""
 
     cols = matrix.T.tolist()
@@ -365,7 +365,7 @@ def zero_column_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionRet
     return None
 
 
-def duplicate_row_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn:
+def duplicate_row_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Matches matrix that contain two identical rows."""
 
     rows = matrix.tolist()
@@ -377,7 +377,7 @@ def duplicate_row_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionR
     return None
 
 
-def duplicate_column_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn:
+def duplicate_column_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Matches matrix that contain two identical cols."""
 
     cols = matrix.T.tolist()
@@ -389,7 +389,7 @@ def duplicate_column_matcher(matrix: Matrix, _context: Context) -> MatcherFuncti
     return None
 
 
-def diagonal_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn:
+def diagonal_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Matches diagonal matrix."""
 
     if matrix.is_diagonal():
@@ -397,7 +397,7 @@ def diagonal_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn
     return None
 
 
-def triangular_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn:
+def triangular_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Matches upper or lower triangular matrix."""
 
     if is_upper_triangular(matrix) or is_lower_triangular(matrix):
@@ -405,7 +405,7 @@ def triangular_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionRetu
     return None
 
 
-def scalar_multiple_row_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn:
+def scalar_multiple_row_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Matches matrices where at least one row has a nontrivial common factor.
 
     Specifically, checks each row for a greatest common divisor (GCD) of its
@@ -428,7 +428,7 @@ def scalar_multiple_row_matcher(matrix: Matrix, _context: Context) -> MatcherFun
     return None
 
 
-def scalar_multiple_column_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn:
+def scalar_multiple_column_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Matches matrices where at least one column has a nontrivial common factor.
 
     Checks each column for a GCD of its nonzero elements that is not a unit.
@@ -449,7 +449,7 @@ def scalar_multiple_column_matcher(matrix: Matrix, _context: Context) -> Matcher
     return None
 
 
-def linear_combination_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn:
+def linear_combination_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Matches matrix that can benefit from a determinant-preserving linear combination
     (elementary row or column operation) to introduce new zero entries.
 

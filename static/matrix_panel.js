@@ -581,8 +581,13 @@ function deleteActiveCell() {
 
     setTimeout(() => {
       const previousCell = activeCell.previousElementSibling;
+      const nextCell = activeCell.nextElementSibling;
       activeCell.parentNode.removeChild(activeCell);
-      setActiveCell(previousCell);
+      if (previousCell) {
+        setActiveCell(previousCell);
+      } else if (nextCell) {
+        setActiveCell(nextCell);
+      }
     }, 300);
   }
 }

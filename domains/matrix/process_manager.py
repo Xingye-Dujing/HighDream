@@ -1,6 +1,3 @@
-# TODO: Backend should return task_id for frontend polling implementation:
-#        Achieve asynchronous processing to prevent frontend blocking
-
 from typing import Dict, Union
 from sympy import latex
 

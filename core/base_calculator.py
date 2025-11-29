@@ -14,7 +14,7 @@ class BaseCalculator(ABC):
     """Abstract base class for symbolic expression evaluators that support step-by-step evaluation."""
 
     def __init__(self) -> None:
-        self.rule_registry = RuleRegistry()
+        self._rule_registry = RuleRegistry()
         self.step_generator = BaseStepGenerator()
         self.processed: set = set()
         self.cache: dict = {}
@@ -31,6 +31,10 @@ class BaseCalculator(ABC):
         self.operation: Operation = None
         self.rule_dict: RuleDict = None
         self.matcher_list: MatcherList = None
+
+    def _initialize_rules(self) -> None:
+        """Register all rules and matchers."""
+        self._rule_registry.register_all(self.rule_dict, self.matcher_list)
 
     def _validate_properties(self) -> None:
         """Validate the key properties of the calculator."""
@@ -49,12 +53,11 @@ class BaseCalculator(ABC):
         self.step_generator.reset()
 
     def _context_split(self, **context: Context) -> Symbol:
+        """Only fit Derivative, Integral."""
         return context.get('variable', Symbol('x'))
 
     def _perform_operation(self, expr: Expr, operation: Operation, **context: Context) -> Operation:
-        """Perform the specified operation on the expression and return the result.
-
-        Only fit Derivative, Integral."""
+        """Perform the specified operation on the expression and return the result."""
         var = self._context_split(**context)
         return operation(expr, var)
 
@@ -79,14 +82,12 @@ class BaseCalculator(ABC):
         """Return a simplified version of the expression, using caching to avoid redundant computation."""
         return simplify(expr)
 
-    def _initialize_rules(self) -> None:
-        """Register all rules and matchers."""
-        self.rule_registry.register_all(self.rule_dict, self.matcher_list)
-
     def _get_context_dict(self, **context: Context) -> RuleContext:
         context_dict = {}
         for key, value in context.items():
             context_dict[key] = value
+        # Add step_generator to the rule context to allow rule functions to add steps freely by accessing the step generator.
+        # context_dict['step_generator'] = self.step_generator
         return context_dict
 
     def _check_rule_is_can_apply(self, _rule: RuleFunction) -> bool:
@@ -96,7 +97,7 @@ class BaseCalculator(ABC):
         """Apply the most appropriate rule to the expression and return result with explanation."""
         rule_context: RuleContext = self._get_context_dict(**context)
 
-        for rule in self.rule_registry.get_applicable_rules(expr, rule_context):
+        for rule in self._rule_registry.get_applicable_rules(expr, rule_context):
             if not self._check_rule_is_can_apply(rule):
                 continue
             # print(f"rule: {rule.__name__}")
@@ -227,6 +228,7 @@ class BaseCalculator(ABC):
         """
         self._do_compute(expr, self.operation, **context)
 
+    @abstractmethod
     def compute_list(self, expr: str, **context: Context) -> Tuple[List[Expr], List[str]]:
         """Compute the step-by-step evaluation of the given expression and return it as a tuple.
 
@@ -242,6 +244,7 @@ class BaseCalculator(ABC):
         self._compute(expr, **context)
         return self.step_generator.get_steps()
 
+    @abstractmethod
     def compute_latex(self, expr: str, **context: Context) -> str:
         """Compute the step-by-step evaluation of the given expression and return it as a LaTeX string.
 

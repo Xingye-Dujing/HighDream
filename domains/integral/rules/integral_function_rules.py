@@ -4,7 +4,7 @@ from sympy import (
 )
 
 from core import RuleRegistry
-from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
+from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 from utils.latex_formatter import wrap_latex
 
 _create_matcher = RuleRegistry.create_common_matcher
@@ -29,21 +29,21 @@ cosh_rule = _create_rule("双曲余弦")
 tanh_rule = _create_rule("双曲正切")
 
 
-def const_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the const rule: c dx = c*x + C"""
     var = context['variable']
     var_latex, expr_latex = wrap_latex(var, expr)
     return expr * var, f"常数积分: $\\int {expr_latex}\\,d{var} = {var_latex} + C$"
 
 
-def var_rule(_expr: Expr, context: Context) -> RuleFunctionReturn:
+def var_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the var rule: x dx = (1/2)x^2 + C"""
     var = context['variable']
     var_latex = wrap_latex(var)
     return (var**2) / 2, f"变量积分: $\\int {var_latex}\\,d{var_latex} = \\frac{{{var_latex}^2}}{2} + C$"
 
 
-def pow_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def pow_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the pow rule:
 
     n != -1 to x^n dx = x^(n+1)/(n+1) + C;
@@ -66,7 +66,7 @@ def pow_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return result, f"幂函数积分规则: $\\int {expr_latex}\\,d{var_latex} = \\frac{{{var_latex}^{{{exponent_latex}}}}}{{{exponent_latex}}} + C$"
 
 
-def inverse_trig_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def inverse_trig_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
     mapping = {
@@ -95,20 +95,20 @@ cosh_matcher = _create_matcher(cosh)
 tanh_matcher = _create_matcher(tanh)
 
 
-def const_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn:
+def const_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     if expr.is_constant():
         return 'const'
     return None
 
 
-def var_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def var_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
     if expr == var:
         return 'var'
     return None
 
 
-def inverse_trig_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def inverse_trig_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
     patterns = [1/sqrt(1 - var**2), -1/sqrt(1 - var**2), 1/(1 + var**2)]
     if any(expr == p for p in patterns):

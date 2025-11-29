@@ -1,9 +1,9 @@
 from sympy import I, Matrix, exp, latex, pi, prod, simplify
 
-from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
+from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 
 
-def vandermonde_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
+def vandermonde_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     """Apply the formula to a Vandermonde determinant."""
     n = matrix.rows
 
@@ -22,7 +22,7 @@ def vandermonde_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
     return result, explanation
 
 
-def circulant_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
+def circulant_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     """Apply the formula to a circulant determinant.
 
     A circulant determinant is fully determined by its first row [c_0, c_1, ..., c_{n-1}],
@@ -59,7 +59,7 @@ def circulant_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
     return result, explanation
 
 
-def symmetric_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
+def symmetric_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     """Apply the formula to 2x2 symmetric determinant.
 
     A symmetric determinant satisfies A = A^T. For a 2x2 symmetric determinant:
@@ -84,7 +84,7 @@ def symmetric_rule(matrix: Matrix, _context: Context) -> RuleFunctionReturn:
     return None
 
 
-def vandermonde_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn:
+def vandermonde_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Match whether a determinant is a Vandermonde determinant.
 
     This matcher verifies that:
@@ -123,7 +123,7 @@ def vandermonde_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionRet
     return 'vandermonde'
 
 
-def circulant_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn:
+def circulant_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Match whether a determinant a circulant determinant.
 
     A circulant determinant is fully determined by its first row [c_0, c_1, ..., c_{n-1}],
@@ -152,7 +152,7 @@ def circulant_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionRetur
     return 'circulant'
 
 
-def symmetric_matcher(matrix: Matrix, _context: Context) -> MatcherFunctionReturn:
+def symmetric_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Match whether a determinant is symmetric (i.e., equal to its transpose).
 
     This matcher uses SymPy's built-in is_symmetric() method.

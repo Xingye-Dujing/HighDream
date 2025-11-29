@@ -1,20 +1,57 @@
+"""API Routes Module for HighDream Application.
+
+This module defines the Flask blueprint for all API endpoints, handling various
+mathematical computation requests including expression parsing, matrix operations,
+and process management.
+
+Routes:
+    /parse          - Parse mathematical expressions to LaTeX format
+    /compute        - Execute mathematical computations
+    /matrix_analyze - Analyze matrix properties
+    /matrix_cal     - Perform matrix calculations
+    /get_process    - Retrieve process information
+    /static/trees   - Serve static tree diagram files
+"""
+
 from flask import Blueprint, request, jsonify, send_from_directory
 from domains import MatrixAnalyzer, MatrixCalculator, ProcessManager
 from config import TREES_DIR
 from utils.latex_formatter import str_to_latex
 from .compute_service import start_compute
 
+# Create a Flask blueprint for API routes
 api = Blueprint('api', __name__)
 
 
 @api.route('/parse', methods=['POST'])
 def parse_input():
+    """Parse a mathematical expression and convert it to LaTeX format.
+
+    Expected JSON input:
+        expression (str): The mathematical expression to parse
+        operation_type (str): Type of operation for context
+
+    Returns:
+        JSON response with either:
+            success (bool): True if parsing succeeded
+            result (str): LaTeX formatted output
+        or:
+            success (bool): False if parsing failed
+            error (str): Error message describing the issue
+
+    Example:
+        POST /parse
+        {
+            "expression": "2+2*3",
+            "operation_type": "arithmetic"
+        }
+    """
     data = request.json or {}
     expression = data.get('expression', '')
     operation_type = data.get('operation_type', '')
+
     try:
-        latex_output = str_to_latex(
-            expression, operation_type)
+        latex_output = str_to_latex(expression, operation_type)
         return jsonify({'success': True, 'result': latex_output})
     except Exception as e:
         return jsonify({'success': False, 'error': f'{e}'})
@@ -22,9 +59,25 @@ def parse_input():
 
 @api.route('/compute', methods=['POST'])
 def compute():
+    """Execute a mathematical computation based on operation type.
+
+    Expected JSON input:
+        operation_type (str): Type of operation to perform
+        ... other fields depending on operation type
+
+    Returns:
+        JSON response with either:
+            success (bool): True if computation succeeded
+            result (various): Computation result
+            tree_svg_url (str, optional): URL to syntax tree SVG (for 'expr' operations)
+        or:
+            success (bool): False if computation failed
+            error (str): Error message describing the issue
+    """
     data = request.json or {}
     op_type = data.get('operation_type', '')
     success, result = start_compute(op_type, data)
+
     if success:
         if op_type == 'expr':
             return jsonify({
@@ -38,6 +91,14 @@ def compute():
 
 @api.route('/matrix_analyze', methods=['POST'])
 def matrix_analyze():
+    """Analyze properties of a matrix expression.
+
+    Expected JSON input:
+        expression (str): Matrix expression to analyze
+
+    Returns:
+        JSON response containing analysis results from MatrixAnalyzer
+    """
     data = request.json or {}
     expr = data.get('expression', '')
     return jsonify(MatrixAnalyzer().analyze(expr))
@@ -45,10 +106,22 @@ def matrix_analyze():
 
 @api.route('/matrix_cal', methods=['POST'])
 def matrix_cal():
+    """Perform step-by-step matrix calculations.
+
+    Expected JSON input:
+        expression (str): Initial matrix expression
+        operations (str): Newline-separated list of operations to perform
+        record_all_steps (str): "True" to record all calculation steps
+
+    Returns:
+        JSON response with:
+            steps (list): List of LaTeX-formatted calculation steps
+    """
     data = request.json or {}
     expr = data.get('expression', '')
     ops = data.get('operations', '').split('\n')
     record = data.get('record_all_steps') == 'True'
+
     calc = MatrixCalculator()
     calc.calculate(expr, ops, record)
     return jsonify({'steps': calc.get_steps_latex()})
@@ -56,6 +129,15 @@ def matrix_cal():
 
 @api.route('/get_process', methods=['POST'])
 def get_process():
+    """Retrieve information about a specific process.
+
+    Expected JSON input:
+        type (str): Type of process to retrieve
+        expression (str): Expression related to the process
+
+    Returns:
+        JSON response containing process information from ProcessManager
+    """
     data = request.json or {}
     ptype = data.get('type', '')
     expr = data.get('expression', '')
@@ -64,4 +146,12 @@ def get_process():
 
 @api.route('/static/trees/<path:filename>')
 def serve_tree(filename):
+    """Serve static tree diagram files.
+
+    Args:
+        filename (str): Name of the file to serve from TREES_DIR
+
+    Returns:
+        File content from the trees directory
+    """
     return send_from_directory(TREES_DIR, filename)

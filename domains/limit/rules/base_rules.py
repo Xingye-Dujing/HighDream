@@ -1,12 +1,9 @@
-# TODO 判断是否添加括号 / 获取极限参数的函数可以考虑放在工具库里, 共所有领域使用
-# TODO 另外想一个好办法去提出 exp(f(x))-1, 现在写的太死，局限性很高
-
 from sympy import (
     AccumBounds, Add, Expr, Integer, Limit, Mul, Pow, S, UnevaluatedExpr,
     exp, latex, limit, log, nan, oo, simplify, sin, sqrt, zoo
 )
 
-from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
+from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 from domains.limit import (
     check_add_split, check_combination_indeterminate, check_div_split,
     check_function_tends_to_zero, check_limit_exists, check_mul_split,
@@ -14,7 +11,7 @@ from domains.limit import (
 )
 
 
-def direct_substitution_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def direct_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the direct substitution rule for evaluating a limit."""
     var, point, direction = get_limit_args(context)
 
@@ -37,7 +34,7 @@ def direct_substitution_rule(expr: Expr, context: Context) -> RuleFunctionReturn
     return result.doit(), f"直接代入: ${full_rule}$"
 
 
-def mul_split_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def mul_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply multiplicative splitting rules to decompose a limit expression.
 
     This function attempts two strategies in order:
@@ -55,7 +52,6 @@ def mul_split_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     expr_limit = Limit(expr, var, point, dir=direction)
     factors = expr.as_ordered_factors()
 
-    # TODO: 此函数相似代码很多, 后续还需进一步重构
     # Two for loops to apply the two strategies successively.
     # Strategy 1: Extract standard limit forms
     for i, factor in enumerate(factors):
@@ -135,7 +131,7 @@ def mul_split_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return None
 
 
-def add_split_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def add_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply additive splitting rule to decompose a limit of a sum.
 
     This rule attempts to split the expression into two parts such that:
@@ -171,7 +167,7 @@ def add_split_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return None
 
 
-def div_split_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def div_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the quotient rule for limits."""
     var, point, direction = get_limit_args(context)
     expr_limit = Limit(expr, var, point, dir=direction)
@@ -185,7 +181,7 @@ def div_split_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return new_expr, f"应用除法拆分规则: ${latex(expr_limit)} = {latex(new_expr)}$"
 
 
-def const_inf_add_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def const_inf_add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the constant-plus-infinity rule for limits.
 
     This rule handles sums where:
@@ -215,7 +211,7 @@ def const_inf_add_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return result, explanation
 
 
-def const_inf_div_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def const_inf_div_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the bounded-over-infinity limit rule.
 
     This rule applies when:
@@ -232,7 +228,7 @@ def const_inf_div_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return Integer(0), rf"应用\,趋于常数(有界)/趋于无穷\,规则: ${latex(expr_limit)} = 0$"
 
 
-def const_inf_mul_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def const_inf_mul_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the non-zero-constant-times-infinity limit rule.
 
     This rule applies when the expression is a product such that:
@@ -259,7 +255,7 @@ def const_inf_mul_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return result, rf"应用\,趋于非零常数(有界)(可无)$\cdot$趋于无穷\,规则: ${latex(expr_limit)} = {latex(result)}$"
 
 
-def small_o_add_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def small_o_add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the sum-of-infinitesimals rule.
 
     This rule applies when the expression is a finite sum (or difference)
@@ -273,7 +269,7 @@ def small_o_add_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return Integer(0), rf"应用\,多个趋于\,0\,相加减\,规则: ${latex(expr_limit)} = 0$"
 
 
-def const_zero_div_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def const_zero_div_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the non-zero-constant-over-zero limit rule.
 
     This rule applies when:
@@ -297,7 +293,7 @@ def const_zero_div_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return result, rf"应用\,趋于非零常数(有界)/趋于0\,规则(可能需要通分再观察): ${latex(expr_limit)} = {latex(result)}$"
 
 
-def conjugate_rationalize_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def conjugate_rationalize_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Rationalize a fraction whose numerator is of the form sqrt(A) +- sqrt(B).
 
     This rule applies when:
@@ -334,7 +330,7 @@ def conjugate_rationalize_rule(expr: Expr, context: Context) -> RuleFunctionRetu
     return new_limit, explanation
 
 
-def direct_substitution_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def direct_substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Determine whether the direct substitution rule is applicable for evaluating the limit.
 
     Direct substitution is valid if:
@@ -375,7 +371,7 @@ def direct_substitution_matcher(expr: Expr, context: Context) -> MatcherFunction
         return None
 
 
-def mul_split_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def mul_split_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Determine whether multiplicative splitting is applicable.
 
     This matcher checks if the expression is a product that can be safely split
@@ -390,7 +386,7 @@ def mul_split_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
     return None
 
 
-def add_split_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def add_split_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Determine whether additive splitting is applicable.
 
     This matcher checks if the expression is a sum that can be safely split
@@ -405,7 +401,7 @@ def add_split_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
     return None
 
 
-def div_split_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def div_split_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Determine whether the quotient rule for limits is applicable.
 
     This matcher checks if the expression is a quotient (i.e., a rational expression)
@@ -422,7 +418,7 @@ def div_split_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
     return None
 
 
-def const_inf_add_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def const_inf_add_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matches expressions of the form 'bounded_term +- unbounded_terms',
     where all unbounded terms tend to infinity with the same sign.
 
@@ -462,7 +458,7 @@ def const_inf_add_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn
     return None
 
 
-def const_inf_mul_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def const_inf_mul_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matches expressions of the form 'c * f(x)', where:
       - c is a nonzero finite real constant (optional),
       - f(x) tends to +-oo as x approaches the limit point,
@@ -504,7 +500,7 @@ def const_inf_mul_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn
     return None
 
 
-def const_inf_div_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def const_inf_div_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matches expressions of the form 'bounded / unbounded', where:
       - The numerator approaches a finite real limit (i.e., is bounded),
       - The denominator diverges to +-oo.
@@ -522,7 +518,7 @@ def const_inf_div_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn
     return None
 
 
-def const_zero_div_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def const_zero_div_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matches expressions of the form 'c / f(x)', where:
       - The numerator tends to a nonzero finite real constant (c != 0),
       - The denominator tends to zero.
@@ -542,7 +538,7 @@ def const_zero_div_matcher(expr: Expr, context: Context) -> MatcherFunctionRetur
     return None
 
 
-def small_o_add_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def small_o_add_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matches sums or differences of multiple infinitesimal terms,
     i.e., expressions where every term tends to zero at the limit point.
 

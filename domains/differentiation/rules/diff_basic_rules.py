@@ -1,10 +1,10 @@
 from sympy import Add, Derivative, Expr, Mul, Symbol, latex
 
-from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
+from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 from utils.latex_formatter import wrap_latex
 
 
-def add_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the sum rule: d/dx (u + v + ...) = du/dx + dv/dx + ..."""
     var: Symbol = context['variable']
     var_latex = wrap_latex(var)
@@ -31,7 +31,7 @@ def add_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return new_expr, explanation
 
 
-def mul_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def mul_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the product rule: (uv)' = u'v + uv' and its general form"""
     var: Symbol = context['variable']
     var_latex, expr_latex = wrap_latex(var, expr)
@@ -107,7 +107,7 @@ def mul_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return new_expr, explanation
 
 
-def div_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def div_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the quotient rule: d/dx(u/v) = (u' v - u v') / v^2"""
     var: Symbol = context['variable']
     u, v = expr.as_numer_denom()
@@ -135,7 +135,7 @@ def div_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return new_expr, explanation
 
 
-def chain_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def chain_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the chain rule to f(g(x)): d/dx f(g(x)) = f'(g(x)) * g'(x)"""
     var = context['variable']
     outer_func = expr.func
@@ -157,13 +157,13 @@ def chain_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return new_expr, explanation
 
 
-def add_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn:
+def add_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     if isinstance(expr, Add):
         return 'add'
     return None
 
 
-def mul_div_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn:
+def mul_div_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     if not isinstance(expr, Mul):
         return None
 
@@ -172,7 +172,7 @@ def mul_div_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn:
     return 'mul' if den == 1 or den.is_constant else 'div'
 
 
-def chain_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def chain_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
    # Match composite functions f(g(x)) where g(x) is not the variable itself.
     if expr.args and len(expr.args) == 1:

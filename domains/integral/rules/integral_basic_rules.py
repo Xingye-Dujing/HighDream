@@ -1,10 +1,10 @@
 from sympy import Add, Expr, Integral, Mul, latex
 
-from utils import Context, MatcherFunctionReturn, RuleFunctionReturn
+from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 from utils.latex_formatter import wrap_latex
 
 
-def add_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the sum rule：(f+g) dx = f dx + g dx"""
     var = context['variable']
     var_latex, expr_latex = wrap_latex(var, expr)
@@ -20,7 +20,7 @@ def add_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return new_expr, explanation
 
 
-def mul_const_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
+def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the const mul rule: c*f(x) dx = c * f(x) dx"""
     var = context['variable']
     factors = expr.args
@@ -42,13 +42,13 @@ def mul_const_rule(expr: Expr, context: Context) -> RuleFunctionReturn:
     return const_part * inner_integral, f"常数因子提取: $\\int {expr_latex}\\,d{var} = {latex(const_part)} \\int {func_part_latex}\\,d{var_latex}$"
 
 
-def add_matcher(expr: Expr, _context: Context) -> MatcherFunctionReturn:
+def add_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     if isinstance(expr, Add):
         return 'add'
     return None
 
 
-def mul_const_matcher(expr: Expr, context: Context) -> MatcherFunctionReturn:
+def mul_const_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     if not expr.is_constant() and isinstance(expr, Mul) and any(not f.has(context['variable']) for f in expr.args):
         return 'mul_const'
     return None
