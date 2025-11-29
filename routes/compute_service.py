@@ -7,7 +7,6 @@ The service routes requests to appropriate calculators based on operation type
 and handles data processing, error handling, and result formatting.
 """
 
-import os
 import uuid
 from typing import Any, Dict, Tuple
 from sympy import Symbol, preorder_traversal, latex, sympify
@@ -238,10 +237,10 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
                 tree = parser.parse_tree(expression)
                 # Generate unique filename
                 file_name = f"{uuid.uuid4().hex}.svg"
-                save_path = os.path.join(TREES_DIR, file_name)
+                save_path = f"{TREES_DIR}/{file_name}"
 
                 parser.draw_expr_tree(tree, save_path=save_path)
-                tree_svg_url = f"{TREES_DIR}/{file_name}"
+                tree_svg_url = save_path
 
             return True, (expressions_out, tree_svg_url)
 
