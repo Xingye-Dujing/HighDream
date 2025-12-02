@@ -38,8 +38,10 @@ if __name__ == '__main__':
     server_thread.daemon = True
     server_thread.start()
 
+    print("\n启动服务...\n")
+
     # Give the server a moment to start
-    time.sleep(1)
+    time.sleep(0.1)
 
     # Open the browser
     webbrowser.open_new('http://127.0.0.1:5000/')
@@ -49,4 +51,4 @@ if __name__ == '__main__':
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("Shutting down...")
+        print("\n关闭中...")
