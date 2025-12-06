@@ -1,7 +1,10 @@
 from domains.differentiation.diff_calculator import DiffCalculator
+from domains.differentiation.diff_calculator import SelectDiffCalculator
 from domains.expression_parser import ExpressionParser
 from domains.integral.integral_calculator import IntegralCalculator
+from domains.integral.integral_calculator import SelectIntegralCalculator
 from domains.limit.limit_calculator import LimitCalculator
+from domains.limit.limit_calculator import SelectLimitCalculator
 
 # Matrix
 from domains.matrix.base_transform import BaseTransform
@@ -35,6 +38,7 @@ __all__ = [
     'EigenSolver',
     'Inverter',
     'LimitCalculator',
+    'SelectLimitCalculator',
     'LinearDependence',
     'LinearSystemConverter',
     'LinearSystemSolver',
@@ -50,6 +54,8 @@ __all__ = [
     'SVDSolver',
     'VectorProjectionSolver',
     'DiffCalculator',
+    'SelectDiffCalculator',
     'ExpressionParser',
     'IntegralCalculator',
+    'SelectIntegralCalculator',
 ]

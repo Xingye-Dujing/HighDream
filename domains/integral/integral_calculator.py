@@ -1,7 +1,7 @@
 from typing import List, Tuple
 from sympy import Expr, Integral, Symbol
 
-from core import BaseCalculator
+from core import BaseCalculator, SelectRuleCalculator
 from utils import MatcherList, Operation, RuleDict
 from domains.integral import MATCHER_LIST, RULE_DICT
 
@@ -9,54 +9,64 @@ from domains.integral import MATCHER_LIST, RULE_DICT
 C = Symbol('C')
 
 
-class IntegralCalculator(BaseCalculator):
-    """Symbolic integral calculator that support step-by-step evaluation.
+def create_integral_calculator(base_class):
+    """Factory function to create integral calculator classes."""
 
-    Examples:
-    >>> from sympy import Symbol
-    >>> from IPython.display import display, Math
-    >>> from domains import IntegralCalculator
+    class IntegralCalculatorImpl(base_class):
+        """Symbolic integral calculator that support step-by-step evaluation.
 
-    >>> expr =  'x**3+sin(x)'
-    >>> x = Symbol('x')
+        Examples:
+        >>> from sympy import Symbol
+        >>> from IPython.display import display, Math
+        >>> from domains import IntegralCalculator
 
-    >>> calculator = IntegralCalculator()
-    >>> latex_output = calculator.compute_latex(expr, x)
+        >>> expr =  'x**3+sin(x)'
+        >>> x = Symbol('x')
 
-    >>> display(Math(latex_output))
-    """
+        >>> calculator = IntegralCalculator()
+        >>> latex_output = calculator.compute_latex(expr, x)
 
-    def init_key_property(self) -> None:
-        self.operation: Operation = Integral
-        self.rule_dict: RuleDict = RULE_DICT
-        self.matcher_list: MatcherList = MATCHER_LIST
-
-    def _final_postprocess(self, final_expr: Expr) -> None:
-        """Add constant of integration (+C) for indefinite integrals without the integral symbol.
-
-        Ensure the constant of integration (+C) appears only in explanatory text or final output,
-        never embedded in the symbolic antiderivative expression.
+        >>> display(Math(latex_output))
         """
-        super()._final_postprocess(final_expr)
-        # Add C to the last step
-        self.step_generator.steps[-1] += C
-        try:
-            # When expression experience simplification without assumptions,
-            # add C to the penultimate expression.
-            if not self.step_generator.steps[-2].has(C):
-                self.step_generator.steps[-2] += C
-            # When no rule applies to the remaining Integral, fall back to SymPy's Integral.doit() and
-            # the result experiences simplification without assumptions and simplification with assumptions.
-            # add C to the third-to-last expression.
-            if len(self.step_generator.steps) > 3 and not self.step_generator.steps[-3].has(C):
-                self.step_generator.steps[-3] += C
-        except IndexError:
-            pass
 
-    def compute_list(self, expr: str, var: Symbol) -> Tuple[List[Expr], List[str]]:
-        """Define Integral context."""
-        return super().compute_list(expr, variable=var)
+        def init_key_property(self) -> None:
+            self.operation: Operation = Integral
+            self.rule_dict: RuleDict = RULE_DICT
+            self.matcher_list: MatcherList = MATCHER_LIST
 
-    def compute_latex(self, expr: str, var: Symbol) -> str:
-        """Define Integral context."""
-        return super().compute_latex(expr, variable=var)
+        def _final_postprocess(self, final_expr: Expr) -> None:
+            """Add constant of integration (+C) for indefinite integrals without the integral symbol.
+
+            Ensure the constant of integration (+C) appears only in explanatory text or final output,
+            never embedded in the symbolic antiderivative expression.
+            """
+            super()._final_postprocess(final_expr)
+            # Add C to the last step
+            self.step_generator.steps[-1] += C
+            try:
+                # When expression experience simplification without assumptions,
+                # add C to the penultimate expression.
+                if not self.step_generator.steps[-2].has(C):
+                    self.step_generator.steps[-2] += C
+                # When no rule applies to the remaining Integral, fall back to SymPy's Integral.doit() and
+                # the result experiences simplification without assumptions and simplification with assumptions.
+                # add C to the third-to-last expression.
+                if len(self.step_generator.steps) > 3 and not self.step_generator.steps[-3].has(C):
+                    self.step_generator.steps[-3] += C
+            except IndexError:
+                pass
+
+        def compute_list(self, expr: str, var: Symbol) -> Tuple[List[Expr], List[str]]:
+            """Define Integral context."""
+            return super().compute_list(expr, variable=var)
+
+        def compute_latex(self, expr: str, var: Symbol) -> str:
+            """Define Integral context."""
+            return super().compute_latex(expr, variable=var)
+
+    return IntegralCalculatorImpl
+
+
+IntegralCalculator = create_integral_calculator(BaseCalculator)
+
+SelectIntegralCalculator = create_integral_calculator(SelectRuleCalculator)
