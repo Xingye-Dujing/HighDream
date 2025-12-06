@@ -13,6 +13,7 @@ Routes:
     /static/trees   - Serve static tree diagram files
 """
 
+from sympy import Symbol, diff, integrate, latex, limit, sympify
 from flask import Blueprint, request, jsonify, send_from_directory
 from domains import MatrixAnalyzer, MatrixCalculator, ProcessManager
 from config import TREES_DIR
@@ -155,3 +156,75 @@ def serve_tree(filename):
         File content from the trees directory
     """
     return send_from_directory(TREES_DIR, filename)
+
+
+@api.route('/render_latex', methods=['POST'])
+def render_latex():
+    """Convert expression to LaTeX using sympy's latex function.
+
+    Expected JSON input:
+        expression (str): The mathematical expression to convert
+
+    Returns:
+        JSON response with either:
+            success (bool): True if conversion succeeded
+            latex (str): LaTeX formatted expression
+        or:
+            success (bool): False if conversion failed
+            error (str): Error message describing the issue
+    """
+    data = request.json or {}
+    expression = data.get('expression', '')
+
+    try:
+        latex_output = latex(sympify(expression))
+
+        return jsonify({'success': True, 'latex': latex_output})
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'{e}'})
+
+
+@api.route('/sympy_calculate', methods=['POST'])
+def sympy_calculate():
+    """Perform SymPy calculations based on operation type.
+
+    Expected JSON input:
+        expression (str): The mathematical expression to calculate
+        operation_type (str): Type of operation ('diff', 'integral', 'limit')
+        variable (str): Variable for the operation (default 'x')
+
+    Returns:
+        JSON response with either:
+            success (bool): True if calculation succeeded
+            result (str): Result of the SymPy calculation
+        or:
+            success (bool): False if calculation failed
+            error (str): Error message describing the issue
+    """
+    data = request.json or {}
+    expression = data.get('expression', '')
+    operation_type = data.get('operation_type', 'diff')
+    variable = data.get('variable', 'x')
+
+    try:
+        expr = sympify(expression)
+        var = Symbol(variable)
+
+        if operation_type == 'diff':
+            result = diff(expr, var)
+        elif operation_type == 'integral':
+            result = integrate(expr, var)
+        elif operation_type == 'limit':
+            point = data.get('point', '0')
+            direction = data.get('direction', '+-')
+            point = sympify(point)
+            result = limit(expr, var, point, dir=direction)
+        else:
+            # Default to just returning the parsed expression
+            result = expr
+
+        result_str = str(result)
+
+        return jsonify({'success': True, 'result': result_str})
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'{e}'})

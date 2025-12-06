@@ -125,3 +125,13 @@ def matrix_lab():
     expr = request.form.get(
         'expression') if request.method == 'POST' else request.args.get('expression')
     return render_template('matrix_lab.html', expression=expr)
+
+
+@main.route('/blueprint_canvas')
+def blueprint_canvas():
+    """Render the blueprint canvas page.
+
+    Returns:
+        str: Rendered HTML template for the blueprint canvas interface.
+    """
+    return render_template('blueprint_canvas.html')
