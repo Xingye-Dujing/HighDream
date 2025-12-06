@@ -861,9 +861,9 @@ class BlueprintCanvas {
     const expressionSource = this.nodes[expressionConn.output.nodeId];
     const operationSource = this.nodes[operationConn.output.nodeId];
 
-    if (!expressionSource || expressionSource.type !== 'expression' ||
-      !operationSource || operationSource.type !== 'operation') {
-      resultNode.data.result = '输入节点类型错误';
+    // 检查表达式输入：可以是表达式节点或结果节点
+    if (!expressionSource || (expressionSource.type !== 'expression' && expressionSource.type !== 'result')) {
+      resultNode.data.result = '表达式输入节点类型错误，应为表达式节点或结果节点';
       const resultEl = document.querySelector(`.bp-node-result[data-node-id="${resultNode.id}"]`);
       if (resultEl) {
         resultEl.textContent = resultNode.data.result;
@@ -871,7 +871,31 @@ class BlueprintCanvas {
       return;
     }
 
-    const expression = expressionSource.data.expression || '';
+    // 检查运算输入：必须是运算节点
+    if (!operationSource || operationSource.type !== 'operation') {
+      resultNode.data.result = '运算输入节点类型错误，应为运算节点';
+      const resultEl = document.querySelector(`.bp-node-result[data-node-id="${resultNode.id}"]`);
+      if (resultEl) {
+        resultEl.textContent = resultNode.data.result;
+      }
+      return;
+    }
+
+    // 获取表达式：如果是结果节点，使用其计算结果；如果是表达式节点，使用其表达式
+    let expression = '';
+    if (expressionSource.type === 'expression') {
+      expression = expressionSource.data.expression || '';
+    } else if (expressionSource.type === 'result') {
+      // 使用结果节点的计算结果作为表达式
+      expression = expressionSource.data.resultExpression || expressionSource.data.result || '';
+      // 如果结果包含等号（如 'd/dx(f(x)) = result'），提取等号后的部分
+      if (expression.includes('=')) {
+        const parts = expression.split('=');
+        if (parts.length > 1) {
+          expression = parts[parts.length - 1].trim();
+        }
+      }
+    }
     const operation = operationSource.data.operation || 'expr';
     const variable = operationSource.data.variable || 'x';
 
