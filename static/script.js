@@ -7,6 +7,9 @@ let kernelStatus = 'idle';
 
 let foreverVisible = true;
 
+// Store polling timers
+const pollTimers = new Map();
+
 // Initialize after page loads
 document.addEventListener("DOMContentLoaded", function () {
   applyTheme(isDarkTheme);
@@ -145,7 +148,6 @@ function bindEvents() {
   document.getElementById("addMdCellBtn").addEventListener("click", () => addNewCell("markdown"));
   document.getElementById("toggleCodeCellInputs").addEventListener("click", toggleCodeCellInputs);
   document.getElementById("runAllBtn").addEventListener("click", runAllCells);
-  document.getElementById("restartKernelBtn").addEventListener("click", restartKernel);
   document.getElementById("moveCellUpBtn").addEventListener("click", moveActiveCellUp);
   document.getElementById("moveCellDownBtn").addEventListener("click", moveActiveCellDown);
   document.getElementById("deleteCellBtn").addEventListener("click", deleteActiveCell);
@@ -686,29 +688,13 @@ function runAllCells() {
   updateKernelStatus('busy');
 
   document.querySelectorAll('.cell[data-cell-type="code"]').forEach((cell) => {
-    runCell(cell);
+    const expression = cell.querySelector("textarea").value.trim();
+    if (expression) runCell(cell);
   });
 
   setTimeout(() => {
     updateKernelStatus('idle');
   }, 500);
-}
-
-// Restart kernel
-function restartKernel() {
-  document.querySelectorAll(".cell-output").forEach((output) => {
-    output.innerHTML = "";
-  });
-
-  document.querySelectorAll(".cell-prompt").forEach((prompt) => {
-    prompt.textContent = "In [ ]:";
-  });
-
-  document.querySelectorAll(".cell").forEach((cell) => {
-    delete cell.dataset.runIndex;
-  });
-
-  showNotification("内核已重启", "success");
 }
 
 // Update kernel status
@@ -811,7 +797,13 @@ function runCell(cell) {
     payload.is_draw_tree = is_draw_tree;
   }
 
-  fetch("/compute", {
+  // Display computing status
+  outputArea.innerHTML = `<div class="computing">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">正在计算中，请稍候...</div>
+  </div>`;
+
+  fetch("/api/compute", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -820,31 +812,13 @@ function runCell(cell) {
   })
     .then((response) => response.json())
     .then((data) => {
-      runButton.classList.remove("running");
-      updateKernelStatus('idle');
-
-      if (data.success) {
-        // Rendering results from ExpressionParser (equivalent expression list + visualization derivation tree) needs special handling
-        if (operationType == "expr") {
-          renderExpressionResult(outputArea, data);
-        }
-        else {
-          outputArea.innerHTML = `<div class="math-output"> ${data.result}</> `;
-
-          // Add control buttons
-          addMathOutputControls();
-
-          if (typeof MathJax !== "undefined") {
-            MathJax.typesetPromise([outputArea]);
-          }
-
-          outputArea.classList.add("result-animation");
-          setTimeout(() => {
-            outputArea.classList.remove("result-animation");
-          }, 1000);
-        }
+      if (data.success && data.task_id) {
+        // Start polling task status
+        pollTaskStatus(data.task_id, outputArea, runButton, operationType);
       } else {
-        outputArea.innerHTML = `<div class="error"> 错误: ${data.error}</> `;
+        runButton.classList.remove("running");
+        updateKernelStatus('idle');
+        outputArea.innerHTML = `<div class="error"> 错误: ${data.error || '未知错误'}</> `;
         updateKernelStatus('error');
       }
     })
@@ -905,7 +879,7 @@ function renderMathPreview(cell) {
     return;
   }
 
-  fetch("/parse", {
+  fetch("/api/parse", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -1034,7 +1008,6 @@ function applyTheme(isDark) {
     document.documentElement.style.setProperty("--jp-border-color2", "#808080");
     themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
     isDarkTheme = true;
-    document.querySelector('meta[name="theme-color"]').setAttribute('content', '#1e1e1e');
   } else {
     document.documentElement.style.setProperty("--jp-ui-font-color0", "rgba(0, 0, 0, 0.87)");
     document.documentElement.style.setProperty("--jp-ui-font-color1", "rgba(0, 0, 0, 0.54)");
@@ -1292,4 +1265,115 @@ function loadNotebook() {
   };
 
   input.click();
+}
+
+// Poll task status
+function pollTaskStatus(taskId, outputArea, runButton, operationType) {
+  const pollInterval = 1000; // Poll once per second
+
+  const poll = async () => {
+    try {
+      const response = await fetch("/api/task_status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ task_id: taskId }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.task) {
+        const task = data.task;
+
+        // Update status display
+        updateComputingStatus(outputArea, task.status);
+
+        if (task.status === 'completed') {
+          // Clear polling timer
+          if (pollTimers.has(taskId)) {
+            clearInterval(pollTimers.get(taskId));
+            pollTimers.delete(taskId);
+          }
+
+          runButton.classList.remove("running");
+          updateKernelStatus('idle');
+
+          if (operationType === "expr") {
+            renderExpressionResult(outputArea, {
+              success: true,
+              result: task.result[0],
+              tree_svg_url: task.result[1]
+            });
+          } else {
+            outputArea.innerHTML = `<div class="math-output">${task.result}</div>`;
+
+            addMathOutputControls();
+
+            if (typeof MathJax !== "undefined") {
+              MathJax.typesetPromise([outputArea]);
+            }
+
+            outputArea.classList.add("result-animation");
+            setTimeout(() => {
+              outputArea.classList.remove("result-animation");
+            }, 1000);
+          }
+        } else if (task.status === 'failed') {
+          // Clear polling timer
+          if (pollTimers.has(taskId)) {
+            clearInterval(pollTimers.get(taskId));
+            pollTimers.delete(taskId);
+          }
+
+          runButton.classList.remove("running");
+          updateKernelStatus('idle');
+          outputArea.innerHTML = `<div class="error">错误: ${task.error}</div>`;
+          updateKernelStatus('error');
+        }
+      } else {
+        // Task query failed
+        if (pollTimers.has(taskId)) {
+          clearInterval(pollTimers.get(taskId));
+          pollTimers.delete(taskId);
+        }
+
+        runButton.classList.remove("running");
+        updateKernelStatus('idle');
+        outputArea.innerHTML = `<div class="error">任务查询失败: ${data.error || '未知错误'}</div>`;
+        updateKernelStatus('error');
+      }
+    } catch (error) {
+      console.error('轮询错误:', error);
+      // Network error does not clear the timer, continue trying
+    }
+  };
+
+  // Execute once immediately
+  poll();
+
+  // Set up timed polling
+  const timerId = setInterval(poll, pollInterval);
+  pollTimers.set(taskId, timerId);
+}
+
+// Update computing status display
+function updateComputingStatus(outputArea, status) {
+  const statusMessages = {
+    'pending': '任务已提交，等待处理...',
+    'running': '正在计算中，请稍候...'
+  };
+
+  const statusIcons = {
+    'pending': '<i class="fas fa-clock"></i>',
+    'running': '<div class="loading-spinner"></div>'
+  };
+
+  const message = statusMessages[status] || '处理中...';
+  const icon = statusIcons[status] || '<div class="loading-spinner"></div>';
+
+  outputArea.innerHTML = `<div class="computing">
+    ${icon}
+    <div class="loading-text">${message}</div>
+  </div>`;
 }

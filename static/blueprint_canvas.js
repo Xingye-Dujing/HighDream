@@ -41,7 +41,7 @@ class BlueprintCanvas {
 
     // Right-click on canvas to show context menu
     this.canvas.addEventListener('contextmenu', (e) => {
-      // 检查是否点击在空白处（不在任何节点上）
+      // Check if clicked on empty space (not on any node)
       if (!e.target.closest('.bp-node')) {
         e.preventDefault();
         this.showCanvasContextMenu(e.clientX, e.clientY);
@@ -133,7 +133,7 @@ class BlueprintCanvas {
     if (type === 'render') {
       inputs = [{}];
     } else if (type === 'result') {
-      // 结果节点有两个输入：表达式和运算
+      // Result node has two inputs: expression and operation
       inputs = [{}, {}];
     }
 
@@ -185,7 +185,7 @@ class BlueprintCanvas {
     const nodeEl = document.createElement('div');
     nodeEl.className = 'bp-node';
     nodeEl.id = node.id;
-    nodeEl.setAttribute('data-node-type', node.type); // 添加节点类型属性以用于CSS选择
+    nodeEl.setAttribute('data-node-type', node.type); // Add node type attribute for CSS selector
     nodeEl.style.left = `${node.x}px`;
     nodeEl.style.top = `${node.y}px`;
     nodeEl.style.width = `${node.width}px`;
@@ -264,7 +264,7 @@ class BlueprintCanvas {
   getInputPortsHTML(node) {
     if (node.inputs.length === 0) return '';
 
-    return node.inputs.map((input, index) => {
+    return node.inputs.map((_, index) => {
       let portClass = 'bp-port input';
       let portLabel = '';
 
@@ -283,7 +283,7 @@ class BlueprintCanvas {
   getOutputPortsHTML(node) {
     if (node.outputs.length === 0) return '';
 
-    return node.outputs.map((output, index) => `
+    return node.outputs.map((_, index) => `
       <div class="bp-port output" data-node-id="${node.id}" data-port-type="output" data-port-index="${index}"></div>
     `).join('');
   }
@@ -303,7 +303,7 @@ class BlueprintCanvas {
     // Node context menu (right-click)
     nodeEl.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      e.stopPropagation(); // 阻止事件冒泡到画布
+      e.stopPropagation(); // Prevent event bubbling to canvas
       this.selectNode(node.id); // Select the node first
       this.showNodeContextMenu(e.clientX, e.clientY);
     });
@@ -322,7 +322,7 @@ class BlueprintCanvas {
     if (expressionInput) {
       expressionInput.addEventListener('input', (e) => {
         this.nodes[node.id].data.expression = e.target.value;
-        // 自动更新连接的节点
+        // Auto-update connected nodes
         this.updateConnectedNodes(node.id);
       });
     }
@@ -332,7 +332,7 @@ class BlueprintCanvas {
     if (variableInput) {
       variableInput.addEventListener('input', (e) => {
         this.nodes[node.id].data.variable = e.target.value;
-        // 自动更新连接的节点
+        // Auto-update connected nodes
         this.updateConnectedNodes(node.id);
       });
     }
@@ -342,7 +342,7 @@ class BlueprintCanvas {
     if (limitPointInput) {
       limitPointInput.addEventListener('input', (e) => {
         this.nodes[node.id].data.limitPoint = e.target.value;
-        // 自动更新连接的节点
+        // Auto-update connected nodes
         this.updateConnectedNodes(node.id);
       });
     }
@@ -363,7 +363,7 @@ class BlueprintCanvas {
           }
         }
 
-        // 自动更新连接的节点
+        // Auto-update connected nodes
         this.updateConnectedNodes(node.id);
       });
     }
@@ -537,14 +537,14 @@ class BlueprintCanvas {
       finalInputPort = outputPort;
     }
 
-    // 检查输入端口是否已有连接
+    // Check if input port already has connection
     const existingConnection = this.connections.find(conn =>
       conn.input.nodeId === finalInputPort.nodeId &&
       conn.input.portIndex === finalInputPort.portIndex
     );
 
     if (existingConnection) {
-      // 删除已存在的连接
+      // Delete existing connection
       this.deleteConnection(existingConnection.id);
     }
 
@@ -569,16 +569,16 @@ class BlueprintCanvas {
     this.connections.push(connection);
     this.renderConnection(connection);
 
-    // 自动触发计算
+    // Auto-trigger calculation
     this.updateConnectedNodes(finalOutputPort.nodeId);
 
-    // 如果连接到结果节点，检查是否所有输入都已连接，是则执行计算
+    // If connected to result node, check if all inputs are connected, then execute calculation
     if (finalInputPort.nodeId && this.nodes[finalInputPort.nodeId] && this.nodes[finalInputPort.nodeId].type === 'result') {
-      // 检查结果节点是否有两个输入都已连接
+      // Check if result node has both inputs connected
       const resultNode = this.nodes[finalInputPort.nodeId];
       const inputConnections = this.connections.filter(conn => conn.input.nodeId === resultNode.id);
 
-      // 只在两个输入都连接时执行计算
+      // Only execute calculation when both inputs are connected
       if (inputConnections.length >= 2) {
         const expressionConn = inputConnections.find(conn => conn.input.portIndex === 0);
         const operationConn = inputConnections.find(conn => conn.input.portIndex === 1);
@@ -623,7 +623,7 @@ class BlueprintCanvas {
     const pathData = `M ${x1} ${y1} C ${midX} ${y1} ${midX} ${y2} ${x2} ${y2}`;
     path.setAttribute('d', pathData);
 
-    // 添加双击事件
+    // Add double-click event
     path.addEventListener('dblclick', (e) => {
       e.stopPropagation();
       this.deleteConnection(connection.id);
@@ -724,13 +724,13 @@ class BlueprintCanvas {
     const node = this.nodes[nodeId];
     if (!node) return;
 
-    // 只有结果节点进行计算
+    // Only result nodes perform calculation
     if (node.type === 'result') {
       await this.performResultNodeCalculation(node);
     }
   }
 
-  // 调用后端 API 执行 SymPy 计算
+  // Call backend API to execute SymPy calculation
   async performSymPyCalculation(expression, operation, variable, limitPoint = '0') {
     try {
       const payload = {
@@ -739,12 +739,12 @@ class BlueprintCanvas {
         variable: variable
       };
 
-      // 为极限运算添加趋向点参数
+      // Add limit point parameter for limit operations
       if (operation === 'limit') {
         payload.point = limitPoint;
       }
 
-      const response = await fetch('/sympy_calculate', {
+      const response = await fetch('/api/sympy_calculate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -773,10 +773,10 @@ class BlueprintCanvas {
       const targetNode = this.nodes[conn.input.nodeId];
       if (targetNode) {
         if (targetNode.type === 'result') {
-          // 触发结果节点计算
+          // Trigger result node calculation
           await this.performResultNodeCalculation(targetNode);
         } else if (targetNode.type === 'render') {
-          // 渲染节点直接显示输入数据
+          // Render node directly displays input data
           const sourceNode = this.nodes[fromNodeId];
           if (sourceNode) {
             let dataToRender = '';
@@ -785,14 +785,14 @@ class BlueprintCanvas {
             } else if (sourceNode.type === 'operation') {
               dataToRender = sourceNode.data.operation;
             } else if (sourceNode.type === 'result') {
-              // 使用结果表达式而不是显示结果
+              // Use result expression instead of displaying result
               dataToRender = sourceNode.data.resultExpression || sourceNode.data.result;
             }
 
             targetNode.data.latex = dataToRender;
             const renderEl = document.querySelector(`.bp-node-result[data-node-id="${targetNode.id}"]`);
             if (renderEl) {
-              // 使用sympy的latex函数转换，然后渲染
+              // Use SymPy's latex function to convert, then render
               this.renderSympyLatex(dataToRender, renderEl);
             }
           }
@@ -802,8 +802,8 @@ class BlueprintCanvas {
   }
 
   renderSympyLatex(expression, element) {
-    // 调用后端 API 使用 sympy 的 latex 函数
-    fetch('/render_latex', {
+    // Call backend API to use sympy's latex function
+    fetch('/api/render_latex', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -829,23 +829,23 @@ class BlueprintCanvas {
   }
 
   async performResultNodeCalculation(resultNode) {
-    // 获取连接到结果节点的输入
+    // Get inputs connected to result node
     const inputConnections = this.connections.filter(conn => conn.input.nodeId === resultNode.id);
 
     if (inputConnections.length < 2) {
-      // 如果输入不足，清空结果
+      // If insufficient inputs, clear result
       resultNode.data.result = '缺少输入: 需要表达式和运算节点';
       resultNode.data.resultExpression = '';
       const resultEl = document.querySelector(`.bp-node-result[data-node-id="${resultNode.id}"]`);
       if (resultEl) {
         resultEl.textContent = resultNode.data.result;
       }
-      return; // 需要两个输入
+      return; // Need two inputs
     }
 
-    // 第一个输入接口（索引0）应该连接表达式节点
+    // First input port (index 0) should connect to expression node
     const expressionConn = inputConnections.find(conn => conn.input.portIndex === 0);
-    // 第二个输入接口（索引1）应该连接运算节点
+    // Second input port (index 1) should connect to operation node
     const operationConn = inputConnections.find(conn => conn.input.portIndex === 1);
 
     if (!expressionConn || !operationConn) {
@@ -861,7 +861,7 @@ class BlueprintCanvas {
     const expressionSource = this.nodes[expressionConn.output.nodeId];
     const operationSource = this.nodes[operationConn.output.nodeId];
 
-    // 检查表达式输入：可以是表达式节点或结果节点
+    // Check expression input: can be expression node or result node
     if (!expressionSource || (expressionSource.type !== 'expression' && expressionSource.type !== 'result')) {
       resultNode.data.result = '表达式输入节点类型错误，应为表达式节点或结果节点';
       const resultEl = document.querySelector(`.bp-node-result[data-node-id="${resultNode.id}"]`);
@@ -871,7 +871,7 @@ class BlueprintCanvas {
       return;
     }
 
-    // 检查运算输入：必须是运算节点
+    // Check operation input: must be operation node
     if (!operationSource || operationSource.type !== 'operation') {
       resultNode.data.result = '运算输入节点类型错误，应为运算节点';
       const resultEl = document.querySelector(`.bp-node-result[data-node-id="${resultNode.id}"]`);
@@ -881,14 +881,14 @@ class BlueprintCanvas {
       return;
     }
 
-    // 获取表达式：如果是结果节点，使用其计算结果；如果是表达式节点，使用其表达式
+    // Get expression: if result node, use its calculation result; if expression node, use its expression
     let expression = '';
     if (expressionSource.type === 'expression') {
       expression = expressionSource.data.expression || '';
     } else if (expressionSource.type === 'result') {
-      // 使用结果节点的计算结果作为表达式
+      // Use result node's calculation result as expression
       expression = expressionSource.data.resultExpression || expressionSource.data.result || '';
-      // 如果结果包含等号（如 'd/dx(f(x)) = result'），提取等号后的部分
+      // If result contains equals sign (like 'd/dx(f(x)) = result'), extract part after equals
       if (expression.includes('=')) {
         const parts = expression.split('=');
         if (parts.length > 1) {
@@ -899,14 +899,14 @@ class BlueprintCanvas {
     const operation = operationSource.data.operation || 'expr';
     const variable = operationSource.data.variable || 'x';
 
-    // 显示计算中状态
+    // Show calculating status
     resultNode.data.result = '计算中...';
     const resultEl = document.querySelector(`.bp-node-result[data-node-id="${resultNode.id}"]`);
     if (resultEl) {
       resultEl.textContent = resultNode.data.result;
     }
 
-    // 执行实际的SymPy计算
+    // Execute actual SymPy calculation
     const limitPoint = operationSource.data.limitPoint || '0';
     try {
       const resultExpression = await this.performSymPyCalculation(expression, operation, variable, limitPoint);
@@ -922,9 +922,9 @@ class BlueprintCanvas {
         displayResult = resultExpression;
       }
 
-      // 更新结果节点
+      // Update result node
       resultNode.data.result = displayResult;
-      resultNode.data.resultExpression = resultExpression; // 存储结果表达式供输出使用
+      resultNode.data.resultExpression = resultExpression; // Store result expression for output use
       if (resultEl) {
         resultEl.textContent = displayResult;
       }
@@ -936,7 +936,7 @@ class BlueprintCanvas {
       }
     }
 
-    // 更新连接到结果节点的渲染节点
+    // Update render nodes connected to result node
     this.updateConnectedNodes(resultNode.id);
   }
 
@@ -944,21 +944,21 @@ class BlueprintCanvas {
     const connection = this.connections.find(conn => conn.id === connectionId);
     if (!connection) return;
 
-    // 从数组中移除连接
+    // Remove connection from array
     this.connections = this.connections.filter(conn => conn.id !== connectionId);
 
-    // 从SVG中移除连接线
+    // Remove connection line from SVG
     const path = document.getElementById(connectionId);
     if (path) {
       path.remove();
     }
 
-    // 如果删除的连接是连接到结果节点的，检查是否需要更新结果节点
+    // If deleted connection was connected to result node, check if result node needs update
     if (connection.input.nodeId && this.nodes[connection.input.nodeId] && this.nodes[connection.input.nodeId].type === 'result') {
-      // 检查结果节点是否还有足够的输入来进行计算
+      // Check if result node still has enough inputs for calculation
       const inputConnections = this.connections.filter(conn => conn.input.nodeId === connection.input.nodeId);
       if (inputConnections.length < 2) {
-        // 如果输入不足，清空结果
+        // If insufficient inputs, clear result
         const resultNode = this.nodes[connection.input.nodeId];
         if (resultNode) {
           resultNode.data.result = '缺少输入: 需要表达式和运算节点';
@@ -969,7 +969,7 @@ class BlueprintCanvas {
           }
         }
       } else {
-        // 如果仍有足够的输入，重新执行计算
+        // If still have enough inputs, re-execute calculation
         this.performResultNodeCalculation(this.nodes[connection.input.nodeId]);
       }
     }
@@ -1023,7 +1023,7 @@ class BlueprintCanvas {
 
   copyNode(node) {
     this.copiedNode = JSON.parse(JSON.stringify(node));
-    this.copiedNode.id = null; // 清除ID以便创建新节点
+    this.copiedNode.id = null; // Clear ID for creating new node
   }
 
   pasteNode(x, y) {

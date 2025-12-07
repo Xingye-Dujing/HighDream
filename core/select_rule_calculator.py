@@ -6,8 +6,10 @@ from .base_calculator import BaseCalculator
 
 
 class SelectRuleCalculator(BaseCalculator):
+    """A calculator that allows manual selection of rules for expression transformation."""
+
     def _apply_rule(self, expr: Expr, operation: Operation, **context: Context) -> Tuple[Expr, str]:
-        """Apply the most appropriate rule to the expression and return result with explanation."""
+        """Apply rule to the expression and return result with explanation."""
         rule_context: RuleContext = self._get_context_dict(**context)
 
         applicable_rules_list = self._rule_registry.get_applicable_rules(

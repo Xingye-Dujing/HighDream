@@ -23,7 +23,7 @@ def create_app():
     app = Flask(__name__, template_folder=TEMPLATE_FOLDER,
                 static_folder=STATIC_FOLDER)
     app.register_blueprint(main)
-    app.register_blueprint(api)
+    app.register_blueprint(api, url_prefix='/api')
     return app
 
 

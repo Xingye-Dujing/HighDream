@@ -499,7 +499,7 @@ function runCell(cell) {
     record_all_steps: is_record_all_steps
   };
 
-  fetch("/matrix_cal", {
+  fetch("/api/matrix_cal", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -537,7 +537,7 @@ function renderMathPreview(cell) {
     return;
   }
 
-  fetch("/parse", {
+  fetch("/api/parse", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -624,7 +624,6 @@ function applyTheme(isDark) {
     document.documentElement.style.setProperty("--jp-border-color2", "#808080");
     themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
     isDarkTheme = true;
-    document.querySelector('meta[name="theme-color"]').setAttribute('content', '#1e1e1e');
   } else {
     document.documentElement.style.setProperty("--jp-ui-font-color0", "rgba(0, 0, 0, 0.87)");
     document.documentElement.style.setProperty("--jp-ui-font-color1", "rgba(0, 0, 0, 0.54)");
@@ -787,7 +786,7 @@ function renderMathPreview() {
     return;
   }
 
-  fetch("/parse", {
+  fetch("/api/parse", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

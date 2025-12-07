@@ -6,7 +6,8 @@ and process management.
 
 Routes:
     /parse          - Parse mathematical expressions to LaTeX format
-    /compute        - Execute mathematical computations
+    /compute        - Execute mathematical computations (async)
+    /task_status    - Get task status and results
     /matrix_analyze - Analyze matrix properties
     /matrix_cal     - Perform matrix calculations
     /get_process    - Retrieve process information
@@ -18,7 +19,7 @@ from flask import Blueprint, request, jsonify, send_from_directory
 from domains import MatrixAnalyzer, MatrixCalculator, ProcessManager
 from config import TREES_DIR
 from utils.latex_formatter import str_to_latex
-from .compute_service import start_compute
+from .task_manager import task_manager
 
 # Create a Flask blueprint for API routes
 api = Blueprint('api', __name__)
@@ -60,34 +61,61 @@ def parse_input():
 
 @api.route('/compute', methods=['POST'])
 def compute():
-    """Execute a mathematical computation based on operation type.
+    """Execute a mathematical computation based on operation type (async).
 
     Expected JSON input:
         operation_type (str): Type of operation to perform
         ... other fields depending on operation type
 
     Returns:
-        JSON response with either:
-            success (bool): True if computation succeeded
-            result (various): Computation result
-            tree_svg_url (str, optional): URL to syntax tree SVG (for 'expr' operations)
-        or:
-            success (bool): False if computation failed
-            error (str): Error message describing the issue
+        JSON response with:
+            success (bool): Always True for task creation
+            task_id (str): Task ID for polling results
     """
     data = request.json or {}
     op_type = data.get('operation_type', '')
-    success, result = start_compute(op_type, data)
 
-    if success:
-        if op_type == 'expr':
-            return jsonify({
-                'success': True,
-                'result': result[0],
-                'tree_svg_url': result[1],
-            })
-        return jsonify({'success': True, 'result': result})
-    return jsonify({'success': False, 'error': result})
+    # Create asynchronous task
+    task_id = task_manager.create_task(op_type, data)
+
+    return jsonify({
+        'success': True,
+        'task_id': task_id
+    })
+
+
+@api.route('/task_status', methods=['POST'])
+def get_task_status():
+    """Get the status and result of an async task.
+
+    Expected JSON input:
+        task_id (str): The task ID to query
+
+    Returns:
+        JSON response with task status and results:
+            task_id (str): Task ID
+            operation_type (str): Operation type
+            status (str): Task status (pending/running/completed/failed)
+            result (various, optional): Computation result if completed
+            error (str, optional): Error message if failed
+            created_at (str): Task creation timestamp
+            started_at (str, optional): Task start timestamp
+            completed_at (str, optional): Task completion timestamp
+    """
+    data = request.json or {}
+    task_id = data.get('task_id', '')
+
+    task_info = task_manager.get_task_status(task_id)
+    if task_info:
+        return jsonify({
+            'success': True,
+            'task': task_info
+        })
+    else:
+        return jsonify({
+            'success': False,
+            'error': f'Task not found: {task_id}'
+        })
 
 
 @api.route('/matrix_analyze', methods=['POST'])

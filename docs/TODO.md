@@ -1,15 +1,5 @@
 # TODO List
 
-## Expression Validation
-
-- **中文**: 将所有的验证表达式 `a == b` 替换为 `a.equals(b)`。后者能够处理具有多种等效形式的表达式情况。
-- **English**: Replace all validation expressions `a == b` with `a.equals(b)`. The latter can handle cases where expressions have multiple equivalent forms.
-
-## Parentheses Formatting
-
-- **中文**: 将所有括号替换为 `\left(` 和 `\right)` 以获得更好的视觉效果。这些括号会自动调整以匹配表达式的高度。
-- **English**: Replace all parentheses with `\left(` and `\right)` for better visual appeal. These automatically adjust to match the height of the expression.
-
 ## Power Calculation Optimization
 
 - **中文**: SymPy 显式计算所有幂运算，这会导致指数较大时出现性能问题。我们需要特殊处理来避免直接计算幂值。
@@ -22,13 +12,8 @@
 
 ## Manual Rule Selection Feature
 
-- **中文**: 实现人工选择每一步使用何种规则的功能，以更好地满足用户需求
-- **English**: Implement a feature to manually select which rule to apply at each step, to better meet user needs
-
-## Asynchronous Processing Implementation
-
-- **中文**: 后端应返回 `task_id` 并在前端实现`轮询`：实现异步处理以防止前端阻塞。
-- **English**: Backend should return `task_id` and implement polling on frontend: Achieve asynchronous processing to prevent frontend blocking.
+- **中文**: 为 **人工选择每一步使用何种规则** 建立一个前端页面。
+- **English**: Create a frontend page for manually selecting which rule to apply at each step.
 
 ---
 

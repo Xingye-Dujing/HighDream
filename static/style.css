@@ -591,6 +591,64 @@ a {
   border-left: 3px solid var(--jp-error-color);
 }
 
+/* 计算中状态样式 */
+.computing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  color: var(--jp-ui-font-color0);
+  font-family: var(--font-family);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(25, 118, 210, 0.2);
+  border-top: 4px solid var(--jp-brand-color0);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+.loading-text {
+  font-size: 14px;
+  color: var(--jp-ui-font-color1);
+  text-align: center;
+}
+
+/* 状态图标样式 */
+.computing .fa-clock {
+  font-size: 32px;
+  color: var(--jp-kernel-busy-color);
+  margin-bottom: 16px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* 旋转动画 */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 脉冲动画 */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 .success {
   color: var(--jp-success-color);
   padding: 12px;

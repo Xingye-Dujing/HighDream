@@ -194,7 +194,7 @@ function analyzeMatrix(expression) {
     analysis_types: ['rank', 'determinant', 'eigenvalues', 'eigenvectors', 'svd']
   };
 
-  fetch('/matrix_analyze', {
+  fetch('/api/matrix_analyze', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -282,7 +282,7 @@ function renderMathPreview() {
     return;
   }
 
-  fetch("/parse", {
+  fetch("/api/parse", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -398,7 +398,7 @@ function runRef() {
 }
 
 function runDet1() {
-  fetch("/get_process", {
+  fetch("/api/get_process", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -422,7 +422,7 @@ function runDet1() {
 }
 
 function runDet2() {
-  fetch("/get_process", {
+  fetch("/api/get_process", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -446,7 +446,7 @@ function runDet2() {
 }
 
 function runRank() {
-  fetch("/get_process", {
+  fetch("/api/get_process", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -470,7 +470,7 @@ function runRank() {
 }
 
 function runEigen() {
-  fetch("/get_process", {
+  fetch("/api/get_process", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -493,7 +493,7 @@ function runEigen() {
 }
 
 function runSVD() {
-  fetch("/get_process", {
+  fetch("/api/get_process", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
