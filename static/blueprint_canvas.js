@@ -44,6 +44,8 @@ class BlueprintCanvas {
       // Check if clicked on empty space (not on any node)
       if (!e.target.closest('.bp-node')) {
         e.preventDefault();
+        e.stopPropagation(); // Prevent event bubbling
+        this.hideContextMenu(); // Hide any existing context menu first
         this.showCanvasContextMenu(e.clientX, e.clientY);
       }
     });
@@ -304,6 +306,7 @@ class BlueprintCanvas {
     nodeEl.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       e.stopPropagation(); // Prevent event bubbling to canvas
+      this.hideContextMenu(); // Hide any existing context menu first
       this.selectNode(node.id); // Select the node first
       this.showNodeContextMenu(e.clientX, e.clientY);
     });
@@ -989,6 +992,7 @@ class BlueprintCanvas {
   }
 
   showNodeContextMenu(x, y) {
+    this.hideContextMenu(); // Hide any existing context menu first
     const menu = document.getElementById('node-context-menu');
     menu.style.left = `${x}px`;
     menu.style.top = `${y}px`;
@@ -996,6 +1000,7 @@ class BlueprintCanvas {
   }
 
   showCanvasContextMenu(x, y) {
+    this.hideContextMenu(); // Hide any existing context menu first
     this.contextMenuX = x;
     this.contextMenuY = y;
 

@@ -46,12 +46,12 @@ def create_integral_calculator(base_class):
             try:
                 # When expression experience simplification without assumptions,
                 # add C to the penultimate expression.
-                if not self.step_generator.steps[-2].has(C):
+                if not self.step_generator.steps[-2].has(C) and not self.step_generator.steps[-2].has(Integral):
                     self.step_generator.steps[-2] += C
                 # When no rule applies to the remaining Integral, fall back to SymPy's Integral.doit() and
                 # the result experiences simplification without assumptions and simplification with assumptions.
                 # add C to the third-to-last expression.
-                if len(self.step_generator.steps) > 3 and not self.step_generator.steps[-3].has(C):
+                if len(self.step_generator.steps) > 3 and not self.step_generator.steps[-3].has(C) and not self.step_generator.steps[-3].has(Integral):
                     self.step_generator.steps[-3] += C
             except IndexError:
                 pass
