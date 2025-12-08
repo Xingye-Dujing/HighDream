@@ -11,6 +11,11 @@
 - **English**: Fractions should be created using SymPy's `sympify(string)` or `Rational(a, b)`
   Do not use `/`, otherwise it may be interpreted as an imprecise decimal.
 
+## Inverse Trigonometric Function Notation
+
+- **中文**: 在输入表达式时，反三角函数是 `asin()`, `acos()`, `atan()`，而不是 arcsin(), arccos(), arctan()。
+- **English**: When entering expressions, inverse trigonometric functions are asin(), acos(), atan(), not arcsin(), arccos(), arctan().
+
 ## Expression Validation
 
 - **中文**: 将所有的验证表达式 `a == b` 替换为 `a.equals(b)`。后者能够处理具有多种等效形式的表达式情况。

@@ -109,11 +109,18 @@ class BaseCalculator(ABC):
         operation_obj = self._perform_operation(expr, operation, **context)
         return operation_obj.doit(), f"需手动计算表达式: ${latex(operation_obj)}$"
 
-    def _update_expression(self, current_expr: Expr, operation: Operation, expr_to_operation: Dict[Expr, Operation], **context: Context) -> Tuple[Expr, str, Dict[Expr, Operation]]:
+    def _update_expression(self, current_expr: Expr, operation: Operation, expr_to_operation: Dict[Expr, Operation], direct_compute: bool, **context: Context) -> Tuple[Expr, str, Dict[Expr, Operation]]:
         # Extract the unique variable from the expression for substitution(u-substitution).
         # context['variable'] = list(current_expr.free_symbols)[0]
-        new_expr, explanation = self._apply_rule(
-            current_expr, operation, **context)
+        # but it don't work now.
+        if direct_compute:
+            current_operation = self._get_cached_result(
+                current_expr, operation, **context)
+            new_expr = current_operation.doit()
+            explanation = f"${latex(current_operation)}$ 之前已计算过，不再显示中间过程"
+        else:
+            new_expr, explanation = self._apply_rule(
+                current_expr, operation, **context)
         # Replace all occurrences of operation(current, var) with new_expr
         for key in list(expr_to_operation.keys()):
             expr_to_operation[key] = expr_to_operation[key].subs(
@@ -177,21 +184,21 @@ class BaseCalculator(ABC):
         expr_key = str(expr)
         expr_to_operation: Dict[Expr, Operation] = {
             expr_key: initial_operation}
-        # Avoid recomputing duplicate expressions.
-        seen = set([expr_key])
 
         while queue:
+            direct_compute = False
+
             current_expr = queue.popleft()
             # Solve the problem: unhashable type: 'MutableDenseMatrix'
             current_expr_key = str(current_expr)
             current_operation = expr_to_operation.get(current_expr_key)
 
             if current_expr_key in self.processed:
-                continue
+                direct_compute = True
             self.processed.add(current_expr_key)
 
             new_expr, explanation, expr_to_operation = self._update_expression(
-                current_expr, operation, expr_to_operation, **context)
+                current_expr, operation, expr_to_operation, direct_compute, **context)
 
             current_step = expr_to_operation[expr_key]
             current_step = self._step_expr_postprocess(current_step)
@@ -203,10 +210,8 @@ class BaseCalculator(ABC):
                     new_expr, operation) else new_expr.atoms(operation)
                 for s in sub_exprs:
                     sub_expr = s.args[0]
-                    if sub_expr not in seen:
-                        seen.add(sub_expr)
-                        expr_to_operation[str(sub_expr)] = s
-                        queue.append(sub_expr)
+                    expr_to_operation[str(sub_expr)] = s
+                    queue.append(sub_expr)
 
         # Final simplification
         exprs, _ = self.step_generator.get_steps()
