@@ -1,5 +1,5 @@
 from sympy import (
-    Dummy, Expr, Mul, Wild, diff, exp, integrate,
+    Dummy, Expr, Integral, Mul, Wild, diff, exp, integrate,
     latex, log, simplify, sqrt
 )
 
@@ -13,6 +13,70 @@ from domains.integral import (
     try_standard_substitution,
     try_trig_substitution
 )
+
+
+def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Apply integration rule for f'(x)/f(x) which integrates to ln|f(x)| + C.
+
+    This rule handles expressions where the integrand is the derivative of a function
+    divided by that same function, which results in the natural logarithm of the
+    absolute value of that function.
+    """
+    find = False
+
+    var = context['variable']
+
+    # More general approach for f'(x)/f(x)
+    numerator, denominator = expr.as_numer_denom()
+    f_prime = diff(denominator, var)
+    ratio = simplify(numerator / f_prime)
+
+    var_latex, f_x_latex = latex(var), latex(denominator)
+    if ratio.is_constant():
+        find = True
+
+    # Also check if expression can be rearranged to this form
+    if not find and expr.is_Mul:
+        # Look for patterns like f'(x) * (1/f(x))
+        factors = expr.args
+        for factor in factors:
+            if factor.is_Pow and factor.args[1] == -1:
+                f_x = factor.args[0]
+                f_prime = diff(f_x, var)
+                # Create the rest of the multiplication
+                other_factors = [f for f in factors if f != factor]
+                remaining = Mul(*other_factors) if other_factors else 1
+
+                ratio = simplify(remaining - f_prime)
+
+                if ratio.is_constant():
+                    var_latex, f_x_latex = latex(var), latex(f_x)
+                    break
+
+    if ratio == 1:
+        result = ratio * log(abs(denominator))
+        explaination = (
+            f"对数积分法则($\\frac{{f'({var_latex})}}{{f({var_latex})}}$ 形式): $"
+            f"\\int \\frac{{{latex(f_prime)}}}{{{f_x_latex}}}\\,d{var_latex} = "
+            f"\\ln|{f_x_latex}| + C$"
+        )
+    elif ratio == -1:
+        result = -log(abs(denominator))
+        explaination = (
+            f"对数积分法则($\\frac{{f'({var_latex})}}{{f({var_latex})}}$ 形式): $"
+            f"\\int {latex(expr)}\\,d{var_latex} = "
+            f"- \\int \\frac{{{latex(f_prime)}}}{{{f_x_latex}}}\\,d{var_latex} = "
+            f"- \\ln|{f_x_latex}| + C$"
+        )
+    else:
+        result = ratio * log(abs(denominator))
+        explaination = (
+            f"对数积分法则($\\frac{{f'({var_latex})}}{{f({var_latex})}}$ 形式): $"
+            f"\\int {latex(expr)}\\,d{var_latex} = "
+            f"{latex(ratio)} \\int \\frac{{{latex(f_prime)}}}{{{f_x_latex}}}\\,d{var_latex} = "
+            f"{latex(ratio)} \\ln|{f_x_latex}| + C$"
+        )
+    return result, explaination
 
 
 def parts_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
@@ -42,7 +106,7 @@ def parts_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     v = simplify(integrate(dv, var))
     u_v = simplify(u * v)
     v_du = simplify(v * du)
-    result = simplify(u_v - simplify(integrate(v_du, var)))
+    result = u_v - Integral(v_du, var)
     var_latex, expr_latex, v_du_latex = wrap_latex(
         var, expr, v_du)
     return result, (
@@ -85,6 +149,45 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     result = try_exp_log_substitution(expr, var, u)
     if result is not None:
         return result
+
+    return None
+
+
+def logarithmic_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Heuristic matcher for f'(x)/f(x) integration pattern.
+
+    Returns 'logarithmic' if the expression matches the pattern where the
+    numerator is the derivative of the denominator.
+    """
+    # Extract numerator and denominator
+    numerator, denominator = expr.as_numer_denom()
+
+    if denominator == 1:
+        return None
+
+    var = context['variable']
+
+    # Calculate derivative of denominator
+    f_prime = diff(denominator, var)
+    ratio = simplify(numerator - f_prime)
+
+    if ratio.is_constant():
+        return 'logarithmic'
+
+    # Also check if expression can be rearranged to this form
+    if expr.is_Mul:
+        # Look for patterns like f'(x) * (1/f(x))
+        factors = expr.args
+        for factor in factors:
+            if factor.is_Pow and factor.args[1] == -1:
+                f_x = factor.args[0]
+                f_prime = diff(f_x, var)
+                # Create the rest of the multiplication
+                other_factors = [f for f in factors if f != factor]
+                remaining = Mul(*other_factors) if other_factors else 1
+                ratio = simplify(remaining / f_prime)
+                if ratio.is_constant():
+                    return 'logarithmic'
 
     return None
 

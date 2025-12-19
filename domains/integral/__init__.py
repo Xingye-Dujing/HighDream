@@ -21,6 +21,7 @@ from .rules.integral_function_rules import (
     cosh_matcher, cosh_rule
 )
 from .rules.integral_special_rules import (
+    logarithmic_matcher, logarithmic_rule,
     parts_matcher, parts_rule, substitution_matcher, substitution_rule
 )
 
@@ -52,13 +53,14 @@ RULE_DICT: RuleDict = {
     'var': var_rule,
     'mul_const': mul_const_rule,
     'add': add_rule,
+    'logarithmic': logarithmic_rule,
     'substitution': substitution_rule,
     'parts': parts_rule,
 }
 
 # Note: Earlier entries have higher priority.
 MATCHER_LIST: MatcherList = [
-    const_matcher, var_matcher, add_matcher, mul_const_matcher,
+    const_matcher, var_matcher, mul_const_matcher, logarithmic_matcher, add_matcher,
     pow_matcher, exp_matcher, log_matcher, sin_matcher, cos_matcher, tan_matcher,
     sec_matcher, csc_matcher, cot_matcher, exp_matcher, log_matcher, sinh_matcher, cosh_matcher,
     inverse_trig_matcher, substitution_matcher,

@@ -23,7 +23,6 @@ cos_rule = _create_rule("余弦")
 tan_rule = _create_rule("正切")
 sec_rule = _create_rule("正割")
 csc_rule = _create_rule("余割")
-cot_rule = _create_rule("余切")
 sinh_rule = _create_rule("双曲正弦")
 cosh_rule = _create_rule("双曲余弦")
 tanh_rule = _create_rule("双曲正切")
@@ -82,6 +81,22 @@ def inverse_trig_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     return None
 
 
+def cot_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Apply the cotangent integration rule: ∫cot(x) dx = ln|sin(x)| + C
+
+    Handles the integral of 1/tan(x) = cot(x).
+    """
+    var = context['variable']
+    var_latex = wrap_latex(var)
+
+    # Since 1/tan(x) = cot(x), we're integrating cot(x)
+    result = log(Abs(sin(var)))
+
+    if expr == cot(var):
+        return result, f"余切函数积分: $\\int \\cot({var_latex})\\,d{var_latex} = \\ln|\\sin({var_latex})| + C$"
+    return result, f"倒数正切函数积分: $\\int \\frac{{1}}{{\\tan({var_latex})}}\\,d{var_latex} = \\int \\cot({var_latex})\\,d{var_latex} = \\ln|\\sin({var_latex})| + C$"
+
+
 pow_matcher = _create_matcher(Pow)
 exp_matcher = _create_matcher(exp)
 log_matcher = _create_matcher(log)
@@ -90,7 +105,6 @@ cos_matcher = _create_matcher(cos)
 tan_matcher = _create_matcher(tan)
 sec_matcher = _create_matcher(sec)
 csc_matcher = _create_matcher(csc)
-cot_matcher = _create_matcher(cot)
 sinh_matcher = _create_matcher(sinh)
 cosh_matcher = _create_matcher(cosh)
 tanh_matcher = _create_matcher(tanh)
@@ -114,4 +128,18 @@ def inverse_trig_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRet
     patterns = [1/sqrt(1 - var**2), -1/sqrt(1 - var**2), 1/(1 + var**2)]
     if any(expr == p for p in patterns):
         return 'inverse_trig'
+    return None
+
+
+def cot_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for cotangent expressions including 1/tan(x).
+
+    Matches expressions that are equivalent to cot(x).
+    """
+    var = context['variable']
+
+    # Match direct cot(x) or 1/tan(x)
+    if expr == cot(var) or expr == 1/tan(var):
+        return 'cot'
+
     return None

@@ -41,23 +41,15 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the const mul rule: c*f(x) dx = c * f(x) dx"""
     var = context['variable']
-    factors = expr.args
 
-    # Split the factors into two parts: const and func.
-    const_factors, func_factors = [], []
-    for f in factors:
-        if f.has(var):
-            func_factors.append(f)
-        else:
-            const_factors.append(f)
-    const_part = Mul(*const_factors)
-    func_part = Mul(*func_factors)
+    coeff, func_part = expr.as_coeff_Mul()
+
     var_latex, expr_latex, func_part_latex = wrap_latex(var, expr, func_part)
 
-    if const_part == -1:
+    if coeff == -1:
         return -Integral(func_part, var), f"负号提出: $\\int {expr_latex}\\,d{var} = -\\int {func_part_latex}\\,d{var_latex}$"
-    inner_integral = Integral(func_part, var)
-    return const_part * inner_integral, f"常数因子提取: $\\int {expr_latex}\\,d{var} = {latex(const_part)} \\int {func_part_latex}\\,d{var_latex}$"
+
+    return coeff * Integral(func_part, var), f"常数因子提取: $\\int {expr_latex}\\,d{var} = {latex(coeff)} \\int {func_part_latex}\\,d{var_latex}$"
 
 
 def add_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
@@ -70,6 +62,9 @@ def add_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
 
 
 def mul_const_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    if not expr.is_constant() and isinstance(expr, Mul) and any(f.is_constant() for f in expr.args):
-        return 'mul_const'
+    if not expr.is_constant() and isinstance(expr, Mul):
+        # Use as_coeff_Mul to check if there's a constant coefficient
+        coeff, _ = expr.as_coeff_Mul()
+        if coeff != 1:
+            return 'mul_const'
     return None
