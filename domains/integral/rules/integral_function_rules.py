@@ -97,6 +97,24 @@ def cot_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     return result, f"倒数正切函数积分: $\\int \\frac{{1}}{{\\tan({var_latex})}}\\,d{var_latex} = \\int \\cot({var_latex})\\,d{var_latex} = \\ln|\\sin({var_latex})| + C$"
 
 
+def inverse_tangent_linear_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Apply the rule for 1/(x^2 + m) form: 1/(x^2 + m) dx = (1/sqrt(m))*arctan(x/sqrt(m)) + C
+
+    Handles integrals of the form 1/(x^2 + m) where m > 0.
+    """
+    var = context['variable']
+    var_latex = wrap_latex(var)
+
+    # SymPy puts the constant term at the front
+    m = expr.base.args[0]
+    sqrt_m = sqrt(m)
+    result = (1/sqrt_m) * atan(var/sqrt_m)
+    m_latex = wrap_latex(m)
+    sqrt_m_latex = wrap_latex(sqrt_m)
+
+    return result, f"线性逆切函数积分: $\\int \\frac{{1}}{{{var_latex}^2 + {m_latex}}}\\,d{var_latex} = \\frac{{1}}{{{sqrt_m_latex}}} \\arctan\\left(\\frac{{{var_latex}}}{{{sqrt_m_latex}}}\\right) + C$"
+
+
 pow_matcher = _create_matcher(Pow)
 exp_matcher = _create_matcher(exp)
 log_matcher = _create_matcher(log)
@@ -141,5 +159,20 @@ def cot_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     # Match direct cot(x) or 1/tan(x)
     if expr == cot(var) or expr == 1/tan(var):
         return 'cot'
+
+    return None
+
+
+def inverse_tangent_linear_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for expressions of the form 1/(x^2 + m) where m is a positive constant."""
+    var = context['variable']
+
+    # Match pattern 1/(var^2 + m) where m > 0
+    if expr.is_Pow and expr.exp == -1:
+        denominator = expr.base
+        terms = denominator.args
+        # SymPy puts the constant term at the front
+        if denominator.is_Add and len(terms) == 2 and terms[1] == var**2 and terms[0] > 0:
+            return 'inverse_tangent_linear'
 
     return None

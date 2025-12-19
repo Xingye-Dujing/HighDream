@@ -18,7 +18,8 @@ from .rules.integral_function_rules import (
     cos_matcher, cos_rule, tan_matcher, tan_rule,
     sec_matcher, sec_rule, csc_matcher, csc_rule,
     cot_matcher, cot_rule, sinh_matcher, sinh_rule,
-    cosh_matcher, cosh_rule
+    cosh_matcher, cosh_rule, inverse_tangent_linear_matcher,
+    inverse_tangent_linear_rule
 )
 from .rules.integral_special_rules import (
     logarithmic_matcher, logarithmic_rule,
@@ -49,6 +50,7 @@ RULE_DICT: RuleDict = {
     'sinh': sinh_rule,
     'cosh': cosh_rule,
     'inverse_trig': inverse_trig_rule,
+    'inverse_tangent_linear': inverse_tangent_linear_rule,
     'const': const_rule,
     'var': var_rule,
     'mul_const': mul_const_rule,
@@ -63,6 +65,6 @@ MATCHER_LIST: MatcherList = [
     const_matcher, var_matcher, mul_const_matcher, logarithmic_matcher, add_matcher,
     pow_matcher, exp_matcher, log_matcher, sin_matcher, cos_matcher, tan_matcher,
     sec_matcher, csc_matcher, cot_matcher, exp_matcher, log_matcher, sinh_matcher, cosh_matcher,
-    inverse_trig_matcher, substitution_matcher,
+    inverse_trig_matcher, inverse_tangent_linear_matcher, substitution_matcher,
     parts_matcher
 ]
