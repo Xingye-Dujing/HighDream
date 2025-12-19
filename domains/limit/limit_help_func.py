@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple, Union
 from sympy import (
     Expr, Interval, Intersection, Limit, Pow, S, Symbol,
-    acos, asin, limit, log, oo, solveset, zoo
+    acos, asin, limit, log, oo, simplify, solveset, zoo
 )
 from sympy.core.relational import Relational
 
@@ -159,7 +159,7 @@ def is_infinite(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
     Returns True if the result is positive or negative real infinity (oo or -oo).
     """
     try:
-        lim_val = limit(expr, var, point, dir=direction)
+        lim_val = simplify(limit(expr, var, point, dir=direction))
         return lim_val in (S.Infinity, S.NegativeInfinity)
     except Exception:
         return False
@@ -173,7 +173,7 @@ def is_zero(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
     """
 
     try:
-        lim_val = limit(expr, var, point, dir=direction)
+        lim_val = simplify(limit(expr, var, point, dir=direction))
         return lim_val == S.Zero
     except Exception:
         return False
@@ -192,7 +192,7 @@ def is_constant(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
     """
 
     try:
-        lim = limit(expr, var, point, dir=direction)
+        lim = simplify(limit(expr, var, point, dir=direction))
         return lim.is_real and not lim.has(oo, -oo, zoo)
     except Exception:
         return False
@@ -205,7 +205,7 @@ def check_function_tends_to_zero(f: Expr, var: Symbol, point: Expr, direction: s
     from the specified direction. Returns True only if the limit exists and is exactly zero.
     """
     try:
-        lim_val = limit(f, var, point, dir=direction)
+        lim_val = simplify(limit(f, var, point, dir=direction))
         return lim_val == S.Zero
     except Exception:
         return False
@@ -250,7 +250,7 @@ def is_indeterminate_form(expr: Expr, var: Symbol, point: Expr, direction: str) 
     try:
         # Helper to safely compute sub-limits
         def _limit(e: Expr) -> Expr:
-            return limit(e, var, point, dir=direction)
+            return simplify(limit(e, var, point, dir=direction))
 
         # Case 1: a/b to check 0/0 or oo/oo
         if expr.is_Mul:
@@ -375,8 +375,8 @@ def check_combination_indeterminate(part1: Expr, part2: Expr, var: Symbol, point
             f"Unsupported operation: {operation!r}. Expected 'mul' or 'add'.")
 
     try:
-        lim1 = limit(part1, var, point, dir=direction)
-        lim2 = limit(part2, var, point, dir=direction)
+        lim1 = simplify(limit(part1, var, point, dir=direction))
+        lim2 = simplify(limit(part2, var, point, dir=direction))
     except Exception:
         # If either sub-limit fails to evaluate, we cannot confirm indeterminacy.
         # Unlike full-expression analyzers, this helper returns False on error.

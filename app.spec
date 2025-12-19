@@ -11,9 +11,10 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['tkinter'],
     noarchive=False,
-    optimize=0,
+    # 优化级别最高只能设置到 1, 设置到 2 会有问题
+    optimize=1,
 )
 pyz = PYZ(a.pure)
 
@@ -26,7 +27,7 @@ exe = EXE(
     name='HighDreamWeb',
     debug=False,
     bootloader_ignore_signals=False,
-    strip=False,
+    strip=True,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,

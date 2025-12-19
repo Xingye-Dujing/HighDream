@@ -199,7 +199,7 @@ def const_inf_add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     inf_sign = None
     for term in terms:
         # Find the sign from the first infinite term
-        lim_val = limit(term, var, point, dir=direction)
+        lim_val = simplify(limit(term, var, point, dir=direction))
         if lim_val not in (oo, -oo):
             continue
         inf_sign = 1 if lim_val == oo else -1 if lim_val == -oo else None
@@ -245,7 +245,7 @@ def const_inf_mul_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     count = 0
     for factor in factors:
-        lim_val = limit(factor, var, point, dir=direction)
+        lim_val = simplify(limit(factor, var, point, dir=direction))
         if lim_val == -oo or lim_val < 0:
             count += 1
 
@@ -286,7 +286,7 @@ def const_zero_div_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     sign = 1 if direction == '+' else -1
     # SymPy moves the minus sign to the numerator,
     # so we only need to consider the sign of the limit of the numerator.
-    num_lim = limit(num, var, point, dir=direction).doit()
+    num_lim = simplify(limit(num, var, point, dir=direction).doit())
     sign *= 1 if num_lim > 0 else -1
     result = oo * sign
 
@@ -363,7 +363,7 @@ def direct_substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunc
                 return None
 
         # Final fallback: compute the actual limit to verify existence
-        lim_val = limit(expr, var, point, dir=direction)
+        lim_val = simplify(limit(expr, var, point, dir=direction))
         if lim_val.is_finite or lim_val in (oo, -oo):
             return 'direct_substitution'
         return None
@@ -436,7 +436,7 @@ def const_inf_add_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRe
     inf_sign = None
 
     for term in terms:
-        lim_val = limit(term, var, point, dir=direction)
+        lim_val = simplify(limit(term, var, point, dir=direction))
         if lim_val in (oo, -oo):
             have_inf = True
             term_sign = 1 if lim_val == oo else -1
@@ -480,7 +480,7 @@ def const_inf_mul_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRe
 
     has_inf = False
     for factor in factors:
-        lim_val = limit(factor, var, point, dir=direction)
+        lim_val = simplify(limit(factor, var, point, dir=direction))
         if lim_val in (oo, -oo):
             has_inf = True
         elif lim_val.is_real:
@@ -532,7 +532,7 @@ def const_zero_div_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionR
         return None
 
     if is_constant(num, var, point, direction):
-        num_lim = limit(num, var, point, dir=direction)
+        num_lim = simplify(limit(num, var, point, dir=direction))
         if num_lim != 0 and is_zero(den, var, point, direction):
             return 'const_zero_div'
     return None

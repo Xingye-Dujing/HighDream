@@ -31,8 +31,8 @@ def parts_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     var = context['variable']
     u, dv = select_parts_u_dv(expr, var)
     du = diff(u, var)
-    v = integrate(dv, var)
-    result = u * v - integrate(v * du, var)
+    v = simplify(integrate(dv, var))
+    result = simplify(u * v - integrate(v * du, var))
     var_latex, expr_latex, u_latex, v_latex, du_latex = wrap_latex(
         var, expr, u, v, du)
     return result, (

@@ -121,8 +121,8 @@ def check_div_split(expr: Expr, var: Symbol, point: Expr, direction: str) -> boo
 
     # Compute limits once to avoid redundant calls.
     try:
-        num_limit = limit(num, var, point, dir=direction)
-        den_limit = limit(den, var, point, dir=direction)
+        num_limit = simplify(limit(num, var, point, dir=direction))
+        den_limit = simplify(limit(den, var, point, dir=direction))
     except Exception:
         return False
 

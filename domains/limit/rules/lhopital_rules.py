@@ -347,8 +347,8 @@ def _estimate_derivative_complexity(numerator: Expr, denominator: Expr, var: Sym
     """
     try:
         # Compute derivative proxies
-        num_diff = diff(numerator, var)
-        den_diff = diff(denominator, var)
+        num_diff = simplify(diff(numerator, var))
+        den_diff = simplify(diff(denominator, var))
 
         # Avoid division by zero or undefined forms
         if den_diff == 0:
@@ -365,7 +365,7 @@ def _estimate_derivative_complexity(numerator: Expr, denominator: Expr, var: Sym
 
     except Exception:
         # Fallback on raw ratio if simplification fails (e.g., due to timeouts or singularities)
-        result = num_diff / den_diff
+        result = simplify(num_diff / den_diff)
 
     # Aggregate weighted complexity metrics
     complexity = (
@@ -446,10 +446,11 @@ def lhopital_direct_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn
     typ = _get_indeterminate_type(num, den, var, point, direction)
 
     try:
-        num_deriv = diff(num, var)
-        den_deriv = diff(den, var)
+        num_deriv = simplify(diff(num, var))
+        den_deriv = simplify(diff(den, var))
 
-        new_expr = Limit(num_deriv/den_deriv, var, point, dir=direction)
+        new_expr = Limit(simplify(num_deriv/den_deriv),
+                         var, point, dir=direction)
 
         # Map internal type to display form
         display_type = r'\frac{0}{0}' if typ == '0/0' else r'\frac{\infty}{\infty}'
@@ -458,7 +459,7 @@ def lhopital_direct_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn
             f"原式为 ${display_type}$ 型不定式,应用洛必达法则: "
             f"对分子 ${latex(num)}$ 和分母 ${latex(den)}$ 关于 ${latex(var)}$ 分别求导,得到: "
             f"${latex(num_deriv)}, {latex(den_deriv)}$"
-            f"因此极限转化为: ${latex(new_expr)}$"
+            f" 因此极限转化为: ${latex(new_expr)}$"
         )
 
         return new_expr, explanation
@@ -498,13 +499,13 @@ def lhopital_zero_times_inf_rule(expr: Expr, context: RuleContext) -> RuleFuncti
 
     conversion_explanation = (
         f"原式为 $0 \\cdot \\infty$ 型不定式,转换为 ${display_type}$ 型:"
-        f"${latex(expr)} = \\frac{{{latex(numerator)}}}{{{denominator}}}$"
+        f"${latex(expr)} = \\frac{{{latex(numerator)}}}{{{latex(denominator)}}}$"
     )
 
-    numerator_diff = diff(numerator, var)
-    denominator_diff = diff(denominator, var)
+    numerator_diff = simplify(diff(numerator, var))
+    denominator_diff = simplify(diff(denominator, var))
 
-    diff_expr = numerator_diff / denominator_diff
+    diff_expr = simplify(numerator_diff / denominator_diff)
     diff_limit = Limit(diff_expr, var, point, direction)
 
     explanation = conversion_explanation + (
@@ -544,7 +545,7 @@ def lhopital_inf_minus_inf_rule(expr: Expr, context: RuleContext) -> RuleFunctio
         numerator_diff = diff(numerator, var)
         denominator_diff = diff(denominator, var)
 
-        diff_expr = numerator_diff / denominator_diff
+        diff_expr = simplify(numerator_diff / denominator_diff)
         diff_limit = Limit(diff_expr, var, point, direction)
         explanation = conversion_explanation + (
             f"应用洛必达法则,分子分母分别求导:"

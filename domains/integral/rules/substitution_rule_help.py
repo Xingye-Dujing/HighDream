@@ -28,7 +28,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunctio
         if not inner_expr.has(var):
             continue
 
-        gp = diff(inner_expr, var)  # g'(x)
+        gp = simplify(diff(inner_expr, var))  # g'(x)
         if gp.is_zero:
             continue
 
@@ -46,18 +46,18 @@ def try_standard_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunctio
             f_u = factor.func(u)
 
             # Integrate f(u) du
-            inner_integral = integrate(f_u, u)
+            inner_integral = simplify(integrate(f_u, u))
             if isinstance(inner_integral, Integral):
                 # Integration failed or is unevaluated
                 continue
 
             # Substitute back u = g(x)
-            result = inner_integral.subs(u, inner_expr)
+            result = ratio * inner_integral.subs(u, inner_expr)
 
             var_latex = wrap_latex(var)
             explanation = (
                 f"换元法: 令 $u = {latex(inner_expr)}$, $du = {latex(gp)}\\,d{var_latex}$, "
-                f"原式化为 $\\int {latex(f_u)}\\,du = {latex(inner_integral)}$, "
+                f"原式化为 $ {latex(ratio)} \\int {latex(f_u)}\\,du = {latex(inner_integral)}$, "
                 f"故积分为 ${latex(result)} + C$"
             )
             return result, explanation
@@ -204,7 +204,7 @@ def try_radical_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunction
             new_expr = new_expr.subs(rad, u)
             new_expr = simplify(new_expr * dx_du)
 
-            integral_u = integrate(new_expr, u)
+            integral_u = simplify(integrate(new_expr, u))
             if isinstance(integral_u, Integral):
                 continue  # Integration failed
 
@@ -246,7 +246,7 @@ def try_exp_log_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunction
         new_expr = new_expr.subs(exp(var), u)  # Ensure exp(x) is replaced
         new_expr = simplify(new_expr * dx_du)
 
-        integral_u = integrate(new_expr, u)
+        integral_u = simplify(integrate(new_expr, u))
         if isinstance(integral_u, Integral):
             pass  # Try next case
         else:
@@ -271,7 +271,7 @@ def try_exp_log_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunction
         new_expr = new_expr.subs(log(var), u)
         new_expr = simplify(new_expr * dx_du)
 
-        integral_u = integrate(new_expr, u)
+        integral_u = simplify(integrate(new_expr, u))
         if isinstance(integral_u, Integral):
             return None
         final_result = integral_u.subs(u, log(var))
