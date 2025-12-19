@@ -1,7 +1,7 @@
 """Expression Type Checking Utilities
 
-This module provides utility functions to classify and identify types of mathematical 
-expressions using SymPy expressions. It includes checks for logarithmic, polynomial, 
+This module provides utility functions to classify and identify types of mathematical
+expressions using SymPy expressions. It includes checks for logarithmic, polynomial,
 trigonometric, inverse trigonometric, exponential, and radical expressions.
 
 Functions:

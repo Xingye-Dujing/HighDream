@@ -57,7 +57,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunctio
             var_latex = wrap_latex(var)
             explanation = (
                 f"换元法: 令 $u = {latex(inner_expr)}$, $du = {latex(gp)}\\,d{var_latex}$, "
-                f"原式化为 $ {latex(ratio)} \\int {latex(f_u)}\\,du = {latex(inner_integral)}$, "
+                f"原式化为 $ {latex(ratio)} \\int {latex(f_u)}\\,du = {latex(ratio)} {latex(inner_integral)}$, "
                 f"故积分为 ${latex(result)} + C$"
             )
             return result, explanation

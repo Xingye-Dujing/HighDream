@@ -4,8 +4,7 @@ from sympy import (
 )
 
 from utils import (
-    MatcherFunctionReturn, RuleContext, RuleFunctionReturn,
-    has_radical, is_exp, is_inv_trig, is_log, is_poly, is_trig
+    MatcherFunctionReturn, RuleContext, RuleFunctionReturn, has_radical
 )
 from utils.latex_formatter import wrap_latex
 from domains.integral import (
@@ -19,26 +18,37 @@ from domains.integral import (
 def parts_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply integration by parts: u dv = u v − v du.
 
-    Uses the LIATE heuristic to select u from a product of two factors:
-      L — Logarithmic      (e.g., log(x))
+    Uses the ILAET heuristic to select u from a product of two factors:
       I — Inverse trig     (e.g., asin(x))
+      L — Logarithmic      (e.g., log(x))
       A — Algebraic        (e.g., x, x**2)
-      T — Trigonometric    (e.g., sin(x))
       E — Exponential      (e.g., exp(x))
+      T — Trigonometric    (e.g., sin(x))
 
-    Only triggers for binary products (exactly two factors).
+    Works with both products (multi-factor) and single-factor expressions.
+    Handle single-factor expressions by setting dv = 1
     """
     var = context['variable']
-    u, dv = select_parts_u_dv(expr, var)
-    du = diff(u, var)
+
+    # Handle single-factor expressions by setting dv = 1
+    if not isinstance(expr, Mul):
+        u = expr
+        dv = 1
+    else:
+        # For multi-factor expressions, use the ILAET heuristic
+        u, dv = select_parts_u_dv(expr, var)
+
+    du = simplify(diff(u, var))
     v = simplify(integrate(dv, var))
-    result = simplify(u * v - integrate(v * du, var))
-    var_latex, expr_latex, u_latex, v_latex, du_latex = wrap_latex(
-        var, expr, u, v, du)
+    u_v = simplify(u * v)
+    v_du = simplify(v * du)
+    result = simplify(u_v - simplify(integrate(v_du, var)))
+    var_latex, expr_latex, v_du_latex = wrap_latex(
+        var, expr, v_du)
     return result, (
-        f"分部积分法(LIATE 选择 $u={latex(u)}$, $dv={latex(dv)}\\,d{var_latex}$): $"
+        f"分部积分法(ILAET 选择 $u={latex(u)}$, $dv={latex(dv)}\\,d{var_latex}$): $"
         f"\\int {expr_latex}\\,d{var_latex} = "
-        f"{u_latex}\\cdot{v_latex} - \\int {v_latex}\\cdot{du_latex}\\,d{var_latex} + C$"
+        f"{latex(u_v)} - \\int {v_du_latex} \\,d{var_latex}$"
     )
 
 
@@ -79,51 +89,8 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     return None
 
 
-def parts_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
-    """Heuristic matcher for integration by parts.
-
-    Returns 'parts' if the expression is a product of two factors
-    that likely benefit from LIATE-based integration by parts, e.g.:
-      - log(x) * polynomial(x)
-      - polynomial(x) * trig(x)
-      - polynomial(x) * exp(x)
-
-    This avoids triggering parts on cases like sin(x)*cos(x) or exp(x)*log(x).
-    """
-    var = context['variable']
-
-    # Only consider binary products
-    if not isinstance(expr, Mul) or len(expr.args) != 2:
-        return None
-
-    arg1, arg2 = expr.args
-
-    # Classify factor type for matching using LIATE ordering:
-    # L (Log), I (Inverse trig), A (Algebraic/polynomial), T (Trig), E (Exp)
-    types = [
-        [is_log(arg1), is_inv_trig(arg1), is_poly(
-            arg1, var), is_trig(arg1), is_exp(arg1, var)],
-        [is_log(arg2), is_inv_trig(arg2), is_poly(
-            arg2, var), is_trig(arg2), is_exp(arg2, var)]
-    ]
-
-    # Unpack for readability following LIATE order
-    (l1, i1, p1, t1, e1), (l2, i2, p2, t2, e2) = types
-
-    # LIATE-motivated patterns:
-    # 1. Any log * anything (L is highest priority -> good for u)
-    if l1 or l2:
-        return 'parts'
-
-    # 2. Inverse trig * anything except log (I is second priority)
-    if (i1 and not l2) or (i2 and not l1):
-        return 'parts'
-
-    # 3. Polynomial * (trig or exp) -> poly as u, trig/exp as dv
-    if (p1 and (t2 or e2)) or (p2 and (t1 or e1)):
-        return 'parts'
-
-    return None
+def parts_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+    return 'parts'
 
 
 def substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:

@@ -50,8 +50,8 @@ RULE_DICT: RuleDict = {
     'inverse_trig': inverse_trig_rule,
     'const': const_rule,
     'var': var_rule,
-    'add': add_rule,
     'mul_const': mul_const_rule,
+    'add': add_rule,
     'substitution': substitution_rule,
     'parts': parts_rule,
 }

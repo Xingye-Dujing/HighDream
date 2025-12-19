@@ -1,6 +1,6 @@
 from sympy import (
     Abs, Expr, Integral, Pow, acos, asin, atan, cos, cosh, cot, csc, exp,
-    log, sec, sin, sinh, sqrt, tan, tanh
+    latex, log, sec, sin, sinh, sqrt, tan, tanh
 )
 
 from core import RuleRegistry
@@ -32,8 +32,9 @@ tanh_rule = _create_rule("双曲正切")
 def const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the const rule: c dx = c*x + C"""
     var = context['variable']
-    var_latex, expr_latex = wrap_latex(var, expr)
-    return expr * var, f"常数积分: $\\int {expr_latex}\\,d{var} = {var_latex} + C$"
+    res = expr * var
+    expr_latex = wrap_latex(expr)
+    return res, f"常数积分: $\\int {expr_latex}\\,d{var} = {latex(res)} + C$"
 
 
 def var_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
