@@ -23,6 +23,7 @@ cos_rule = _create_rule("余弦")
 tan_rule = _create_rule("正切")
 sec_rule = _create_rule("正割")
 csc_rule = _create_rule("余割")
+cot_rule = _create_rule("余切")
 sinh_rule = _create_rule("双曲正弦")
 cosh_rule = _create_rule("双曲余弦")
 tanh_rule = _create_rule("双曲正切")
@@ -81,22 +82,6 @@ def inverse_trig_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     return None
 
 
-def cot_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
-    """Apply the cotangent integration rule: ∫cot(x) dx = ln|sin(x)| + C
-
-    Handles the integral of 1/tan(x) = cot(x).
-    """
-    var = context['variable']
-    var_latex = wrap_latex(var)
-
-    # Since 1/tan(x) = cot(x), we're integrating cot(x)
-    result = log(Abs(sin(var)))
-
-    if expr == cot(var):
-        return result, f"余切函数积分: $\\int \\cot({var_latex})\\,d{var_latex} = \\ln|\\sin({var_latex})| + C$"
-    return result, f"倒数正切函数积分: $\\int \\frac{{1}}{{\\tan({var_latex})}}\\,d{var_latex} = \\int \\cot({var_latex})\\,d{var_latex} = \\ln|\\sin({var_latex})| + C$"
-
-
 def inverse_tangent_linear_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the rule for 1/(x^2 + m) form: 1/(x^2 + m) dx = (1/sqrt(m))*arctan(x/sqrt(m)) + C
 
@@ -121,8 +106,6 @@ log_matcher = _create_matcher(log)
 sin_matcher = _create_matcher(sin)
 cos_matcher = _create_matcher(cos)
 tan_matcher = _create_matcher(tan)
-sec_matcher = _create_matcher(sec)
-csc_matcher = _create_matcher(csc)
 sinh_matcher = _create_matcher(sinh)
 cosh_matcher = _create_matcher(cosh)
 tanh_matcher = _create_matcher(tanh)
@@ -146,6 +129,32 @@ def inverse_trig_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRet
     patterns = [1/sqrt(1 - var**2), -1/sqrt(1 - var**2), 1/(1 + var**2)]
     if any(expr == p for p in patterns):
         return 'inverse_trig'
+    return None
+
+
+def sec_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for secant expressions including 1/cos(x).
+
+    Matches expressions that are equivalent to sec(x).
+    """
+    var = context['variable']
+
+    # Match direct sec(x) or 1/cos(x)
+    if expr == sec(var) or expr == 1/cos(var):
+        return 'sec'
+    return None
+
+
+def csc_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for cosecant expressions including 1/sin(x).
+
+    Matches expressions that are equivalent to csc(x).
+    """
+    var = context['variable']
+
+    # Match direct csc(x) or 1/sin(x)
+    if expr == csc(var) or expr == 1/sin(var):
+        return 'csc'
     return None
 
 

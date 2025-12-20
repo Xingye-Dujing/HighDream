@@ -40,12 +40,12 @@ def create_integral_calculator(base_class):
             if expr.is_number:
                 return C
 
-            expr = expr.expand()
-            if not isinstance(expr, Add):
+            expand_expr = expr.expand()
+            if not isinstance(expand_expr, Add):
                 return expr + C
 
-            other_terms = [term for term in expr.args if not term.is_number]
-
+            other_terms = [
+                term for term in expand_expr.args if not term.is_number]
             return simplify(Add(*other_terms)) + C
 
         def _final_postprocess(self, final_expr: Expr) -> None:

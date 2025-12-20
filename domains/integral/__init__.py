@@ -2,7 +2,6 @@ from utils import MatcherList, RuleDict
 
 from .rules.parts_rule_help import select_parts_u_dv
 from .rules.substitution_rule_help import (
-    try_exp_log_substitution,
     try_radical_substitution,
     try_standard_substitution,
     try_trig_substitution

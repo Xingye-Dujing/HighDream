@@ -3,7 +3,7 @@ from collections import deque
 from functools import lru_cache
 from typing import Deque, Dict, List, Tuple
 
-from sympy import Expr, Symbol, latex, simplify, sympify
+from sympy import Expr, Symbol, expand_log, latex, simplify, sympify
 
 from utils import Context, MatcherList, Operation, RuleContext, RuleDict, RuleFunction
 from .base_step_generator import BaseStepGenerator
@@ -79,8 +79,12 @@ class BaseCalculator(ABC):
 
     @lru_cache(maxsize=128)
     def _cached_simplify(self, expr: Expr) -> Expr:
-        """Return a simplified version of the expression, using caching to avoid redundant computation."""
-        return simplify(expr)
+        """Return a simplified version of the expression, using caching to avoid redundant computation.
+
+        Note: Force log simplification
+        """
+
+        return expand_log(sympify(expr), force=True)
 
     def _get_context_dict(self, **context: Context) -> RuleContext:
         context_dict = {}

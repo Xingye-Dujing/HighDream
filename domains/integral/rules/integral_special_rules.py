@@ -1,6 +1,6 @@
 from sympy import (
-    Dummy, Expr, Integral, Mul, Wild, diff, exp, integrate,
-    latex, log, simplify, sqrt
+    Dummy, Expr, Integral, Mul, Wild, Rational, diff, integrate,
+    latex, log, simplify
 )
 
 from utils import (
@@ -8,11 +8,14 @@ from utils import (
 )
 from utils.latex_formatter import wrap_latex
 from domains.integral import (
-    select_parts_u_dv, try_exp_log_substitution,
+    select_parts_u_dv,
     try_radical_substitution,
     try_standard_substitution,
     try_trig_substitution
 )
+
+sqrt_pow = Rational(1, 2)
+minus_sqrt_pow = -Rational(1, 2)
 
 
 def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
@@ -123,7 +126,6 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
       1. Standard form: f(g(x)) * g'(x) to f(u) du
       2. Trigonometric substitution (e.g., sqrt(a^2−x^2), sqrt(a^2+x^2), sqrt(x^2−a^2))
       3. Radical substitution (e.g., sqrt[n]{ax + b})
-      4. Exponential/logarithmic substitution (e.g., e^{ax}, log(ax))
 
     Returns a transformed integral or None if no substitution applies.
     """
@@ -142,11 +144,6 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     # Strategy 3: Substitutions for nested radicals (e.g., (ax + b)^{1/n})
     result = try_radical_substitution(expr, var, u)
-    if result is not None:
-        return result
-
-    # Strategy 4: Substitutions involving exp or log terms
-    result = try_exp_log_substitution(expr, var, u)
     if result is not None:
         return result
 
@@ -203,7 +200,6 @@ def substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRet
       1. Standard pattern: f(g(x)) * g'(x) (up to constant multiple)
       2. Trigonometric substitution forms: sqrt(a^2−x^2), sqrt(a^2+x^2), sqrt(x^2−a^2)
       3. Nested radicals: (ax + b)^{p/q} with q > 1
-      4. Pure exp(x) or log(x) terms that suggest substitution
     """
     var = context['variable']
 
@@ -244,17 +240,21 @@ def substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRet
                 return 'substitution'
 
     # Strategy 2: Trigonometric substitution patterns
+
     a = Wild('a', exclude=[var], properties=[
              lambda x: x.is_positive])  # Assume a > 0
-    if expr.find(sqrt(a**2 - var**2)):
-        return 'substitution'
+    tri_sub_patterns = [(a - var**2)**sqrt_pow,
+                        (a + var**2)**sqrt_pow,
+                        (var**2 - a)**sqrt_pow,
+                        (a - var**2)**minus_sqrt_pow,
+                        (a + var**2)**minus_sqrt_pow,
+                        (var**2 - a)**minus_sqrt_pow]
+    for pattern in tri_sub_patterns:
+        if expr.find(pattern):
+            return 'substitution'
 
     # Strategy 3: Radical expressions (e.g., (ax+b)^{1/n})
     if has_radical(expr, var):
-        return 'substitution'
-
-    # Strategy 4: Exponential or logarithmic terms in x
-    if expr.has(exp(var)) or expr.has(log(var)):
         return 'substitution'
 
     return None
