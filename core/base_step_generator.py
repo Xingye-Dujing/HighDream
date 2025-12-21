@@ -36,6 +36,8 @@ class BaseStepGenerator(ABC):
     def get_available_sym(self, var: Symbol) -> Symbol:
         if var.name in self.available_sym_chars:
             self.available_sym_chars.remove(var.name)
+        if not self.available_sym_chars:
+            raise ValueError("没有更多可用的变量.")
         new_sym_char = self.available_sym_chars[0]
         self.available_sym_chars.remove(new_sym_char)
         return Symbol(new_sym_char)

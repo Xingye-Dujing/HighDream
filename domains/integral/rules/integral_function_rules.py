@@ -14,8 +14,7 @@ def _create_rule(func_name):
     return RuleRegistry.create_common_rule(Integral, func_name)
 
 
-# Generate all exp and log rules using the factory function
-exp_rule = _create_rule("指数")
+# Generate log rules using the factory function
 log_rule = _create_rule("对数")
 # Generate all trigonometric and hyperbolic rules using the factory function
 sin_rule = _create_rule("正弦")
@@ -67,6 +66,29 @@ def pow_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     return result, f"幂函数积分规则: $\\int {expr_latex}\\,d{var_latex} = \\frac{{{var_latex}^{{{exponent_latex}}}}}{{{exponent_latex}}} + C$"
 
 
+def exp_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Apply the extended exponential rule for a^x where a can be any base.
+
+    For a^x dx = a^x / ln(a) + C
+    For e^x dx = e^x + C (special case)
+    """
+    var = context['variable']
+    base, exponent = expr.as_base_exp()
+    var_latex = wrap_latex(var)
+
+    # Check if it's e^x (natural exponential)
+    if base == exp(1) and exponent == var:
+        result = expr
+        return result, f"自然指数函数积分: $\\int e^{{{var_latex}}}\\,d{var_latex} = e^{{{var_latex}}} + C$"
+    # General case: a^x where a > 0 and a != 1
+    if exponent == var and base.is_positive and base.is_real and base != 1:
+        result = expr / log(base)
+        base_latex = wrap_latex(base)
+        return result, f"指数函数积分: $\\int {base_latex}^{{{var_latex}}}\\,d{var_latex} = \\frac{{{base_latex}^{{{var_latex}}}}}{{\\ln({base_latex})}} + C$"
+
+    return None
+
+
 def inverse_trig_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     var = context['variable']
     var_latex = wrap_latex(var)
@@ -101,7 +123,6 @@ def inverse_tangent_linear_rule(expr: Expr, context: RuleContext) -> RuleFunctio
 
 
 pow_matcher = _create_matcher(Pow)
-exp_matcher = _create_matcher(exp)
 log_matcher = _create_matcher(log)
 sin_matcher = _create_matcher(sin)
 cos_matcher = _create_matcher(cos)
@@ -129,6 +150,24 @@ def inverse_trig_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRet
     patterns = [1/sqrt(1 - var**2), -1/sqrt(1 - var**2), 1/(1 + var**2)]
     if any(expr == p for p in patterns):
         return 'inverse_trig'
+    return None
+
+
+def exp_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Extended matcher for exponential expressions including a^x where a can be any base."""
+    var = context['variable']
+    # Match direct exp(x) form
+    if expr == exp(var):
+        return 'exp'
+
+    # Check if expression is of the form a^x
+    if expr.is_Pow:
+        base, exponent = expr.as_base_exp()
+        # Match e^x or a^x where a > 0, a != 1, and exponent is the integration variable
+        if (base == exp(1) and exponent == var) or \
+           (exponent == var and base.is_positive and base.is_real and base != 1):
+            return 'exp'
+
     return None
 
 

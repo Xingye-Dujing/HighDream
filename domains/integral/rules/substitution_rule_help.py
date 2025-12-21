@@ -1,6 +1,6 @@
 from sympy import (
-    Abs, Dummy, Eq, Expr, Integral, Pow, Rational, Symbol, Wild, acos, asin, atan,
-    diff, latex, log, sec, simplify, sin, solve, sqrt, tan
+    Abs, Dummy, Eq, Expr, I, Integral, Pow, Rational, Symbol, Wild, acos, asin, atan,
+    diff, latex, log, preorder_traversal, sec, simplify, sin, solve, sqrt, tan, together
 )
 
 from core import BaseStepGenerator
@@ -19,50 +19,71 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
 
     Returns the integrated result and explanation if successful.
     """
-    # Normalize factors: handle both Mul and non-Mul (e.g., single sin(x))
+    # Normalize factors: handle both Mul and non-Mul (e.g., single sin(x+2))
+    expr = together(expr)
     factors = list(expr.args) if expr.is_Mul else [expr]
 
     for factor in factors:
-        # Only consider unary elementary functions: f(g(x))
-        if not (factor.is_Function and len(factor.args) == 1):
+        if not factor.args or factor.is_constant() or factor == var:
             continue
 
-        inner_expr = factor.args[0]  # g(x)
-        if not inner_expr.has(var):
-            continue
+        flag = False
+        if factor.is_Pow and factor.args[1].has(var):
+            flag = True  # eg. 3^g(x), etc.
+        inner = factor.args[1] if flag else factor.args[0]   # g(x)
 
-        gp = simplify(diff(inner_expr, var))  # g'(x)
-        if gp.is_zero:
-            continue
-
-        try:
-            outer_part = expr / factor  # The rest of the integrand
-            if outer_part == 0:
+        for original_term in preorder_traversal(inner):
+            if original_term == var or original_term.is_constant():
                 continue
 
-            # Check if outer_part = k * g'(x) for some constant k
-            ratio = simplify(outer_part / gp)
-            if not ratio.is_constant():
-                continue
+            check_list = [original_term]
+            sqrt_term = sqrt(original_term)
+            # Use a temporary variable with positive real assumptions to aid radical simplification
+            _t = Symbol('t', real=True, positive=True)
+            sqrt_term = simplify(sqrt_term.subs(var, _t)).subs(_t, var).replace(
+                Abs, lambda arg: arg)
+            if not sqrt_term.has(I):
+                check_list.append(sqrt_term)
 
-            # Substitute u = g(x)
-            u = step_gene.get_available_sym(var)
-            step_gene.subs_dict[u] = inner_expr
-            # Construct f(u): e.g., sin(g(x)) to sin(u)
-            f_u = factor.func(u)
+            for term in check_list:
+                if term == var:
+                    continue
 
-            new_expr = ratio * Integral(f_u, u)
+                gp = simplify(diff(term, var))  # g'(x)
+                if gp == 0:
+                    continue
 
-            explanation = (
-                f"换元法: 令 ${u.name} = {latex(inner_expr)}$, $d{u.name} = {latex(gp)}\\,d{var.name}$, "
-                f"原式化为 $ {latex(ratio)} \\int {latex(f_u)}\\,d{u.name} = {latex(new_expr)}$, "
-            )
-            return new_expr, explanation
+                try:
+                    outer_part = expr / factor  # The rest of the integrand
 
-        except (ZeroDivisionError, ValueError, TypeError, NotImplementedError) as e:
-            # Safely skip problematic cases (e.g., division by zero, unsupported ops)
-            print(f"Warning: Standard substitution failed for {e}")
-            continue
+                    # Check if outer_part = k * g'(x) for some constant k
+                    ratio = simplify(outer_part / gp)
+                    if not ratio.is_constant():
+                        continue
+
+                    # Substitute u = g(x)
+                    u = step_gene.get_available_sym(var)
+                    step_gene.subs_dict[u] = term
+                    # Construct f(u)
+                    f_u = simplify((expr/gp/ratio).subs(term, u))
+
+                    new_expr = ratio * Integral(f_u, u)
+
+                    ratio_latex = '' if ratio == 1 else (
+                        '-' if ratio == -1 else latex(ratio))
+                    gp_latex = '' if gp == 1 else (
+                        '-' if gp == -1 else latex(gp))
+
+                    explanation = (
+                        f"换元法: 令 ${u.name} = {latex(term)}$, $d{u.name} = {gp_latex}\\,d{var.name}$, "
+                        f"原式$ \\int {latex(expr)}\\,d{var.name}$ 化为 $ {ratio_latex} \\int {latex(f_u)}\\,d{u.name}$, "
+                    )
+                    return new_expr, explanation
+
+                except (ZeroDivisionError, ValueError, TypeError, NotImplementedError) as e:
+                    # Safely skip problematic cases (e.g., division by zero, unsupported ops)
+                    print(f"Warning: Standard substitution failed for {e}")
+                    continue
 
     return None
 
@@ -233,7 +254,8 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
             new_expr = simplify(new_expr * dx_du)
             # Use a temporary variable with positive real assumptions to aid radical simplification
             _t = Symbol('t', real=True, positive=True)
-            new_expr = simplify(new_expr.subs(u, _t)).subs(_t, u)
+            new_expr = simplify(new_expr.subs(u, _t)).subs(_t, u).replace(
+                Abs, lambda arg: arg)
 
             final_result = Integral(new_expr, u)
 

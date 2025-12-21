@@ -1,6 +1,6 @@
 from sympy import (
-    Expr, Integral, Mul, Wild, Rational, diff, integrate,
-    latex, log, simplify
+    Abs, Expr, I, Integral, Mul, Wild, Rational, Symbol, diff, integrate,
+    latex, log, preorder_traversal, simplify, sqrt, together
 )
 
 from utils import (
@@ -203,41 +203,52 @@ def substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRet
     """
     var = context['variable']
 
-    # Skip constant expressions
-    if not expr.has(var):
-        return None
-
     # Normalize expression into a list of factors (even for non-Mul)
+    expr = together(expr)
     factors = list(expr.args) if expr.is_Mul else [expr]
 
     # Strategy 1: Standard u-substitution pattern f(g(x)) * g'(x)
     for factor in factors:
-        # Look for unary functions like sin(g(x)), log(g(x)), etc.
-        if factor.is_Function and len(factor.args) == 1:
-            inner = factor.args[0]
-            if not inner.has(var):
-                continue
-            gp = diff(inner, var)
-            if gp.is_zero:
-                continue
+        if not factor.args or factor.is_constant() or factor == var:
+            continue
 
-            # Compute the "remaining part" = expr / factor
-            try:
+        flag = False
+        # Look for unary functions like 3^g(x), etc.
+        if factor.is_Pow and factor.args[1].has(var):
+            flag = True
+        # Look for unary functions like sin(g(x)), log(g(x)),1/g(x)^2 etc.
+        inner = factor.args[1] if flag else factor.args[0]
+
+        for original_term in preorder_traversal(inner):
+            if original_term == var or original_term.is_constant():
+                continue
+            check_list = [original_term]
+            sqrt_term = sqrt(original_term)
+            # Use a temporary variable with positive real assumptions to aid radical simplification
+            _t = Symbol('t', real=True, positive=True)
+            sqrt_term = simplify(sqrt_term.subs(var, _t).subs(_t, var).replace(
+                Abs, lambda arg: arg))
+            if not sqrt_term.has(I):
+                check_list.append(sqrt_term)
+            for term in check_list:
+                if term == var:
+                    continue
+
+                gp = simplify(diff(term, var))
+                if gp == 0:
+                    continue
+
+                # Compute the "remaining part" = expr / factor
                 outer_part = expr / factor
-            except ZeroDivisionError:
-                continue
 
-            if outer_part == 0:
-                continue
+                # Check if outer_part is a constant multiple of g'(x)
+                try:
+                    ratio = simplify(outer_part / gp)
+                except Exception:
+                    continue
 
-            # Check if outer_part is a constant multiple of g'(x)
-            try:
-                ratio = simplify(outer_part / gp)
-            except Exception:
-                continue
-
-            if ratio.is_constant():
-                return 'substitution'
+                if ratio.is_constant():
+                    return 'substitution'
 
     # Strategy 2: Trigonometric substitution patterns
 
