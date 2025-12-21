@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from sympy import Expr, Integral, Symbol
+from sympy import Add, Expr, Integral, Symbol, simplify
 
 from core import BaseCalculator, SelectRuleCalculator
 from utils import MatcherList, Operation, RuleDict
@@ -34,19 +34,22 @@ def create_integral_calculator(base_class):
             self.rule_dict: RuleDict = RULE_DICT
             self.matcher_list: MatcherList = MATCHER_LIST
 
-        # def _merge_constants_with_C(self, expr: Expr) -> Expr:
-        #     """Merge all constant terms to C."""
+        def _merge_constants_with_C(self, expr: Expr) -> Expr:
+            """Merge all constant terms to C."""
 
-        #     if expr.is_number:
-        #         return C
+            if expr.is_number:
+                return C
 
-        #     expand_expr = expr.expand()
-        #     if not isinstance(expand_expr, Add):
-        #         return expr + C
+            expand_expr = expr.expand()
+            if not isinstance(expand_expr, Add):
+                return expr + C
 
-        #     other_terms = [
-        #         term for term in expand_expr.args if not term.is_number]
-        #     return simplify(together(Add(*other_terms))) + C
+            other_terms = [
+                term for term in expand_expr.args if not term.is_number]
+            # If there are more than 4 terms, don't merge constant terms to C to avoid complexity.
+            if len(other_terms) > 4:
+                return expr + C
+            return simplify(Add(*other_terms)) + C
 
         def _final_postprocess(self, final_expr: Expr) -> None:
             """Add constant of integration (+C) for indefinite integrals without the integral symbol.
@@ -56,23 +59,20 @@ def create_integral_calculator(base_class):
             """
             super()._final_postprocess(final_expr)
             # Add C to the last step
-            # self.step_generator.steps[-1] = self._merge_constants_with_C(
-            #     self.step_generator.steps[-1])
-            self.step_generator.steps[-1] += C
+            self.step_generator.steps[-1] = self._merge_constants_with_C(
+                self.step_generator.steps[-1])
             try:
                 # When expression experience simplification without assumptions,
                 # add C to the penultimate expression.
                 if not self.step_generator.steps[-2].has(C) and not self.step_generator.steps[-2].has(Integral):
-                    # self.step_generator.steps[-2] = self._merge_constants_with_C(
-                    #     self.step_generator.steps[-2])
-                    self.step_generator.steps[-2] += C
+                    self.step_generator.steps[-2] = self._merge_constants_with_C(
+                        self.step_generator.steps[-2])
                 # When no rule applies to the remaining Integral, fall back to SymPy's Integral.doit() and
                 # the result experiences simplification without assumptions and simplification with assumptions.
                 # add C to the third-to-last expression.
                 if not self.step_generator.steps[-3].has(C) and not self.step_generator.steps[-3].has(Integral):
-                    # self.step_generator.steps[-3] = self._merge_constants_with_C(
-                    #     self.step_generator.steps[-3])
-                    self.step_generator.steps[-3] += C
+                    self.step_generator.steps[-3] = self._merge_constants_with_C(
+                        self.step_generator.steps[-3])
             except IndexError:
                 pass
 
