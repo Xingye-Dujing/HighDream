@@ -4,8 +4,11 @@ from typing import List, Tuple
 from sympy import Expr, Symbol, latex
 
 
-available_sym_chars = ['u', 'v', 'x', 'y', 'h', 'z', 't', 's', 'r', 'q', 'w'
-                       'p', 'o', 'n', 'm', 'l', 'k', 'j', 'i', 'h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
+available_sym_chars = [
+    'u', 'v', 'x', 'y', 'h', 'z', 't', 's', 'r', 'q', 'w',
+    'p', 'o', 'n', 'm', 'l', 'k', 'j', 'i', 'g', 'f', 'e',
+    'd', 'b', 'a', 'c'
+]
 
 
 class BaseStepGenerator(ABC):

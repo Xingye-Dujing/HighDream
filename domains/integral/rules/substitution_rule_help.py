@@ -1,6 +1,6 @@
 from sympy import (
     Abs, Dummy, Eq, Expr, Integral, Pow, Rational, Symbol, Wild, acos, asin, atan,
-    diff, integrate, latex, log, sec, simplify, sin, solve, sqrt, tan
+    diff, latex, log, sec, simplify, sin, solve, sqrt, tan
 )
 
 from core import BaseStepGenerator
@@ -181,7 +181,7 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
     return None
 
 
-def try_radical_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunctionReturn:
+def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
     """Attempt radical substitution for integrals containing nested radicals,
     e.g., sqrt(x), sqrt(x + sqrt(x)), (x + 1)^{2/3}, etc.
 
@@ -215,6 +215,7 @@ def try_radical_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunction
 
         # Solve base = u**(q/p) for x
         try:
+            u = step_gene.get_available_sym(var)
             equation = Eq(base, u**(Rational(q, p)))
             sol = solve(equation, var)
             if not sol:
@@ -230,22 +231,19 @@ def try_radical_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunction
             # Also replace any exact match of 'rad' with u (handles nested cases)
             new_expr = new_expr.subs(rad, u)
             new_expr = simplify(new_expr * dx_du)
+            # Use a temporary variable with positive real assumptions to aid radical simplification
+            _t = Symbol('t', real=True, positive=True)
+            new_expr = simplify(new_expr.subs(u, _t)).subs(_t, u)
 
-            new_u = Symbol('u', real=True, positive=True)
-            new_expr = new_expr.subs(u, new_u)
-            integral_u = simplify(integrate(new_expr, new_u))
-            if isinstance(integral_u, Integral):
-                continue  # Integration failed
+            final_result = Integral(new_expr, u)
 
-            final_result = integral_u.subs(new_u, rad)
-            final_result = simplify(final_result)
-
+            # Store substitution
+            step_gene.subs_dict[u] = rad
             explanation = (
-                f"根式代换：令 $u = {latex(rad)}$, 则由 ${latex(base)} = u^{{{latex(Rational(q, p))}}}$ 解得 "
-                f"${latex(var)} = {latex(x_of_u)}$, "
-                f"且 $d{latex(var)} = {latex(dx_du)}\\,du$. 积分化为 "
-                f"$\\int {latex(new_expr)}\\,du = {latex(integral_u)}$, "
-                f"回代后得结果：${latex(final_result)} + C$."
+                f"根式代换：令 ${u.name} = {latex(rad)}$, 则由 ${latex(base)} = {u.name}^{{{latex(Rational(q, p))}}}$ 解得 "
+                f"${var.name} = {latex(x_of_u)}$, "
+                f"且 $d{var.name} = {latex(dx_du)}\\,d{u.name}$. 积分化为 "
+                f"$\\int {latex(new_expr)}\\,d{u.name}$, "
             )
             return final_result, explanation
 
