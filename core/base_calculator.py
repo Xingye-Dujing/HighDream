@@ -170,7 +170,10 @@ class BaseCalculator(ABC):
         if len(symbol_list) > 1:
             raise ValueError(
                 "仅允许出现一个字母变量.")
-        context['variable'] = symbol_list[0]
+        if symbol_list:
+            context['variable'] = symbol_list[0]
+        else:
+            context['variable'] = Symbol("x")
 
         initial_operation = self._get_cached_result(expr, operation, **context)
         self.step_generator.add_step(initial_operation)
