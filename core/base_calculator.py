@@ -90,8 +90,8 @@ class BaseCalculator(ABC):
         context_dict = {}
         for key, value in context.items():
             context_dict[key] = value
-        # Add step_generator to the rule context to allow rule functions to add steps freely by accessing the step generator.
-        # context_dict['step_generator'] = self.step_generator
+        # Add step_generator to the rule context to allow rule functions to control steps freely by accessing the step generator.
+        context_dict['step_generator'] = self.step_generator
         return context_dict
 
     def _check_rule_is_can_apply(self, _rule: RuleFunction) -> bool:
@@ -131,6 +131,27 @@ class BaseCalculator(ABC):
             )
         return new_expr, explanation, expr_to_operation
 
+    def _back_subs(self, final_expr: Expr) -> None:
+        """Perform back substitution by iterating through the substitution dictionary in reverse order.
+
+        The keys are post-substitution variables and values are pre-substitution expressions.
+        Since substitutions were added in order, back substitution requires reverse iteration.
+
+        Args:
+            final_expr: The final expression to perform back substitution on
+        """
+        subs_dict = self.step_generator.subs_dict
+        if not subs_dict:
+            return final_expr
+        # Iterate through the substitution dictionary in reverse order
+        # This ensures proper back substitution since later substitutions depend on earlier ones
+        for key, value in reversed(list(subs_dict.items())):
+            final_expr = simplify(final_expr.subs(key, value))
+
+        self.step_generator.add_step(final_expr, "回代换元变量")
+
+        return final_expr
+
     def _final_postprocess(self, final_expr: Expr) -> None:
         """Apply domain-aware simplification by assuming all free symbols are positive real numbers.
 
@@ -139,6 +160,8 @@ class BaseCalculator(ABC):
         """
         if not final_expr.free_symbols:
             return
+
+        final_expr = self._back_subs(final_expr)
 
         # Map each free symbol to a new symbol with positive=True, real=True
         assumption_map = {

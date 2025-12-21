@@ -1,5 +1,5 @@
 from sympy import (
-    Dummy, Expr, Integral, Mul, Wild, Rational, diff, integrate,
+    Expr, Integral, Mul, Wild, Rational, diff, integrate,
     latex, log, simplify
 )
 
@@ -130,21 +130,21 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     Returns a transformed integral or None if no substitution applies.
     """
     var = context['variable']
-    u = Dummy('u')  # Use dummy variable to avoid symbol collision
+    step_gene = context['step_generator']
 
     # Strategy 1: Standard chain-rule pattern f(g(x)) * g'(x)
-    result = try_standard_substitution(expr, var, u)
-    if result is not None:
+    result = try_standard_substitution(expr, var, step_gene)
+    if result:
         return result
 
     # Strategy 2: Trigonometric substitutions for sqrt(a^2 +- x^2) etc.
     result = try_trig_substitution(expr, var)
-    if result is not None:
+    if result:
         return result
 
     # Strategy 3: Substitutions for nested radicals (e.g., (ax + b)^{1/n})
-    result = try_radical_substitution(expr, var, u)
-    if result is not None:
+    result = try_radical_substitution(expr, var, step_gene)
+    if result:
         return result
 
     return None

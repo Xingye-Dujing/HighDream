@@ -3,14 +3,14 @@ from sympy import (
     diff, integrate, latex, log, sec, simplify, sin, solve, sqrt, tan
 )
 
+from core import BaseStepGenerator
 from utils import RuleFunctionReturn
-from utils.latex_formatter import wrap_latex
 
 sqrt_pow = Rational(1, 2)
 minus_sqrt_pow = -Rational(1, 2)
 
 
-def try_standard_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunctionReturn:
+def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
     """Attempt standard u-substitution for integrals of the form f(g(x)) g'(x) dx.
 
     Matches expressions where:
@@ -45,28 +45,23 @@ def try_standard_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunctio
             if not ratio.is_constant():
                 continue
 
+            # Substitute u = g(x)
+            u = step_gene.get_available_sym(var)
+            step_gene.subs_dict[u] = inner_expr
             # Construct f(u): e.g., sin(g(x)) to sin(u)
             f_u = factor.func(u)
 
-            # Integrate f(u) du
-            inner_integral = simplify(integrate(f_u, u))
-            if isinstance(inner_integral, Integral):
-                # Integration failed or is unevaluated
-                continue
+            new_expr = ratio * Integral(f_u, u)
 
-            # Substitute back u = g(x)
-            result = ratio * inner_integral.subs(u, inner_expr)
-
-            var_latex = wrap_latex(var)
             explanation = (
-                f"换元法: 令 $u = {latex(inner_expr)}$, $du = {latex(gp)}\\,d{var_latex}$, "
-                f"原式化为 $ {latex(ratio)} \\int {latex(f_u)}\\,du = {latex(ratio)} {latex(inner_integral)}$, "
-                f"故积分为 ${latex(result)} + C$"
+                f"换元法: 令 ${u.name} = {latex(inner_expr)}$, $d{u.name} = {latex(gp)}\\,d{var.name}$, "
+                f"原式化为 $ {latex(ratio)} \\int {latex(f_u)}\\,d{u.name} = {latex(new_expr)}$, "
             )
-            return result, explanation
+            return new_expr, explanation
 
-        except (ZeroDivisionError, ValueError, TypeError, NotImplementedError):
+        except (ZeroDivisionError, ValueError, TypeError, NotImplementedError) as e:
             # Safely skip problematic cases (e.g., division by zero, unsupported ops)
+            print(f"Warning: Standard substitution failed for {e}")
             continue
 
     return None
