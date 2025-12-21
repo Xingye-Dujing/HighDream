@@ -201,10 +201,8 @@ def try_radical_substitution(expr: Expr, var: Symbol, u: Symbol) -> RuleFunction
     candidates = []
     for atom in expr.atoms(Pow):
         base, _exp = atom.base, atom.exp
-        print(base, _exp)
         if isinstance(_exp, Rational) and -1 < _exp < 1 and base.has(var):
             candidates.append(atom)
-    print(candidates)
 
     # Sort by depth (simplest first) – optional but improves success rate
     candidates.sort(key=lambda r: r.count_ops())

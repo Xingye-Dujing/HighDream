@@ -298,12 +298,14 @@ function setupCellEvents(cell) {
       renderMathPreview(cell);
 
       // If diff, integral, limit is selected, show variable input box
+      /*
       const varInput = cell.querySelector(".var-input");
       if (this.value === "diff" || this.value === "integral" || this.value === "limit") {
         if (varInput) varInput.style.display = "flex";
       } else {
         if (varInput) varInput.style.display = "none";
       }
+      */
 
       // If ref is selected, show target form input box for matrix
       const refControls = cell.querySelector(".ref-controls");
@@ -515,10 +517,12 @@ function createCellElement(id, type) {
                 </optgroup>
               </select>
               <!-- 变量输入框 -->
+              <!--
               <span class="var-input" style="display: flex;">
                 <span class="var-label">变量:</span>
                 <input type="text" value="x" size="2" class="var-input-field">
               </span>
+              -->
 
               <!-- RefCalculator 专有 -->
               <div class="ref-controls controls" style="display: none; gap:8px; margin-left:8px; align-items:center;">

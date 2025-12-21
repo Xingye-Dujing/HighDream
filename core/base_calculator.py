@@ -54,7 +54,7 @@ class BaseCalculator(ABC):
 
     def _context_split(self, **context: Context) -> Symbol:
         """Only fit Derivative, Integral."""
-        return context.get('variable', Symbol('x'))
+        return context.get('variable')
 
     def _perform_operation(self, expr: Expr, operation: Operation, **context: Context) -> Operation:
         """Perform the specified operation on the expression and return the result."""
@@ -114,9 +114,7 @@ class BaseCalculator(ABC):
         return operation_obj.doit(), f"需手动计算表达式: ${latex(operation_obj)}$"
 
     def _update_expression(self, current_expr: Expr, operation: Operation, expr_to_operation: Dict[Expr, Operation], direct_compute: bool, **context: Context) -> Tuple[Expr, str, Dict[Expr, Operation]]:
-        # Extract the unique variable from the expression for substitution(u-substitution).
-        # context['variable'] = list(current_expr.free_symbols)[0]
-        # but it don't work now.
+
         if direct_compute:
             current_operation = self._get_cached_result(
                 current_expr, operation, **context)
@@ -167,6 +165,12 @@ class BaseCalculator(ABC):
         """Perform the core symbolic computation and record each evaluation step."""
         self.reset_process()
         expr = self._sympify(expr)
+        # Extract the unique variable from the expression for calculating.
+        symbol_list = list(expr.free_symbols)
+        if len(symbol_list) > 1:
+            raise ValueError(
+                "仅允许出现一个字母变量.")
+        context['variable'] = symbol_list[0]
 
         initial_operation = self._get_cached_result(expr, operation, **context)
         self.step_generator.add_step(initial_operation)
@@ -200,6 +204,11 @@ class BaseCalculator(ABC):
             if current_expr_key in self.processed:
                 direct_compute = True
             self.processed.add(current_expr_key)
+
+            # Extract the unique variable from the expression for substitution.
+            symbol_list = list(current_expr.free_symbols)
+            if symbol_list:
+                context['variable'] = symbol_list[0]
 
             new_expr, explanation, expr_to_operation = self._update_expression(
                 current_expr, operation, expr_to_operation, direct_compute, **context)
