@@ -23,27 +23,27 @@ from domains import (
 
 # Registry of available calculators mapped by operation type
 _calculators = {
-    'diff': DiffCalculator(),
-    'expr': ExpressionParser(),
-    'integral': IntegralCalculator(),
-    'ref': RefCalculator(),
-    'operations': BasicOperations(),
-    'invert': Inverter(),
-    'rank': Rank(),
-    'LU': LUDecomposition(),
-    'diag': Diagonalization(),
-    'svd': SVDSolver(),
-    'eigen': EigenSolver(),
-    'schur': SchurDecomposition(),
-    'det_1': DeterminantCalculator(),
-    'det_2': DetCalculator(),
-    'orthogonal': OrthogonalProcessor(),
-    'projection': VectorProjectionSolver(),
-    'dependence': LinearDependence(),
-    'transform_1': BaseTransform(),
-    'transform_2': LinearTransform(),
-    'linear_system_converter': LinearSystemConverter(),
-    'linear_solver': LinearSystemSolver(),
+    'diff': DiffCalculator,
+    'expr': ExpressionParser,
+    'integral': IntegralCalculator,
+    'ref': RefCalculator,
+    'operations': BasicOperations,
+    'invert': Inverter,
+    'rank': Rank,
+    'LU': LUDecomposition,
+    'diag': Diagonalization,
+    'svd': SVDSolver,
+    'eigen': EigenSolver,
+    'schur': SchurDecomposition,
+    'det_1': DeterminantCalculator,
+    'det_2': DetCalculator,
+    'orthogonal': OrthogonalProcessor,
+    'projection': VectorProjectionSolver,
+    'dependence': LinearDependence,
+    'transform_1': BaseTransform,
+    'transform_2': LinearTransform,
+    'linear_system_converter': LinearSystemConverter,
+    'linear_solver': LinearSystemSolver,
 }
 
 
@@ -90,10 +90,10 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
         variable = data.get('variable', 'x')
 
         if operation_type == 'diff':
-            return True, _calculators['diff'].compute_latex(expression, Symbol(variable))
+            return True, _calculators['diff']().compute_latex(expression, Symbol(variable))
 
         if operation_type == 'integral':
-            return True, _calculators['integral'].compute_latex(expression, Symbol(variable))
+            return True, _calculators['integral']().compute_latex(expression, Symbol(variable))
 
         if operation_type == 'limit':
             point = sympify(data.get('point', '0'))
@@ -105,34 +105,34 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
 
         if operation_type == 'ref':
             target = data.get('target_form', 'ref')
-            return True, _calculators['ref'].compute_latex(expression, target)
+            return True, _calculators['ref']().compute_latex(expression, target)
 
         if operation_type == 'operations':
             ops = data.get('operations', '+')
-            return True, _calculators['operations'].compute(expression, ops)
+            return True, _calculators['operations']().compute(expression, ops)
 
         if operation_type == 'invert':
-            calc = _calculators['invert']
+            calc = _calculators['invert']()
             calc.auto_matrix_inverse(expression)
             return True, calc.get_steps_latex()
 
         if operation_type == 'rank':
-            calc = _calculators['rank']
+            calc = _calculators['rank']()
             calc.auto_matrix_rank(expression)
             return True, calc.get_steps_latex()
 
         if operation_type == 'LU':
-            calc = _calculators['LU']
+            calc = _calculators['LU']()
             calc.auto_lu_decomposition(expression)
             return True, calc.get_steps_latex()
 
         if operation_type == 'diag':
-            calc = _calculators['diag']
+            calc = _calculators['diag']()
             calc.auto_diagonalization(expression)
             return True, calc.get_steps_latex()
 
         if operation_type in ('svd', 'singular'):
-            calc = _calculators['svd']
+            calc = _calculators['svd']()
             if operation_type == 'svd':
                 calc.compute_svd(expression)
             else:
@@ -140,22 +140,23 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
             return True, calc.get_steps_latex()
 
         if operation_type == 'eigen':
-            calc = _calculators['eigen']
+            calc = _calculators['eigen']()
             calc.auto_eigen_solver(expression)
             return True, calc.get_steps_latex()
 
         if operation_type == 'schur':
-            calc = _calculators['schur']
+            calc = _calculators['schur']()
             calc.auto_schur_decomposition(expression)
             return True, calc.get_steps_latex()
 
         if operation_type == 'det':
             cal_type = data.get('type', '1')
-            calc = _calculators['det_1'] if cal_type == '1' else _calculators['det_2']
+            calc = _calculators['det_1'](
+            ) if cal_type == '1' else _calculators['det_2']()
             return True, calc.compute_latex(expression)
 
         if operation_type == 'orthogonal':
-            calc = _calculators['orthogonal']
+            calc = _calculators['orthogonal']()
             calc.auto_orthogonal_analysis(expression)
             return True, calc.get_steps_latex()
 
@@ -163,17 +164,17 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
             lines = expression.split('\n')
             if len(lines) < 2:
                 return False, "Requires two lines: vector and basis"
-            calc = _calculators['projection']
+            calc = _calculators['projection']()
             calc.auto_project_vector(lines[0], lines[1])
             return True, calc.get_steps_latex()
 
         if operation_type == 'dependence':
-            calc = _calculators['dependence']
+            calc = _calculators['dependence']()
             calc.auto_check_dependence(expression)
             return True, calc.get_steps_latex()
 
         if operation_type == 'linear-system':
-            conv = _calculators['linear_system_converter']
+            conv = _calculators['linear_system_converter']()
             exprs, unknowns = conv.str_to_Eq(expression, get_unknowns=True)
             conv.show_equations_to_matrix(exprs, unknowns)
             return True, conv.get_steps_latex()
@@ -183,18 +184,18 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
             if len(parts) < 2:
                 return False, "First line should be matrix A, second line vector b"
             A, b = parts[0], parts[1]
-            solver = _calculators['linear_solver']
+            solver = _calculators['linear_solver']()
             solver.solve(A, b)
             return True, solver.get_steps_latex()
 
         if operation_type == 'transform-1':
-            calc = _calculators['transform_1']
+            calc = _calculators['transform_1']()
             calc_type = data.get('type', 'basis_change')
             calc.compute_transform(expression, calc_type)
             return True, calc.get_steps_latex()
 
         if operation_type == 'transform-2':
-            calc = _calculators['transform_2']
+            calc = _calculators['transform_2']()
             calc_type = data.get('type', 'find_matrix')
             calc.compute(expression, calc_type)
             return True, calc.get_steps_latex()

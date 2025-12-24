@@ -5,7 +5,10 @@ from typing import Deque, Dict, List, Tuple
 
 from sympy import Abs, Expr, Symbol, expand_log, latex, simplify, sympify
 
-from utils import Context, MatcherList, Operation, RuleContext, RuleDict, RuleFunction, is_elementary_expression
+from utils import (
+    Context, MatcherList, Operation, RuleContext,
+    RuleDict, RuleFunction, is_elementary_expression
+)
 from .base_step_generator import BaseStepGenerator
 from .rule_registry import RuleRegistry
 
@@ -52,6 +55,7 @@ class BaseCalculator(ABC):
         """
         self.processed = set()
         self.step_generator.reset()
+        self.sudden_end = [False, None]
 
     def _context_split(self, **context: Context) -> Symbol:
         """Only fit Derivative, Integral."""
@@ -101,7 +105,6 @@ class BaseCalculator(ABC):
     def _apply_rule(self, expr: Expr, operation: Operation, **context: Context) -> Tuple[Expr, str]:
         """Apply the most appropriate rule to the expression and return result with explanation."""
         rule_context: RuleContext = self._get_context_dict(**context)
-        self.sudden_end = [False, None]
 
         for rule in self._rule_registry.get_applicable_rules(expr, rule_context):
             if not self._check_rule_is_can_apply(rule):
@@ -169,7 +172,7 @@ class BaseCalculator(ABC):
         if not final_expr.free_symbols:
             return
 
-        final_expr = self._back_subs(final_expr)
+        final_expr = simplify(self._back_subs(final_expr))
 
         var = final_expr.free_symbols.pop()
 
@@ -177,8 +180,7 @@ class BaseCalculator(ABC):
         simplified_expr = simplify(final_expr.subs(var, _t).subs(_t, var).replace(
             Abs, lambda arg: arg))
 
-        # Must compare strings, because variables must be not equal due to different assumptions
-        if str(simplified_expr) != str(final_expr):
+        if simplified_expr != final_expr:
             self.step_generator.add_step(
                 simplified_expr,
                 "假设所有变量为正实数, 化简表达式"

@@ -1,8 +1,13 @@
 import uuid
+import time
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 from typing import Any, Dict, Optional
 from datetime import datetime
+from config import (
+    MAX_WORKERS, SINGLE_TASK_EXECUTE_TIMEOUT_SECONDS, TASK_CLEAR_AFTER_CREAT_SECONDS
+)
 from .compute_service import start_compute
 
 
@@ -60,6 +65,10 @@ class TaskManager:
             self._tasks = {}
             self._task_lock = threading.Lock()
             self._initialized = True
+            self._executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+            # Semaphore to control concurrent tasks
+            self._semaphore = threading.Semaphore(MAX_WORKERS)
+            self._start_cleanup_thread()
 
     def create_task(self, operation_type: str, data: Dict[str, Any]) -> str:
         """Create new task and return task ID"""
@@ -86,42 +95,52 @@ class TaskManager:
 
     def _execute_task(self, task: Task):
         """Execute task (runs in background thread)"""
-        try:
-            # Update status to running
-            task.status = TaskStatus.RUNNING
-            task.started_at = datetime.now()
+        # Acquire semaphore to ensure we don't exceed max workers
+        with self._semaphore:
+            try:
+                # Update status to running
+                task.status = TaskStatus.RUNNING
+                task.started_at = datetime.now()
 
-            # Execute computation
-            success, result = start_compute(task.operation_type, task.data)
+                future = self._executor.submit(
+                    start_compute, task.operation_type, task.data)
+                try:
+                    success, result = future.result(
+                        timeout=SINGLE_TASK_EXECUTE_TIMEOUT_SECONDS)
+                    # Update task result
+                    if success:
+                        task.status = TaskStatus.COMPLETED
+                        task.result = result
+                    else:
+                        task.status = TaskStatus.FAILED
+                        task.error = result
+                except TimeoutError:
+                    task.status = TaskStatus.FAILED
+                    task.error = "任务超时."
 
-            # Update task result
-            if success:
-                task.status = TaskStatus.COMPLETED
-                task.result = result
-            else:
+            except Exception as e:
                 task.status = TaskStatus.FAILED
-                task.error = result
+                task.error = str(e)
 
-        except Exception as e:
-            task.status = TaskStatus.FAILED
-            task.error = str(e)
+            finally:
+                task.completed_at = datetime.now()
 
-        finally:
-            task.completed_at = datetime.now()
+    def _start_cleanup_thread(self):
+        def cleanup_worker():
+            while True:
+                time.sleep(30)  # Cleanup every 30 seconds
+                self.cleanup_old_tasks()
 
-    def cleanup_old_tasks(self, max_age_hours: int = 24):
+        cleanup_thread = threading.Thread(target=cleanup_worker, daemon=True)
+        cleanup_thread.start()
+
+    def cleanup_old_tasks(self, max_age_seconds: int = TASK_CLEAR_AFTER_CREAT_SECONDS):
         """Clean up old tasks"""
         current_time = datetime.now()
         with self._task_lock:
-            tasks_to_remove = []
             for task_id, task in self._tasks.items():
-                age_hours = (current_time -
-                             task.created_at).total_seconds() / 3600
-                if age_hours > max_age_hours:
-                    tasks_to_remove.append(task_id)
-
-            for task_id in tasks_to_remove:
-                del self._tasks[task_id]
+                if (current_time - task.created_at).total_seconds() > max_age_seconds:
+                    del self._tasks[task_id]
 
 
 # Global task manager instance

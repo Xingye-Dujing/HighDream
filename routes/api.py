@@ -111,11 +111,11 @@ def get_task_status():
             'success': True,
             'task': task_info
         })
-    else:
-        return jsonify({
-            'success': False,
-            'error': f'Task not found: {task_id}'
-        })
+
+    return jsonify({
+        'success': False,
+        'error': f'任务不存在: {task_id}'
+    })
 
 
 @api.route('/matrix_analyze', methods=['POST'])
