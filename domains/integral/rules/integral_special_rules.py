@@ -1,10 +1,10 @@
 from sympy import (
-    Abs, Expr, I, Integral, Mul, Wild, Rational, Symbol, diff, integrate,
+    Abs, Expr, I, Integer, Integral, Mul, Wild, Rational, Symbol, diff, integrate,
     latex, log, preorder_traversal, simplify, sqrt, together
 )
 
 from utils import (
-    MatcherFunctionReturn, RuleContext, RuleFunctionReturn, has_radical
+    MatcherFunctionReturn, RuleContext, RuleFunctionReturn, has_radical, is_elementary_expression
 )
 from utils.latex_formatter import wrap_latex
 from domains.integral import (
@@ -100,20 +100,24 @@ def parts_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     # Handle single-factor expressions by setting dv = 1
     if not isinstance(expr, Mul):
         u = expr
-        dv = 1
+        dv = Integer(1)
     else:
         # For multi-factor expressions, use the ILAET heuristic
         u, dv = select_parts_u_dv(expr, var)
 
     du = simplify(diff(u, var))
     v = simplify(integrate(dv, var))
+
+    if not is_elementary_expression(v):
+        return None
+
     u_v = simplify(u * v)
     v_du = simplify(v * du)
     result = u_v - Integral(v_du, var)
-    var_latex, expr_latex, v_du_latex = wrap_latex(
-        var, expr, v_du)
+    var_latex, expr_latex, dv_latex, v_du_latex = wrap_latex(
+        var, expr, dv, v_du)
     return result, (
-        f"分部积分法(ILAET 选择 $u={latex(u)}$, $dv={latex(dv)}\\,d{var_latex}$): $"
+        f"分部积分法(ILAET 选择 $u={latex(u)}$, $dv={dv_latex}\\,d{var_latex}$): $"
         f"\\int {expr_latex}\\,d{var_latex} = "
         f"{latex(u_v)} - \\int {v_du_latex} \\,d{var_latex}$"
     )

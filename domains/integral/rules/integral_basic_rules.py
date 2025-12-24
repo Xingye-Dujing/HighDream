@@ -1,4 +1,4 @@
-from sympy import Add, Expr, Integral, Mul, div, fraction, latex
+from sympy import Add, Expr, Integral, Mul, div, fraction, powsimp, latex
 
 from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 from utils.latex_formatter import wrap_latex
@@ -29,12 +29,10 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     var_latex, expr_latex = wrap_latex(var, expr)
 
     # Comparing to diff's add_rule, we use list comprehension.
-    integrals = [Integral(term, var) for term in expr_copy.args]
+    integrals = [Integral(powsimp(term), var) for term in expr_copy.args]
     new_expr = Add(*integrals)
 
-    rhs_latex = " + ".join(
-        f"\\int {wrap_latex(term)}\\,d{var_latex}" for term in expr_copy.args)
-    explanation = f"应用加法规则: $\\int{expr_latex}\\,d{var_latex} = {rhs_latex}$"
+    explanation = f"应用加法规则: $\\int{expr_latex}\\,d{var_latex} = {latex(new_expr)}$"
     return new_expr, explanation
 
 

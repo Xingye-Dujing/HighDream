@@ -3,9 +3,9 @@ from collections import deque
 from functools import lru_cache
 from typing import Deque, Dict, List, Tuple
 
-from sympy import Expr, Symbol, expand_log, latex, simplify, sympify
+from sympy import Abs, Expr, Symbol, expand_log, latex, simplify, sympify
 
-from utils import Context, MatcherList, Operation, RuleContext, RuleDict, RuleFunction
+from utils import Context, MatcherList, Operation, RuleContext, RuleDict, RuleFunction, is_elementary_expression
 from .base_step_generator import BaseStepGenerator
 from .rule_registry import RuleRegistry
 
@@ -18,6 +18,7 @@ class BaseCalculator(ABC):
         self.step_generator = BaseStepGenerator()
         self.processed: set = set()
         self.cache: dict = {}
+        self.sudden_end: List[bool, Expr] = [False, None]
         self.init_key_property()
         self._validate_properties()
         self._initialize_rules()
@@ -100,18 +101,23 @@ class BaseCalculator(ABC):
     def _apply_rule(self, expr: Expr, operation: Operation, **context: Context) -> Tuple[Expr, str]:
         """Apply the most appropriate rule to the expression and return result with explanation."""
         rule_context: RuleContext = self._get_context_dict(**context)
+        self.sudden_end = [False, None]
 
         for rule in self._rule_registry.get_applicable_rules(expr, rule_context):
             if not self._check_rule_is_can_apply(rule):
                 continue
-            # print(f"rule: {rule.__name__}")
+
             result = rule(expr, rule_context)
             if result:
+                # print(f"rule: {rule.__name__}")
                 return result
 
         # Fallback to SymPy if no rule matches
         operation_obj = self._perform_operation(expr, operation, **context)
-        return operation_obj.doit(), f"需手动计算表达式: ${latex(operation_obj)}$"
+        operation_val = operation_obj.doit()
+        if not is_elementary_expression(operation_val):
+            self.sudden_end = [True, operation_obj]
+        return operation_val, f"需手动计算表达式: ${latex(operation_obj)}$"
 
     def _update_expression(self, current_expr: Expr, operation: Operation, expr_to_operation: Dict[Expr, Operation], direct_compute: bool, **context: Context) -> Tuple[Expr, str, Dict[Expr, Operation]]:
 
@@ -119,6 +125,8 @@ class BaseCalculator(ABC):
             current_operation = self._get_cached_result(
                 current_expr, operation, **context)
             new_expr = current_operation.doit()
+            if not is_elementary_expression(new_expr):
+                self.sudden_end = [True, current_operation]
             explanation = f"${latex(current_operation)}$ 之前已计算过，不再显示中间过程"
         else:
             new_expr, explanation = self._apply_rule(
@@ -163,15 +171,11 @@ class BaseCalculator(ABC):
 
         final_expr = self._back_subs(final_expr)
 
-        # Map each free symbol to a new symbol with positive=True, real=True
-        assumption_map = {
-            s: Symbol(s.name, positive=True, real=True)
-            for s in final_expr.free_symbols
-        }
+        var = final_expr.free_symbols.pop()
 
-        # Replace symbols with their assumed counterparts
-        expr_with_assumptions = final_expr.xreplace(assumption_map)
-        simplified_expr = simplify(expr_with_assumptions)
+        _t = Symbol('t', real=True, positive=True)
+        simplified_expr = simplify(final_expr.subs(var, _t).subs(_t, var).replace(
+            Abs, lambda arg: arg))
 
         # Must compare strings, because variables must be not equal due to different assumptions
         if str(simplified_expr) != str(final_expr):
@@ -241,6 +245,12 @@ class BaseCalculator(ABC):
 
             current_step = expr_to_operation[expr_key]
             current_step = self._step_expr_postprocess(current_step)
+
+            if self.sudden_end[0]:
+                self.step_generator.add_step(
+                    None, f'${latex(self.sudden_end[1])}$ 无法用初等函数表示, 退出计算.')
+                break
+
             self.step_generator.add_step(current_step, explanation)
 
             if new_expr != current_operation:
@@ -252,16 +262,17 @@ class BaseCalculator(ABC):
                     expr_to_operation[str(sub_expr)] = s
                     queue.append(sub_expr)
 
-        # Final simplification
-        exprs, _ = self.step_generator.get_steps()
-        if exprs:
-            final_expr = exprs[-1]
-            simplified_expr = self._cached_simplify(final_expr)
-            if simplified_expr != final_expr:
-                self.step_generator.add_step(simplified_expr, "简化表达式")
-                final_expr = simplified_expr
+        if not self.sudden_end[0]:
+            # Final simplification
+            exprs, _ = self.step_generator.get_steps()
+            if exprs:
+                final_expr = exprs[-1]
+                simplified_expr = self._cached_simplify(final_expr)
+                if simplified_expr != final_expr:
+                    self.step_generator.add_step(simplified_expr, "简化表达式")
+                    final_expr = simplified_expr
 
-        self._final_postprocess(final_expr)
+            self._final_postprocess(final_expr)
 
     def _compute(self, expr: str, **context: Context) -> None:
         """Compute the step-by-step evaluation of the given expression.

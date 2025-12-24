@@ -251,6 +251,8 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
             new_expr = expr.subs(var, x_of_u)
             # Also replace any exact match of 'rad' with u (handles nested cases)
             new_expr = new_expr.subs(rad, u)
+            if new_expr.has(var) or new_expr.has(rad):
+                continue
             new_expr = simplify(new_expr * dx_du)
             # Use a temporary variable with positive real assumptions to aid radical simplification
             _t = Symbol('t', real=True, positive=True)

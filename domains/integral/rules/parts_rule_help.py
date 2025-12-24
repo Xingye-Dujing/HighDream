@@ -1,5 +1,5 @@
 from typing import Tuple
-from sympy import Expr, Mul, Symbol
+from sympy import Expr, Mul, Symbol, simplify
 
 from utils import (
     is_exp, is_inv_trig, is_log, is_poly, is_trig
@@ -65,5 +65,5 @@ def select_parts_u_dv(expr: Mul, var: Symbol) -> Tuple[Expr, Expr]:
             best_priority = priority
             u_candidate = factor
 
-    dv = expr / u_candidate
+    dv = simplify(expr / u_candidate)
     return u_candidate, dv
