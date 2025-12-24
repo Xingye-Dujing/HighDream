@@ -62,6 +62,15 @@ class BlueprintCanvas {
         this.deleteNode(this.selectedNode.id);
       }
     });
+
+    // Save and load buttons
+    document.getElementById('saveBlueprintBtn').addEventListener('click', () => {
+      this.saveBlueprint();
+    });
+
+    document.getElementById('loadBlueprintBtn').addEventListener('click', () => {
+      this.loadBlueprint();
+    });
   }
 
   setupToolbarButtons() {
@@ -1242,6 +1251,204 @@ class BlueprintCanvas {
         this.pasteNode(position.x, position.y);
         break;
     }
+  }
+
+  // Save blueprint to file
+  saveBlueprint() {
+    try {
+      // Create blueprint data structure
+      const blueprintData = {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        nodes: {},
+        connections: [],
+        nodeCounter: this.nodeCounter
+      };
+
+      // Save nodes with all their properties
+      Object.keys(this.nodes).forEach(nodeId => {
+        const node = this.nodes[nodeId];
+        blueprintData.nodes[nodeId] = {
+          id: node.id,
+          type: node.type,
+          x: node.x,
+          y: node.y,
+          width: node.width,
+          height: node.height,
+          title: node.title,
+          data: JSON.parse(JSON.stringify(node.data)), // Deep copy node data
+          inputs: node.inputs,
+          outputs: node.outputs
+        };
+      });
+
+      // Save connections
+      blueprintData.connections = this.connections.map(conn => ({
+        id: conn.id,
+        output: {
+          nodeId: conn.output.nodeId,
+          portType: conn.output.portType,
+          portIndex: conn.output.portIndex
+        },
+        input: {
+          nodeId: conn.input.nodeId,
+          portType: conn.input.portType,
+          portIndex: conn.input.portIndex
+        }
+      }));
+
+      // Convert to JSON and create download
+      const blueprintJson = JSON.stringify(blueprintData, null, 2);
+      const blob = new Blob([blueprintJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `highdream-blueprint-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      URL.revokeObjectURL(url);
+      this.showNotification('蓝图已保存', 'success');
+    } catch (error) {
+      console.error('保存蓝图时出错:', error);
+      this.showNotification('保存蓝图失败: ' + error.message, 'error');
+    }
+  }
+
+  // Load blueprint from file
+  loadBlueprint() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const blueprintData = JSON.parse(e.target.result);
+
+          // Validate blueprint data
+          if (!blueprintData.version || !blueprintData.nodes) {
+            throw new Error('无效的蓝图文件格式');
+          }
+
+          // Clear current canvas
+          this.clearCanvas();
+
+          // Restore node counter
+          this.nodeCounter = blueprintData.nodeCounter || 0;
+
+          // Restore nodes
+          Object.keys(blueprintData.nodes).forEach(nodeId => {
+            const nodeData = blueprintData.nodes[nodeId];
+            const node = {
+              id: nodeData.id,
+              type: nodeData.type,
+              x: nodeData.x,
+              y: nodeData.y,
+              width: nodeData.width,
+              height: nodeData.height,
+              title: nodeData.title,
+              data: nodeData.data,
+              inputs: nodeData.inputs,
+              outputs: nodeData.outputs
+            };
+
+            this.nodes[nodeId] = node;
+            this.renderNode(node);
+          });
+
+          // Restore connections
+          blueprintData.connections.forEach(connData => {
+            const connection = {
+              id: connData.id,
+              output: connData.output,
+              input: connData.input
+            };
+
+            this.connections.push(connection);
+            this.renderConnection(connection);
+          });
+
+          // Update any connected nodes
+          Object.keys(this.nodes).forEach(nodeId => {
+            this.updateConnectedNodes(nodeId);
+          });
+
+          this.showNotification('蓝图已加载', 'success');
+        } catch (error) {
+          console.error('加载蓝图时出错:', error);
+          this.showNotification('加载蓝图失败: ' + error.message, 'error');
+        }
+      };
+
+      reader.readAsText(file);
+    };
+
+    input.click();
+  }
+
+  // Clear the canvas
+  clearCanvas() {
+    // Clear nodes
+    this.nodes = {};
+    this.nodesContainer.innerHTML = '';
+
+    // Clear connections
+    this.connections = [];
+    this.connectionSvg.innerHTML = `
+      <defs>
+        <marker
+          id="arrowhead"
+          markerWidth="10"
+          markerHeight="7"
+          refX="9"
+          refY="3.5"
+          orient="auto"
+        >
+          <polygon points="0 0, 10 3.5, 0 7" fill="#5b89cd" />
+        </marker>
+      </defs>
+    `;
+
+    // Reset other state
+    this.selectedNode = null;
+    this.connectingPort = null;
+    this.connectingType = null;
+    this.tempConnection = null;
+  }
+
+  // Show notification
+  showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+      <div class="notification-content">
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+        <span>${message}</span>
+      </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.classList.add('notification-show');
+    }, 10);
+
+    setTimeout(() => {
+      notification.classList.remove('notification-show');
+      notification.classList.add('notification-hide');
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 300);
+    }, 3000);
   }
 }
 
