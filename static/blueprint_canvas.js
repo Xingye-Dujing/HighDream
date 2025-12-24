@@ -20,7 +20,6 @@ class BlueprintCanvas {
     this.setupEventListeners();
     this.setupToolbarButtons();
     this.setupContextMenus();
-    this.setupDialogs();
   }
 
   setupEventListeners() {
@@ -78,8 +77,16 @@ class BlueprintCanvas {
       this.addNode('result', { x: 300, y: 100 });
     });
 
+    document.getElementById('addSimplifyNodeBtn').addEventListener('click', () => {
+      this.addNode('simplify', { x: 400, y: 100 });
+    });
+
+    document.getElementById('addTextNodeBtn').addEventListener('click', () => {
+      this.addNode('text', { x: 500, y: 100 });
+    });
+
     document.getElementById('addRenderNodeBtn').addEventListener('click', () => {
-      this.addNode('render', { x: 400, y: 100 });
+      this.addNode('render', { x: 600, y: 100 });
     });
   }
 
@@ -105,28 +112,6 @@ class BlueprintCanvas {
     });
   }
 
-  setupDialogs() {
-    const dialog = document.getElementById('node-edit-dialog');
-    const closeBtn = document.getElementById('closeDialogBtn');
-    const cancelBtn = document.getElementById('cancelDialogBtn');
-    const saveBtn = document.getElementById('saveDialogBtn');
-
-    closeBtn.addEventListener('click', () => this.closeDialog());
-    cancelBtn.addEventListener('click', () => this.closeDialog());
-
-    saveBtn.addEventListener('click', () => {
-      this.saveNodeChanges();
-      this.closeDialog();
-    });
-
-    // Close dialog when clicking outside
-    dialog.addEventListener('click', (e) => {
-      if (e.target === dialog) {
-        this.closeDialog();
-      }
-    });
-  }
-
   addNode(type, position) {
     this.nodeCounter++;
     const nodeId = `node-${this.nodeCounter}`;
@@ -137,6 +122,9 @@ class BlueprintCanvas {
     } else if (type === 'result') {
       // Result node has two inputs: expression and operation
       inputs = [{}, {}];
+    } else if (type === 'simplify') {
+      // Simplify node has one input: expression
+      inputs = [{}];
     }
 
     const node = {
@@ -148,7 +136,7 @@ class BlueprintCanvas {
       height: 150,
       title: this.getNodeTitleByType(type),
       inputs: inputs,
-      outputs: type === 'render' ? [] : [{}],
+      outputs: type === 'render' || type === 'text' ? [] : [{}],
       data: this.getDefaultNodeData(type)
     };
 
@@ -163,6 +151,8 @@ class BlueprintCanvas {
       'expression': '表达式节点',
       'operation': '运算节点',
       'result': '结果节点',
+      'simplify': '化简节点',
+      'text': '文本节点',
       'render': '渲染节点'
     };
     return titles[type] || '节点';
@@ -176,6 +166,10 @@ class BlueprintCanvas {
         return { operation: 'diff', variable: 'x', limitPoint: '0' };
       case 'result':
         return { result: '结果将显示在这里' };
+      case 'simplify':
+        return { result: '化简结果将显示在这里' };
+      case 'text':
+        return { text: '这是一个注释文本' };
       case 'render':
         return { latex: '' };
       default:
@@ -232,6 +226,18 @@ class BlueprintCanvas {
         `;
         break;
 
+      case 'simplify':
+        content = `
+          <div class="bp-node-result" data-node-id="${node.id}">${node.data.result}</div>
+        `;
+        break;
+
+      case 'text':
+        content = `
+          <textarea class="bp-node-text" data-node-id="${node.id}" placeholder="输入注释文本">${node.data.text}</textarea>
+        `;
+        break;
+
       case 'render':
         content = `
           <div class="bp-node-result" data-node-id="${node.id}">${node.data.latex ? this.renderLatex(node.data.latex) : '渲染结果'}</div>
@@ -258,6 +264,8 @@ class BlueprintCanvas {
       'expression': 'EXPR',
       'operation': 'OP',
       'result': 'RES',
+      'simplify': 'SIMPLIFY',
+      'text': 'TEXT',
       'render': 'RENDER'
     };
     return labels[type] || type.toUpperCase();
@@ -274,6 +282,8 @@ class BlueprintCanvas {
         portLabel = '<span class="bp-port-label">表达式</span>';
       } else if (node.type === 'result' && index === 1) {
         portLabel = '<span class="bp-port-label">运算</span>';
+      } else if (node.type === 'simplify' && index === 0) {
+        portLabel = '<span class="bp-port-label">表达式</span>';
       }
 
       return `
@@ -368,6 +378,15 @@ class BlueprintCanvas {
 
         // Auto-update connected nodes
         this.updateConnectedNodes(node.id);
+      });
+    }
+
+    // Text input change
+    const textInput = nodeEl.querySelector('.bp-node-text');
+    if (textInput) {
+      textInput.addEventListener('input', (e) => {
+        this.nodes[node.id].data.text = e.target.value;
+        // Text nodes don't need to update connected nodes as they don't have outputs
       });
     }
 
@@ -591,6 +610,18 @@ class BlueprintCanvas {
         }
       }
     }
+
+    // If connected to simplify node, check if input is connected, then execute simplification
+    if (finalInputPort.nodeId && this.nodes[finalInputPort.nodeId] && this.nodes[finalInputPort.nodeId].type === 'simplify') {
+      // Check if simplify node has input connected
+      const simplifyNode = this.nodes[finalInputPort.nodeId];
+      const inputConnections = this.connections.filter(conn => conn.input.nodeId === simplifyNode.id);
+
+      // Execute simplification when input is connected
+      if (inputConnections.length >= 1) {
+        this.performSimplifyNodeCalculation(simplifyNode);
+      }
+    }
   }
 
   renderConnection(connection) {
@@ -759,11 +790,35 @@ class BlueprintCanvas {
       if (data.success) {
         return data.result;
       } else {
-        console.error('计算错误:', data.error);
         return '错误: ' + data.error;
       }
     } catch (error) {
-      console.error('API 请求错误:', error);
+      return 'API 请求错误: ' + error.message;
+    }
+  }
+
+  // Call backend API to execute SymPy simplification
+  async performSymPySimplification(expression) {
+    try {
+      const payload = {
+        expression: expression
+      };
+
+      const response = await fetch('/api/sympy_simplify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        return data.result;
+      } else {
+        return '错误: ' + data.error;
+      }
+    } catch (error) {
       return 'API 请求错误: ' + error.message;
     }
   }
@@ -778,6 +833,9 @@ class BlueprintCanvas {
         if (targetNode.type === 'result') {
           // Trigger result node calculation
           await this.performResultNodeCalculation(targetNode);
+        } else if (targetNode.type === 'simplify') {
+          // Trigger simplify node calculation
+          await this.performSimplifyNodeCalculation(targetNode);
         } else if (targetNode.type === 'render') {
           // Render node directly displays input data
           const sourceNode = this.nodes[fromNodeId];
@@ -789,6 +847,9 @@ class BlueprintCanvas {
               dataToRender = sourceNode.data.operation;
             } else if (sourceNode.type === 'result') {
               // Use result expression instead of displaying result
+              dataToRender = sourceNode.data.resultExpression || sourceNode.data.result;
+            } else if (sourceNode.type === 'simplify') {
+              // Use simplify node's result
               dataToRender = sourceNode.data.resultExpression || sourceNode.data.result;
             }
 
@@ -826,7 +887,6 @@ class BlueprintCanvas {
         }
       })
       .catch(error => {
-        console.error('Error rendering LaTeX:', error);
         element.innerHTML = '渲染错误';
       });
   }
@@ -932,7 +992,6 @@ class BlueprintCanvas {
         resultEl.textContent = displayResult;
       }
     } catch (error) {
-      console.error('计算错误:', error);
       resultNode.data.result = `计算错误: ${error.message}`;
       if (resultEl) {
         resultEl.textContent = resultNode.data.result;
@@ -941,6 +1000,92 @@ class BlueprintCanvas {
 
     // Update render nodes connected to result node
     this.updateConnectedNodes(resultNode.id);
+  }
+
+  async performSimplifyNodeCalculation(simplifyNode) {
+    // Get input connected to simplify node
+    const inputConnections = this.connections.filter(conn => conn.input.nodeId === simplifyNode.id);
+
+    if (inputConnections.length < 1) {
+      // If insufficient inputs, clear result
+      simplifyNode.data.result = '缺少输入: 需要表达式节点';
+      simplifyNode.data.resultExpression = '';
+      const resultEl = document.querySelector(`.bp-node-result[data-node-id="${simplifyNode.id}"]`);
+      if (resultEl) {
+        resultEl.textContent = simplifyNode.data.result;
+      }
+      return; // Need one input
+    }
+
+    // First input port (index 0) should connect to expression node or result node
+    const expressionConn = inputConnections.find(conn => conn.input.portIndex === 0);
+
+    if (!expressionConn) {
+      simplifyNode.data.result = '缺少输入: 需要表达式节点';
+      simplifyNode.data.resultExpression = '';
+      const resultEl = document.querySelector(`.bp-node-result[data-node-id="${simplifyNode.id}"]`);
+      if (resultEl) {
+        resultEl.textContent = simplifyNode.data.result;
+      }
+      return;
+    }
+
+    const expressionSource = this.nodes[expressionConn.output.nodeId];
+
+    // Check expression input: can be expression node or result node
+    if (!expressionSource || (expressionSource.type !== 'expression' && expressionSource.type !== 'result')) {
+      simplifyNode.data.result = '表达式输入节点类型错误，应为表达式节点或结果节点';
+      const resultEl = document.querySelector(`.bp-node-result[data-node-id="${simplifyNode.id}"]`);
+      if (resultEl) {
+        resultEl.textContent = simplifyNode.data.result;
+      }
+      return;
+    }
+
+    // Get expression: if result node, use its calculation result; if expression node, use its expression
+    let expression = '';
+    if (expressionSource.type === 'expression') {
+      expression = expressionSource.data.expression || '';
+    } else if (expressionSource.type === 'result') {
+      // Use result node's calculation result as expression
+      expression = expressionSource.data.resultExpression || expressionSource.data.result || '';
+      // If result contains equals sign (like 'd/dx(f(x)) = result'), extract part after equals
+      if (expression.includes('=')) {
+        const parts = expression.split('=');
+        if (parts.length > 1) {
+          expression = parts[parts.length - 1].trim();
+        }
+      }
+    }
+
+    // Show calculating status
+    simplifyNode.data.result = '化简中...';
+    const resultEl = document.querySelector(`.bp-node-result[data-node-id="${simplifyNode.id}"]`);
+    if (resultEl) {
+      resultEl.textContent = simplifyNode.data.result;
+    }
+
+    // Execute actual SymPy simplification
+    try {
+      const resultExpression = await this.performSymPySimplification(expression);
+
+      let displayResult = `simplify(${expression}) = ${resultExpression}`;
+
+      // Update simplify node
+      simplifyNode.data.result = displayResult;
+      simplifyNode.data.resultExpression = resultExpression; // Store result expression for output use
+      if (resultEl) {
+        resultEl.textContent = displayResult;
+      }
+    } catch (error) {
+      simplifyNode.data.result = `化简错误: ${error.message}`;
+      if (resultEl) {
+        resultEl.textContent = simplifyNode.data.result;
+      }
+    }
+
+    // Update render nodes connected to simplify node
+    this.updateConnectedNodes(simplifyNode.id);
   }
 
   deleteConnection(connectionId) {
@@ -974,6 +1119,27 @@ class BlueprintCanvas {
       } else {
         // If still have enough inputs, re-execute calculation
         this.performResultNodeCalculation(this.nodes[connection.input.nodeId]);
+      }
+    }
+
+    // If deleted connection was connected to simplify node, check if simplify node needs update
+    if (connection.input.nodeId && this.nodes[connection.input.nodeId] && this.nodes[connection.input.nodeId].type === 'simplify') {
+      // Check if simplify node still has enough inputs for calculation
+      const inputConnections = this.connections.filter(conn => conn.input.nodeId === connection.input.nodeId);
+      if (inputConnections.length < 1) {
+        // If insufficient inputs, clear result
+        const simplifyNode = this.nodes[connection.input.nodeId];
+        if (simplifyNode) {
+          simplifyNode.data.result = '缺少输入: 需要表达式节点';
+          simplifyNode.data.resultExpression = '';
+          const resultEl = document.querySelector(`.bp-node-result[data-node-id="${simplifyNode.id}"]`);
+          if (resultEl) {
+            resultEl.textContent = simplifyNode.data.result;
+          }
+        }
+      } else {
+        // If still have enough inputs, re-execute calculation
+        this.performSimplifyNodeCalculation(this.nodes[connection.input.nodeId]);
       }
     }
   }
@@ -1063,6 +1229,12 @@ class BlueprintCanvas {
       case 'add-result':
         this.addNode('result', position);
         break;
+      case 'add-simplify':
+        this.addNode('simplify', position);
+        break;
+      case 'add-text':
+        this.addNode('text', position);
+        break;
       case 'add-render':
         this.addNode('render', position);
         break;
@@ -1070,56 +1242,6 @@ class BlueprintCanvas {
         this.pasteNode(position.x, position.y);
         break;
     }
-  }
-
-  openNodeEditDialog(node) {
-    document.getElementById('node-title').value = node.title;
-    document.getElementById('node-expression').value = node.data.expression || '';
-
-    if (node.type === 'operation') {
-      document.getElementById('operation-group').style.display = 'block';
-      document.getElementById('node-operation').value = node.data.operation || 'diff';
-    } else {
-      document.getElementById('operation-group').style.display = 'none';
-    }
-
-    this.currentEditNodeId = node.id;
-    document.getElementById('node-edit-dialog').classList.add('active');
-  }
-
-  saveNodeChanges() {
-    if (!this.currentEditNodeId) return;
-
-    const node = this.nodes[this.currentEditNodeId];
-    if (!node) return;
-
-    node.title = document.getElementById('node-title').value;
-    node.data.expression = document.getElementById('node-expression').value;
-
-    if (node.type === 'operation') {
-      node.data.operation = document.getElementById('node-operation').value;
-    }
-
-    // Update the node UI
-    const nodeEl = document.getElementById(this.currentEditNodeId);
-    if (nodeEl) {
-      nodeEl.querySelector('.bp-node-title').textContent = node.title;
-
-      const expressionInput = nodeEl.querySelector('.bp-node-expression');
-      if (expressionInput) {
-        expressionInput.value = node.data.expression;
-      }
-
-      const operationSelect = nodeEl.querySelector('.bp-node-operation');
-      if (operationSelect) {
-        operationSelect.value = node.data.operation;
-      }
-    }
-  }
-
-  closeDialog() {
-    document.getElementById('node-edit-dialog').classList.remove('active');
-    this.currentEditNodeId = null;
   }
 }
 

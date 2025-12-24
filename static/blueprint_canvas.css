@@ -207,7 +207,21 @@
   flex: 1;
 }
 
-.bp-node-expression:focus {
+.bp-node-text {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px;
+  border: 1px dashed var(--jp-border-color1);
+  border-radius: 4px;
+  font-family: var(--font-family);
+  font-size: 15px;
+  background: transparent;
+  outline: none;
+  flex: 1;
+}
+
+.bp-node-expression:focus,
+.bp-node-text:focus {
   border-color: var(--jp-brand-color1);
 }
 

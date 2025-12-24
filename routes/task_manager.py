@@ -138,9 +138,14 @@ class TaskManager:
         """Clean up old tasks"""
         current_time = datetime.now()
         with self._task_lock:
+            # Collect task IDs to delete first to avoid modifying dict during iteration
+            tasks_to_delete = []
             for task_id, task in self._tasks.items():
                 if (current_time - task.created_at).total_seconds() > max_age_seconds:
-                    del self._tasks[task_id]
+                    tasks_to_delete.append(task_id)
+
+            for task_id in tasks_to_delete:
+                del self._tasks[task_id]
 
 
 # Global task manager instance

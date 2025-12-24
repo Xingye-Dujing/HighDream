@@ -256,3 +256,31 @@ def sympy_calculate():
         return jsonify({'success': True, 'result': result_str})
     except Exception as e:
         return jsonify({'success': False, 'error': f'{e}'})
+
+
+@api.route('/sympy_simplify', methods=['POST'])
+def sympy_simplify():
+    """Perform SymPy simplification on an expression.
+
+    Expected JSON input:
+        expression (str): The mathematical expression to simplify
+
+    Returns:
+        JSON response with either:
+            success (bool): True if simplification succeeded
+            result (str): Simplified result of the expression
+        or:
+            success (bool): False if simplification failed
+            error (str): Error message describing the issue
+    """
+    data = request.json or {}
+    expression = data.get('expression', '')
+
+    try:
+        expr = sympify(expression)
+        result = simplify(expr)
+        result_str = str(result)
+
+        return jsonify({'success': True, 'result': result_str})
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'{e}'})
