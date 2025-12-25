@@ -188,7 +188,7 @@ class BaseCalculator(ABC):
 
     def _sympify(self, expr: str) -> Expr:
         """Convert the input expression to a SymPy expression."""
-        return sympify(expr)
+        return simplify(sympify(expr))
 
     def _do_compute(self, expr: str, operation: Operation, **context: Context) -> None:
         """Perform the core symbolic computation and record each evaluation step."""

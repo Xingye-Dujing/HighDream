@@ -6,6 +6,7 @@ from .rules.substitution_rule_help import (
     try_standard_substitution,
     try_trig_substitution
 )
+from .rules.f_x_mul_exp_g_x_rule_help import handle_fx_mul_exp_gx, special_add_split_exp_term
 from .rules.integral_basic_rules import (
     add_matcher, add_rule, mul_const_matcher, mul_const_rule
 )
@@ -22,7 +23,8 @@ from .rules.integral_function_rules import (
 )
 from .rules.integral_special_rules import (
     logarithmic_matcher, logarithmic_rule,
-    parts_matcher, parts_rule, substitution_matcher, substitution_rule
+    parts_matcher, parts_rule, substitution_matcher, substitution_rule,
+    f_x_mul_exp_g_x_matcher, f_x_mul_exp_g_x_rule
 )
 
 __all__ = [
@@ -31,7 +33,8 @@ __all__ = [
     'select_parts_u_dv',
     'try_radical_substitution',
     'try_standard_substitution',
-    'try_trig_substitution'
+    'try_trig_substitution',
+    'handle_fx_mul_exp_gx',
 ]
 
 # Rule mapping: Rule name -> Rule function
@@ -54,6 +57,7 @@ RULE_DICT: RuleDict = {
     'mul_const': mul_const_rule,
     'add': add_rule,
     'logarithmic': logarithmic_rule,
+    'f_x_mul_exp_g_x': f_x_mul_exp_g_x_rule,
     'substitution': substitution_rule,
     'parts': parts_rule,
 }
@@ -61,8 +65,8 @@ RULE_DICT: RuleDict = {
 # Note: Earlier entries have higher priority.
 MATCHER_LIST: MatcherList = [
     const_matcher, var_matcher, mul_const_matcher, logarithmic_matcher, substitution_matcher,
-    add_matcher, pow_matcher, exp_matcher, log_matcher, sin_matcher, cos_matcher, tan_matcher,
-    sec_matcher, csc_matcher, cot_matcher, exp_matcher, log_matcher, sinh_matcher, cosh_matcher,
-    inverse_trig_matcher, inverse_tangent_linear_matcher,
+    f_x_mul_exp_g_x_matcher, add_matcher, pow_matcher, exp_matcher, log_matcher, sin_matcher,
+    cos_matcher, tan_matcher, sec_matcher, csc_matcher, cot_matcher, exp_matcher, log_matcher,
+    sinh_matcher, cosh_matcher, inverse_trig_matcher, inverse_tangent_linear_matcher,
     parts_matcher
 ]

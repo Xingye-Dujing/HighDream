@@ -1,6 +1,6 @@
 from sympy import (
-    Abs, Expr, I, Integer, Integral, Mul, Wild, Rational, Symbol, diff, integrate,
-    latex, log, preorder_traversal, simplify, sqrt, together
+    Abs, Expr, I, Integer, Integral, Mul, Wild, Rational, Symbol, diff, exp,
+    integrate, latex, log, powsimp, preorder_traversal, simplify, sqrt, together
 )
 
 from utils import (
@@ -11,7 +11,9 @@ from domains.integral import (
     select_parts_u_dv,
     try_radical_substitution,
     try_standard_substitution,
-    try_trig_substitution
+    try_trig_substitution,
+    special_add_split_exp_term,
+    handle_fx_mul_exp_gx
 )
 
 sqrt_pow = Rational(1, 2)
@@ -154,6 +156,30 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     return None
 
 
+def f_x_mul_exp_g_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Handle f(x)^exp(g(x)) case by recognition of differential forms.
+
+      - (1+x-1/x)*exp(x+1/x) dx
+      - (1+x-1/x)*exp(x+1/x)+x dx
+      - (1+x-1/x)*exp(x+1/x)*sin(x) dx
+      - exp(cos(x))*(1-x*sin(x)) dx
+      - exp(cos(x))*(1-x*sin(x))+x dx
+    """
+    # First try to split the expression into two parts: exp term and another term
+    # Otherwise, anther term will Interfering with the recognition of the f(x)^exp(g(x)) structure
+    split_exp_term = special_add_split_exp_term(expr, context)
+    if split_exp_term:
+        return split_exp_term
+    # To make sure only one exp term via powsimp()
+    # To make Add to Mul via together()
+    expr = together(powsimp(expr))
+    for arg in expr.args:
+        if isinstance(arg, exp):
+            another_term = simplify(expr/arg)
+            return handle_fx_mul_exp_gx(expr, arg, another_term, context)
+    return None
+
+
 def logarithmic_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Heuristic matcher for f'(x)/f(x) integration pattern.
 
@@ -227,6 +253,7 @@ def substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRet
             if original_term == var or original_term.is_constant():
                 continue
             check_list = [original_term]
+            # Introducing sqrt_term is to handle implicit f(x)^2 cases like x/(x**4+1), x**x*(log(x)+1)/(x**(2*x)+1)
             sqrt_term = sqrt(original_term)
             # Use a temporary variable with positive real assumptions to aid radical simplification
             _t = Symbol('t', real=True, positive=True)
@@ -272,4 +299,12 @@ def substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRet
     if has_radical(expr, var):
         return 'substitution'
 
+    return None
+
+
+def f_x_mul_exp_g_x_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+    # To make Add to Mul via together()
+    expr = together(expr)
+    if isinstance(expr, Mul) and expr.has(exp):
+        return 'f_x_mul_exp_g_x'
     return None

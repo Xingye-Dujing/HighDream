@@ -53,7 +53,7 @@ def parse_input():
     operation_type = data.get('operation_type', '')
 
     try:
-        latex_output = str_to_latex(expression, operation_type)
+        latex_output = str_to_latex(simplify(expression), operation_type)
         return jsonify({'success': True, 'result': latex_output})
     except Exception as e:
         return jsonify({'success': False, 'error': f'{e}'})
@@ -205,7 +205,7 @@ def render_latex():
     expression = data.get('expression', '')
 
     try:
-        latex_output = latex(sympify(expression))
+        latex_output = latex(simplify(sympify(expression)))
 
         return jsonify({'success': True, 'latex': latex_output})
     except Exception as e:
@@ -230,7 +230,7 @@ def sympy_calculate():
             error (str): Error message describing the issue
     """
     data = request.json or {}
-    expression = data.get('expression', '')
+    expression = simplify(data.get('expression', ''))
     operation_type = data.get('operation_type', 'diff')
     variable = data.get('variable', 'x')
 
@@ -277,8 +277,7 @@ def sympy_simplify():
     expression = data.get('expression', '')
 
     try:
-        expr = sympify(expression)
-        result = simplify(expr)
+        result = simplify(sympify(expression))
         result_str = str(result)
 
         return jsonify({'success': True, 'result': result_str})

@@ -1,5 +1,5 @@
 from typing import Tuple, Union
-from sympy import Expr, Matrix, latex, sympify
+from sympy import Expr, Matrix, latex, simplify, sympify
 from domains.matrix.linear_system_converter import LinearSystemConverter
 import config
 
@@ -58,4 +58,4 @@ def str_to_latex(expr: str, operation_type: str = None) -> str:
         eq_latex = [latex(eq) for eq in equations]
         return r"\begin{cases} " + r" \\ ".join(eq_latex) + r" \end{cases}"
 
-    return latex(sympify(expr))
+    return latex(simplify(sympify(expr)))

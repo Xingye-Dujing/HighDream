@@ -19,11 +19,12 @@ def smart_expand(expr: Expr) -> Expr:
 
 def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the sum rule：(f+g) dx = f dx + g dx"""
-    expr_copy = expr
     if isinstance(expr, Mul):
         expr_copy = smart_expand(expr)
-    if not expr_copy:
-        return None
+        if not expr_copy:
+            return None
+    else:
+        expr_copy = expr.expand()
 
     var = context['variable']
     var_latex, expr_latex = wrap_latex(var, expr)
@@ -51,10 +52,7 @@ def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
 
 def add_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    if isinstance(expr, Add):
-        return 'add'
-    if isinstance(expr, Mul) and fraction(expr)[1] != 1:
-        # If is a fraction
+    if isinstance(expr, Add) or isinstance(expr, Mul):
         return 'add'
     return None
 

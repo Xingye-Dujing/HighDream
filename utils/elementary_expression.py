@@ -8,6 +8,8 @@ from sympy import (
 
 def is_elementary_expression(expr: Expr) -> bool:
     """Check if an expression is elementary."""
+    if not expr:
+        return False
 
     # Base cases
     if expr.is_number or isinstance(expr, Symbol):

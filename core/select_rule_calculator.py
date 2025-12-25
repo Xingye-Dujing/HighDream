@@ -25,7 +25,6 @@ class SelectRuleCalculator(BaseCalculator):
             print(f"{i+1}. {rule.__name__}")
         index = input("请输入规则编号：")
         rule = applicable_rules_list[int(index)-1]
-        print(expr)
         result = rule(expr, rule_context)
 
         if result:
