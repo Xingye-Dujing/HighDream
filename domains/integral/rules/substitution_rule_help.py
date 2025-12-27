@@ -67,6 +67,9 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
                     # Construct f(u)
                     f_u = simplify((expr/gp/ratio).subs(term, u))
 
+                    if f_u.has(var):
+                        continue
+
                     new_expr = ratio * Integral(f_u, u)
 
                     ratio_latex = '' if ratio == 1 else (

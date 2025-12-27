@@ -1,39 +1,96 @@
-from sympy import Add, Expr, Integral, Mul, div, fraction, powsimp, latex
+from sympy import (
+    Add, Expr, Eq, Integral, Mul,  Pow, degree, div, fraction,
+    powsimp, latex, solve, symbols
+)
 
 from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 from utils.latex_formatter import wrap_latex
 
 
-def smart_expand(expr: Expr) -> Expr:
-    """Expand an expression to Add form by performing polynomial division."""
-    num, den = fraction(expr)
-    q, r = div(num, den)
-    result = q + r/den
-    if isinstance(result, Add):
-        return result
-    result = result.expand()
-    if isinstance(result, Add):
-        return result
-    return None
+def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr, str]:
+    """Handle polynomial expressions for integration"""
+    # If expr is rational fraction, performing partial fraction decomposition.
+    expr_copy = num / den
+    expr_apart = expr_copy.apart()
+
+    # If the rational fraction is reducible
+    if expr_apart != expr_copy:
+        return expr_apart, "(有理分式)化为真分式或部分分式分解"
+
+    # If the rational fraction is not reducible:
+    # 1. irreducible linear poly:
+    if degree(den) == 1:
+        q, r = div(num, den)
+        result = q + r/den
+        return result, "裂项(分母为一次多项式)"
+
+    # 2. irreducible quadratic poly:
+    if degree(den) == 2:
+        # The simplest irreducible quadratic poly, no decomposition required
+        if num.is_constant():
+            expr_result = Integral(num/den, var).doit()
+            return expr_result, rf"(分母为二次多项式且分子为常数)分母配方凑 $ \frac{{1}}{{u^2+1}} $ 法"
+
+        den_diff = den.diff()
+        alpha, beta = symbols('alpha beta')
+        # Construct the identity: num = alpha * den_diff + beta
+        sol = solve(Eq(num, alpha * den_diff + beta),
+                    (alpha, beta))
+        alpha_val, beta_val = sol[alpha], sol[beta]
+
+        part1 = alpha_val*den_diff/den
+        part2 = beta_val/den
+        expr_copy = part1 + part2
+        return expr_copy, rf"(分母为不可约二次) $构造等式(分子 = \alpha \cdot 分母导数 + \beta)进行裂项$"
+
+    # In fact, by the fundamental theorem of algebra, (None, None) will never be reached
+    return None, None
 
 
 def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the sum rule：(f+g) dx = f dx + g dx"""
-    if isinstance(expr, Mul):
-        expr_copy = smart_expand(expr)
-        if not expr_copy:
-            return None
-    else:
-        expr_copy = expr.expand()
-
     var = context['variable']
     var_latex, expr_latex = wrap_latex(var, expr)
+    prefix = "应用加法展开规则"
+
+    if isinstance(expr, (Mul, Pow)):
+        num, den = fraction(expr)
+        # If expr is rational fraction, make sure it is a true fraction.
+        q, r = div(num, den)
+        result = q + r/den
+        # The simplest linear poly, no decomposition required
+        if degree(den) == 1 and not isinstance(result, Add):
+            return None
+        if expr == 1/(var**2+1):
+            return None
+
+        used = False
+        if den != 1 and num.is_polynomial() and den.is_polynomial():
+            # If expr is rational fraction, performing partial fraction decomposition.
+            result, prefix = handle_poly(num, den, var)
+            if not isinstance(result, Add):
+                return result, prefix
+            used = True
+            expr_copy = result
+
+        # Handle the expressions containing non-polynomial elements such as log
+        if not used:
+            result = result.expand()
+            if isinstance(result, Add):
+                expr_copy = result
+                used = True
+
+        if not used:
+            return None
+
+    else:
+        expr_copy = expr.expand()
 
     # Comparing to diff's add_rule, we use list comprehension.
     integrals = [Integral(powsimp(term), var) for term in expr_copy.args]
     new_expr = Add(*integrals)
 
-    explanation = f"应用加法规则: $\\int{expr_latex}\\,d{var_latex} = {latex(new_expr)}$"
+    explanation = f"{prefix}: $\\int {expr_latex}\\,d {var_latex} = {latex(new_expr)}$"
     return new_expr, explanation
 
 
@@ -52,7 +109,10 @@ def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
 
 def add_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    if isinstance(expr, Add) or isinstance(expr, Mul):
+    if isinstance(expr, (Add, Mul)):
+        return 'add'
+    # 1/(poly^n): poly^(-n)
+    if isinstance(expr, Pow) and expr.exp.is_integer:
         return 'add'
     return None
 

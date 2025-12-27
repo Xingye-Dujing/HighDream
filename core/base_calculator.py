@@ -89,7 +89,7 @@ class BaseCalculator(ABC):
         Note: Force log simplification
         """
 
-        return expand_log(sympify(expr), force=True)
+        return expand_log(simplify(expr), force=True)
 
     def _get_context_dict(self, **context: Context) -> RuleContext:
         context_dict = {}
@@ -172,19 +172,17 @@ class BaseCalculator(ABC):
         if not final_expr.free_symbols:
             return
 
-        final_expr = simplify(self._back_subs(final_expr))
+        # 1. Back substitute
+        final_expr = self._back_subs(final_expr)
 
+        # 2. Assume the variable are positive real numbers and simplify final expression
         var = final_expr.free_symbols.pop()
 
         _t = Symbol('t', real=True, positive=True)
         simplified_expr = simplify(final_expr.subs(var, _t).subs(_t, var).replace(
             Abs, lambda arg: arg))
-
         if simplified_expr != final_expr:
-            self.step_generator.add_step(
-                simplified_expr,
-                "假设所有变量为正实数, 化简表达式"
-            )
+            self.step_generator.add_step(simplified_expr, "假设所有变量为正实数, 化简表达式")
 
     def _sympify(self, expr: str) -> Expr:
         """Convert the input expression to a SymPy expression."""
@@ -265,14 +263,14 @@ class BaseCalculator(ABC):
                     queue.append(sub_expr)
 
         if not self.sudden_end[0]:
-            # Final simplification
             exprs, _ = self.step_generator.get_steps()
-            if exprs:
-                final_expr = exprs[-1]
-                simplified_expr = self._cached_simplify(final_expr)
-                if simplified_expr != final_expr:
-                    self.step_generator.add_step(simplified_expr, "简化表达式")
-                    final_expr = simplified_expr
+            final_expr = exprs[-1]
+
+            # Final simplification
+            simplified_expr = self._cached_simplify(final_expr)
+            if simplified_expr != final_expr:
+                self.step_generator.steps[-1] = simplified_expr
+                final_expr = simplified_expr
 
             self._final_postprocess(final_expr)
 
