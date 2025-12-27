@@ -43,7 +43,7 @@ def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr, str]:
         expr_copy = part1 + part2
         return expr_copy, rf"(分母为不可约二次) $构造等式(分子 = \alpha \cdot 分母导数 + \beta)进行裂项$"
 
-    # In fact, by the fundamental theorem of algebra, (None, None) will never be reached
+    # Cases like 1/(x**2+1)**2 that have already been reduced to the simplest form will reach here
     return None, None
 
 
@@ -68,8 +68,13 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         if den != 1 and num.is_polynomial() and den.is_polynomial():
             # If expr is rational fraction, performing partial fraction decomposition.
             result, prefix = handle_poly(num, den, var)
+            # 1. Have already been reduced to the simplest form
+            if not result:
+                return None
+            # 2. The simplest irreducible quadratic poly, no decomposition required
             if not isinstance(result, Add):
                 return result, prefix
+            # 3. The rational fraction is reducible
             used = True
             expr_copy = result
 
