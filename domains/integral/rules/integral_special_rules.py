@@ -194,6 +194,8 @@ def quotient_diff_form_rule(expr: Expr, context: RuleContext) -> RuleFunctionRet
     if not is_elementary_expression(int_result):
         return None
     int_num, int_den = fraction(int_result)
+    if int_den == 1:
+        return None
 
     need_num = diff(int_num, var)*int_den-int_num*diff(int_den, var)
     need_expr = simplify(need_num/int_den**2)
@@ -340,5 +342,8 @@ def f_x_mul_exp_g_x_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctio
 
 def quotient_diff_form_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     if isinstance(expr, (Mul, Pow)):
+        _, den = fraction(expr)
+        if den == 1:
+            return None
         return 'quotient_diff_form'
     return None
