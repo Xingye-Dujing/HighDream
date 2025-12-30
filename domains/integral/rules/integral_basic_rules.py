@@ -1,13 +1,13 @@
 from sympy import (
     Add, Expr, Eq, Integral, Mul,  Pow, degree, div, fraction,
-    powsimp, latex, solve, symbols
+    integrate, powsimp, latex, solve, symbols
 )
 
 from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 from utils.latex_formatter import wrap_latex
 
 
-def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr, str]:
+def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr, str, bool]:
     """Handle polynomial expressions for integration"""
     # If expr is rational fraction, performing partial fraction decomposition.
     expr_copy = num / den
@@ -15,21 +15,21 @@ def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr, str]:
 
     # If the rational fraction is reducible
     if expr_apart != expr_copy:
-        return expr_apart, "(有理分式)化为真分式或部分分式分解"
+        return expr_apart, "(有理分式)化为真分式或部分分式分解", False
 
     # If the rational fraction is not reducible:
     # 1. irreducible linear poly:
     if degree(den) == 1:
         q, r = div(num, den)
         result = q + r/den
-        return result, "裂项(分母为一次多项式)"
+        return result, "裂项(分母为一次多项式)", False
 
     # 2. irreducible quadratic poly:
     if degree(den) == 2:
         # The simplest irreducible quadratic poly, no decomposition required
         if num.is_constant():
-            expr_result = Integral(num/den, var).doit()
-            return expr_result, rf"(分母为二次多项式且分子为常数)分母配方凑 $ \frac{{1}}{{u^2+1}} $ 法"
+            return integrate(expr_copy, var), \
+                rf"(分母为二次多项式且分子为常数)分母配方/提公因子凑 $ \frac{{1}}{{b}} \frac{{1}}{{u^2+1}} $ 法", True
 
         den_diff = den.diff()
         alpha, beta = symbols('alpha beta')
@@ -41,10 +41,10 @@ def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr, str]:
         part1 = alpha_val*den_diff/den
         part2 = beta_val/den
         expr_copy = part1 + part2
-        return expr_copy, rf"(分母为不可约二次) $构造等式(分子 = \alpha \cdot 分母导数 + \beta)进行裂项$"
+        return expr_copy, rf"(分母为不可约二次) $构造等式(分子 = \alpha \cdot 分母导数 + \beta)进行裂项$", False
 
     # Cases like 1/(x**2+1)**2 that have already been reduced to the simplest form will reach here
-    return None, None
+    return None, None, False
 
 
 def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
@@ -67,14 +67,18 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         used = False
         if den != 1 and num.is_polynomial() and den.is_polynomial():
             # If expr is rational fraction, performing partial fraction decomposition.
-            result, prefix = handle_poly(num, den, var)
+            result, prefix, is_direct_return = handle_poly(num, den, var)
             # 1. Have already been reduced to the simplest form
             if not result:
                 return None
-            # 2. The simplest irreducible quadratic poly, no decomposition required
-            if not isinstance(result, Add):
+            # 2. The simplest irreducible quadratic poly, directly return result
+            if is_direct_return:
                 return result, prefix
-            # 3. The rational fraction is reducible
+            # 3. If there is only one term after decomposition
+            if not isinstance(result, Add):
+                new_expr = Integral(result, var)
+                return new_expr, f"{prefix}: $\\int {expr_latex}\\,d {var_latex} = {latex(new_expr)}$"
+            # 4. The rational fraction is reducible
             used = True
             expr_copy = result
 
@@ -113,11 +117,11 @@ def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     return coeff * Integral(func_part, var), f"常数因子提取: $\\int {expr_latex}\\,d{var} = {latex(coeff)} \\int {func_part_latex}\\,d{var_latex}$"
 
 
-def add_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+def add_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     if isinstance(expr, (Add, Mul)):
         return 'add'
     # 1/(poly^n): poly^(-n)
-    if isinstance(expr, Pow) and expr.exp.is_integer:
+    if isinstance(expr, Pow) and expr.exp.is_integer and expr.base != context['variable']:
         return 'add'
     return None
 
