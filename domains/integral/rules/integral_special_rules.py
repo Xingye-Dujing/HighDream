@@ -191,8 +191,11 @@ def quotient_diff_form_rule(expr: Expr, context: RuleContext) -> RuleFunctionRet
     # eg. (cos(x)+1)*tan(x/2)**2 to 1-cos(x)
     # So we can use simplify(fu(expr)) to simplify trigonometric functions to a simpler form
     int_result = simplify(fu(integrate(expr, var)))
+    if not isinstance(int_result, Mul):
+        return None
     if not is_elementary_expression(int_result):
         return None
+
     int_num, int_den = fraction(int_result)
     if int_den == 1:
         return None

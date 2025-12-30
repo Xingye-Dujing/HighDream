@@ -74,8 +74,8 @@ RULE_DICT: RuleDict = {
 # Note: Earlier entries have higher priority.
 MATCHER_LIST: MatcherList = [
     const_matcher, var_matcher, mul_const_matcher, logarithmic_matcher, substitution_matcher,
-    f_x_mul_exp_g_x_matcher, add_matcher, pow_matcher, exp_matcher, log_matcher, sin_matcher,
-    cos_matcher, tan_matcher, sec_matcher, csc_matcher, cot_matcher, exp_matcher, log_matcher,
-    sinh_matcher, cosh_matcher, tanh_matcher, csch_matcher, sech_matcher, coth_matcher,
-    inverse_trig_matcher, inverse_tangent_linear_matcher, quotient_diff_form_matcher, parts_matcher
+    f_x_mul_exp_g_x_matcher, quotient_diff_form_matcher, add_matcher, pow_matcher, exp_matcher,
+    log_matcher, sin_matcher, cos_matcher, tan_matcher, sec_matcher, csc_matcher, cot_matcher,
+    exp_matcher, log_matcher, sinh_matcher, cosh_matcher, tanh_matcher, csch_matcher, sech_matcher,
+    coth_matcher, inverse_trig_matcher, inverse_tangent_linear_matcher, parts_matcher
 ]
