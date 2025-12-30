@@ -58,3 +58,8 @@
 
 - **中文**: 完善积分部分的规则和匹配器，当前只能处理简单的积分计算，需要扩展更多复杂的积分场景支持
 - **English**: Improve the rules and matcher, as it currently can only handle simple integral calculations and needs to support more complex integration scenarios
+
+## Expression Simplification Enhancement
+
+- **中文**: 考虑将所有的 `simplify(expr)` 换为 `simplify(fu(expr))`，以改进表达式简化的效果
+- **English**: Consider replacing all `simplify(expr)` with `simplify(fu(expr))` to improve the effectiveness of expression simplification

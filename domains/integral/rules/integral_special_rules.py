@@ -1,7 +1,8 @@
 from sympy import (
-    Abs, Expr, I, Integer, Integral, Mul, Wild, Rational, Symbol, diff, exp,
-    integrate, latex, log, powsimp, preorder_traversal, simplify, sqrt, together
+    Abs, Expr, I, Integer, Integral, Mul, Wild, Rational, Symbol, diff, exp, fraction,
+    integrate, latex, log, powsimp, preorder_traversal, simplify, sqrt, together, Pow,
 )
+from sympy.simplify.fu import fu
 
 from utils import (
     MatcherFunctionReturn, RuleContext, RuleFunctionReturn, has_radical, is_elementary_expression
@@ -180,6 +181,33 @@ def f_x_mul_exp_g_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn
     return None
 
 
+def quotient_diff_form_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Handle f(x)/g(x)^2 case by recognition of quotient differential forms.
+
+    eg. x*sin(x)/(x+sin(x))^2"""
+
+    var = context['variable']
+    # Note: fu() can handle standard form simplification of trigonometric functions
+    # eg. (cos(x)+1)*tan(x/2)**2 to 1-cos(x)
+    # So we can use simplify(fu(expr)) to simplify trigonometric functions to a simpler form
+    int_result = simplify(fu(integrate(expr, var)))
+    if not is_elementary_expression(int_result):
+        return None
+    int_num, int_den = fraction(int_result)
+
+    need_num = diff(int_num, var)*int_den-int_num*diff(int_den, var)
+    need_expr = simplify(need_num/int_den**2)
+    if simplify(need_expr/expr).has(var):
+        return None
+
+    var_latex = latex(var)
+    return int_result, (
+        f'变换表达式凑商的微分形式:'
+        f'$\\int {latex(expr)}\\,d{var_latex} = \\int \\frac{{{latex(need_num)}}}{{{latex(int_den**2)}}}\\,d{var_latex} ='
+        f'{latex(int_result)} + C$'
+    )
+
+
 def logarithmic_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Heuristic matcher for f'(x)/f(x) integration pattern.
 
@@ -307,4 +335,10 @@ def f_x_mul_exp_g_x_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctio
     expr = together(expr)
     if isinstance(expr, Mul) and expr.has(exp):
         return 'f_x_mul_exp_g_x'
+    return None
+
+
+def quotient_diff_form_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+    if isinstance(expr, (Mul, Pow)):
+        return 'quotient_diff_form'
     return None

@@ -27,7 +27,8 @@ from .rules.integral_function_rules import (
 from .rules.integral_special_rules import (
     logarithmic_matcher, logarithmic_rule,
     parts_matcher, parts_rule, substitution_matcher, substitution_rule,
-    f_x_mul_exp_g_x_matcher, f_x_mul_exp_g_x_rule
+    f_x_mul_exp_g_x_matcher, f_x_mul_exp_g_x_rule,
+    quotient_diff_form_matcher, quotient_diff_form_rule
 )
 
 __all__ = [
@@ -65,6 +66,7 @@ RULE_DICT: RuleDict = {
     'add': add_rule,
     'logarithmic': logarithmic_rule,
     'f_x_mul_exp_g_x': f_x_mul_exp_g_x_rule,
+    'quotient_diff_form': quotient_diff_form_rule,
     'substitution': substitution_rule,
     'parts': parts_rule,
 }
@@ -75,5 +77,5 @@ MATCHER_LIST: MatcherList = [
     f_x_mul_exp_g_x_matcher, add_matcher, pow_matcher, exp_matcher, log_matcher, sin_matcher,
     cos_matcher, tan_matcher, sec_matcher, csc_matcher, cot_matcher, exp_matcher, log_matcher,
     sinh_matcher, cosh_matcher, tanh_matcher, csch_matcher, sech_matcher, coth_matcher,
-    inverse_trig_matcher, inverse_tangent_linear_matcher, parts_matcher
+    inverse_trig_matcher, inverse_tangent_linear_matcher, quotient_diff_form_matcher, parts_matcher
 ]

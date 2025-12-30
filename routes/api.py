@@ -15,6 +15,7 @@ Routes:
 """
 
 from sympy import Symbol, diff, integrate, latex, limit, simplify, sympify
+from sympy.simplify.fu import fu
 from flask import Blueprint, request, jsonify, send_from_directory
 from domains import MatrixAnalyzer, MatrixCalculator, ProcessManager
 from config import TREES_DIR
@@ -251,7 +252,7 @@ def sympy_calculate():
             # Default to just returning the parsed expression
             result = expr
 
-        result_str = str(simplify(result))
+        result_str = str(simplify(fu(result)))
 
         return jsonify({'success': True, 'result': result_str})
     except Exception as e:
