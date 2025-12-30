@@ -1,10 +1,11 @@
 from sympy import (
     Abs, Dummy, Eq, Expr, I, Integral, Pow, Rational, Symbol, Wild, acos, asin, atan,
-    diff, latex, log, preorder_traversal, sec, simplify, sin, solve, sqrt, tan, together
+    diff, latex, log, integrate, preorder_traversal, sec, simplify, sin, solve, sqrt,
+    tan, together
 )
 
 from core import BaseStepGenerator
-from utils import RuleFunctionReturn
+from utils import RuleFunctionReturn, is_elementary_expression
 
 sqrt_pow = Rational(1, 2)
 minus_sqrt_pow = -Rational(1, 2)
@@ -27,12 +28,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
         if not factor.args or factor.is_constant() or factor == var:
             continue
 
-        flag = False
-        if factor.is_Pow and factor.args[1].has(var):
-            flag = True  # eg. 3^g(x), etc.
-        inner = factor.args[1] if flag else factor.args[0]   # g(x)
-
-        for original_term in preorder_traversal(inner):
+        for original_term in preorder_traversal(factor):
             if original_term == var or original_term.is_constant():
                 continue
 
@@ -79,7 +75,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
 
                     explanation = (
                         f"换元法: 令 ${u.name} = {latex(term)}$, $d{u.name} = {gp_latex}\\,d{var.name}$, "
-                        f"原式$ \\int {latex(expr)}\\,d{var.name}$ 化为 $ {ratio_latex} \\int {latex(f_u)}\\,d{u.name}$, "
+                        f"原式$ \\int {latex(expr)}\\,d{var.name}$ 化为 $ {ratio_latex} \\int {latex(f_u)}\\,d{u.name}$"
                     )
                     return new_expr, explanation
 
@@ -106,7 +102,8 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
     # These assumptions are necessary for Integral to work correctly !!!
     a = Wild('a', exclude=[var], properties=[
              lambda x: x.is_positive])
-    theta = Dummy('theta', real=True)
+    # Theta is real and positive to help simplify
+    theta = Dummy('theta', real=True, positive=True)
 
     # Helper: attempt substitution given pattern, sub_expr, d(x)/d(theta), and back-substitution
     def _apply_trig_sub(pattern, x_of_theta, theta_of_x):
@@ -126,11 +123,12 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
         dx_dtheta = diff(x_sub, theta)
 
         try:
-            new_expr = simplify((expr.subs(var, x_sub)*dx_dtheta)).replace(
+            # Note: inverse=True is necessary to handle cases like asin(sin(x)) == x
+            new_expr = simplify(expr.subs(var, x_sub)*dx_dtheta, inverse=True).replace(
                 Abs, lambda arg: arg)
-            int_theta = Integral(new_expr, theta).doit()
-            if isinstance(int_theta, Integral):
-                return None  # Integration failed
+            int_theta = simplify(integrate(new_expr, theta))
+            if not is_elementary_expression(int_theta):
+                return None
 
             new_subs = theta_of_x.subs(a, sqrt(a_val))
             if pattern in ((a+var**2)**minus_sqrt_pow, (var**2-a)**minus_sqrt_pow):
@@ -270,7 +268,7 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
                 f"根式代换：令 ${u.name} = {latex(rad)}$, 则由 ${latex(base)} = {u.name}^{{{latex(Rational(q, p))}}}$ 解得 "
                 f"${var.name} = {latex(x_of_u)}$, "
                 f"且 $d{var.name} = {latex(dx_du)}\\,d{u.name}$. 积分化为 "
-                f"$\\int {latex(new_expr)}\\,d{u.name}$, "
+                f"$\\int {latex(new_expr)}\\,d{u.name}$"
             )
             return final_result, explanation
 

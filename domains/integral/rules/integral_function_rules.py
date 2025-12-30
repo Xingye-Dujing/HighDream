@@ -1,6 +1,6 @@
 from sympy import (
     Abs, Expr, Integral, Pow, acos, asin, atan, cos, cosh, cot, csc, exp,
-    latex, log, sec, sin, sinh, sqrt, tan, tanh
+    latex, log, sec, sin, sinh, sqrt, tan, tanh, csch, sech, coth
 )
 
 from core import RuleRegistry
@@ -25,7 +25,8 @@ csc_rule = _create_rule("余割")
 cot_rule = _create_rule("余切")
 sinh_rule = _create_rule("双曲正弦")
 cosh_rule = _create_rule("双曲余弦")
-tanh_rule = _create_rule("双曲正切")
+csch_rule = _create_rule("双曲余割")
+sech_rule = _create_rule("双曲正割")
 
 
 def const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
@@ -122,6 +123,22 @@ def inverse_tangent_linear_rule(expr: Expr, context: RuleContext) -> RuleFunctio
     return result, f"线性逆切函数积分: $\\int \\frac{{1}}{{{var_latex}^2 + {m_latex}}}\\,d{var_latex} = \\frac{{1}}{{{sqrt_m_latex}}} \\arctan\\left(\\frac{{{var_latex}}}{{{sqrt_m_latex}}}\\right) + C$"
 
 
+def tanh_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Apply the tanh rule: tanh(x) dx = ln(|cosh(x)|) + C"""
+    var = context['variable']
+    result = log(Abs(cosh(var)))
+    var_latex = latex(var)
+    return result, f"双曲正切函数积分: $\\int \\tanh({var_latex})\\,d{var_latex} = \\ln| \\cosh({var_latex})| + C$"
+
+
+def coth_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Apply the coth rule: coth(x) dx = ln(|sinh(x)|) + C"""
+    var = context['variable']
+    result = log(Abs(sinh(var)))
+    var_latex = latex(var)
+    return result, f"双曲余切函数积分: $\\int \\coth({var_latex})\\,d{var_latex} = \\ln| \\sinh({var_latex})| + C$"
+
+
 pow_matcher = _create_matcher(Pow)
 log_matcher = _create_matcher(log)
 sin_matcher = _create_matcher(sin)
@@ -207,6 +224,46 @@ def cot_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     # Match direct cot(x) or 1/tan(x)
     if expr == cot(var) or expr == 1/tan(var):
         return 'cot'
+
+    return None
+
+
+def csch_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for hyperbolic cosecant expressions including 1/sinh(x).
+
+    Matches expressions that are equivalent to csch(x).
+    """
+    var = context['variable']
+
+    # Match direct csch(x) or 1/sinh(x)
+    if expr == csch(var) or expr == 1/sinh(var):
+        return 'csch'
+    return None
+
+
+def sech_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for hyperbolic secant expressions including 1/cosh(x).
+
+    Matches expressions that are equivalent to sech(x).
+    """
+    var = context['variable']
+
+    # Match direct sech(x) or 1/cosh(x)
+    if expr == sech(var) or expr == 1/cosh(var):
+        return 'sech'
+    return None
+
+
+def coth_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for hyperbolic cotangent expressions including 1/tanh(x).
+
+    Matches expressions that are equivalent to coth(x).
+    """
+    var = context['variable']
+
+    # Match direct coth(x) or 1/tanh(x)
+    if expr == coth(var) or expr == 1/tanh(var):
+        return 'coth'
 
     return None
 
