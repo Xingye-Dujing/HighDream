@@ -1,6 +1,6 @@
 from sympy import (
     Add, Expr, Eq, Integral, Mul,  Pow, degree, div, fraction,
-    integrate, powsimp, latex, solve, symbols
+    integrate, powsimp, latex, solve, symbols, simplify
 )
 
 from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
@@ -96,7 +96,8 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         expr_copy = expr.expand()
 
     # Comparing to diff's add_rule, we use list comprehension.
-    integrals = [Integral(powsimp(term), var) for term in expr_copy.args]
+    integrals = [Integral(simplify(powsimp(term)), var)
+                 for term in expr_copy.args]
     new_expr = Add(*integrals)
 
     explanation = f"{prefix}: $\\int {expr_latex}\\,d {var_latex} = {latex(new_expr)}$"

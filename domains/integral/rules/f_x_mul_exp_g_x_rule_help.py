@@ -4,6 +4,8 @@ from utils import RuleContext, RuleFunctionReturn, is_elementary_expression
 
 def handle_fx_mul_exp_gx(expr: Expr, exp_term: exp, another_term: Expr, context: RuleContext) -> RuleFunctionReturn:
     var = context['variable']
+    step_gene = context['step_generator']
+
     integrate_result = simplify(integrate(expr, var))
     if not is_elementary_expression(integrate_result):
         return None
@@ -16,8 +18,22 @@ def handle_fx_mul_exp_gx(expr: Expr, exp_term: exp, another_term: Expr, context:
         result = simplify(m_x*exp_term)
     else:
         return None
+
+    step_gene.add_step('None', '')
+    step_gene.add_step(
+        'None', f'$\\int {latex(expr)}\\,\\mathrm{{d}} {var}$')
+    step_gene.add_step(
+        'None', f'$= \\int {latex(diff_m_x*exp_term)}\\,\\mathrm{{d}} {var} + \\int {latex((another_term-diff_m_x)*exp_term)}\\,\\mathrm{{d}} {var}$')
+    step_gene.add_step(
+        'None', f'$= \\int {latex(diff_m_x*exp_term)}\\,\\mathrm{{d}} {var} + \\int {latex(m_x)}\\,\\mathrm{{d}} {latex(exp_term)}$')
+    step_gene.add_step(
+        'None', f'$= \\int {latex(diff_m_x*exp_term)}\\,\\mathrm{{d}} {var} + {latex(result)} - \\int {latex(diff_m_x*exp_term)}\\,\\mathrm{{d}} {var}$')
+    step_gene.add_step(
+        'None', f'$= {latex(result)} + C$')
+    step_gene.add_step('None', '')
+
     mid_process = Integral((diff_m_x+m_x*diff_g_x)*exp_term, var)
-    return result, (rf'$\int f({var})\,e^{{g({var})}}\,d{var} \to 凑微分法:'
+    return result, (rf'$\int f({var})\,e^{{g({var})}}\,d{var} \to 变换表达式凑积的微分形式:'
                     rf'\int {latex(expr)}\, d{var}= {latex(mid_process)} ='
                     rf"\int (m'({var})+m({var})\,g'({var}))\,e^{{g({var})}}\,d{var} = "
                     rf'm({var})\,e^{{g({var})}},\,'

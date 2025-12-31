@@ -73,7 +73,7 @@ def create_integral_calculator(base_class):
                 if not self.step_generator.steps[-3].has(C) and not self.step_generator.steps[-3].has(Integral):
                     self.step_generator.steps[-3] = self._merge_constants_with_C(
                         self.step_generator.steps[-3])
-            except IndexError:
+            except (IndexError, AttributeError):
                 pass
 
         def compute_list(self, expr: str, var: Symbol) -> Tuple[List[Expr], List[str]]:

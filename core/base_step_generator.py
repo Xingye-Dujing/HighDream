@@ -65,7 +65,10 @@ class BaseStepGenerator(ABC):
 
         lines = []
         for i, (step, explanation) in enumerate(zip(self.steps, self._explanations)):
-            line = r"&=" + latex(step) if i > 0 else "&" + latex(step)
+            if step == 'None':
+                line = rf"& \quad \quad"
+            else:
+                line = r"&=" + latex(step) if i > 0 else "&" + latex(step)
             if explanation:
                 line += rf" \quad \text{{{explanation}}}"
             lines.append(line)

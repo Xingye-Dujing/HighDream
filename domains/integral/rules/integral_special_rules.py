@@ -1,6 +1,6 @@
 from sympy import (
     Abs, Expr, I, Integer, Integral, Mul, Wild, Rational, Symbol, diff, exp, fraction,
-    integrate, latex, log, powsimp, preorder_traversal, simplify, sqrt, together, Pow,
+    integrate, latex, log, powsimp, preorder_traversal, simplify, sqrt, together
 )
 from sympy.simplify.fu import fu
 
@@ -187,6 +187,7 @@ def quotient_diff_form_rule(expr: Expr, context: RuleContext) -> RuleFunctionRet
     eg. x*sin(x)/(x+sin(x))^2"""
 
     var = context['variable']
+    step_gene = context['step_generator']
     # Note: fu() can handle standard form simplification of trigonometric functions
     # eg. (cos(x)+1)*tan(x/2)**2 to 1-cos(x)
     # So we can use simplify(fu(expr)) to simplify trigonometric functions to a simpler form
@@ -200,16 +201,32 @@ def quotient_diff_form_rule(expr: Expr, context: RuleContext) -> RuleFunctionRet
     if int_den == 1:
         return None
 
-    need_num = diff(int_num, var)*int_den-int_num*diff(int_den, var)
+    int_num_diff = diff(int_num, var)
+    int_den_diff = diff(int_den, var)
+    need_num = int_num_diff*int_den-int_num*int_den_diff
     need_expr = simplify(need_num/int_den**2)
     if simplify(need_expr/expr).has(var):
         return None
 
     var_latex = latex(var)
+    step_gene.add_step('None', '')
+    step_gene.add_step(
+        'None', f'$\\int {latex(expr)}\\,\\mathrm{{d}} {var_latex}$')
+    step_gene.add_step(
+        'None', f'$= \\int \\frac{{{latex(int_num_diff)}}}{{{latex(int_den)}}}\\,\\mathrm{{d}}{var_latex} - \\int \\frac{{{latex(int_num*int_den_diff)}}}{{{latex(int_den**2)}}}\\,\\mathrm{{d}}{var_latex}$')
+    step_gene.add_step(
+        'None', f'$= \\int \\frac{{{latex(int_num_diff)}}}{{{latex(int_den)}}}\\,\\mathrm{{d}}{var_latex} + \\int {latex(int_num)}\\,\\mathrm{{d}} \\left({latex(1/int_den)}\\right)$')
+    step_gene.add_step(
+        'None', f'$= \\int \\frac{{{latex(int_num_diff)}}}{{{latex(int_den)}}}\\,\\mathrm{{d}}{var_latex} + {latex(int_result)} - \\int \\frac{{{latex(int_num_diff)}}}{{{latex(int_den)}}}\\,\\mathrm{{d}}{var_latex}$')
+    step_gene.add_step(
+        'None', f'$= {latex(int_result)} + C$')
+    step_gene.add_step('None', '')
+
     return int_result, (
         f'变换表达式凑商的微分形式:'
         f'$\\int {latex(expr)}\\,d{var_latex} = \\int \\frac{{{latex(need_num)}}}{{{latex(int_den**2)}}}\\,d{var_latex} ='
-        f'{latex(int_result)} + C$'
+        f"\\int \\frac{{f'({var})g({var})-g'({var})f({var})}}{{g({var})^2}}\\,d{var_latex} = \\frac{{f({var})}}{{g({var})}},\\,"
+        rf'此处\, f({var}) = {latex(int_num)},\,g({var}) = {latex(int_den)}$'
     )
 
 
@@ -344,7 +361,7 @@ def f_x_mul_exp_g_x_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctio
 
 
 def quotient_diff_form_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    if isinstance(expr, (Mul, Pow)):
+    if isinstance(expr, Mul):
         _, den = fraction(expr)
         if den == 1:
             return None
