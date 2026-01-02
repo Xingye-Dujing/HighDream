@@ -600,11 +600,13 @@ function createCellElement(id, type) {
                 </select>
                 <label style="font-size:12px;">深度:</label>
                 <input type="number" class="expr-depth" value="3" min="1" max="10" style="width:50px;">
+                <!--
                 <span class="gene-label">生成推导树:</label>
                 <select class="gene-sort">
                   <option value="false">否</option>
                   <option value="true">是</option>
                 </select>
+                -->
               </div>
 
               <button class="keyboard-button" title="打开虚拟键盘">
@@ -795,10 +797,10 @@ function runCell(cell) {
   if (operationType === 'expr') {
     const sort = cell.querySelector(".expr-sort").value || "complexity";
     const depth = cell.querySelector(".expr-depth").value || "3";
-    const is_draw_tree = cell.querySelector(".gene-sort").value;
+    // const is_draw_tree = cell.querySelector(".gene-sort").value;
     payload.max_depth = depth;
     payload.sort_strategy = sort;
-    payload.is_draw_tree = is_draw_tree;
+    // payload.is_draw_tree = is_draw_tree;
   }
 
   // Display computing status
@@ -1142,7 +1144,7 @@ function saveNotebook() {
       if (operationType === "expr") {
         cellData.exprSort = cell.querySelector(".expr-sort").value || "complexity";
         cellData.exprDepth = cell.querySelector(".expr-depth").value || "3";
-        cellData.geneSort = cell.querySelector(".gene-sort").value || "false";
+        // cellData.geneSort = cell.querySelector(".gene-sort").value || "false";
       }
 
       cells.push(cellData);
@@ -1234,7 +1236,7 @@ function loadNotebook() {
             if (cellData.operationType === "expr") {
               const exprSort = cell.querySelector(".expr-sort");
               const exprDepth = cell.querySelector(".expr-depth");
-              const geneSort = cell.querySelector(".gene-sort");
+              // const geneSort = cell.querySelector(".gene-sort");
 
               if (exprSort) exprSort.value = cellData.exprSort || "complexity";
               if (exprDepth) exprDepth.value = cellData.exprDepth || "3";

@@ -7,11 +7,12 @@ The service routes requests to appropriate calculators based on operation type
 and handles data processing, error handling, and result formatting.
 """
 
-import uuid
+# import uuid
+# form config import TREES_DIR
 from typing import Any, Dict, Tuple
 from sympy import Symbol, preorder_traversal, latex, sympify
 
-from config import TREES_DIR, DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
+from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
 from domains import (
     DiffCalculator, IntegralCalculator, LimitCalculator, ExpressionParser,
     RefCalculator, BasicOperations, Inverter, Rank, LUDecomposition,
@@ -203,7 +204,7 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
         if operation_type == 'expr':
             max_depth = int(
                 data.get('max_depth', DEFAULT_PARSER_MAX_DEPTH))
-            is_draw_tree = data.get('is_draw_tree') == 'true'
+            # is_draw_tree = data.get('is_draw_tree') == 'true'
             sort_strategy = data.get('sort_strategy', 'complexity')
 
             def length_sort(expr):
@@ -232,18 +233,18 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
                 expressions_out.append(
                     {'latex': expr_latex, 'reason': str(reason)})
 
-            # Generate derivation tree SVG and return accessible static path
-            tree_svg_url = None
-            if is_draw_tree:
-                tree = parser.parse_tree(expression)
-                # Generate unique filename
-                file_name = f"{uuid.uuid4().hex}.svg"
-                save_path = f"{TREES_DIR}/{file_name}"
+            # # Generate derivation tree SVG and return accessible static path
+            # tree_svg_url = None
+            # if is_draw_tree:
+            #     tree = parser.parse_tree(expression)
+            #     # Generate unique filename
+            #     file_name = f"{uuid.uuid4().hex}.svg"
+            #     save_path = f"{TREES_DIR}/{file_name}"
 
-                parser.draw_expr_tree(tree, save_path=save_path)
-                tree_svg_url = save_path
+            #     parser.draw_expr_tree(tree, save_path=save_path)
+            #     tree_svg_url = save_path
 
-            return True, (expressions_out, tree_svg_url)
+            # return True, (expressions_out, tree_svg_url)
 
         return False, f"Unsupported operation type: {operation_type}"
 

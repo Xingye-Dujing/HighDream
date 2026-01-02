@@ -3,7 +3,7 @@ import threading
 import webbrowser
 
 # NOTE: This import is required when packaging with PyInstaller !!!
-import matplotlib.backends.backend_svg
+# import matplotlib.backends.backend_svg
 
 
 from gevent import pywsgi
@@ -11,7 +11,7 @@ from flask import Flask
 from config import TEMPLATE_FOLDER, STATIC_FOLDER
 from routes import main, api
 
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 
 
 def create_app():
