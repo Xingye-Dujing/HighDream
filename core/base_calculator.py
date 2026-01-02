@@ -179,7 +179,7 @@ class BaseCalculator(ABC):
         var = final_expr.free_symbols.pop()
 
         _t = Symbol('t', real=True, positive=True)
-        simplified_expr = radsimp(final_expr.subs(var, _t).subs(_t, var).replace(
+        simplified_expr = simplify(final_expr.subs(var, _t).subs(_t, var).replace(
             Abs, lambda arg: arg))
         if simplified_expr != final_expr:
             self.step_generator.add_step(simplified_expr, "假设所有变量为正实数, 化简表达式")
@@ -272,7 +272,7 @@ class BaseCalculator(ABC):
             final_expr = exprs[-1]
 
             # Final simplification
-            simplified_expr = self._cached_simplify(final_expr)
+            simplified_expr = simplify(final_expr)
             if simplified_expr != final_expr:
                 self.step_generator.steps[-1] = simplified_expr
                 final_expr = simplified_expr

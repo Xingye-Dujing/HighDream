@@ -1,9 +1,9 @@
 from sympy import (
     Add, Expr, Eq, Integral, Mul,  Pow, atan, degree, div, fraction,
-    integrate, powsimp, latex, radsimp, solve, symbols
+    integrate, powsimp, latex, radsimp, solve, simplify, symbols, sqrt
 )
 
-from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
+from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn, can_use_weierstrass
 from utils.latex_formatter import wrap_latex
 
 
@@ -56,6 +56,7 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     var = context['variable']
     var_latex, expr_latex = wrap_latex(var, expr)
     prefix = "应用加法展开规则"
+    expr_copy = expr.expand()
 
     if isinstance(expr, (Mul, Pow)):
         num, den = fraction(expr)
@@ -112,12 +113,13 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         if not used:
             return None
 
-    else:
-        expr_copy = expr.expand()
-
     # Comparing to diff's add_rule, we use list comprehension.
-    integrals = [Integral(radsimp(powsimp(term)), var)
-                 for term in expr_copy.args]
+    integrals = []
+    for term in expr_copy.args:
+        if can_use_weierstrass(term, var):
+            integrals.append(Integral(radsimp(powsimp(term)), var))
+        else:
+            integrals.append(Integral(simplify(powsimp(term)), var))
     new_expr = Add(*integrals)
 
     explanation = f"{prefix}: $\\int {expr_latex}\\,d {var_latex} = {latex(new_expr)}$"
@@ -126,16 +128,39 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
 def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the const mul rule: c*f(x) dx = c * f(x) dx"""
-    var = context['variable']
+    used = False
 
-    coeff, func_part = expr.as_coeff_Mul()
+    var = context['variable']
+    coeff_first, expr_copy = expr.as_coeff_Mul(rational=True)
+    num, den = fraction(expr_copy)
+    if den == 1:
+        coeff, func_part = expr_copy.as_content_primitive(radical=True)
+    else:
+        coeff_num, func_num = num.as_content_primitive(radical=True)
+        coeff_den, func_den = den.as_content_primitive(radical=True)
+        if coeff_num != 1 or coeff_den != 1:
+            used = True
+        coeff = simplify(coeff_num/coeff_den)
+        func_part = simplify(func_num/func_den)
+
+    coeff *= coeff_first
+
+    if isinstance(func_part, Mul) and func_part.args[0].is_constant():
+        coeff *= func_part.args[0]
+        func_part = func_part/coeff
+
+    if not expr.has(sqrt) and coeff.has(sqrt):
+        coeff, func_part = expr.as_coeff_Mul()
 
     var_latex, expr_latex, func_part_latex = wrap_latex(var, expr, func_part)
-
     if coeff == -1:
         return -Integral(func_part, var), f"负号提出: $\\int {expr_latex}\\,d{var} = -\\int {func_part_latex}\\,d{var_latex}$"
+    if coeff != 1:
+        return coeff * Integral(func_part, var), f"常数因子提取: $\\int {expr_latex}\\,d{var} = {latex(coeff)} \\int {func_part_latex}\\,d{var_latex}$"
+    if used:
+        return Integral(func_part, var), f"约分: $\\int {expr_latex}\\,d{var} = \\int {func_part_latex}\\,d{var_latex}$"
 
-    return coeff * Integral(func_part, var), f"常数因子提取: $\\int {expr_latex}\\,d{var} = {latex(coeff)} \\int {func_part_latex}\\,d{var_latex}$"
+    return None
 
 
 def add_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
@@ -147,10 +172,6 @@ def add_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     return None
 
 
-def mul_const_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    if not expr.is_constant() and isinstance(expr, Mul):
-        # Use as_coeff_Mul to check if there's a constant coefficient
-        coeff, _ = expr.as_coeff_Mul()
-        if coeff != 1:
-            return 'mul_const'
-    return None
+def mul_const_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    if not can_use_weierstrass(expr, context['variable']):
+        return 'mul_const'

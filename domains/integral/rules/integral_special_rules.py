@@ -200,7 +200,7 @@ def quotient_diff_form_rule(expr: Expr, context: RuleContext) -> RuleFunctionRet
         return None
 
     int_num, int_den = fraction(int_result)
-    if int_den == 1:
+    if int_den.is_constant():
         return None
 
     int_num_diff = diff(int_num, var)

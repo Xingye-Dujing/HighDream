@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from sympy import Add, Expr, Integral, Symbol, radsimp
+from sympy import Add, Expr, Integral, Symbol, simplify
 
 from core import BaseCalculator, SelectRuleCalculator
 from utils import MatcherList, Operation, RuleDict
@@ -49,7 +49,7 @@ def create_integral_calculator(base_class):
             # If there are more than 4 terms, don't merge constant terms to C to avoid complexity.
             if len(other_terms) > 4 and not isinstance(expr, Add):
                 return expr + C
-            return radsimp(Add(*other_terms)) + C
+            return simplify(Add(*other_terms)) + C
 
         def _final_postprocess(self, final_expr: Expr) -> None:
             """Add constant of integration (+C) for indefinite integrals without the integral symbol.
