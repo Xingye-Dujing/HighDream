@@ -1,6 +1,6 @@
 from sympy import (
     Add, Expr, Eq, Integral, Mul,  Pow, atan, degree, div, fraction,
-    integrate, powsimp, latex, radsimp, solve, symbols, simplify
+    integrate, powsimp, latex, radsimp, solve, symbols
 )
 
 from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
@@ -62,14 +62,14 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         # If expr is rational fraction, make sure it is a true fraction.
         q, r = div(num, den)
         result = q + r/den
-        # The simplest linear poly, no decomposition required
-        if degree(den) == 1 and not isinstance(result, Add):
-            return None
-        if expr == 1/(var**2+1):
-            return None
 
         used = False
         if den != 1 and num.is_polynomial() and den.is_polynomial():
+            # The simplest linear poly, no decomposition required
+            if degree(den) == 1 and not isinstance(result, Add):
+                return None
+            if expr == 1/(var**2+1):
+                return None
             # If expr is rational fraction, performing partial fraction decomposition.
             result, prefix, is_direct_return = handle_poly(num, den, var)
             # 1. Have already been reduced to the simplest form
@@ -116,7 +116,7 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         expr_copy = expr.expand()
 
     # Comparing to diff's add_rule, we use list comprehension.
-    integrals = [Integral(simplify(powsimp(term)), var)
+    integrals = [Integral(radsimp(powsimp(term)), var)
                  for term in expr_copy.args]
     new_expr = Add(*integrals)
 

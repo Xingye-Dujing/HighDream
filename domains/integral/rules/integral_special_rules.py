@@ -35,7 +35,7 @@ def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     var = context['variable']
 
     # More general approach for f'(x)/f(x)
-    numerator, denominator = expr.as_numer_denom()
+    numerator, denominator = fraction(expr)
     f_prime = diff(denominator, var)
     ratio = simplify(numerator / f_prime)
 

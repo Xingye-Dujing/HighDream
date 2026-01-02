@@ -3,7 +3,7 @@ from collections import deque
 from functools import lru_cache
 from typing import Deque, Dict, List, Tuple
 
-from sympy import Abs, Expr, Symbol, expand_log, latex, simplify, sympify
+from sympy import Abs, Expr, Symbol, expand_log, latex, radsimp, simplify, sympify
 
 from utils import (
     Context, MatcherList, Operation, RuleContext,
@@ -89,7 +89,7 @@ class BaseCalculator(ABC):
         Note: Force log simplification
         """
 
-        return expand_log(simplify(expr, inverse=True), force=True)
+        return expand_log(radsimp(expr), force=True)
 
     def _get_context_dict(self, **context: Context) -> RuleContext:
         context_dict = {}
@@ -179,14 +179,14 @@ class BaseCalculator(ABC):
         var = final_expr.free_symbols.pop()
 
         _t = Symbol('t', real=True, positive=True)
-        simplified_expr = simplify(final_expr.subs(var, _t).subs(_t, var).replace(
+        simplified_expr = radsimp(final_expr.subs(var, _t).subs(_t, var).replace(
             Abs, lambda arg: arg))
         if simplified_expr != final_expr:
             self.step_generator.add_step(simplified_expr, "假设所有变量为正实数, 化简表达式")
 
     def _sympify(self, expr: str) -> Expr:
         """Convert the input expression to a SymPy expression."""
-        return simplify(sympify(expr), inverse=True)
+        return radsimp(sympify(expr))
 
     def _do_compute(self, expr: str, operation: Operation, **context: Context) -> None:
         """Perform the core symbolic computation and record each evaluation step."""

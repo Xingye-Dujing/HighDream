@@ -54,7 +54,7 @@ def parse_input():
     operation_type = data.get('operation_type', '')
 
     try:
-        latex_output = str_to_latex(simplify(expression), operation_type)
+        latex_output = str_to_latex(expression, operation_type)
         return jsonify({'success': True, 'result': latex_output})
     except Exception as e:
         return jsonify({'success': False, 'error': f'{e}'})
