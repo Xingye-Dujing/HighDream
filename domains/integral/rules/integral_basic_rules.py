@@ -1,6 +1,6 @@
 from sympy import (
-    Add, Expr, Eq, Integral, Mul,  Pow, degree, div, fraction,
-    integrate, powsimp, latex, solve, symbols, simplify
+    Add, Expr, Eq, Integral, Mul,  Pow, atan, degree, div, fraction,
+    integrate, powsimp, latex, radsimp, solve, symbols, simplify
 )
 
 from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
@@ -28,8 +28,12 @@ def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr, str, bool]:
     if degree(den) == 2:
         # The simplest irreducible quadratic poly, no decomposition required
         if num.is_constant():
-            return integrate(expr_copy, var), \
-                rf"(分母为二次多项式且分子为常数)分母配方/提公因子凑 $ \frac{{1}}{{b}} \frac{{1}}{{u^2+1}} $ 法", True
+            result = integrate(expr_copy, var)
+            if result.has(atan):
+                return result, \
+                    rf"(分母为二次多项式且分子为常数)分母配方/提公因子凑 $ \frac{{1}}{{b}} \frac{{1}}{{u^2+1}} $ 法", True
+            # If square roots are needed during decomposition, another algorithm should be used
+            return expr_copy.apart(full=True).doit(), "(有理分式)化为真分式或部分分式分解", False
 
         den_diff = den.diff()
         alpha, beta = symbols('alpha beta')
@@ -81,6 +85,22 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
             # 4. The rational fraction is reducible
             used = True
             expr_copy = result
+
+        if not used and den != 1:
+            den_diff = den.diff()
+            alpha, beta = symbols('alpha beta')
+            try:
+                # Construct the identity: num = alpha * den_diff + beta
+                sol = solve(Eq(num, alpha * den_diff + beta*den),
+                            (alpha, beta))
+                alpha_val, beta_val = sol[alpha], sol[beta]
+                if alpha_val.is_constant() and beta_val.is_constant():
+                    part1 = radsimp(alpha_val*den_diff/den)
+                    part2 = beta_val
+                    result = Integral(part1, var) + Integral(part2, var)
+                    return result, f"$构造等式(分子 = \\alpha \\cdot 分母导数 + \\beta \\cdot 分母)进行裂项: \\int {expr_latex}\\,d {var_latex} = {latex(result)}$"
+            except Exception as e:
+                print(f"Error in add_rule: {e}")
 
         # Handle the expressions containing non-polynomial elements such as log
         if not used:

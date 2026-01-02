@@ -263,7 +263,6 @@ def weierstrass_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunct
     substituted_expr *= dx_dt
 
     result = Integral(simplify(substituted_expr), t)
-    print(result)
 
     var_latex = latex(var)
     explaination = (

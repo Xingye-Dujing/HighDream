@@ -59,13 +59,14 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
 
                     # Substitute u = g(x)
                     u = step_gene.get_available_sym(var)
-                    step_gene.subs_dict[u] = term
+
                     # Construct f(u)
                     f_u = simplify((expr/gp/ratio).subs(term, u))
 
                     if f_u.has(var):
                         continue
 
+                    step_gene.subs_dict[u] = term
                     new_expr = ratio * Integral(f_u, u)
 
                     ratio_latex = '' if ratio == 1 else (
@@ -77,6 +78,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
                         f"换元法: 令 ${u.name} = {latex(term)}$, $d{u.name} = {gp_latex}\\,d{var.name}$, "
                         f"原式$ \\int {latex(expr)}\\,d{var.name}$ 化为 $ {ratio_latex} \\int {latex(f_u)}\\,d{u.name}$"
                     )
+
                     return new_expr, explanation
 
                 except (ZeroDivisionError, ValueError, TypeError, NotImplementedError) as e:

@@ -1,5 +1,5 @@
 from sympy import (
-    Expr, Symbol, log, exp, sin, cos, tan, cot, csc, sec,
+    Expr, I, Symbol, log, exp, sin, cos, tan, cot, csc, sec,
     asin, acos, atan, acot, acsc, asec, sinh, cosh, tanh, coth,
     csch, sech, asinh, acosh, atanh, acoth, acsch, asech, sqrt,
     Add, Mul, Pow, Abs, floor, ceiling
@@ -12,6 +12,8 @@ def is_elementary_expression(expr: Expr) -> bool:
         return False
 
     # Base cases
+    if expr.has(I):
+        return False
     if expr.is_number or isinstance(expr, Symbol):
         return True
 
