@@ -47,7 +47,7 @@ def create_integral_calculator(base_class):
             other_terms = [
                 term for term in expand_expr.args if not term.is_number]
             # If there are more than 4 terms, don't merge constant terms to C to avoid complexity.
-            if len(other_terms) > 4:
+            if len(other_terms) > 4 and not isinstance(expr, Add):
                 return expr + C
             return simplify(Add(*other_terms)) + C
 

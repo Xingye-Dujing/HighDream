@@ -89,7 +89,7 @@ class BaseCalculator(ABC):
         Note: Force log simplification
         """
 
-        return expand_log(simplify(expr), force=True)
+        return expand_log(simplify(expr, inverse=True), force=True)
 
     def _get_context_dict(self, **context: Context) -> RuleContext:
         context_dict = {}
@@ -157,7 +157,7 @@ class BaseCalculator(ABC):
         # Iterate through the substitution dictionary in reverse order
         # This ensures proper back substitution since later substitutions depend on earlier ones
         for key, value in reversed(list(subs_dict.items())):
-            final_expr = simplify(final_expr.subs(key, value))
+            final_expr = simplify(final_expr.subs(key, value), inverse=True)
 
         self.step_generator.add_step(final_expr, "回代换元变量")
 
@@ -186,7 +186,7 @@ class BaseCalculator(ABC):
 
     def _sympify(self, expr: str) -> Expr:
         """Convert the input expression to a SymPy expression."""
-        return simplify(sympify(expr))
+        return simplify(sympify(expr), inverse=True)
 
     def _do_compute(self, expr: str, operation: Operation, **context: Context) -> None:
         """Perform the core symbolic computation and record each evaluation step."""
@@ -239,6 +239,11 @@ class BaseCalculator(ABC):
             symbol_list = list(current_expr.free_symbols)
             if symbol_list:
                 context['variable'] = symbol_list[0]
+            elif self.step_generator.subs_dict:
+                context['variable'] = list(
+                    self.step_generator.subs_dict.keys())[-1]
+            else:
+                context['variable'] = Symbol("x")
 
             new_expr, explanation, expr_to_operation = self._update_expression(
                 current_expr, operation, expr_to_operation, direct_compute, **context)

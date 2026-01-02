@@ -28,6 +28,7 @@ from .rules.integral_special_rules import (
     logarithmic_matcher, logarithmic_rule,
     parts_matcher, parts_rule, substitution_matcher, substitution_rule,
     f_x_mul_exp_g_x_matcher, f_x_mul_exp_g_x_rule,
+    weierstrass_substitution_matcher, weierstrass_substitution_rule,
     quotient_diff_form_matcher, quotient_diff_form_rule
 )
 
@@ -39,6 +40,7 @@ __all__ = [
     'try_standard_substitution',
     'try_trig_substitution',
     'handle_fx_mul_exp_gx',
+    'special_add_split_exp_term'
 ]
 
 # Rule mapping: Rule name -> Rule function
@@ -68,6 +70,7 @@ RULE_DICT: RuleDict = {
     'f_x_mul_exp_g_x': f_x_mul_exp_g_x_rule,
     'quotient_diff_form': quotient_diff_form_rule,
     'substitution': substitution_rule,
+    'weierstrass_substitution': weierstrass_substitution_rule,
     'parts': parts_rule,
 }
 
@@ -77,5 +80,6 @@ MATCHER_LIST: MatcherList = [
     f_x_mul_exp_g_x_matcher, quotient_diff_form_matcher, add_matcher, pow_matcher, exp_matcher,
     log_matcher, sin_matcher, cos_matcher, tan_matcher, sec_matcher, csc_matcher, cot_matcher,
     exp_matcher, log_matcher, sinh_matcher, cosh_matcher, tanh_matcher, csch_matcher, sech_matcher,
-    coth_matcher, inverse_trig_matcher, inverse_tangent_linear_matcher, parts_matcher
+    coth_matcher, inverse_trig_matcher, inverse_tangent_linear_matcher, weierstrass_substitution_matcher,
+    parts_matcher
 ]

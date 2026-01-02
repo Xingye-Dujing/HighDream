@@ -1,11 +1,13 @@
 from sympy import (
     Abs, Expr, I, Integer, Integral, Mul, Wild, Rational, Symbol, diff, exp, fraction,
-    integrate, latex, log, powsimp, preorder_traversal, simplify, sqrt, together
+    integrate, latex, log, powsimp, preorder_traversal, simplify, sqrt, together, sin, cos,
+    tan, cot, sec, csc
 )
 from sympy.simplify.fu import fu
 
 from utils import (
-    MatcherFunctionReturn, RuleContext, RuleFunctionReturn, has_radical, is_elementary_expression
+    MatcherFunctionReturn, RuleContext, RuleFunctionReturn,
+    can_use_weierstrass, has_radical, is_elementary_expression
 )
 from utils.latex_formatter import wrap_latex
 from domains.integral import (
@@ -230,6 +232,48 @@ def quotient_diff_form_rule(expr: Expr, context: RuleContext) -> RuleFunctionRet
     )
 
 
+def weierstrass_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Apply Weierstrass substitution (t = tan(x/2)) for integration.
+
+    For expressions containing only rational functions of sin(x), cos(x), etc.,
+    the substitution t = tan(x/2) transforms them to rational functions in t:
+    - sin(x) = 2t/(1+t^2)
+    - cos(x) = (1-t^2)/(1+t^2)
+    - dx = 2dt/(1+t^2)
+    """
+    var = context['variable']
+    step_gene = context['step_generator']
+
+    # Get substitution variable
+    t = step_gene.get_available_sym(var)
+    step_gene.subs_dict[t] = tan(var/2)
+
+    dx_dt = 2 / (1 + t**2)
+
+    # Perform the substitution on the expression
+    substituted_expr = expr.subs([
+        (sin(var), 2*t / (1 + t**2)),
+        (cos(var), (1 - t**2) / (1 + t**2)),
+        (tan(var), 2*t / (1 - t**2)),
+        (cot(var), (1 - t**2) / (2*t)),
+        (sec(var), (1 + t**2) / (1 - t**2)),
+        (csc(var), (1 + t**2) / (2*t))
+    ])
+
+    substituted_expr *= dx_dt
+
+    result = Integral(simplify(substituted_expr), t)
+    print(result)
+
+    var_latex = latex(var)
+    explaination = (
+        f"万能代换:\\,令 ${t.name} = \\tan \\left(\\frac{{{var_latex}}}{2} \\right),\\,"
+        f"则\\,d{var_latex} = \\frac{{2}}{{1+{t.name}^2}}\\,d{t.name}$"
+    )
+
+    return result, explaination
+
+
 def logarithmic_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Heuristic matcher for f'(x)/f(x) integration pattern.
 
@@ -366,4 +410,14 @@ def quotient_diff_form_matcher(expr: Expr, _context: RuleContext) -> MatcherFunc
         if den == 1:
             return None
         return 'quotient_diff_form'
+    return None
+
+
+def weierstrass_substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+
+    var = context['variable']
+
+    if can_use_weierstrass(expr, var):
+        return 'weierstrass_substitution'
+
     return None
