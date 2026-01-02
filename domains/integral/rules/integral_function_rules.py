@@ -139,6 +139,63 @@ def coth_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     return result, f"双曲余切函数积分: $\\int \\coth({var_latex})\\,d{var_latex} = \\ln| \\sinh({var_latex})| + C$"
 
 
+def sin_power_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Apply the rule for sin(x)^n."""
+    var = context['variable']
+    var_latex = wrap_latex(var)
+
+    _, n = expr.as_base_exp()
+    n_latex = wrap_latex(n)
+
+    if n == 2:
+        result = var/2 - sin(2*var)/4
+        return result, f"正弦平方积分: $\\int \\sin^2({var_latex})\\,d{var_latex} = \\frac{{{var_latex}}}{2} - \\frac{{\\sin(2{var_latex})}}{4} + C$"
+
+    # For higher powers, we can use reduction formula
+    # sin^n(x) dx = -sin^(n-1)(x)cos(x)/n + (n-1)/n sin^(n-2)(x) dx
+    result = -(sin(var)**(n-1) * cos(var))/n + (n-1) / \
+        n * Integral(sin(var)**(n-2), var)
+    return result, f"正弦幂函数积分: $\\int \\sin^{{{n_latex}}}({var_latex})\\,d{var_latex} = -\\frac{{\\sin^{{{n_latex}-1}}({var_latex})\\cos({var_latex})}}{{{n_latex}}} + \\frac{{{n_latex}-1}}{{{n_latex}}} \\int \\sin^{{{n_latex}-2}}({var_latex})\\,d{var_latex}$"
+
+
+def cos_power_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Apply the rule for cos(x)^n."""
+    var = context['variable']
+    var_latex = wrap_latex(var)
+
+    _, n = expr.as_base_exp()
+    n_latex = wrap_latex(n)
+
+    if n == 2:
+        result = var/2 + sin(2*var)/4
+        return result, f"余弦平方积分: $\\int \\cos^2({var_latex})\\,d{var_latex} = \\frac{{{var_latex}}}{2} + \\frac{{\\sin(2{var_latex})}}{4} + C$"
+
+    # For higher powers, we can use reduction formula
+    # cos^n(x) dx = cos^(n-1)(x)sin(x)/n + (n-1)/n cos^(n-2)(x) dx
+    result = (cos(var)**(n-1) * sin(var))/n + (n-1) / \
+        n * Integral(cos(var)**(n-2), var)
+    return result, f"余弦幂函数积分: $\\int \\cos^{{{n_latex}}}({var_latex})\\,d{var_latex} = \\frac{{\\cos^{{{n_latex}-1}}({var_latex})\\sin({var_latex})}}{{{n_latex}}} + \\frac{{{n_latex}-1}}{{{n_latex}}} \\int \\cos^{{{n_latex}-2}}({var_latex})\\,d{var_latex}$"
+
+
+def tan_power_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Apply the rule for tan(x)^n."""
+    var = context['variable']
+    var_latex = wrap_latex(var)
+
+    _, n = expr.as_base_exp()
+    n_latex = wrap_latex(n)
+
+    if n == 2:
+        result = tan(var) - var
+        return result, f"正切平方积分: $\\int \\tan^2({var_latex})\\,d{var_latex} = \\tan({var_latex}) - {var_latex} + C$"
+
+    # For higher powers, we can use reduction formula
+    # tan^n(x) dx = tan^(n-1)(x)/(n-1) - tan^(n-2)(x) dx
+    result = tan(var)**(n-1)/(n-1) - \
+        Integral(tan(var)**(n-2), var)
+    return result, f"正切幂函数积分: $\\int \\tan^{{{n_latex}}}({var_latex})\\,d{var_latex} = \\frac{{\\tan^{{{n_latex}-1}}({var_latex})}}{{{n_latex}-1}} - \\int \\tan^{{{n_latex}-2}}({var_latex})\\,d{var_latex}$"
+
+
 pow_matcher = _create_matcher(Pow)
 log_matcher = _create_matcher(log)
 sin_matcher = _create_matcher(sin)
@@ -279,5 +336,41 @@ def inverse_tangent_linear_matcher(expr: Expr, context: RuleContext) -> MatcherF
         # SymPy puts the constant term at the front
         if denominator.is_Add and len(terms) == 2 and terms[1] == var**2 and terms[0] > 0:
             return 'inverse_tangent_linear'
+
+    return None
+
+
+def sin_power_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for sin(x)^n expressions."""
+    var = context['variable']
+
+    if expr.is_Pow:
+        base, _exp = expr.as_base_exp()
+        if base.func == sin and len(base.args) == 1 and base.args[0] == var and _exp.is_Integer and _exp > 0:
+            return 'sin_power'
+
+    return None
+
+
+def cos_power_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for cos(x)^n expressions."""
+    var = context['variable']
+
+    if expr.is_Pow:
+        base, _exp = expr.as_base_exp()
+        if base.func == cos and len(base.args) == 1 and base.args[0] == var and _exp.is_Integer and _exp > 0:
+            return 'cos_power'
+
+    return None
+
+
+def tan_power_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for tan(x)^n expressions."""
+    var = context['variable']
+
+    if expr.is_Pow:
+        base, _exp = expr.as_base_exp()
+        if base.func == tan and len(base.args) == 1 and base.args[0] == var and _exp.is_Integer and _exp > 0:
+            return 'tan_power'
 
     return None

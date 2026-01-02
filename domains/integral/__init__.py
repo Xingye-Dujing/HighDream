@@ -22,7 +22,10 @@ from .rules.integral_function_rules import (
     csch_matcher, sech_matcher,
     coth_matcher, csch_rule, sech_rule, coth_rule,
     inverse_tangent_linear_matcher,
-    inverse_tangent_linear_rule
+    inverse_tangent_linear_rule,
+    sin_power_matcher, sin_power_rule,
+    cos_power_matcher, cos_power_rule,
+    tan_power_matcher, tan_power_rule,
 )
 from .rules.integral_special_rules import (
     logarithmic_matcher, logarithmic_rule,
@@ -62,6 +65,9 @@ RULE_DICT: RuleDict = {
     'coth': coth_rule,
     'inverse_trig': inverse_trig_rule,
     'inverse_tangent_linear': inverse_tangent_linear_rule,
+    'sin_power': sin_power_rule,
+    'cos_power': cos_power_rule,
+    'tan_power': tan_power_rule,
     'const': const_rule,
     'var': var_rule,
     'mul_const': mul_const_rule,
@@ -78,8 +84,8 @@ RULE_DICT: RuleDict = {
 MATCHER_LIST: MatcherList = [
     const_matcher, var_matcher, mul_const_matcher, logarithmic_matcher, substitution_matcher,
     f_x_mul_exp_g_x_matcher, quotient_diff_form_matcher, add_matcher, pow_matcher, exp_matcher,
-    log_matcher, sin_matcher, cos_matcher, tan_matcher, sec_matcher, csc_matcher, cot_matcher,
-    exp_matcher, log_matcher, sinh_matcher, cosh_matcher, tanh_matcher, csch_matcher, sech_matcher,
-    coth_matcher, inverse_trig_matcher, inverse_tangent_linear_matcher, weierstrass_substitution_matcher,
-    parts_matcher
+    log_matcher, sin_matcher, cos_matcher, tan_matcher, sin_power_matcher, cos_power_matcher,
+    tan_power_matcher, sec_matcher, csc_matcher, cot_matcher, exp_matcher, log_matcher, sinh_matcher,
+    cosh_matcher, tanh_matcher, csch_matcher, sech_matcher, coth_matcher, inverse_trig_matcher,
+    inverse_tangent_linear_matcher, weierstrass_substitution_matcher, parts_matcher
 ]
