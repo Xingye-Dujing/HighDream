@@ -1,6 +1,6 @@
 from typing import Dict, Tuple
 from sympy import Matrix, Symbol, eye, latex, simplify, zeros
-from IPython.display import Math, display
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -540,149 +540,149 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         return results
 
 
-# Demo functions
-def demo_orthogonal_sets():
-    """Demonstrate orthogonal set checking."""
-    processor = OrthogonalProcessor()
+# # Demo functions
+# def demo_orthogonal_sets():
+#     """Demonstrate orthogonal set checking."""
+#     processor = OrthogonalProcessor()
 
-    processor.step_generator.add_step(r"\textbf{正交集判断演示}")
+#     processor.step_generator.add_step(r"\textbf{正交集判断演示}")
 
-    # Examples for different cases
-    orthogonal_set = '[[1,0],[0,1]]'  # Orthonormal set
-    orthogonal_not_normal = '[[2,0],[0,3]]'  # Orthogonal but not normalized
-    not_orthogonal = '[[1,1,2],[1,0,1],[3,1,2]]'  # Not orthogonal
-    single_vector = '[[1,0]]'  # Single vector
-    zero_vector = '[[0,0],[1,0]]'  # Contains zero vector
+#     # Examples for different cases
+#     orthogonal_set = '[[1,0],[0,1]]'  # Orthonormal set
+#     orthogonal_not_normal = '[[2,0],[0,3]]'  # Orthogonal but not normalized
+#     not_orthogonal = '[[1,1,2],[1,0,1],[3,1,2]]'  # Not orthogonal
+#     single_vector = '[[1,0]]'  # Single vector
+#     zero_vector = '[[0,0],[1,0]]'  # Contains zero vector
 
-    test_cases = [
-        ("规范正交集", orthogonal_set),
-        ("正交但不规范集", orthogonal_not_normal),
-        ("非正交集", not_orthogonal),
-        ("单个向量", single_vector),
-        ("包含零向量的集", zero_vector)
-    ]
+#     test_cases = [
+#         ("规范正交集", orthogonal_set),
+#         ("正交但不规范集", orthogonal_not_normal),
+#         ("非正交集", not_orthogonal),
+#         ("单个向量", single_vector),
+#         ("包含零向量的集", zero_vector)
+#     ]
 
-    for name, vectors in test_cases:
-        processor.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            processor.auto_orthogonal_analysis(vectors)
-        except Exception as e:
-            processor.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#     for name, vectors in test_cases:
+#         processor.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             processor.auto_orthogonal_analysis(vectors)
+#         except Exception as e:
+#             processor.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
 
-        display(Math(processor.get_steps_latex()))
-
-
-def demo_orthogonal_matrices():
-    """Demonstrate orthogonal matrix checking."""
-    processor = OrthogonalProcessor()
-
-    processor.step_generator.add_step(r"\textbf{正交矩阵判断演示}")
-
-    # Examples for different cases
-    identity = '[[1,0],[0,1]]'  # Identity matrix
-    rotation = '[[0,-1],[1,0]]'  # Rotation matrix
-    not_orthogonal = '[[1,2],[3,4]]'  # Non-orthogonal matrix
-    reflection = '[[1,0],[0,-1]]'  # Reflection matrix
-
-    test_cases = [
-        ("单位矩阵", identity),
-        ("旋转矩阵", rotation),
-        ("非正交矩阵", not_orthogonal),
-        ("反射矩阵", reflection)
-    ]
-
-    for name, matrix in test_cases:
-        processor.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            processor.is_orthogonal_matrix(matrix)
-        except Exception as e:
-            processor.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-
-        display(Math(processor.get_steps_latex()))
+#         display(Math(processor.get_steps_latex()))
 
 
-def demo_gram_schmidt():
-    """Demonstrate Gram-Schmidt orthonormalization process."""
-    processor = OrthogonalProcessor()
+# def demo_orthogonal_matrices():
+#     """Demonstrate orthogonal matrix checking."""
+#     processor = OrthogonalProcessor()
 
-    processor.step_generator.add_step(r"\textbf{Gram-Schmidt 规范正交化演示}")
+#     processor.step_generator.add_step(r"\textbf{正交矩阵判断演示}")
 
-    # Examples for different cases
-    independent_2d = '[[1,1],[2,0]]'
-    independent_3d = '[[1,1,0],[1,0,1],[0,1,1]]'
-    dependent_vectors = '[[1,2],[2,4],[3,6]]'  # Linearly dependent
+#     # Examples for different cases
+#     identity = '[[1,0],[0,1]]'  # Identity matrix
+#     rotation = '[[0,-1],[1,0]]'  # Rotation matrix
+#     not_orthogonal = '[[1,2],[3,4]]'  # Non-orthogonal matrix
+#     reflection = '[[1,0],[0,-1]]'  # Reflection matrix
 
-    test_cases = [
-        ("二维独立向量", independent_2d),
-        ("三维独立向量", independent_3d),
-        ("线性相关向量", dependent_vectors)
-    ]
+#     test_cases = [
+#         ("单位矩阵", identity),
+#         ("旋转矩阵", rotation),
+#         ("非正交矩阵", not_orthogonal),
+#         ("反射矩阵", reflection)
+#     ]
 
-    for name, vectors in test_cases:
-        processor.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            processor.gram_schmidt_orthonormalization(vectors)
-        except Exception as e:
-            processor.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(processor.get_steps_latex()))
+#     for name, matrix in test_cases:
+#         processor.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             processor.is_orthogonal_matrix(matrix)
+#         except Exception as e:
+#             processor.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
 
-
-def demo_qr_decomposition():
-    """Demonstrate QR decomposition."""
-    processor = OrthogonalProcessor()
-
-    processor.step_generator.add_step(r"\textbf{QR 分解演示}")
-
-    # Examples for different cases
-    square_matrix = '[[1,1],[2,0]]'
-    rectangular = '[[1,2,3],[4,5,6]]'
-    symmetric = '[[2,1],[1,2]]'
-
-    test_cases = [
-        ("方阵", square_matrix),
-        ("矩形矩阵", rectangular),
-        ("对称矩阵", symmetric)
-    ]
-
-    for name, matrix in test_cases:
-        processor.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            processor.qr_decomposition(matrix)
-        except Exception as e:
-            processor.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-
-        display(Math(processor.get_steps_latex()))
+#         display(Math(processor.get_steps_latex()))
 
 
-def demo_symbolic_cases():
-    """Demonstrate symbolic cases."""
-    processor = OrthogonalProcessor()
+# def demo_gram_schmidt():
+#     """Demonstrate Gram-Schmidt orthonormalization process."""
+#     processor = OrthogonalProcessor()
 
-    display(Math(r"\textbf{符号情况演示}"))
-    display(Math(r"\textbf{假设所有符号表达式各自满足一定的条件}"))
+#     processor.step_generator.add_step(r"\textbf{Gram-Schmidt 规范正交化演示}")
 
-    # Symbolic examples
-    symbolic_orthogonal = '[[a,0],[0,b]]'
-    symbolic_matrix = '[[a,b],[c,d]]'
+#     # Examples for different cases
+#     independent_2d = '[[1,1],[2,0]]'
+#     independent_3d = '[[1,1,0],[1,0,1],[0,1,1]]'
+#     dependent_vectors = '[[1,2],[2,4],[3,6]]'  # Linearly dependent
 
-    test_cases = [
-        ("符号正交集", symbolic_orthogonal),
-        ("符号矩阵", symbolic_matrix)
-    ]
+#     test_cases = [
+#         ("二维独立向量", independent_2d),
+#         ("三维独立向量", independent_3d),
+#         ("线性相关向量", dependent_vectors)
+#     ]
 
-    for name, data in test_cases:
-        processor.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            processor.auto_orthogonal_analysis(data)
-        except Exception as e:
-            processor.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#     for name, vectors in test_cases:
+#         processor.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             processor.gram_schmidt_orthonormalization(vectors)
+#         except Exception as e:
+#             processor.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(processor.get_steps_latex()))
 
-        display(Math(processor.get_steps_latex()))
+
+# def demo_qr_decomposition():
+#     """Demonstrate QR decomposition."""
+#     processor = OrthogonalProcessor()
+
+#     processor.step_generator.add_step(r"\textbf{QR 分解演示}")
+
+#     # Examples for different cases
+#     square_matrix = '[[1,1],[2,0]]'
+#     rectangular = '[[1,2,3],[4,5,6]]'
+#     symmetric = '[[2,1],[1,2]]'
+
+#     test_cases = [
+#         ("方阵", square_matrix),
+#         ("矩形矩阵", rectangular),
+#         ("对称矩阵", symmetric)
+#     ]
+
+#     for name, matrix in test_cases:
+#         processor.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             processor.qr_decomposition(matrix)
+#         except Exception as e:
+#             processor.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+
+#         display(Math(processor.get_steps_latex()))
 
 
-if __name__ == "__main__":
-    demo_orthogonal_sets()
-    demo_orthogonal_matrices()
-    demo_gram_schmidt()
-    demo_qr_decomposition()
-    demo_symbolic_cases()
+# def demo_symbolic_cases():
+#     """Demonstrate symbolic cases."""
+#     processor = OrthogonalProcessor()
+
+#     display(Math(r"\textbf{符号情况演示}"))
+#     display(Math(r"\textbf{假设所有符号表达式各自满足一定的条件}"))
+
+#     # Symbolic examples
+#     symbolic_orthogonal = '[[a,0],[0,b]]'
+#     symbolic_matrix = '[[a,b],[c,d]]'
+
+#     test_cases = [
+#         ("符号正交集", symbolic_orthogonal),
+#         ("符号矩阵", symbolic_matrix)
+#     ]
+
+#     for name, data in test_cases:
+#         processor.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             processor.auto_orthogonal_analysis(data)
+#         except Exception as e:
+#             processor.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+
+#         display(Math(processor.get_steps_latex()))
+
+
+# if __name__ == "__main__":
+#     demo_orthogonal_sets()
+#     demo_orthogonal_matrices()
+#     demo_gram_schmidt()
+#     demo_qr_decomposition()
+#     demo_symbolic_cases()

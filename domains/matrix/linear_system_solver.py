@@ -1,6 +1,6 @@
 from typing import List
 from sympy import Matrix, eye, latex, symbols, zeros
-from IPython.display import Math, display
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -14,9 +14,9 @@ class LinearSystemSolver(CommonMatrixCalculator):
     such as underdetermined, overdetermined, and singular systems.
     """
 
-    def display_steps(self) -> None:
-        """Display all solution steps in mathematical notation."""
-        display(Math(self.step_generator.get_steps_latex()))
+    # def display_steps(self) -> None:
+    #     """Display all solution steps in mathematical notation."""
+    #     display(Math(self.step_generator.get_steps_latex()))
 
     def display_system(self, A: Matrix, b: Matrix, variables: List[str] = None) -> None:
         """Display the linear system Ax = b in equation form.
@@ -1115,274 +1115,274 @@ class LinearSystemSolver(CommonMatrixCalculator):
         raise ValueError(f"Unknown solving method: {method}")
 
 
-# Demo functions
-def demo_underdetermined_systems():
-    """Demonstrate solving underdetermined systems."""
-    solver = LinearSystemSolver()
+# # Demo functions
+# def demo_underdetermined_systems():
+#     """Demonstrate solving underdetermined systems."""
+#     solver = LinearSystemSolver()
 
-    # Underdetermined system examples
-    under_A1 = '[[1,2,3],[4,5,6]]'  # 2 equations, 3 unknowns
-    under_b1 = '[7,8]'
+#     # Underdetermined system examples
+#     under_A1 = '[[1,2,3],[4,5,6]]'  # 2 equations, 3 unknowns
+#     under_b1 = '[7,8]'
 
-    under_A2 = '[[1,1,1,1],[0,1,1,1]]'  # 2 equations, 4 unknowns
-    under_b2 = '[5,3]'
+#     under_A2 = '[[1,1,1,1],[0,1,1,1]]'  # 2 equations, 4 unknowns
+#     under_b2 = '[5,3]'
 
-    solver.add_step("\\textbf{欠定线性方程组求解演示}")
+#     solver.add_step("\\textbf{欠定线性方程组求解演示}")
 
-    under_systems = [(under_A1, under_b1), (under_A2, under_b2)]
+#     under_systems = [(under_A1, under_b1), (under_A2, under_b2)]
 
-    for i, (A, b) in enumerate(under_systems, 1):
-        solver.add_step(f"\\textbf{{欠定系统示例 {i}}}")
-        try:
-            solver.solve_underdetermined_system(A, b)
-            solver.display_steps()
-            solver.step_generator.clear()
-        except Exception as e:
-            solver.add_step(f"\\text{{错误: }} {str(e)}")
-            solver.display_steps()
-            solver.step_generator.clear()
-
-
-def demo_overdetermined_systems():
-    """Demonstrate solving overdetermined systems."""
-    solver = LinearSystemSolver()
-
-    # Overdetermined system examples
-    over_A1 = '[[1,2],[3,4],[5,6],[2,6]]'
-    over_b1 = '[7,8,9,3]'
-
-    over_A2 = '[[1,1],[2,1],[3,1]]'
-    over_b2 = '[3,4,5]'
-
-    solver.add_step("\\textbf{超定线性方程组求解演示}")
-
-    over_systems = [(over_A1, over_b1), (over_A2, over_b2)]
-
-    for i, (A, b) in enumerate(over_systems, 1):
-        solver.add_step(f"\\textbf{{超定系统示例 {i}}}")
-        try:
-            result = solver.solve_overdetermined_system(A, b)
-            if result is not None:
-                solver.add_vector(result, "\\boldsymbol{x}")
-            solver.display_steps()
-            solver.step_generator.clear()
-        except Exception as e:
-            solver.add_step(f"\\text{{错误: }} {str(e)}")
-            solver.display_steps()
-            solver.step_generator.clear()
+#     for i, (A, b) in enumerate(under_systems, 1):
+#         solver.add_step(f"\\textbf{{欠定系统示例 {i}}}")
+#         try:
+#             solver.solve_underdetermined_system(A, b)
+#             solver.display_steps()
+#             solver.step_generator.clear()
+#         except Exception as e:
+#             solver.add_step(f"\\text{{错误: }} {str(e)}")
+#             solver.display_steps()
+#             solver.step_generator.clear()
 
 
-def demo_basic_systems():
-    """Demonstrate solving basic linear systems."""
-    solver = LinearSystemSolver()
+# def demo_overdetermined_systems():
+#     """Demonstrate solving overdetermined systems."""
+#     solver = LinearSystemSolver()
 
-    # Solvable system examples
-    A1 = '[[2,1],[1,3]]'
-    b1 = '[5,10]'
+#     # Overdetermined system examples
+#     over_A1 = '[[1,2],[3,4],[5,6],[2,6]]'
+#     over_b1 = '[7,8,9,3]'
 
-    A2 = '[[1,2,3],[0,1,4],[5,6,0]]'
-    b2 = '[14,7,8]'
+#     over_A2 = '[[1,1],[2,1],[3,1]]'
+#     over_b2 = '[3,4,5]'
 
-    A3 = '[[1,1],[2,3]]'
-    b3 = '[5,13]'
+#     solver.add_step("\\textbf{超定线性方程组求解演示}")
 
-    solver.add_step("\\textbf{基本线性方程组求解演示}")
+#     over_systems = [(over_A1, over_b1), (over_A2, over_b2)]
 
-    test_systems = [(A1, b1), (A2, b2), (A3, b3)]
-
-    for i, (A, b) in enumerate(test_systems, 1):
-        solver.add_step(f"\\textbf{{示例 {i}}}")
-        try:
-            solver.solve(A, b, method='auto', show_steps=True)
-            solver.display_steps()
-            solver.step_generator.clear()
-        except Exception as e:
-            solver.add_step(f"\\text{{错误: }} {str(e)}")
-            solver.display_steps()
-            solver.step_generator.clear()
-
-
-def demo_special_matrices():
-    """Demonstrate solving systems with special matrices."""
-    solver = LinearSystemSolver()
-
-    # Special matrix examples
-    identity_A = '[[1,0,0],[0,1,0],[0,0,1]]'
-    diagonal_A = '[[2,0,0],[0,3,0],[0,0,5]]'
-    permutation_A = '[[0,1,0],[0,0,1],[1,0,0]]'
-    upper_triangular_A = '[[1,2,3],[0,4,5],[0,0,6]]'
-    lower_triangular_A = '[[1,0,0],[2,3,0],[4,5,6]]'
-
-    b = '[1,2,3]'
-
-    solver.add_step("\\textbf{特殊矩阵系统求解演示}")
-
-    special_cases = [
-        ("单位矩阵", identity_A, b),
-        ("对角矩阵", diagonal_A, b),
-        ("置换矩阵", permutation_A, b),
-        ("上三角矩阵", upper_triangular_A, b),
-        ("下三角矩阵", lower_triangular_A, b)
-    ]
-
-    for name, A, b in special_cases:
-        solver.add_step(f"\\textbf{{{name}}}")
-        try:
-            # Use Gaussian elimination to demonstrate solving with special matrices
-            solver.solve_by_gaussian_elimination(A, b, show_steps=True)
-            solver.display_steps()
-            solver.step_generator.clear()
-        except Exception as e:
-            solver.add_step(f"\\text{{错误: }} {str(e)}")
-            solver.display_steps()
-            solver.step_generator.clear()
+#     for i, (A, b) in enumerate(over_systems, 1):
+#         solver.add_step(f"\\textbf{{超定系统示例 {i}}}")
+#         try:
+#             result = solver.solve_overdetermined_system(A, b)
+#             if result is not None:
+#                 solver.add_vector(result, "\\boldsymbol{x}")
+#             solver.display_steps()
+#             solver.step_generator.clear()
+#         except Exception as e:
+#             solver.add_step(f"\\text{{错误: }} {str(e)}")
+#             solver.display_steps()
+#             solver.step_generator.clear()
 
 
-def demo_singular_systems():
-    """Demonstrate solving singular systems."""
-    solver = LinearSystemSolver()
+# def demo_basic_systems():
+#     """Demonstrate solving basic linear systems."""
+#     solver = LinearSystemSolver()
 
-    # Singular system examples
-    # Row linearly dependent, infinite solutions
-    singular_A1 = '[[1,2,3],[4,5,6],[7,8,9]]'
-    singular_b1 = '[1,2,3]'
+#     # Solvable system examples
+#     A1 = '[[2,1],[1,3]]'
+#     b1 = '[5,10]'
 
-    singular_A2 = '[[1,1],[1,1]]'  # Identical rows, infinite solutions
-    singular_b2 = '[2,2]'
+#     A2 = '[[1,2,3],[0,1,4],[5,6,0]]'
+#     b2 = '[14,7,8]'
 
-    # Identical rows but different constants, no solution
-    singular_A3 = '[[1,1],[1,1]]'
-    singular_b3 = '[2,3]'
+#     A3 = '[[1,1],[2,3]]'
+#     b3 = '[5,13]'
 
-    singular_A4 = '[[1,2],[2,4]]'  # Second row is multiple of first
-    singular_b4 = '[1,2]'  # Has solution
+#     solver.add_step("\\textbf{基本线性方程组求解演示}")
 
-    singular_A5 = '[[1,2],[2,4]]'  # Second row is multiple of first
-    singular_b5 = '[1,3]'  # No solution
+#     test_systems = [(A1, b1), (A2, b2), (A3, b3)]
 
-    solver.add_step("\\textbf{{奇异系统演示}}")
-
-    singular_systems = [
-        ("无穷多解示例1", singular_A1, singular_b1),
-        ("无穷多解示例2", singular_A2, singular_b2),
-        ("无解示例1", singular_A3, singular_b3),
-        ("无穷多解示例3", singular_A4, singular_b4),
-        ("无解示例2", singular_A5, singular_b5)
-    ]
-
-    for name, A, b in singular_systems:
-        solver.add_step(f"\\textbf{{{name}}}")
-        try:
-            solver.solve(A, b, method='auto', show_steps=True)
-            solver.display_steps()
-            solver.step_generator.clear()
-        except Exception as e:
-            solver.add_step(f"\\text{{错误: }} {str(e)}")
-            solver.display_steps()
-            solver.step_generator.clear()
+#     for i, (A, b) in enumerate(test_systems, 1):
+#         solver.add_step(f"\\textbf{{示例 {i}}}")
+#         try:
+#             solver.solve(A, b, method='auto', show_steps=True)
+#             solver.display_steps()
+#             solver.step_generator.clear()
+#         except Exception as e:
+#             solver.add_step(f"\\text{{错误: }} {str(e)}")
+#             solver.display_steps()
+#             solver.step_generator.clear()
 
 
-def demo_symbolic_systems():
-    """Demonstrate solving symbolic systems."""
-    solver = LinearSystemSolver()
+# def demo_special_matrices():
+#     """Demonstrate solving systems with special matrices."""
+#     solver = LinearSystemSolver()
 
-    # Symbolic systems
-    symbolic_A_2x2 = '[[a,b],[c,d]]'
-    symbolic_b_2x2 = '[p,q]'
+#     # Special matrix examples
+#     identity_A = '[[1,0,0],[0,1,0],[0,0,1]]'
+#     diagonal_A = '[[2,0,0],[0,3,0],[0,0,5]]'
+#     permutation_A = '[[0,1,0],[0,0,1],[1,0,0]]'
+#     upper_triangular_A = '[[1,2,3],[0,4,5],[0,0,6]]'
+#     lower_triangular_A = '[[1,0,0],[2,3,0],[4,5,6]]'
 
-    symbolic_A_3x3 = '[[a,b,c],[d,e,f],[g,h,i]]'
-    symbolic_b_3x3 = '[p,q,r]'
+#     b = '[1,2,3]'
 
-    solver.add_step("\\textbf{{符号系统求解演示}}")
-    solver.add_step("\\textbf{假设所有符号表达式不为 0, 可作分母}")
+#     solver.add_step("\\textbf{特殊矩阵系统求解演示}")
 
-    solver.add_step("\\textbf{2×2 符号系统}")
-    try:
-        solver.solve(symbolic_A_2x2, symbolic_b_2x2,
-                     method='auto', show_steps=True)
-        solver.display_steps()
-        solver.step_generator.clear()
-    except Exception as e:
-        solver.add_step(f"\\text{{错误: }} {str(e)}")
-        solver.display_steps()
-        solver.step_generator.clear()
+#     special_cases = [
+#         ("单位矩阵", identity_A, b),
+#         ("对角矩阵", diagonal_A, b),
+#         ("置换矩阵", permutation_A, b),
+#         ("上三角矩阵", upper_triangular_A, b),
+#         ("下三角矩阵", lower_triangular_A, b)
+#     ]
 
-    solver.add_step("\\textbf{3×3 符号系统}")
-    try:
-        solver.solve(symbolic_A_3x3, symbolic_b_3x3,
-                     method='auto', show_steps=True)
-        solver.display_steps()
-        solver.step_generator.clear()
-    except Exception as e:
-        solver.add_step(f"\\text{{错误: }} {str(e)}")
-        solver.display_steps()
-        solver.step_generator.clear()
-
-
-def demo_all_methods():
-    """Demonstrate all solving methods."""
-    solver = LinearSystemSolver()
-
-    # Test system
-    A = '[[2,1],[1,3]]'
-    b = '[5,10]'
-
-    methods = [
-        ('gaussian', '高斯消元法'),
-        ('gauss_jordan', '高斯-约当消元法'),
-        ('inverse', '矩阵求逆法'),
-        ('lu', 'LU分解法'),
-        ('cramer', '克莱姆法则')
-    ]
-
-    solver.add_step("\\textbf{{所有求解方法演示}}")
-
-    for method_key, method_name in methods:
-        solver.add_step(f"\\textbf{{{method_name}}}")
-        try:
-            solver.solve(A, b, method=method_key, show_steps=True)
-            solver.display_steps()
-            solver.step_generator.clear()
-        except Exception as e:
-            solver.add_step(f"\\text{{错误: }} {str(e)}")
-            solver.display_steps()
-            solver.step_generator.clear()
+#     for name, A, b in special_cases:
+#         solver.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             # Use Gaussian elimination to demonstrate solving with special matrices
+#             solver.solve_by_gaussian_elimination(A, b, show_steps=True)
+#             solver.display_steps()
+#             solver.step_generator.clear()
+#         except Exception as e:
+#             solver.add_step(f"\\text{{错误: }} {str(e)}")
+#             solver.display_steps()
+#             solver.step_generator.clear()
 
 
-def demo_auto_solve():
-    """Demonstrate automatic solving functionality."""
-    solver = LinearSystemSolver()
+# def demo_singular_systems():
+#     """Demonstrate solving singular systems."""
+#     solver = LinearSystemSolver()
 
-    # Various types of systems
-    systems = [
-        ("唯一解系统", '[[2,1],[1,3]]', '[5,10]'),
-        ("欠定系统", '[[1,2,3],[4,5,6]]', '[7,8]'),
-        ("超定系统", '[[1,2],[3,4],[5,6]]', '[7,8,9]'),
-        ("上三角系统", '[[1,2,3],[0,4,5],[0,0,6]]', '[1,2,3]'),
-        ("对角系统", '[[2,0,0],[0,3,0],[0,0,5]]', '[4,6,10]')
-    ]
+#     # Singular system examples
+#     # Row linearly dependent, infinite solutions
+#     singular_A1 = '[[1,2,3],[4,5,6],[7,8,9]]'
+#     singular_b1 = '[1,2,3]'
 
-    solver.add_step("\\textbf{{自动求解功能演示}}")
+#     singular_A2 = '[[1,1],[1,1]]'  # Identical rows, infinite solutions
+#     singular_b2 = '[2,2]'
 
-    for name, A, b in systems:
-        solver.add_step(f"\\textbf{{{name}}}")
-        try:
-            solver.solve(A, b, method='auto', show_steps=True)
-            solver.display_steps()
-            solver.step_generator.clear()
-        except Exception as e:
-            solver.add_step(f"\\text{{错误: }} {str(e)}")
-            solver.display_steps()
-            solver.step_generator.clear()
+#     # Identical rows but different constants, no solution
+#     singular_A3 = '[[1,1],[1,1]]'
+#     singular_b3 = '[2,3]'
+
+#     singular_A4 = '[[1,2],[2,4]]'  # Second row is multiple of first
+#     singular_b4 = '[1,2]'  # Has solution
+
+#     singular_A5 = '[[1,2],[2,4]]'  # Second row is multiple of first
+#     singular_b5 = '[1,3]'  # No solution
+
+#     solver.add_step("\\textbf{{奇异系统演示}}")
+
+#     singular_systems = [
+#         ("无穷多解示例1", singular_A1, singular_b1),
+#         ("无穷多解示例2", singular_A2, singular_b2),
+#         ("无解示例1", singular_A3, singular_b3),
+#         ("无穷多解示例3", singular_A4, singular_b4),
+#         ("无解示例2", singular_A5, singular_b5)
+#     ]
+
+#     for name, A, b in singular_systems:
+#         solver.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             solver.solve(A, b, method='auto', show_steps=True)
+#             solver.display_steps()
+#             solver.step_generator.clear()
+#         except Exception as e:
+#             solver.add_step(f"\\text{{错误: }} {str(e)}")
+#             solver.display_steps()
+#             solver.step_generator.clear()
 
 
-if __name__ == "__main__":
-    # Run all demos
-    demo_basic_systems()
-    demo_special_matrices()
-    demo_singular_systems()
-    demo_symbolic_systems()
-    demo_underdetermined_systems()
-    demo_overdetermined_systems()
-    demo_all_methods()
-    demo_auto_solve()
+# def demo_symbolic_systems():
+#     """Demonstrate solving symbolic systems."""
+#     solver = LinearSystemSolver()
+
+#     # Symbolic systems
+#     symbolic_A_2x2 = '[[a,b],[c,d]]'
+#     symbolic_b_2x2 = '[p,q]'
+
+#     symbolic_A_3x3 = '[[a,b,c],[d,e,f],[g,h,i]]'
+#     symbolic_b_3x3 = '[p,q,r]'
+
+#     solver.add_step("\\textbf{{符号系统求解演示}}")
+#     solver.add_step("\\textbf{假设所有符号表达式不为 0, 可作分母}")
+
+#     solver.add_step("\\textbf{2×2 符号系统}")
+#     try:
+#         solver.solve(symbolic_A_2x2, symbolic_b_2x2,
+#                      method='auto', show_steps=True)
+#         solver.display_steps()
+#         solver.step_generator.clear()
+#     except Exception as e:
+#         solver.add_step(f"\\text{{错误: }} {str(e)}")
+#         solver.display_steps()
+#         solver.step_generator.clear()
+
+#     solver.add_step("\\textbf{3×3 符号系统}")
+#     try:
+#         solver.solve(symbolic_A_3x3, symbolic_b_3x3,
+#                      method='auto', show_steps=True)
+#         solver.display_steps()
+#         solver.step_generator.clear()
+#     except Exception as e:
+#         solver.add_step(f"\\text{{错误: }} {str(e)}")
+#         solver.display_steps()
+#         solver.step_generator.clear()
+
+
+# def demo_all_methods():
+#     """Demonstrate all solving methods."""
+#     solver = LinearSystemSolver()
+
+#     # Test system
+#     A = '[[2,1],[1,3]]'
+#     b = '[5,10]'
+
+#     methods = [
+#         ('gaussian', '高斯消元法'),
+#         ('gauss_jordan', '高斯-约当消元法'),
+#         ('inverse', '矩阵求逆法'),
+#         ('lu', 'LU分解法'),
+#         ('cramer', '克莱姆法则')
+#     ]
+
+#     solver.add_step("\\textbf{{所有求解方法演示}}")
+
+#     for method_key, method_name in methods:
+#         solver.add_step(f"\\textbf{{{method_name}}}")
+#         try:
+#             solver.solve(A, b, method=method_key, show_steps=True)
+#             solver.display_steps()
+#             solver.step_generator.clear()
+#         except Exception as e:
+#             solver.add_step(f"\\text{{错误: }} {str(e)}")
+#             solver.display_steps()
+#             solver.step_generator.clear()
+
+
+# def demo_auto_solve():
+#     """Demonstrate automatic solving functionality."""
+#     solver = LinearSystemSolver()
+
+#     # Various types of systems
+#     systems = [
+#         ("唯一解系统", '[[2,1],[1,3]]', '[5,10]'),
+#         ("欠定系统", '[[1,2,3],[4,5,6]]', '[7,8]'),
+#         ("超定系统", '[[1,2],[3,4],[5,6]]', '[7,8,9]'),
+#         ("上三角系统", '[[1,2,3],[0,4,5],[0,0,6]]', '[1,2,3]'),
+#         ("对角系统", '[[2,0,0],[0,3,0],[0,0,5]]', '[4,6,10]')
+#     ]
+
+#     solver.add_step("\\textbf{{自动求解功能演示}}")
+
+#     for name, A, b in systems:
+#         solver.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             solver.solve(A, b, method='auto', show_steps=True)
+#             solver.display_steps()
+#             solver.step_generator.clear()
+#         except Exception as e:
+#             solver.add_step(f"\\text{{错误: }} {str(e)}")
+#             solver.display_steps()
+#             solver.step_generator.clear()
+
+
+# if __name__ == "__main__":
+#     # Run all demos
+#     demo_basic_systems()
+#     demo_special_matrices()
+#     demo_singular_systems()
+#     demo_symbolic_systems()
+#     demo_underdetermined_systems()
+#     demo_overdetermined_systems()
+#     demo_all_methods()
+#     demo_auto_solve()

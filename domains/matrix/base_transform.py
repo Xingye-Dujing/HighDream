@@ -1,6 +1,7 @@
 from typing import Dict
-from sympy import Matrix, latex, symbols
-from IPython.display import Math, display
+from sympy import Matrix, latex
+# from sympy import symbols
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -204,222 +205,222 @@ class BaseTransform(CommonMatrixCalculator):
         return self.get_steps_latex()
 
 
-def demo_coordinate_transform():
-    """Demonstrate coordinate transformations with various examples.
+# def demo_coordinate_transform():
+#     """Demonstrate coordinate transformations with various examples.
 
-    Shows how to transform coordinates between different bases in 2D and 3D spaces,
-    including both numeric and symbolic examples.
-    """
-    transformer = BaseTransform()
+#     Shows how to transform coordinates between different bases in 2D and 3D spaces,
+#     including both numeric and symbolic examples.
+#     """
+#     transformer = BaseTransform()
 
-    transformer.step_generator.add_step(r"\textbf{坐标变换演示}")
+#     transformer.step_generator.add_step(r"\textbf{坐标变换演示}")
 
-    # Example 1: 2D space coordinate transformation
+#     # Example 1: 2D space coordinate transformation
 
-    transformer.step_generator.add_step(r"\text{例 1: 二维空间坐标变换}")
-    vector1 = [3, 2]
-    old_basis1 = [[2, 1], [1, 2]]
-    new_basis1 = [[1, 1], [1, -1]]
+#     transformer.step_generator.add_step(r"\text{例 1: 二维空间坐标变换}")
+#     vector1 = [3, 2]
+#     old_basis1 = [[2, 1], [1, 2]]
+#     new_basis1 = [[1, 1], [1, -1]]
 
-    try:
-        transformer.coordinate_transform(
-            vector1, old_basis1, new_basis1)
-    except Exception as e:
-        transformer.step_generator.add_step(
-            f"\\text{{错误: }} {str(e)}")
+#     try:
+#         transformer.coordinate_transform(
+#             vector1, old_basis1, new_basis1)
+#     except Exception as e:
+#         transformer.step_generator.add_step(
+#             f"\\text{{错误: }} {str(e)}")
 
-    display(Math(transformer.get_steps_latex()))
+#     display(Math(transformer.get_steps_latex()))
 
-    # Example 2: From standard basis to given basis
+#     # Example 2: From standard basis to given basis
 
-    transformer.step_generator.add_step(r"\text{例 2: 从标准基到给定基}")
-    vector2 = [4, 3]
-    basis2 = [[1, 1], [1, -1]]
+#     transformer.step_generator.add_step(r"\text{例 2: 从标准基到给定基}")
+#     vector2 = [4, 3]
+#     basis2 = [[1, 1], [1, -1]]
 
-    try:
-        transformer.standard_to_basis(vector2, basis2)
-    except Exception as e:
-        transformer.step_generator.add_step(
-            f"\\text{{错误: }} {str(e)}")
+#     try:
+#         transformer.standard_to_basis(vector2, basis2)
+#     except Exception as e:
+#         transformer.step_generator.add_step(
+#             f"\\text{{错误: }} {str(e)}")
 
-    display(Math(transformer.get_steps_latex()))
+#     display(Math(transformer.get_steps_latex()))
 
-    # Example 3: From given basis to standard basis
+#     # Example 3: From given basis to standard basis
 
-    transformer.step_generator.add_step(r"\text{例 3: 从给定基到标准基}")
-    coords3 = [2, 1]
-    basis3 = [[1, 1], [1, -1]]
+#     transformer.step_generator.add_step(r"\text{例 3: 从给定基到标准基}")
+#     coords3 = [2, 1]
+#     basis3 = [[1, 1], [1, -1]]
 
-    try:
-        transformer.basis_to_standard(coords3, basis3)
-    except Exception as e:
-        transformer.step_generator.add_step(
-            f"\\text{{错误: }} {str(e)}")
+#     try:
+#         transformer.basis_to_standard(coords3, basis3)
+#     except Exception as e:
+#         transformer.step_generator.add_step(
+#             f"\\text{{错误: }} {str(e)}")
 
-    display(Math(transformer.get_steps_latex()))
+#     display(Math(transformer.get_steps_latex()))
 
-    # Example 4: 3D space coordinate transformation
+#     # Example 4: 3D space coordinate transformation
 
-    transformer.step_generator.add_step(r"\text{例 4: 三维空间坐标变换}")
-    vector4 = [1, 2, 3]
-    old_basis4 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]  # Standard basis
-    new_basis4 = [[1, 1, 0], [1, -1, 0], [0, 0, 2]]
+#     transformer.step_generator.add_step(r"\text{例 4: 三维空间坐标变换}")
+#     vector4 = [1, 2, 3]
+#     old_basis4 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]  # Standard basis
+#     new_basis4 = [[1, 1, 0], [1, -1, 0], [0, 0, 2]]
 
-    try:
-        transformer.coordinate_transform(
-            vector4, old_basis4, new_basis4)
-    except Exception as e:
-        transformer.step_generator.add_step(
-            f"\\text{{错误: }} {str(e)}")
-    display(Math(transformer.get_steps_latex()))
-
-
-def demo_basis_change():
-    """Demonstrate basis change computations.
-
-    Shows how to calculate transition matrices between different bases in 2D and 3D spaces.
-    """
-    transformer = BaseTransform()
-
-    transformer.step_generator.add_step(r"\textbf{基变换演示}")
-
-    # Example 1: Standard basis to another basis
-
-    old_basis1 = [[2, 1], [1, 2]]
-    new_basis1 = [[1, 1], [1, -1]]
-
-    try:
-        transformer.basis_change_matrix(old_basis1, new_basis1)
-    except Exception as e:
-        transformer.step_generator.add_step(
-            f"\\text{{错误: }} {str(e)}")
-
-    display(Math(transformer.get_steps_latex()))
-
-    # Example 2: 3D space basis change
-
-    old_basis2 = [[1, 1, 0], [0, 1, 1], [1, 0, 1]]
-    new_basis2 = [[1, 1, 0], [1, -1, 0], [0, 0, 2]]
-
-    try:
-        transformer.basis_change_matrix(old_basis2, new_basis2)
-    except Exception as e:
-        transformer.step_generator.add_step(
-            f"\\text{{错误: }} {str(e)}")
-    display(Math(transformer.get_steps_latex()))
+#     try:
+#         transformer.coordinate_transform(
+#             vector4, old_basis4, new_basis4)
+#     except Exception as e:
+#         transformer.step_generator.add_step(
+#             f"\\text{{错误: }} {str(e)}")
+#     display(Math(transformer.get_steps_latex()))
 
 
-def demo_symbolic_basis_transform():
-    """Demonstrate basis transformations with symbolic elements.
+# def demo_basis_change():
+#     """Demonstrate basis change computations.
 
-    Shows how to work with symbolic expressions in basis transformations and coordinate conversions.
-    """
-    transformer = BaseTransform()
+#     Shows how to calculate transition matrices between different bases in 2D and 3D spaces.
+#     """
+#     transformer = BaseTransform()
 
-    transformer.step_generator.add_step(r"\textbf{符号基变换和坐标变换演示}")
-    transformer.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0}")
+#     transformer.step_generator.add_step(r"\textbf{基变换演示}")
 
-    # Example 1: Symbolic basis change
+#     # Example 1: Standard basis to another basis
 
-    transformer.step_generator.add_step(r"\text{例 1: 符号基变换}")
+#     old_basis1 = [[2, 1], [1, 2]]
+#     new_basis1 = [[1, 1], [1, -1]]
 
-    # Define symbols
-    a, b, c, d = symbols('a b c d')
+#     try:
+#         transformer.basis_change_matrix(old_basis1, new_basis1)
+#     except Exception as e:
+#         transformer.step_generator.add_step(
+#             f"\\text{{错误: }} {str(e)}")
 
-    # Symbolic bases
-    old_basis_symbolic = Matrix([
-        [1, a],
-        [b, 1]
-    ])
+#     display(Math(transformer.get_steps_latex()))
 
-    new_basis_symbolic = Matrix([
-        [c, 1],
-        [1, d]
-    ])
+#     # Example 2: 3D space basis change
 
-    try:
-        transformer.basis_change_matrix(old_basis_symbolic, new_basis_symbolic)
-    except Exception as e:
-        transformer.step_generator.add_step(
-            f"\\text{{错误: }} {str(e)}")
+#     old_basis2 = [[1, 1, 0], [0, 1, 1], [1, 0, 1]]
+#     new_basis2 = [[1, 1, 0], [1, -1, 0], [0, 0, 2]]
 
-    display(Math(transformer.get_steps_latex()))
-
-    # Example 2: Symbolic coordinate transformation
-
-    transformer.step_generator.add_step(r"\text{例 2: 符号坐标变换}")
-
-    # Symbolic vector coordinates
-    x, y = symbols('x y')
-    vector_symbolic = Matrix([x, y])
-
-    # Symbolic basis
-    basis_symbolic = Matrix([
-        [1, 2],
-        [3, 4]
-    ])
-
-    try:
-        transformer.standard_to_basis(vector_symbolic, basis_symbolic)
-    except Exception as e:
-        transformer.step_generator.add_step(
-            f"\\text{{错误: }} {str(e)}")
-
-    display(Math(transformer.get_steps_latex()))
-
-    # Example 3: Coordinate transformation between symbolic bases
-
-    transformer.step_generator.add_step(r"\text{例 3: 符号基之间的坐标变换}")
-
-    p, q = symbols('p q')
-    vector_symbolic2 = Matrix([p, q])
-
-    old_basis_symbolic2 = Matrix([
-        [1, 1],
-        [1, -1]
-    ])
-
-    new_basis_symbolic2 = Matrix([
-        [a, 0],
-        [0, b]
-    ])
-
-    try:
-        transformer.coordinate_transform(
-            vector_symbolic2, old_basis_symbolic2, new_basis_symbolic2)
-    except Exception as e:
-        transformer.step_generator.add_step(
-            f"\\text{{错误: }} {str(e)}")
-
-    display(Math(transformer.get_steps_latex()))
-
-    # Example 4: 3D symbolic basis change
-
-    transformer.step_generator.add_step(r"\text{例 4: 三维符号基变换}")
-
-    t, u, v = symbols('t u v')
-    old_basis_3d = Matrix([
-        [1, 0, t],
-        [0, 1, u],
-        [0, 0, 1]
-    ])
-
-    new_basis_3d = Matrix([
-        [1, 1, 0],
-        [1, -1, 0],
-        [v, 0, 1]
-    ])
-
-    try:
-        transformer.basis_change_matrix(old_basis_3d, new_basis_3d)
-    except Exception as e:
-        transformer.step_generator.add_step(
-            f"\\text{{错误: }} {str(e)}")
-
-    display(Math(transformer.get_steps_latex()))
+#     try:
+#         transformer.basis_change_matrix(old_basis2, new_basis2)
+#     except Exception as e:
+#         transformer.step_generator.add_step(
+#             f"\\text{{错误: }} {str(e)}")
+#     display(Math(transformer.get_steps_latex()))
 
 
-if __name__ == "__main__":
-    demo_basis_change()
-    demo_coordinate_transform()
-    demo_symbolic_basis_transform()
+# def demo_symbolic_basis_transform():
+#     """Demonstrate basis transformations with symbolic elements.
+
+#     Shows how to work with symbolic expressions in basis transformations and coordinate conversions.
+#     """
+#     transformer = BaseTransform()
+
+#     transformer.step_generator.add_step(r"\textbf{符号基变换和坐标变换演示}")
+#     transformer.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0}")
+
+#     # Example 1: Symbolic basis change
+
+#     transformer.step_generator.add_step(r"\text{例 1: 符号基变换}")
+
+#     # Define symbols
+#     a, b, c, d = symbols('a b c d')
+
+#     # Symbolic bases
+#     old_basis_symbolic = Matrix([
+#         [1, a],
+#         [b, 1]
+#     ])
+
+#     new_basis_symbolic = Matrix([
+#         [c, 1],
+#         [1, d]
+#     ])
+
+#     try:
+#         transformer.basis_change_matrix(old_basis_symbolic, new_basis_symbolic)
+#     except Exception as e:
+#         transformer.step_generator.add_step(
+#             f"\\text{{错误: }} {str(e)}")
+
+#     display(Math(transformer.get_steps_latex()))
+
+#     # Example 2: Symbolic coordinate transformation
+
+#     transformer.step_generator.add_step(r"\text{例 2: 符号坐标变换}")
+
+#     # Symbolic vector coordinates
+#     x, y = symbols('x y')
+#     vector_symbolic = Matrix([x, y])
+
+#     # Symbolic basis
+#     basis_symbolic = Matrix([
+#         [1, 2],
+#         [3, 4]
+#     ])
+
+#     try:
+#         transformer.standard_to_basis(vector_symbolic, basis_symbolic)
+#     except Exception as e:
+#         transformer.step_generator.add_step(
+#             f"\\text{{错误: }} {str(e)}")
+
+#     display(Math(transformer.get_steps_latex()))
+
+#     # Example 3: Coordinate transformation between symbolic bases
+
+#     transformer.step_generator.add_step(r"\text{例 3: 符号基之间的坐标变换}")
+
+#     p, q = symbols('p q')
+#     vector_symbolic2 = Matrix([p, q])
+
+#     old_basis_symbolic2 = Matrix([
+#         [1, 1],
+#         [1, -1]
+#     ])
+
+#     new_basis_symbolic2 = Matrix([
+#         [a, 0],
+#         [0, b]
+#     ])
+
+#     try:
+#         transformer.coordinate_transform(
+#             vector_symbolic2, old_basis_symbolic2, new_basis_symbolic2)
+#     except Exception as e:
+#         transformer.step_generator.add_step(
+#             f"\\text{{错误: }} {str(e)}")
+
+#     display(Math(transformer.get_steps_latex()))
+
+#     # Example 4: 3D symbolic basis change
+
+#     transformer.step_generator.add_step(r"\text{例 4: 三维符号基变换}")
+
+#     t, u, v = symbols('t u v')
+#     old_basis_3d = Matrix([
+#         [1, 0, t],
+#         [0, 1, u],
+#         [0, 0, 1]
+#     ])
+
+#     new_basis_3d = Matrix([
+#         [1, 1, 0],
+#         [1, -1, 0],
+#         [v, 0, 1]
+#     ])
+
+#     try:
+#         transformer.basis_change_matrix(old_basis_3d, new_basis_3d)
+#     except Exception as e:
+#         transformer.step_generator.add_step(
+#             f"\\text{{错误: }} {str(e)}")
+
+#     display(Math(transformer.get_steps_latex()))
+
+
+# if __name__ == "__main__":
+#     demo_basis_change()
+#     demo_coordinate_transform()
+#     demo_symbolic_basis_transform()

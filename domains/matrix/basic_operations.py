@@ -1,5 +1,6 @@
-from sympy import Matrix, latex, symbols, sympify, zeros
-from IPython.display import Math, display
+from sympy import Matrix, latex, sympify, zeros
+# from sympy import symbols
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -360,154 +361,154 @@ class BasicOperations(CommonMatrixCalculator):
         return self.get_steps_latex()
 
 
-def demo():
-    """Demonstrate all basic operations with example matrices."""
-    ops = BasicOperations()
+# def demo():
+#     """Demonstrate all basic operations with example matrices."""
+#     ops = BasicOperations()
 
-    # Example matrices
-    A_str = '[[1,2,3],[4,5,6],[7,8,9]]'
-    B_str = '[[9,8,7],[6,5,4],[3,2,1]]'
-    C_str = '[[1,0,2],[-1,3,1]]'
-    D_str = '[[3,1],[2,1],[1,0]]'
+#     # Example matrices
+#     A_str = '[[1,2,3],[4,5,6],[7,8,9]]'
+#     B_str = '[[9,8,7],[6,5,4],[3,2,1]]'
+#     C_str = '[[1,0,2],[-1,3,1]]'
+#     D_str = '[[3,1],[2,1],[1,0]]'
 
-    # Example vectors
-    v1_str = '[1,2,3]'
-    v2_str = '[4,5,6]'
+#     # Example vectors
+#     v1_str = '[1,2,3]'
+#     v2_str = '[4,5,6]'
 
-    # 1. Matrix addition
+#     # 1. Matrix addition
 
-    ops.step_generator.add_step(r"\textbf{1. 矩阵加法}")
-    try:
-        ops.matrix_addition(A_str, B_str)
-        display(Math(ops.get_steps_latex()))
-    except Exception as e:
-        ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(ops.get_steps_latex()))
+#     ops.step_generator.add_step(r"\textbf{1. 矩阵加法}")
+#     try:
+#         ops.matrix_addition(A_str, B_str)
+#         display(Math(ops.get_steps_latex()))
+#     except Exception as e:
+#         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(ops.get_steps_latex()))
 
-    # 2. Matrix subtraction
+#     # 2. Matrix subtraction
 
-    ops.step_generator.clear()
-    ops.step_generator.add_step(r"\textbf{2. 矩阵减法}")
-    try:
-        ops.matrix_subtraction(A_str, B_str)
-        display(Math(ops.get_steps_latex()))
-    except Exception as e:
-        ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(ops.get_steps_latex()))
+#     ops.step_generator.clear()
+#     ops.step_generator.add_step(r"\textbf{2. 矩阵减法}")
+#     try:
+#         ops.matrix_subtraction(A_str, B_str)
+#         display(Math(ops.get_steps_latex()))
+#     except Exception as e:
+#         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(ops.get_steps_latex()))
 
-    # 3. Matrix multiplication
+#     # 3. Matrix multiplication
 
-    ops.step_generator.clear()
-    ops.step_generator.add_step(r"\textbf{3. 矩阵乘法}")
-    try:
-        ops.matrix_multiplication(C_str, D_str)
-        display(Math(ops.get_steps_latex()))
-    except Exception as e:
-        ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(ops.get_steps_latex()))
+#     ops.step_generator.clear()
+#     ops.step_generator.add_step(r"\textbf{3. 矩阵乘法}")
+#     try:
+#         ops.matrix_multiplication(C_str, D_str)
+#         display(Math(ops.get_steps_latex()))
+#     except Exception as e:
+#         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(ops.get_steps_latex()))
 
-    # 4. Scalar multiplication
+#     # 4. Scalar multiplication
 
-    ops.step_generator.clear()
-    ops.step_generator.add_step(r"\textbf{4. 标量乘法}")
-    try:
-        ops.scalar_multiplication(2, A_str)
-        display(Math(ops.get_steps_latex()))
-    except Exception as e:
-        ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(ops.get_steps_latex()))
+#     ops.step_generator.clear()
+#     ops.step_generator.add_step(r"\textbf{4. 标量乘法}")
+#     try:
+#         ops.scalar_multiplication(2, A_str)
+#         display(Math(ops.get_steps_latex()))
+#     except Exception as e:
+#         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(ops.get_steps_latex()))
 
-    # 5. Matrix transpose
+#     # 5. Matrix transpose
 
-    ops.step_generator.clear()
-    ops.step_generator.add_step(r"\textbf{5. 矩阵转置}")
-    try:
-        ops.transpose(C_str)
-        display(Math(ops.get_steps_latex()))
-    except Exception as e:
-        ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(ops.get_steps_latex()))
+#     ops.step_generator.clear()
+#     ops.step_generator.add_step(r"\textbf{5. 矩阵转置}")
+#     try:
+#         ops.transpose(C_str)
+#         display(Math(ops.get_steps_latex()))
+#     except Exception as e:
+#         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(ops.get_steps_latex()))
 
-    # 6. Vector dot product
+#     # 6. Vector dot product
 
-    ops.step_generator.clear()
-    ops.step_generator.add_step(r"\textbf{6. 向量点积}")
-    try:
-        ops.dot_product(v1_str, v2_str)
-        display(Math(ops.get_steps_latex()))
-    except Exception as e:
-        ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(ops.get_steps_latex()))
+#     ops.step_generator.clear()
+#     ops.step_generator.add_step(r"\textbf{6. 向量点积}")
+#     try:
+#         ops.dot_product(v1_str, v2_str)
+#         display(Math(ops.get_steps_latex()))
+#     except Exception as e:
+#         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(ops.get_steps_latex()))
 
-    # 7. Vector cross product
+#     # 7. Vector cross product
 
-    ops.step_generator.clear()
-    ops.step_generator.add_step(r"\textbf{7. 向量叉积}")
-    try:
-        ops.cross_product(v1_str, v2_str)
-        display(Math(ops.get_steps_latex()))
-    except Exception as e:
-        ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(ops.get_steps_latex()))
-
-
-def demo_symbolic():
-    """Demonstrate symbolic operations with example symbolic matrices."""
-    ops = BasicOperations()
-
-    a, b, c, d = symbols('a b c d')
-
-    A_sym = Matrix([[a, b], [c, 3]])
-    B_sym = Matrix([[1, b], [d, 4]])
-
-    ops.step_generator.add_step(r"\textbf{符号矩阵运算}")
-
-    # Symbolic matrix addition
-    ops.step_generator.add_step(r"\textbf{符号矩阵加法}")
-    try:
-        ops.matrix_addition(A_sym, B_sym)
-        display(Math(ops.get_steps_latex()))
-    except Exception as e:
-        ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(ops.get_steps_latex()))
-
-    ops.step_generator.add_step(r"\textbf{符号矩阵减法}")
-    try:
-        ops.matrix_subtraction(A_sym, B_sym)
-        display(Math(ops.get_steps_latex()))
-    except Exception as e:
-        ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(ops.get_steps_latex()))
-
-    ops.step_generator.add_step(r"\textbf{符号矩阵标量乘法}")
-    try:
-        ops.scalar_multiplication(2, A_sym)
-        display(Math(ops.get_steps_latex()))
-    except Exception as e:
-        ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(ops.get_steps_latex()))
-
-    # Symbolic matrix multiplication
-    ops.step_generator.add_step(r"\textbf{符号矩阵乘法}")
-    try:
-        ops.matrix_multiplication(
-            A_sym, B_sym)
-        display(Math(ops.get_steps_latex()))
-    except Exception as e:
-        ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(ops.get_steps_latex()))
-
-    ops.step_generator.add_step(r"\textbf{符号矩阵转置}")
-    try:
-        ops.transpose(A_sym)
-        display(Math(ops.get_steps_latex()))
-    except Exception as e:
-        ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(ops.get_steps_latex()))
+#     ops.step_generator.clear()
+#     ops.step_generator.add_step(r"\textbf{7. 向量叉积}")
+#     try:
+#         ops.cross_product(v1_str, v2_str)
+#         display(Math(ops.get_steps_latex()))
+#     except Exception as e:
+#         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(ops.get_steps_latex()))
 
 
-if __name__ == "__main__":
-    # Run numerical demonstration
-    demo()
-    # Run symbolic demonstration
-    demo_symbolic()
+# def demo_symbolic():
+#     """Demonstrate symbolic operations with example symbolic matrices."""
+#     ops = BasicOperations()
+
+#     a, b, c, d = symbols('a b c d')
+
+#     A_sym = Matrix([[a, b], [c, 3]])
+#     B_sym = Matrix([[1, b], [d, 4]])
+
+#     ops.step_generator.add_step(r"\textbf{符号矩阵运算}")
+
+#     # Symbolic matrix addition
+#     ops.step_generator.add_step(r"\textbf{符号矩阵加法}")
+#     try:
+#         ops.matrix_addition(A_sym, B_sym)
+#         display(Math(ops.get_steps_latex()))
+#     except Exception as e:
+#         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(ops.get_steps_latex()))
+
+#     ops.step_generator.add_step(r"\textbf{符号矩阵减法}")
+#     try:
+#         ops.matrix_subtraction(A_sym, B_sym)
+#         display(Math(ops.get_steps_latex()))
+#     except Exception as e:
+#         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(ops.get_steps_latex()))
+
+#     ops.step_generator.add_step(r"\textbf{符号矩阵标量乘法}")
+#     try:
+#         ops.scalar_multiplication(2, A_sym)
+#         display(Math(ops.get_steps_latex()))
+#     except Exception as e:
+#         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(ops.get_steps_latex()))
+
+#     # Symbolic matrix multiplication
+#     ops.step_generator.add_step(r"\textbf{符号矩阵乘法}")
+#     try:
+#         ops.matrix_multiplication(
+#             A_sym, B_sym)
+#         display(Math(ops.get_steps_latex()))
+#     except Exception as e:
+#         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(ops.get_steps_latex()))
+
+#     ops.step_generator.add_step(r"\textbf{符号矩阵转置}")
+#     try:
+#         ops.transpose(A_sym)
+#         display(Math(ops.get_steps_latex()))
+#     except Exception as e:
+#         ops.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(ops.get_steps_latex()))
+
+
+# if __name__ == "__main__":
+#     # Run numerical demonstration
+#     demo()
+#     # Run symbolic demonstration
+#     demo_symbolic()

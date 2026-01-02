@@ -1,5 +1,5 @@
 from sympy import Matrix, eye, latex, zeros
-from IPython.display import Math, display
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -811,131 +811,131 @@ class Inverter(CommonMatrixCalculator):
         return None
 
 
-# Demo functions
-def demo_basic_inverse():
-    """
-    Demonstrate basic matrix inversion with regular matrices.
+# # Demo functions
+# def demo_basic_inverse():
+#     """
+#     Demonstrate basic matrix inversion with regular matrices.
 
-    Shows how to use the auto_matrix_inverse method with various examples.
-    """
-    inverter = Inverter()
+#     Shows how to use the auto_matrix_inverse method with various examples.
+#     """
+#     inverter = Inverter()
 
-    # Invertible matrix examples
-    A1 = '[[0,1,1],[4,3,3],[8,7,9]]'
-    A2 = '[[1,2,3],[0,1,4],[5,6,0]]'
-    A3 = '[[1,1],[2,3]]'
+#     # Invertible matrix examples
+#     A1 = '[[0,1,1],[4,3,3],[8,7,9]]'
+#     A2 = '[[1,2,3],[0,1,4],[5,6,0]]'
+#     A3 = '[[1,1],[2,3]]'
 
-    inverter.step_generator.add_step(r"\textbf{基本矩阵求逆演示}")
+#     inverter.step_generator.add_step(r"\textbf{基本矩阵求逆演示}")
 
-    test_matrices = [A1, A2, A3]
+#     test_matrices = [A1, A2, A3]
 
-    for i, matrix in enumerate(test_matrices, 1):
-        inverter.step_generator.add_step(f"\\textbf{{示例 {i}}}")
-        try:
-            inverter.auto_matrix_inverse(matrix)
-            display(Math(inverter.get_steps_latex()))
-        except Exception as e:
-            inverter.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(inverter.get_steps_latex()))
-
-
-def demo_special_matrices():
-    """
-    Demonstrate matrix inversion with special matrix types.
-
-    Shows optimized inversion methods for identity, diagonal, permutation,
-    and triangular matrices.
-    """
-    inverter = Inverter()
-
-    # Special matrix examples
-    identity = '[[1,0,0],[0,1,0],[0,0,1]]'
-    diagonal = '[[2,0,0],[0,3,0],[0,0,5]]'
-    permutation = '[[0,1,0],[0,0,1],[1,0,0]]'
-    upper_triangular = '[[1,2,3],[0,4,5],[0,0,6]]'
-    lower_triangular = '[[1,0,0],[2,3,0],[4,5,6]]'
-
-    inverter.step_generator.add_step(r"\textbf{特殊矩阵求逆演示}")
-
-    special_cases = [
-        ("单位矩阵", identity),
-        ("对角矩阵", diagonal),
-        ("置换矩阵", permutation),
-        ("上三角矩阵", upper_triangular),
-        ("下三角矩阵", lower_triangular)
-    ]
-
-    for name, matrix in special_cases:
-        inverter.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            inverter.inverse_special_matrices(matrix)
-            display(Math(inverter.get_steps_latex()))
-        except Exception as e:
-            inverter.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(inverter.get_steps_latex()))
+#     for i, matrix in enumerate(test_matrices, 1):
+#         inverter.step_generator.add_step(f"\\textbf{{示例 {i}}}")
+#         try:
+#             inverter.auto_matrix_inverse(matrix)
+#             display(Math(inverter.get_steps_latex()))
+#         except Exception as e:
+#             inverter.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(inverter.get_steps_latex()))
 
 
-def demo_singular_matrix():
-    """
-    Demonstrate handling of singular (non-invertible) matrices.
+# def demo_special_matrices():
+#     """
+#     Demonstrate matrix inversion with special matrix types.
 
-    Shows how the system detects and handles matrices with zero determinant.
-    """
-    inverter = Inverter()
+#     Shows optimized inversion methods for identity, diagonal, permutation,
+#     and triangular matrices.
+#     """
+#     inverter = Inverter()
 
-    # Singular matrix examples
-    singular1 = '[[1,2,3],[4,5,6],[7,8,9]]'  # Linearly dependent rows
-    singular2 = '[[1,1],[1,1]]'  # Identical rows
+#     # Special matrix examples
+#     identity = '[[1,0,0],[0,1,0],[0,0,1]]'
+#     diagonal = '[[2,0,0],[0,3,0],[0,0,5]]'
+#     permutation = '[[0,1,0],[0,0,1],[1,0,0]]'
+#     upper_triangular = '[[1,2,3],[0,4,5],[0,0,6]]'
+#     lower_triangular = '[[1,0,0],[2,3,0],[4,5,6]]'
 
-    inverter.step_generator.add_step(r"\textbf{奇异矩阵演示}")
+#     inverter.step_generator.add_step(r"\textbf{特殊矩阵求逆演示}")
 
-    singular_matrices = [singular1, singular2]
+#     special_cases = [
+#         ("单位矩阵", identity),
+#         ("对角矩阵", diagonal),
+#         ("置换矩阵", permutation),
+#         ("上三角矩阵", upper_triangular),
+#         ("下三角矩阵", lower_triangular)
+#     ]
 
-    for i, matrix in enumerate(singular_matrices, 1):
-        inverter.step_generator.add_step(f"\\textbf{{奇异矩阵示例 {i}}}")
-        try:
-            inverter.is_invertible(matrix)
-            display(Math(inverter.get_steps_latex()))
-        except Exception as e:
-            inverter.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(inverter.get_steps_latex()))
-
-
-def demo_symbolic_matrix():
-    """
-    Demonstrate matrix inversion with symbolic expressions.
-
-    Shows how the system handles matrices containing variables.
-    """
-    inverter = Inverter()
-
-    # Symbolic matrices
-    symbolic_2x2 = '[[a,b],[c,d]]'
-    symbolic_3x3 = '[[a,b,c],[d,e,f],[g,h,i]]'
-
-    inverter.step_generator.add_step(r"\textbf{符号矩阵求逆演示}")
-    inverter.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0, 可作分母}")
-
-    inverter.step_generator.add_step(r"\textbf{2×2 符号矩阵}")
-    try:
-        inverter.auto_matrix_inverse(symbolic_2x2)
-        display(Math(inverter.get_steps_latex()))
-    except Exception as e:
-        inverter.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(inverter.get_steps_latex()))
-
-    inverter.step_generator.add_step(r"\textbf{3×3 符号矩阵}")
-    try:
-        inverter.auto_matrix_inverse(symbolic_3x3)
-        display(Math(inverter.get_steps_latex()))
-    except Exception as e:
-        inverter.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(inverter.get_steps_latex()))
+#     for name, matrix in special_cases:
+#         inverter.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             inverter.inverse_special_matrices(matrix)
+#             display(Math(inverter.get_steps_latex()))
+#         except Exception as e:
+#             inverter.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(inverter.get_steps_latex()))
 
 
-if __name__ == "__main__":
-    # Run demonstrations
-    demo_basic_inverse()
-    demo_special_matrices()
-    demo_singular_matrix()
-    demo_symbolic_matrix()
+# def demo_singular_matrix():
+#     """
+#     Demonstrate handling of singular (non-invertible) matrices.
+
+#     Shows how the system detects and handles matrices with zero determinant.
+#     """
+#     inverter = Inverter()
+
+#     # Singular matrix examples
+#     singular1 = '[[1,2,3],[4,5,6],[7,8,9]]'  # Linearly dependent rows
+#     singular2 = '[[1,1],[1,1]]'  # Identical rows
+
+#     inverter.step_generator.add_step(r"\textbf{奇异矩阵演示}")
+
+#     singular_matrices = [singular1, singular2]
+
+#     for i, matrix in enumerate(singular_matrices, 1):
+#         inverter.step_generator.add_step(f"\\textbf{{奇异矩阵示例 {i}}}")
+#         try:
+#             inverter.is_invertible(matrix)
+#             display(Math(inverter.get_steps_latex()))
+#         except Exception as e:
+#             inverter.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(inverter.get_steps_latex()))
+
+
+# def demo_symbolic_matrix():
+#     """
+#     Demonstrate matrix inversion with symbolic expressions.
+
+#     Shows how the system handles matrices containing variables.
+#     """
+#     inverter = Inverter()
+
+#     # Symbolic matrices
+#     symbolic_2x2 = '[[a,b],[c,d]]'
+#     symbolic_3x3 = '[[a,b,c],[d,e,f],[g,h,i]]'
+
+#     inverter.step_generator.add_step(r"\textbf{符号矩阵求逆演示}")
+#     inverter.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0, 可作分母}")
+
+#     inverter.step_generator.add_step(r"\textbf{2×2 符号矩阵}")
+#     try:
+#         inverter.auto_matrix_inverse(symbolic_2x2)
+#         display(Math(inverter.get_steps_latex()))
+#     except Exception as e:
+#         inverter.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(inverter.get_steps_latex()))
+
+#     inverter.step_generator.add_step(r"\textbf{3×3 符号矩阵}")
+#     try:
+#         inverter.auto_matrix_inverse(symbolic_3x3)
+#         display(Math(inverter.get_steps_latex()))
+#     except Exception as e:
+#         inverter.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(inverter.get_steps_latex()))
+
+
+# if __name__ == "__main__":
+#     # Run demonstrations
+#     demo_basic_inverse()
+#     demo_special_matrices()
+#     demo_singular_matrix()
+#     demo_symbolic_matrix()

@@ -1,6 +1,6 @@
 from typing import List, Union
 from sympy import Matrix, latex, simplify, solve, symbols, sympify, zeros
-from IPython.display import Math, display
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -610,129 +610,129 @@ class LinearDependence(CommonMatrixCalculator):
         return None
 
 
-# Demo functions
-def demo_basic_vectors():
-    """Demonstrate linear dependence checking for basic vector groups."""
-    checker = LinearDependence()
+# # Demo functions
+# def demo_basic_vectors():
+#     """Demonstrate linear dependence checking for basic vector groups."""
+#     checker = LinearDependence()
 
-    # Examples of vector groups in various situations
-    independent_2d = '[[1,0],[0,1]]'  # 2D independent
-    dependent_2d = '[[1,2],[2,4]]'    # 2D dependent
-    independent_3d = '[[1,0,0],[0,1,0],[0,0,1]]'  # 3D independent
-    dependent_3d = '[[1,2,3],[2,4,6],[3,6,9]]'    # 3D dependent
+#     # Examples of vector groups in various situations
+#     independent_2d = '[[1,0],[0,1]]'  # 2D independent
+#     dependent_2d = '[[1,2],[2,4]]'    # 2D dependent
+#     independent_3d = '[[1,0,0],[0,1,0],[0,0,1]]'  # 3D independent
+#     dependent_3d = '[[1,2,3],[2,4,6],[3,6,9]]'    # 3D dependent
 
-    checker.step_generator.add_step(r"\textbf{基本向量组线性相关性判断演示}")
+#     checker.step_generator.add_step(r"\textbf{基本向量组线性相关性判断演示}")
 
-    test_vectors = [
-        ("二维线性无关向量组", independent_2d),
-        ("二维线性相关向量组", dependent_2d),
-        ("三维线性无关向量组", independent_3d),
-        ("三维线性相关向量组", dependent_3d)
-    ]
+#     test_vectors = [
+#         ("二维线性无关向量组", independent_2d),
+#         ("二维线性相关向量组", dependent_2d),
+#         ("三维线性无关向量组", independent_3d),
+#         ("三维线性相关向量组", dependent_3d)
+#     ]
 
-    for name, vectors in test_vectors:
-        checker.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            result = checker.auto_check_dependence(vectors)
-            status = "线性相关" if result else "线性无关"
-            checker.step_generator.add_step(f"\\textbf{{最终结果: {status}}}")
-            display(Math(checker.get_steps_latex()))
-        except Exception as e:
-            checker.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(checker.get_steps_latex()))
-
-
-def demo_special_cases():
-    """Demonstrate special cases."""
-    checker = LinearDependence()
-
-    # Special case examples
-    zero_vector = '[[0,0]]'           # Zero vector
-    single_vector = '[[1,2]]'         # Single non-zero vector
-    excess_vectors = '[[1,0],[0,1],[1,1]]'  # More vectors than dimension
-
-    checker.step_generator.add_step(r"\textbf{特殊情况演示}")
-
-    special_cases = [
-        ("零向量", zero_vector),
-        ("单个非零向量", single_vector),
-        ("向量个数大于维度", excess_vectors)
-    ]
-
-    for name, vectors in special_cases:
-        checker.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            result = checker.auto_check_dependence(vectors)
-            status = "线性相关" if result else "线性无关"
-            checker.step_generator.add_step(f"\\textbf{{最终结果: {status}}}")
-            display(Math(checker.get_steps_latex()))
-        except Exception as e:
-            checker.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(checker.get_steps_latex()))
+#     for name, vectors in test_vectors:
+#         checker.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             result = checker.auto_check_dependence(vectors)
+#             status = "线性相关" if result else "线性无关"
+#             checker.step_generator.add_step(f"\\textbf{{最终结果: {status}}}")
+#             display(Math(checker.get_steps_latex()))
+#         except Exception as e:
+#             checker.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(checker.get_steps_latex()))
 
 
-def demo_symbolic_vectors():
-    """Demonstrate symbolic vectors."""
-    checker = LinearDependence()
+# def demo_special_cases():
+#     """Demonstrate special cases."""
+#     checker = LinearDependence()
 
-    # Symbolic vector examples
-    symbolic_2d = '[[a,b],[c,d]]'
-    symbolic_2d_independent = '[[a,b],[2*a,2*b]]'
-    symbolic_3d = '[[a,b,c],[d,e,f],[g,h,i]]'
+#     # Special case examples
+#     zero_vector = '[[0,0]]'           # Zero vector
+#     single_vector = '[[1,2]]'         # Single non-zero vector
+#     excess_vectors = '[[1,0],[0,1],[1,1]]'  # More vectors than dimension
 
-    display(Math(r"\textbf{符号向量线性相关性判断演示}"))
-    display(Math(r"\textbf{假设所有符号表达式不为 0}"))
+#     checker.step_generator.add_step(r"\textbf{特殊情况演示}")
 
-    symbolic_vectors = [
-        ("2×2 符号向量组", symbolic_2d),
-        ("2×2 符号向量组(线性有关)", symbolic_2d_independent),
-        ("3×3 符号向量组", symbolic_3d)
-    ]
+#     special_cases = [
+#         ("零向量", zero_vector),
+#         ("单个非零向量", single_vector),
+#         ("向量个数大于维度", excess_vectors)
+#     ]
 
-    for name, vectors in symbolic_vectors:
-        checker.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            result = checker.auto_check_dependence(vectors)
-            if result is None:
-                checker.step_generator.add_step(r"\text{无法确定线性相关性}")
-            else:
-                status = "线性相关" if result else "线性无关"
-                checker.step_generator.add_step(f"\\textbf{{最终结果: {status}}}")
-            display(Math(checker.get_steps_latex()))
-        except Exception as e:
-            checker.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(checker.get_steps_latex()))
+#     for name, vectors in special_cases:
+#         checker.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             result = checker.auto_check_dependence(vectors)
+#             status = "线性相关" if result else "线性无关"
+#             checker.step_generator.add_step(f"\\textbf{{最终结果: {status}}}")
+#             display(Math(checker.get_steps_latex()))
+#         except Exception as e:
+#             checker.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(checker.get_steps_latex()))
 
 
-def demo_high_dimensional():
-    """Demonstrate high-dimensional vectors."""
-    checker = LinearDependence()
+# def demo_symbolic_vectors():
+#     """Demonstrate symbolic vectors."""
+#     checker = LinearDependence()
 
-    # High-dimensional vector examples
-    high_dim_independent = '[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]'
-    high_dim_dependent = '[[1,2,3,4],[2,4,6,8],[3,6,9,12],[4,8,12,16]]'
+#     # Symbolic vector examples
+#     symbolic_2d = '[[a,b],[c,d]]'
+#     symbolic_2d_independent = '[[a,b],[2*a,2*b]]'
+#     symbolic_3d = '[[a,b,c],[d,e,f],[g,h,i]]'
 
-    checker.step_generator.add_step(r"\textbf{高维向量线性相关性判断演示}")
+#     display(Math(r"\textbf{符号向量线性相关性判断演示}"))
+#     display(Math(r"\textbf{假设所有符号表达式不为 0}"))
 
-    high_dim_vectors = [
-        ("四维线性无关向量组", high_dim_independent),
-        ("四维线性相关向量组", high_dim_dependent)
-    ]
+#     symbolic_vectors = [
+#         ("2×2 符号向量组", symbolic_2d),
+#         ("2×2 符号向量组(线性有关)", symbolic_2d_independent),
+#         ("3×3 符号向量组", symbolic_3d)
+#     ]
 
-    for name, vectors in high_dim_vectors:
-        checker.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            result = checker.auto_check_dependence(vectors)
-            status = "线性相关" if result else "线性无关"
-            checker.step_generator.add_step(f"\\textbf{{最终结果: {status}}}")
-            display(Math(checker.get_steps_latex()))
-        except Exception as e:
-            checker.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(checker.get_steps_latex()))
+#     for name, vectors in symbolic_vectors:
+#         checker.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             result = checker.auto_check_dependence(vectors)
+#             if result is None:
+#                 checker.step_generator.add_step(r"\text{无法确定线性相关性}")
+#             else:
+#                 status = "线性相关" if result else "线性无关"
+#                 checker.step_generator.add_step(f"\\textbf{{最终结果: {status}}}")
+#             display(Math(checker.get_steps_latex()))
+#         except Exception as e:
+#             checker.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(checker.get_steps_latex()))
 
 
-if __name__ == "__main__":
-    demo_basic_vectors()
-    demo_special_cases()
-    demo_symbolic_vectors()
-    demo_high_dimensional()
+# def demo_high_dimensional():
+#     """Demonstrate high-dimensional vectors."""
+#     checker = LinearDependence()
+
+#     # High-dimensional vector examples
+#     high_dim_independent = '[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]'
+#     high_dim_dependent = '[[1,2,3,4],[2,4,6,8],[3,6,9,12],[4,8,12,16]]'
+
+#     checker.step_generator.add_step(r"\textbf{高维向量线性相关性判断演示}")
+
+#     high_dim_vectors = [
+#         ("四维线性无关向量组", high_dim_independent),
+#         ("四维线性相关向量组", high_dim_dependent)
+#     ]
+
+#     for name, vectors in high_dim_vectors:
+#         checker.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             result = checker.auto_check_dependence(vectors)
+#             status = "线性相关" if result else "线性无关"
+#             checker.step_generator.add_step(f"\\textbf{{最终结果: {status}}}")
+#             display(Math(checker.get_steps_latex()))
+#         except Exception as e:
+#             checker.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(checker.get_steps_latex()))
+
+
+# if __name__ == "__main__":
+#     demo_basic_vectors()
+#     demo_special_cases()
+#     demo_symbolic_vectors()
+#     demo_high_dimensional()

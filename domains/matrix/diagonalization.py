@@ -1,6 +1,6 @@
 from typing import Dict, List, Tuple
 from sympy import I, Matrix, diag, eye, factor, latex, simplify, symbols
-from IPython.display import Math, display
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -443,114 +443,114 @@ class Diagonalization(CommonMatrixCalculator):
         raise ValueError("矩阵不可对角化")
 
 
-# Demo functions
-def demo_diagonalization():
-    """Demonstrate diagonalizable matrix examples."""
-    diag_1 = Diagonalization()
+# # Demo functions
+# def demo_diagonalization():
+#     """Demonstrate diagonalizable matrix examples."""
+#     diag_1 = Diagonalization()
 
-    # Examples of diagonalizable matrices
-    A1 = '[[4, -2], [1, 1]]'
-    A2 = '[[2, 0, 0], [0, 3, 0], [0, 0, 1]]'  # Diagonal matrix
-    A3 = '[[1, 2, 0], [2, 1, 0], [0, 0, 3]]'  # Symmetric matrix
+#     # Examples of diagonalizable matrices
+#     A1 = '[[4, -2], [1, 1]]'
+#     A2 = '[[2, 0, 0], [0, 3, 0], [0, 0, 1]]'  # Diagonal matrix
+#     A3 = '[[1, 2, 0], [2, 1, 0], [0, 0, 3]]'  # Symmetric matrix
 
-    diag_1.step_generator.add_step(r"\textbf{可对角化矩阵演示}")
+#     diag_1.step_generator.add_step(r"\textbf{可对角化矩阵演示}")
 
-    cases = [
-        ("一般可对角化矩阵", A1),
-        ("对角矩阵", A2),
-        ("对称矩阵", A3)
-    ]
+#     cases = [
+#         ("一般可对角化矩阵", A1),
+#         ("对角矩阵", A2),
+#         ("对称矩阵", A3)
+#     ]
 
-    for name, matrix in cases:
-        diag_1.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            diag_1.auto_diagonalization(matrix)
-            display(Math(diag_1.get_steps_latex()))
-        except Exception as e:
-            diag_1.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(diag_1.get_steps_latex()))
-
-
-def demo_non_diagonalizable():
-    """Demonstrate non-diagonalizable matrix examples."""
-    diag_2 = Diagonalization()
-
-    # Examples of non-diagonalizable matrices
-    A1 = '[[1, 1], [0, 1]]'
-    A2 = '[[2, 1, 0], [0, 2, 1], [0, 0, 2]]'
-
-    diag_2.step_generator.add_step(r"\textbf{不可对角化矩阵演示}")
-
-    cases = [
-        ("示例 1", A1),
-        ("示例 2", A2)
-    ]
-
-    for name, matrix in cases:
-        diag_2.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            diag_2.auto_diagonalization(matrix)
-            display(Math(diag_2.get_steps_latex()))
-        except Exception as e:
-            diag_2.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(diag_2.get_steps_latex()))
+#     for name, matrix in cases:
+#         diag_1.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             diag_1.auto_diagonalization(matrix)
+#             display(Math(diag_1.get_steps_latex()))
+#         except Exception as e:
+#             diag_1.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(diag_1.get_steps_latex()))
 
 
-def demo_complex():
-    """Demonstrate complex matrix diagonalization examples."""
-    diag_3 = Diagonalization()
+# def demo_non_diagonalizable():
+#     """Demonstrate non-diagonalizable matrix examples."""
+#     diag_2 = Diagonalization()
 
-    # Complex matrix examples
-    A1 = '[[0, -1], [1, 0]]'  # Rotation matrix
-    A2 = '[[1, -2], [2, 1]]'  # Matrix with complex eigenvalues
+#     # Examples of non-diagonalizable matrices
+#     A1 = '[[1, 1], [0, 1]]'
+#     A2 = '[[2, 1, 0], [0, 2, 1], [0, 0, 2]]'
 
-    diag_3.step_generator.add_step(r"\textbf{复数矩阵对角化演示}")
+#     diag_2.step_generator.add_step(r"\textbf{不可对角化矩阵演示}")
 
-    cases = [
-        ("旋转矩阵", A1),
-        ("有复特征值的矩阵", A2)
-    ]
+#     cases = [
+#         ("示例 1", A1),
+#         ("示例 2", A2)
+#     ]
 
-    for name, matrix in cases:
-        diag_3.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            diag_3.auto_diagonalization(matrix)
-            display(Math(diag_3.get_steps_latex()))
-        except Exception as e:
-            diag_3.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(diag_3.get_steps_latex()))
-
-
-def demo_special_cases():
-    """Demonstrate special case examples."""
-    diag_4 = Diagonalization()
-
-    # Special case examples
-    A1 = '[[1, 0, 0], [0, 1, 0], [0, 0, 1]]'  # Identity matrix
-    A2 = '[[2, 1], [0, 2]]'  # Non-diagonalizable
-    A3 = '[[3, 1, 0], [0, 3, 0], [0, 0, 4]]'  # Non-diagonalizable
-
-    diag_4.step_generator.add_step(r"\textbf{特殊情况演示}")
-
-    cases = [
-        ("单位矩阵", A1),
-        ("2x2 不可对角化矩阵", A2),
-        ("3x3 不可对角化矩阵", A3)
-    ]
-
-    for name, matrix in cases:
-        diag_4.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            diag_4.auto_diagonalization(matrix)
-            display(Math(diag_4.get_steps_latex()))
-        except Exception as e:
-            diag_4.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(diag_4.get_steps_latex()))
+#     for name, matrix in cases:
+#         diag_2.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             diag_2.auto_diagonalization(matrix)
+#             display(Math(diag_2.get_steps_latex()))
+#         except Exception as e:
+#             diag_2.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(diag_2.get_steps_latex()))
 
 
-if __name__ == "__main__":
-    # Run all demonstrations
-    demo_diagonalization()
-    demo_non_diagonalizable()
-    demo_complex()
-    demo_special_cases()
+# def demo_complex():
+#     """Demonstrate complex matrix diagonalization examples."""
+#     diag_3 = Diagonalization()
+
+#     # Complex matrix examples
+#     A1 = '[[0, -1], [1, 0]]'  # Rotation matrix
+#     A2 = '[[1, -2], [2, 1]]'  # Matrix with complex eigenvalues
+
+#     diag_3.step_generator.add_step(r"\textbf{复数矩阵对角化演示}")
+
+#     cases = [
+#         ("旋转矩阵", A1),
+#         ("有复特征值的矩阵", A2)
+#     ]
+
+#     for name, matrix in cases:
+#         diag_3.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             diag_3.auto_diagonalization(matrix)
+#             display(Math(diag_3.get_steps_latex()))
+#         except Exception as e:
+#             diag_3.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(diag_3.get_steps_latex()))
+
+
+# def demo_special_cases():
+#     """Demonstrate special case examples."""
+#     diag_4 = Diagonalization()
+
+#     # Special case examples
+#     A1 = '[[1, 0, 0], [0, 1, 0], [0, 0, 1]]'  # Identity matrix
+#     A2 = '[[2, 1], [0, 2]]'  # Non-diagonalizable
+#     A3 = '[[3, 1, 0], [0, 3, 0], [0, 0, 4]]'  # Non-diagonalizable
+
+#     diag_4.step_generator.add_step(r"\textbf{特殊情况演示}")
+
+#     cases = [
+#         ("单位矩阵", A1),
+#         ("2x2 不可对角化矩阵", A2),
+#         ("3x3 不可对角化矩阵", A3)
+#     ]
+
+#     for name, matrix in cases:
+#         diag_4.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             diag_4.auto_diagonalization(matrix)
+#             display(Math(diag_4.get_steps_latex()))
+#         except Exception as e:
+#             diag_4.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(diag_4.get_steps_latex()))
+
+
+# if __name__ == "__main__":
+#     # Run all demonstrations
+#     demo_diagonalization()
+#     demo_non_diagonalizable()
+#     demo_complex()
+#     demo_special_cases()

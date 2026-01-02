@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple
 from collections import Counter
 from sympy import Expr, I, Matrix, eye, factor, latex, simplify, solve, symbols, sympify, zeros
-from IPython.display import Math, display
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -420,168 +420,168 @@ class EigenSolver(CommonMatrixCalculator):
             return None, None
 
 
-def demo_diagonal_and_triangular():
-    """Demonstrate diagonal and triangular matrices."""
-    eigen_solver = EigenSolver()
+# def demo_diagonal_and_triangular():
+#     """Demonstrate diagonal and triangular matrices."""
+#     eigen_solver = EigenSolver()
 
-    eigen_solver.step_generator.add_step(r"\textbf{对角矩阵和三角矩阵演示}")
+#     eigen_solver.step_generator.add_step(r"\textbf{对角矩阵和三角矩阵演示}")
 
-    matrices = [
-        ("对角矩阵", "[[2,0,0],[0,3,0],[0,0,5]]"),
-        ("上三角矩阵", "[[1,2,3],[0,4,5],[0,0,6]]"),
-        ("下三角矩阵", "[[1,0,0],[2,3,0],[4,5,6]]")
-    ]
+#     matrices = [
+#         ("对角矩阵", "[[2,0,0],[0,3,0],[0,0,5]]"),
+#         ("上三角矩阵", "[[1,2,3],[0,4,5],[0,0,6]]"),
+#         ("下三角矩阵", "[[1,0,0],[2,3,0],[4,5,6]]")
+#     ]
 
-    for name, matrix in matrices:
-        eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            eigen_solver.auto_eigen_solver(matrix)
-            display(Math(eigen_solver.get_steps_latex()))
-        except Exception as e:
-            eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(eigen_solver.get_steps_latex()))
-
-
-def demo_special_matrices():
-    """Demonstrate special matrices."""
-    eigen_solver = EigenSolver()
-
-    eigen_solver.step_generator.add_step(r"\textbf{特殊矩阵演示}")
-
-    matrices = [
-        ("对称矩阵", "[[2,1,0],[1,3,1],[0,1,2]]"),
-        ("反对称矩阵", "[[0,1,-2],[-1,0,3],[2,-3,0]]"),
-        ("幂等矩阵", "[[1,0],[0,1]]"),  # Identity matrix is idempotent
-        ("正交矩阵", "[[0,-1],[1,0]]")  # Rotation matrix
-    ]
-
-    for name, matrix in matrices:
-        eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            eigen_solver.auto_eigen_solver(matrix)
-            display(Math(eigen_solver.get_steps_latex()))
-        except Exception as e:
-            eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(eigen_solver.get_steps_latex()))
+#     for name, matrix in matrices:
+#         eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             eigen_solver.auto_eigen_solver(matrix)
+#             display(Math(eigen_solver.get_steps_latex()))
+#         except Exception as e:
+#             eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(eigen_solver.get_steps_latex()))
 
 
-def demo_complex_eigenvalues():
-    """Demonstrate complex eigenvalues."""
-    eigen_solver = EigenSolver()
+# def demo_special_matrices():
+#     """Demonstrate special matrices."""
+#     eigen_solver = EigenSolver()
 
-    eigen_solver.step_generator.add_step(r"\textbf{复数特征值演示}")
+#     eigen_solver.step_generator.add_step(r"\textbf{特殊矩阵演示}")
 
-    matrices = [
-        ("旋转矩阵", "[[0,-1],[1,0]]"),
-        ("复数特征值矩阵", "[[1,-2],[1,3]]")
-    ]
+#     matrices = [
+#         ("对称矩阵", "[[2,1,0],[1,3,1],[0,1,2]]"),
+#         ("反对称矩阵", "[[0,1,-2],[-1,0,3],[2,-3,0]]"),
+#         ("幂等矩阵", "[[1,0],[0,1]]"),  # Identity matrix is idempotent
+#         ("正交矩阵", "[[0,-1],[1,0]]")  # Rotation matrix
+#     ]
 
-    for name, matrix in matrices:
-        eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            eigen_solver.auto_eigen_solver(matrix)
-            display(Math(eigen_solver.get_steps_latex()))
-        except Exception as e:
-            eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(eigen_solver.get_steps_latex()))
-
-
-def demo_defective_matrices():
-    """Demonstrate defective matrices."""
-    eigen_solver = EigenSolver()
-
-    eigen_solver.step_generator.add_step(r"\textbf{亏损矩阵演示}")
-
-    matrices = [
-        ("若尔当块", "[[2,1,0],[0,2,1],[0,0,2]]"),
-        ("亏损矩阵", "[[1,1],[0,1]]")
-    ]
-
-    for name, matrix in matrices:
-        eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            eigen_solver.auto_eigen_solver(matrix)
-            display(Math(eigen_solver.get_steps_latex()))
-        except Exception as e:
-            eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(eigen_solver.get_steps_latex()))
+#     for name, matrix in matrices:
+#         eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             eigen_solver.auto_eigen_solver(matrix)
+#             display(Math(eigen_solver.get_steps_latex()))
+#         except Exception as e:
+#             eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(eigen_solver.get_steps_latex()))
 
 
-def demo_symbolic_matrices():
-    """Demonstrate symbolic matrices."""
-    eigen_solver = EigenSolver()
+# def demo_complex_eigenvalues():
+#     """Demonstrate complex eigenvalues."""
+#     eigen_solver = EigenSolver()
 
-    eigen_solver.step_generator.add_step(r"\textbf{符号矩阵演示}")
+#     eigen_solver.step_generator.add_step(r"\textbf{复数特征值演示}")
 
-    matrices = [
-        ("2×2 符号矩阵", "[[a,b],[c,d]]"),
-        ("对称符号矩阵", "[[p,q],[q,p]]")
-    ]
+#     matrices = [
+#         ("旋转矩阵", "[[0,-1],[1,0]]"),
+#         ("复数特征值矩阵", "[[1,-2],[1,3]]")
+#     ]
 
-    for name, matrix in matrices:
-        eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            eigen_solver.auto_eigen_solver(matrix)
-            display(Math(eigen_solver.get_steps_latex()))
-        except Exception as e:
-            eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(eigen_solver.get_steps_latex()))
-
-
-def demo_general_matrices():
-    """Demonstrate eigenvalue solving for general matrices."""
-    eigen_solver = EigenSolver()
-
-    eigen_solver.step_generator.add_step(r"\textbf{普通矩阵特征值求解演示}")
-
-    matrices = [
-        ("2×2 实矩阵示例 1", "[[3,1],[1,7]]"),
-        ("2×2 实矩阵示例 2", "[[2,4],[1,2]]"),
-        ("3×3 实矩阵示例", "[[4,1,1],[1,4,1],[1,1,4]]"),
-        ("具有重特征值的矩阵", "[[3,1,-1],[1,2,-1],[1,1,0]]"),
-        ("不可对角化矩阵", "[[2,1,0],[0,2,0],[0,0,3]]"),
-        ("随机 3x3 矩阵", "[[2,-1,0],[-1,2,-1],[0,-1,2]]"),
-        ("全 1 矩阵", "[[1,1,1],[1,1,1],[1,1,1]]")
-    ]
-
-    for name, matrix in matrices:
-        eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            eigen_solver.auto_eigen_solver(matrix)
-            display(Math(eigen_solver.get_steps_latex()))
-        except Exception as e:
-            eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(eigen_solver.get_steps_latex()))
+#     for name, matrix in matrices:
+#         eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             eigen_solver.auto_eigen_solver(matrix)
+#             display(Math(eigen_solver.get_steps_latex()))
+#         except Exception as e:
+#             eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(eigen_solver.get_steps_latex()))
 
 
-def demo_mixed_matrices():
-    """Demonstrate mixed type matrices."""
-    eigen_solver = EigenSolver()
+# def demo_defective_matrices():
+#     """Demonstrate defective matrices."""
+#     eigen_solver = EigenSolver()
 
-    eigen_solver.step_generator.add_step(r"\textbf{混合类型矩阵演示}")
+#     eigen_solver.step_generator.add_step(r"\textbf{亏损矩阵演示}")
 
-    matrices = [
-        ("特征值为 0 的矩阵", "[[1,1],[1,1]]"),
-        ("负特征值矩阵", "[[-1,2],[2,-1]]"),
-        ("分数特征值矩阵", "[[1/2,1/3],[1/4,1/5]]"),
-        ("大数矩阵", "[[100,50],[25,75]]"),
-    ]
+#     matrices = [
+#         ("若尔当块", "[[2,1,0],[0,2,1],[0,0,2]]"),
+#         ("亏损矩阵", "[[1,1],[0,1]]")
+#     ]
 
-    for name, matrix in matrices:
-        eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            eigen_solver.auto_eigen_solver(matrix)
-            display(Math(eigen_solver.get_steps_latex()))
-        except Exception as e:
-            eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(eigen_solver.get_steps_latex()))
+#     for name, matrix in matrices:
+#         eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             eigen_solver.auto_eigen_solver(matrix)
+#             display(Math(eigen_solver.get_steps_latex()))
+#         except Exception as e:
+#             eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(eigen_solver.get_steps_latex()))
 
 
-if __name__ == "__main__":
-    demo_diagonal_and_triangular()
-    demo_special_matrices()
-    demo_complex_eigenvalues()
-    demo_defective_matrices()
-    demo_symbolic_matrices()
-    demo_general_matrices()
-    demo_mixed_matrices()
+# def demo_symbolic_matrices():
+#     """Demonstrate symbolic matrices."""
+#     eigen_solver = EigenSolver()
+
+#     eigen_solver.step_generator.add_step(r"\textbf{符号矩阵演示}")
+
+#     matrices = [
+#         ("2×2 符号矩阵", "[[a,b],[c,d]]"),
+#         ("对称符号矩阵", "[[p,q],[q,p]]")
+#     ]
+
+#     for name, matrix in matrices:
+#         eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             eigen_solver.auto_eigen_solver(matrix)
+#             display(Math(eigen_solver.get_steps_latex()))
+#         except Exception as e:
+#             eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(eigen_solver.get_steps_latex()))
+
+
+# def demo_general_matrices():
+#     """Demonstrate eigenvalue solving for general matrices."""
+#     eigen_solver = EigenSolver()
+
+#     eigen_solver.step_generator.add_step(r"\textbf{普通矩阵特征值求解演示}")
+
+#     matrices = [
+#         ("2×2 实矩阵示例 1", "[[3,1],[1,7]]"),
+#         ("2×2 实矩阵示例 2", "[[2,4],[1,2]]"),
+#         ("3×3 实矩阵示例", "[[4,1,1],[1,4,1],[1,1,4]]"),
+#         ("具有重特征值的矩阵", "[[3,1,-1],[1,2,-1],[1,1,0]]"),
+#         ("不可对角化矩阵", "[[2,1,0],[0,2,0],[0,0,3]]"),
+#         ("随机 3x3 矩阵", "[[2,-1,0],[-1,2,-1],[0,-1,2]]"),
+#         ("全 1 矩阵", "[[1,1,1],[1,1,1],[1,1,1]]")
+#     ]
+
+#     for name, matrix in matrices:
+#         eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             eigen_solver.auto_eigen_solver(matrix)
+#             display(Math(eigen_solver.get_steps_latex()))
+#         except Exception as e:
+#             eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(eigen_solver.get_steps_latex()))
+
+
+# def demo_mixed_matrices():
+#     """Demonstrate mixed type matrices."""
+#     eigen_solver = EigenSolver()
+
+#     eigen_solver.step_generator.add_step(r"\textbf{混合类型矩阵演示}")
+
+#     matrices = [
+#         ("特征值为 0 的矩阵", "[[1,1],[1,1]]"),
+#         ("负特征值矩阵", "[[-1,2],[2,-1]]"),
+#         ("分数特征值矩阵", "[[1/2,1/3],[1/4,1/5]]"),
+#         ("大数矩阵", "[[100,50],[25,75]]"),
+#     ]
+
+#     for name, matrix in matrices:
+#         eigen_solver.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             eigen_solver.auto_eigen_solver(matrix)
+#             display(Math(eigen_solver.get_steps_latex()))
+#         except Exception as e:
+#             eigen_solver.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(eigen_solver.get_steps_latex()))
+
+
+# if __name__ == "__main__":
+#     demo_diagonal_and_triangular()
+#     demo_special_matrices()
+#     demo_complex_eigenvalues()
+#     demo_defective_matrices()
+#     demo_symbolic_matrices()
+#     demo_general_matrices()
+#     demo_mixed_matrices()

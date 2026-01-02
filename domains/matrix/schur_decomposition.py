@@ -1,6 +1,6 @@
 from typing import Dict, List, Tuple
 from sympy import Expr, Matrix, eye, latex, simplify, sqrt, symbols, zeros
-from IPython.display import Math, display
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -532,94 +532,94 @@ class SchurDecomposition(CommonMatrixCalculator):
         return self.schur_decomposition_iterative(matrix_input, show_steps)
 
 
-def demo_schur():
-    """Demonstrate Schur decomposition on various matrices."""
+# def demo_schur():
+#     """Demonstrate Schur decomposition on various matrices."""
 
-    schur = SchurDecomposition()
+#     schur = SchurDecomposition()
 
-    # Example matrix
-    schur.step_generator.add_step(r"\text{Hermitian 矩阵示例}")
-    A_hermitian = '[[2,1],[1,2]]'
-    schur.auto_schur_decomposition(A_hermitian)
-    display(Math(schur.get_steps_latex()))
+#     # Example matrix
+#     schur.step_generator.add_step(r"\text{Hermitian 矩阵示例}")
+#     A_hermitian = '[[2,1],[1,2]]'
+#     schur.auto_schur_decomposition(A_hermitian)
+#     display(Math(schur.get_steps_latex()))
 
-    schur.step_generator.add_step("\\" + "\\")
+#     schur.step_generator.add_step("\\" + "\\")
 
-    schur.step_generator.add_step(r"\text{正规矩阵示例}")
-    A_normal = '[[0,-1],[1,0]]'  # Rotation matrix
-    schur.auto_schur_decomposition(A_normal)
-    display(Math(schur.get_steps_latex()))
+#     schur.step_generator.add_step(r"\text{正规矩阵示例}")
+#     A_normal = '[[0,-1],[1,0]]'  # Rotation matrix
+#     schur.auto_schur_decomposition(A_normal)
+#     display(Math(schur.get_steps_latex()))
 
-    schur.step_generator.add_step("\\" + "\\")
+#     schur.step_generator.add_step("\\" + "\\")
 
-    schur.step_generator.add_step(r"\text{一般矩阵示例}")
-    A_general = '[[2,1,0],[0,2,1],[0,0,3]]'
-    schur.auto_schur_decomposition(A_general)
-    display(Math(schur.get_steps_latex()))
+#     schur.step_generator.add_step(r"\text{一般矩阵示例}")
+#     A_general = '[[2,1,0],[0,2,1],[0,0,3]]'
+#     schur.auto_schur_decomposition(A_general)
+#     display(Math(schur.get_steps_latex()))
 
-    schur.step_generator.add_step("\\" + "\\")
-
-
-def demo_special_cases():
-    """Demonstrate special cases of Schur decomposition."""
-
-    schur = SchurDecomposition()
-
-    schur.step_generator.add_step(r"\text{对角矩阵}")
-    A_diag = '[[1,0,0],[0,2,0],[0,0,3]]'
-    schur.auto_schur_decomposition(A_diag)
-    display(Math(schur.get_steps_latex()))
-
-    schur.step_generator.add_step("\\" + "\\")
-
-    schur.step_generator.add_step(r"\text{三角矩阵}")
-    A_tri = '[[1,2,3],[0,4,5],[0,0,6]]'
-    schur.auto_schur_decomposition(A_tri)
-    display(Math(schur.get_steps_latex()))
-
-    schur.step_generator.add_step("\\" + "\\")
-
-    schur.step_generator.add_step(r"\text{复数矩阵}")
-    A_complex = '[[1,I],[-I,1]]'
-    schur.auto_schur_decomposition(A_complex)
-    display(Math(schur.get_steps_latex()))
-
-    schur.step_generator.add_step("\\" + "\\")
+#     schur.step_generator.add_step("\\" + "\\")
 
 
-def demo_convergence():
-    """Demonstrate convergence properties."""
+# def demo_special_cases():
+#     """Demonstrate special cases of Schur decomposition."""
 
-    schur = SchurDecomposition()
+#     schur = SchurDecomposition()
 
-    schur.step_generator.add_step(r"\text{收敛性测试}")
-    A_slow = '[[2,1,1],[1,3,1],[1,1,4]]'
-    _, T = schur.schur_decomposition_iterative(A_slow)
+#     schur.step_generator.add_step(r"\text{对角矩阵}")
+#     A_diag = '[[1,0,0],[0,2,0],[0,0,3]]'
+#     schur.auto_schur_decomposition(A_diag)
+#     display(Math(schur.get_steps_latex()))
 
-    schur.step_generator.add_step(r"\text{最终上三角矩阵 T: }")
-    schur.add_matrix(T, "T")
+#     schur.step_generator.add_step("\\" + "\\")
 
-    # Check upper triangular property
-    n = T.rows
-    is_upper_triangular = True
-    for i in range(n):
-        for j in range(i):
-            if abs(T[i, j]) > 1e-10:
-                is_upper_triangular = False
-                break
-        if not is_upper_triangular:
-            break
+#     schur.step_generator.add_step(r"\text{三角矩阵}")
+#     A_tri = '[[1,2,3],[0,4,5],[0,0,6]]'
+#     schur.auto_schur_decomposition(A_tri)
+#     display(Math(schur.get_steps_latex()))
 
-    if is_upper_triangular:
-        schur.step_generator.add_step(r"\text{成功收敛到上三角矩阵}")
-    else:
-        schur.step_generator.add_step(r"\text{未完全收敛到上三角矩阵}")
+#     schur.step_generator.add_step("\\" + "\\")
 
-    display(Math(schur.get_steps_latex()))
+#     schur.step_generator.add_step(r"\text{复数矩阵}")
+#     A_complex = '[[1,I],[-I,1]]'
+#     schur.auto_schur_decomposition(A_complex)
+#     display(Math(schur.get_steps_latex()))
+
+#     schur.step_generator.add_step("\\" + "\\")
 
 
-if __name__ == "__main__":
-    # Run demonstrations
-    demo_schur()
-    demo_special_cases()
-    demo_convergence()
+# def demo_convergence():
+#     """Demonstrate convergence properties."""
+
+#     schur = SchurDecomposition()
+
+#     schur.step_generator.add_step(r"\text{收敛性测试}")
+#     A_slow = '[[2,1,1],[1,3,1],[1,1,4]]'
+#     _, T = schur.schur_decomposition_iterative(A_slow)
+
+#     schur.step_generator.add_step(r"\text{最终上三角矩阵 T: }")
+#     schur.add_matrix(T, "T")
+
+#     # Check upper triangular property
+#     n = T.rows
+#     is_upper_triangular = True
+#     for i in range(n):
+#         for j in range(i):
+#             if abs(T[i, j]) > 1e-10:
+#                 is_upper_triangular = False
+#                 break
+#         if not is_upper_triangular:
+#             break
+
+#     if is_upper_triangular:
+#         schur.step_generator.add_step(r"\text{成功收敛到上三角矩阵}")
+#     else:
+#         schur.step_generator.add_step(r"\text{未完全收敛到上三角矩阵}")
+
+#     display(Math(schur.get_steps_latex()))
+
+
+# if __name__ == "__main__":
+#     # Run demonstrations
+#     demo_schur()
+#     demo_special_cases()
+#     demo_convergence()

@@ -1,6 +1,6 @@
 from typing import List, Tuple, Union
 from sympy import Matrix, latex, sympify
-from IPython.display import Math, display
+# from IPython.display import Math, display
 
 
 class MatrixCalculator:
@@ -279,42 +279,42 @@ class MatrixCalculator:
         return latex_str
 
 
-def demo():
-    calculator = MatrixCalculator()
+# def demo():
+#     calculator = MatrixCalculator()
 
-    # Demo 1: Basic matrix operations
+#     # Demo 1: Basic matrix operations
 
-    display(Math("\\text{示例 1: 基本矩阵操作}"))
-    matrix_expr = "[[1, 2], [3, 4]]"
-    operations = ["transpose", "inverse"]
-    calculator.calculate(
-        matrix_expr, operations, record_all_steps=True)
-    display(Math(calculator.get_steps_latex()))
+#     display(Math("\\text{示例 1: 基本矩阵操作}"))
+#     matrix_expr = "[[1, 2], [3, 4]]"
+#     operations = ["transpose", "inverse"]
+#     calculator.calculate(
+#         matrix_expr, operations, record_all_steps=True)
+#     display(Math(calculator.get_steps_latex()))
 
-    # Demo 2: Symbolic matrix
+#     # Demo 2: Symbolic matrix
 
-    display(Math("\\text{示例 2: 符号矩阵}"))
-    matrix_expr = "[[a, b], [c, d]]"
-    operations = ["inverse", "transpose"]
-    calculator.calculate(
-        matrix_expr, operations, record_all_steps=True)
-    display(Math(calculator.get_steps_latex()))
+#     display(Math("\\text{示例 2: 符号矩阵}"))
+#     matrix_expr = "[[a, b], [c, d]]"
+#     operations = ["inverse", "transpose"]
+#     calculator.calculate(
+#         matrix_expr, operations, record_all_steps=True)
+#     display(Math(calculator.get_steps_latex()))
 
-    # Demo 3: Row operations
+#     # Demo 3: Row operations
 
-    display(Math("\\text{示例 3: 行操作}"))
-    matrix_expr = "[[1,2,3],[4,5,6],[7,8,9]]"
-    operations = ["swap_rows 0 1", "add_rows 0 1 2", "scale_row 2 3"]
-    calculator.calculate(
-        matrix_expr, operations, record_all_steps=True)
-    display(Math(calculator.get_steps_latex()))
+#     display(Math("\\text{示例 3: 行操作}"))
+#     matrix_expr = "[[1,2,3],[4,5,6],[7,8,9]]"
+#     operations = ["swap_rows 0 1", "add_rows 0 1 2", "scale_row 2 3"]
+#     calculator.calculate(
+#         matrix_expr, operations, record_all_steps=True)
+#     display(Math(calculator.get_steps_latex()))
 
-    display(Math("\\text{示例 3: 行操作}"))
-    matrix_expr = "[[1,2,3],[4,5,6],[7,8,9]]"
-    calculator.calculate(
-        matrix_expr, operations, record_all_steps=True)
-    display(Math(calculator.get_steps_latex()))
+#     display(Math("\\text{示例 3: 行操作}"))
+#     matrix_expr = "[[1,2,3],[4,5,6],[7,8,9]]"
+#     calculator.calculate(
+#         matrix_expr, operations, record_all_steps=True)
+#     display(Math(calculator.get_steps_latex()))
 
 
-if __name__ == "__main__":
-    demo()
+# if __name__ == "__main__":
+#     demo()

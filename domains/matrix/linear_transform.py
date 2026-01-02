@@ -1,6 +1,7 @@
 from typing import List
-from sympy import Matrix, latex, symbols, sympify
-from IPython.display import Math, display
+from sympy import Matrix, latex, sympify
+# from sympy import symbols
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -220,222 +221,222 @@ class LinearTransform(CommonMatrixCalculator):
         return self.get_steps_latex()
 
 
-def demo_linear_transform():
-    """Demonstrate solving linear transformation matrices."""
-    transformer = LinearTransform()
+# def demo_linear_transform():
+#     """Demonstrate solving linear transformation matrices."""
+#     transformer = LinearTransform()
 
-    transformer.step_generator.add_step(r"\textbf{线性变换矩阵求解演示}")
+#     transformer.step_generator.add_step(r"\textbf{线性变换矩阵求解演示}")
 
-    # Example 1: 2D rotation transformation
-    transformer.step_generator.add_step(r"\text{例 1: 二维旋转变换(90 度)}")
-    rotation_matrix = [[0, -1], [1, 0]]
-    basis1 = [[1, 0], [0, 1]]  # Standard basis
+#     # Example 1: 2D rotation transformation
+#     transformer.step_generator.add_step(r"\text{例 1: 二维旋转变换(90 度)}")
+#     rotation_matrix = [[0, -1], [1, 0]]
+#     basis1 = [[1, 0], [0, 1]]  # Standard basis
 
-    try:
-        transformer.find_linear_transform_matrix(rotation_matrix, basis1)
-        display(Math(transformer.get_steps_latex()))
-    except Exception as e:
-        transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(transformer.get_steps_latex()))
+#     try:
+#         transformer.find_linear_transform_matrix(rotation_matrix, basis1)
+#         display(Math(transformer.get_steps_latex()))
+#     except Exception as e:
+#         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(transformer.get_steps_latex()))
 
-    # Example 2: 3D rotation transformation
-    transformer.step_generator.add_step(r"\text{例 2: 三维变换}")
-    matrix1 = [[2, 2, 0], [1, 1, 2], [1, 1, 2]]
-    basis1 = [[1, -2, 1], [-1, 1, 1], [0, 1, 1]]
+#     # Example 2: 3D rotation transformation
+#     transformer.step_generator.add_step(r"\text{例 2: 三维变换}")
+#     matrix1 = [[2, 2, 0], [1, 1, 2], [1, 1, 2]]
+#     basis1 = [[1, -2, 1], [-1, 1, 1], [0, 1, 1]]
 
-    try:
-        transformer.find_linear_transform_matrix(matrix1, basis1)
-        display(Math(transformer.get_steps_latex()))
-    except Exception as e:
-        transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(transformer.get_steps_latex()))
+#     try:
+#         transformer.find_linear_transform_matrix(matrix1, basis1)
+#         display(Math(transformer.get_steps_latex()))
+#     except Exception as e:
+#         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(transformer.get_steps_latex()))
 
-    # Example 3: Projection transformation
-    transformer.step_generator.add_step(r"\text{例 3: 到 $x$ 轴的投影变换}")
-    projection_matrix = [[1, 0], [0, 0]]
-    basis2 = [[2, 1], [1, 2]]
+#     # Example 3: Projection transformation
+#     transformer.step_generator.add_step(r"\text{例 3: 到 $x$ 轴的投影变换}")
+#     projection_matrix = [[1, 0], [0, 0]]
+#     basis2 = [[2, 1], [1, 2]]
 
-    try:
-        transformer.find_linear_transform_matrix(
-            projection_matrix, basis2)
-        display(Math(transformer.get_steps_latex()))
-    except Exception as e:
-        transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(transformer.get_steps_latex()))
-
-
-def demo_basis_change():
-    """Demonstrate basis change for linear transformation matrices."""
-    transformer = LinearTransform()
-
-    transformer.step_generator.add_step(r"\textbf{线性变换矩阵基变换演示}")
-
-    # Example 1: Rotation transformation representation in different bases
-    transformer.step_generator.add_step(r"\text{例 1: 旋转变换在不同基下的表示}")
-    rotation_matrix = [[0, -1], [1, 0]]  # 90 degree rotation
-    standard_basis = [[1, 0], [0, 1]]
-    new_basis = [[1, 1], [1, -1]]
-
-    try:
-        transformer.change_transform_basis(
-            rotation_matrix, standard_basis, new_basis)
-        display(Math(transformer.get_steps_latex()))
-    except Exception as e:
-        transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(transformer.get_steps_latex()))
-
-    # Example 2: Basis change for projection transformation
-    transformer.step_generator.add_step(r"\text{例 2: 投影变换的基变换}")
-    projection_matrix = [[1, 0], [0, 0]]
-    from_basis = [[1, 0], [0, 1]]
-    to_basis = [[2, 1], [1, 2]]
-
-    try:
-        transformer.change_transform_basis(
-            projection_matrix, from_basis, to_basis)
-        display(Math(transformer.get_steps_latex()))
-    except Exception as e:
-        transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(transformer.get_steps_latex()))
-
-    # Example 3: Basis change in 3D space
-    transformer.step_generator.add_step(r"\text{例 3: 三维空间的基变换}")
-    transform_3d = [[1, 2, 0], [0, 1, 1], [1, 0, 1]]
-    from_basis_3d = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-    to_basis_3d = [[1, 1, 0], [1, -1, 0], [0, 0, 2]]
-
-    try:
-        transformer.change_transform_basis(
-            transform_3d, from_basis_3d, to_basis_3d)
-        display(Math(transformer.get_steps_latex()))
-    except Exception as e:
-        transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(transformer.get_steps_latex()))
+#     try:
+#         transformer.find_linear_transform_matrix(
+#             projection_matrix, basis2)
+#         display(Math(transformer.get_steps_latex()))
+#     except Exception as e:
+#         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(transformer.get_steps_latex()))
 
 
-def demo_symbolic_transform():
-    """Demonstrate linear transformations with symbolic elements."""
-    transformer = LinearTransform()
+# def demo_basis_change():
+#     """Demonstrate basis change for linear transformation matrices."""
+#     transformer = LinearTransform()
 
-    transformer.step_generator.add_step(r"\textbf{符号线性变换演示}")
-    transformer.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0}")
+#     transformer.step_generator.add_step(r"\textbf{线性变换矩阵基变换演示}")
 
-    # Example 1: 2D linear transformation with parameters
-    transformer.step_generator.add_step(r"\text{例 1: 带参数的二维线性变换}")
+#     # Example 1: Rotation transformation representation in different bases
+#     transformer.step_generator.add_step(r"\text{例 1: 旋转变换在不同基下的表示}")
+#     rotation_matrix = [[0, -1], [1, 0]]  # 90 degree rotation
+#     standard_basis = [[1, 0], [0, 1]]
+#     new_basis = [[1, 1], [1, -1]]
 
-    # Define symbols
-    a, b, c, d = symbols('a b c d')
+#     try:
+#         transformer.change_transform_basis(
+#             rotation_matrix, standard_basis, new_basis)
+#         display(Math(transformer.get_steps_latex()))
+#     except Exception as e:
+#         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(transformer.get_steps_latex()))
 
-    # Symbolic matrix
-    symbolic_matrix = Matrix([
-        [a, b],
-        [c, d]
-    ])
+#     # Example 2: Basis change for projection transformation
+#     transformer.step_generator.add_step(r"\text{例 2: 投影变换的基变换}")
+#     projection_matrix = [[1, 0], [0, 0]]
+#     from_basis = [[1, 0], [0, 1]]
+#     to_basis = [[2, 1], [1, 2]]
 
-    basis1 = [[1, 0], [0, 1]]
+#     try:
+#         transformer.change_transform_basis(
+#             projection_matrix, from_basis, to_basis)
+#         display(Math(transformer.get_steps_latex()))
+#     except Exception as e:
+#         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(transformer.get_steps_latex()))
 
-    try:
-        transformer.find_linear_transform_matrix(symbolic_matrix, basis1)
-        display(Math(transformer.get_steps_latex()))
-    except Exception as e:
-        transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(transformer.get_steps_latex()))
+#     # Example 3: Basis change in 3D space
+#     transformer.step_generator.add_step(r"\text{例 3: 三维空间的基变换}")
+#     transform_3d = [[1, 2, 0], [0, 1, 1], [1, 0, 1]]
+#     from_basis_3d = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+#     to_basis_3d = [[1, 1, 0], [1, -1, 0], [0, 0, 2]]
 
-    # Example 2: Linear transformation in symbolic basis
-    transformer.step_generator.add_step(r"\text{例 2: 符号基下的线性变换}")
-
-    # Fixed transformation matrix
-    fixed_matrix = [[2, 1], [1, 3]]
-
-    # Symbolic basis
-    k, m = symbols('k m')
-    symbolic_basis = Matrix([
-        [1, k],
-        [m, 1]
-    ])
-
-    try:
-        transformer.find_linear_transform_matrix(fixed_matrix, symbolic_basis)
-        display(Math(transformer.get_steps_latex()))
-    except Exception as e:
-        transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(transformer.get_steps_latex()))
-
-    # Example 3: Symbolic basis change
-    transformer.step_generator.add_step(r"\text{例 3: 符号基变换}")
-
-    # Symbolic transformation matrix
-    p, q, r, s = symbols('p q r s')
-    symbolic_transform = Matrix([
-        [p, q],
-        [r, s]
-    ])
-
-    # Symbolic basis
-    alpha, beta = symbols('alpha beta')
-    from_basis = Matrix([
-        [1, 0],
-        [0, 1]
-    ])
-    to_basis = Matrix([
-        [alpha, 1],
-        [1, beta]
-    ])
-
-    try:
-        transformer.change_transform_basis(
-            symbolic_transform, from_basis, to_basis)
-        display(Math(transformer.get_steps_latex()))
-    except Exception as e:
-        transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(transformer.get_steps_latex()))
-
-    # Example 4: 3D symbolic transformation
-    transformer.step_generator.add_step(r"\text{例 4: 三维符号变换}")
-
-    t, u, v = symbols('t u v')
-    symbolic_3d_matrix = Matrix([
-        [1, t, 0],
-        [u, 2, v],
-        [0, 1, 3]
-    ])
-
-    symbolic_3d_basis = Matrix([
-        [1, 0, 1],
-        [0, 1, t],
-        [1, u, 0]
-    ])
-
-    try:
-        transformer.find_linear_transform_matrix(
-            symbolic_3d_matrix, symbolic_3d_basis)
-        display(Math(transformer.get_steps_latex()))
-    except Exception as e:
-        transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(transformer.get_steps_latex()))
-
-    # Example 5: Function-form symbolic transformation
-    transformer.step_generator.add_step(r"\text{例 5: 函数形式的符号变换}")
-
-    def symbolic_function_transform(vector):
-        """Symbolic linear transformation: T(x,y) = (ax + by, cx + dy)"""
-        x, y = vector[0], vector[1]
-        result = Matrix([a*x + b*y, c*x + d*y])
-        desc = f'T(x,y) = ({a}x + {b}y, {c}x + {d}y)'
-        return result, desc
-
-    standard_basis = [[1, 0], [0, 1]]
-
-    try:
-        transformer.find_linear_transform_matrix(
-            symbolic_function_transform, standard_basis)
-        display(Math(transformer.get_steps_latex()))
-    except Exception as e:
-        transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(transformer.get_steps_latex()))
+#     try:
+#         transformer.change_transform_basis(
+#             transform_3d, from_basis_3d, to_basis_3d)
+#         display(Math(transformer.get_steps_latex()))
+#     except Exception as e:
+#         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(transformer.get_steps_latex()))
 
 
-if __name__ == "__main__":
-    demo_linear_transform()
-    demo_basis_change()
-    demo_symbolic_transform()
+# def demo_symbolic_transform():
+#     """Demonstrate linear transformations with symbolic elements."""
+#     transformer = LinearTransform()
+
+#     transformer.step_generator.add_step(r"\textbf{符号线性变换演示}")
+#     transformer.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0}")
+
+#     # Example 1: 2D linear transformation with parameters
+#     transformer.step_generator.add_step(r"\text{例 1: 带参数的二维线性变换}")
+
+#     # Define symbols
+#     a, b, c, d = symbols('a b c d')
+
+#     # Symbolic matrix
+#     symbolic_matrix = Matrix([
+#         [a, b],
+#         [c, d]
+#     ])
+
+#     basis1 = [[1, 0], [0, 1]]
+
+#     try:
+#         transformer.find_linear_transform_matrix(symbolic_matrix, basis1)
+#         display(Math(transformer.get_steps_latex()))
+#     except Exception as e:
+#         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(transformer.get_steps_latex()))
+
+#     # Example 2: Linear transformation in symbolic basis
+#     transformer.step_generator.add_step(r"\text{例 2: 符号基下的线性变换}")
+
+#     # Fixed transformation matrix
+#     fixed_matrix = [[2, 1], [1, 3]]
+
+#     # Symbolic basis
+#     k, m = symbols('k m')
+#     symbolic_basis = Matrix([
+#         [1, k],
+#         [m, 1]
+#     ])
+
+#     try:
+#         transformer.find_linear_transform_matrix(fixed_matrix, symbolic_basis)
+#         display(Math(transformer.get_steps_latex()))
+#     except Exception as e:
+#         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(transformer.get_steps_latex()))
+
+#     # Example 3: Symbolic basis change
+#     transformer.step_generator.add_step(r"\text{例 3: 符号基变换}")
+
+#     # Symbolic transformation matrix
+#     p, q, r, s = symbols('p q r s')
+#     symbolic_transform = Matrix([
+#         [p, q],
+#         [r, s]
+#     ])
+
+#     # Symbolic basis
+#     alpha, beta = symbols('alpha beta')
+#     from_basis = Matrix([
+#         [1, 0],
+#         [0, 1]
+#     ])
+#     to_basis = Matrix([
+#         [alpha, 1],
+#         [1, beta]
+#     ])
+
+#     try:
+#         transformer.change_transform_basis(
+#             symbolic_transform, from_basis, to_basis)
+#         display(Math(transformer.get_steps_latex()))
+#     except Exception as e:
+#         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(transformer.get_steps_latex()))
+
+#     # Example 4: 3D symbolic transformation
+#     transformer.step_generator.add_step(r"\text{例 4: 三维符号变换}")
+
+#     t, u, v = symbols('t u v')
+#     symbolic_3d_matrix = Matrix([
+#         [1, t, 0],
+#         [u, 2, v],
+#         [0, 1, 3]
+#     ])
+
+#     symbolic_3d_basis = Matrix([
+#         [1, 0, 1],
+#         [0, 1, t],
+#         [1, u, 0]
+#     ])
+
+#     try:
+#         transformer.find_linear_transform_matrix(
+#             symbolic_3d_matrix, symbolic_3d_basis)
+#         display(Math(transformer.get_steps_latex()))
+#     except Exception as e:
+#         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(transformer.get_steps_latex()))
+
+#     # Example 5: Function-form symbolic transformation
+#     transformer.step_generator.add_step(r"\text{例 5: 函数形式的符号变换}")
+
+#     def symbolic_function_transform(vector):
+#         """Symbolic linear transformation: T(x,y) = (ax + by, cx + dy)"""
+#         x, y = vector[0], vector[1]
+#         result = Matrix([a*x + b*y, c*x + d*y])
+#         desc = f'T(x,y) = ({a}x + {b}y, {c}x + {d}y)'
+#         return result, desc
+
+#     standard_basis = [[1, 0], [0, 1]]
+
+#     try:
+#         transformer.find_linear_transform_matrix(
+#             symbolic_function_transform, standard_basis)
+#         display(Math(transformer.get_steps_latex()))
+#     except Exception as e:
+#         transformer.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(transformer.get_steps_latex()))
+
+
+# if __name__ == "__main__":
+#     demo_linear_transform()
+#     demo_basis_change()
+#     demo_symbolic_transform()

@@ -1,6 +1,6 @@
 from itertools import combinations
 from sympy import eye, latex, simplify, zeros
-from IPython.display import Math, display
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -541,131 +541,131 @@ class Rank(CommonMatrixCalculator):
         return None
 
 
-# Demo functions
-def demo_basic_rank():
-    """Demonstrate basic matrix rank computation."""
-    rank_calculator = Rank()
+# # Demo functions
+# def demo_basic_rank():
+#     """Demonstrate basic matrix rank computation."""
+#     rank_calculator = Rank()
 
-    # Examples of matrices with different ranks
-    full_rank = '[[1,2,3],[4,5,6],[7,8,10]]'  # Full rank
-    rank_2 = '[[1,2,3],[4,5,6],[7,8,9]]'     # Rank 2
-    rank_1 = '[[1,2,3],[2,4,6],[3,6,9]]'     # Rank 1
-    zero_matrix = '[[0,0,0],[0,0,0],[0,0,0]]'  # Zero matrix
+#     # Examples of matrices with different ranks
+#     full_rank = '[[1,2,3],[4,5,6],[7,8,10]]'  # Full rank
+#     rank_2 = '[[1,2,3],[4,5,6],[7,8,9]]'     # Rank 2
+#     rank_1 = '[[1,2,3],[2,4,6],[3,6,9]]'     # Rank 1
+#     zero_matrix = '[[0,0,0],[0,0,0],[0,0,0]]'  # Zero matrix
 
-    rank_calculator.step_generator.add_step(r"\textbf{基本矩阵求秩演示}")
+#     rank_calculator.step_generator.add_step(r"\textbf{基本矩阵求秩演示}")
 
-    test_matrices = [
-        ("满秩矩阵", full_rank),
-        ("秩为 2 的矩阵", rank_2),
-        ("秩为 1 的矩阵", rank_1),
-        ("零矩阵", zero_matrix)
-    ]
+#     test_matrices = [
+#         ("满秩矩阵", full_rank),
+#         ("秩为 2 的矩阵", rank_2),
+#         ("秩为 1 的矩阵", rank_1),
+#         ("零矩阵", zero_matrix)
+#     ]
 
-    for name, matrix in test_matrices:
-        rank_calculator.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            rank_calculator.auto_matrix_rank(matrix)
-            display(Math(rank_calculator.get_steps_latex()))
-        except Exception as e:
-            rank_calculator.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(rank_calculator.get_steps_latex()))
-        rank_calculator.step_generator.add_step("\\" + "\\")
-
-
-def demo_rectangular_matrices():
-    """Demonstrate rectangular matrix rank computation."""
-    rank_calculator = Rank()
-
-    # Rectangular matrix examples
-    tall_full_rank = '[[1,2],[3,4],[5,6]]'      # Tall matrix, full rank
-    wide_full_rank = '[[1,2,3,4],[5,6,7,8]]'   # Wide matrix, full rank
-    tall_rank_deficient = '[[1,2],[2,4],[3,6]]'  # Tall matrix, rank deficient
-    # Wide matrix, rank deficient
-    wide_rank_deficient = '[[1,2,3,4],[2,4,6,8]]'
-
-    rank_calculator.step_generator.add_step(r"\textbf{矩形矩阵求秩演示}")
-
-    rectangular_matrices = [
-        ("高满秩矩阵", tall_full_rank),
-        ("宽满秩矩阵", wide_full_rank),
-        ("高秩不足矩阵", tall_rank_deficient),
-        ("宽秩不足矩阵", wide_rank_deficient)
-    ]
-
-    for name, matrix in rectangular_matrices:
-        rank_calculator.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            rank_calculator.auto_matrix_rank(matrix)
-            display(Math(rank_calculator.get_steps_latex()))
-        except Exception as e:
-            rank_calculator.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(rank_calculator.get_steps_latex()))
-        rank_calculator.step_generator.add_step("\\" + "\\")
+#     for name, matrix in test_matrices:
+#         rank_calculator.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             rank_calculator.auto_matrix_rank(matrix)
+#             display(Math(rank_calculator.get_steps_latex()))
+#         except Exception as e:
+#             rank_calculator.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(rank_calculator.get_steps_latex()))
+#         rank_calculator.step_generator.add_step("\\" + "\\")
 
 
-def demo_special_matrices():
-    """Demonstrate special matrix rank computation."""
-    rank_calculator = Rank()
+# def demo_rectangular_matrices():
+#     """Demonstrate rectangular matrix rank computation."""
+#     rank_calculator = Rank()
 
-    # Special matrix examples
-    identity = '[[1,0,0],[0,1,0],[0,0,1]]'      # Identity matrix
-    diagonal_full = '[[2,0,0],[0,3,0],[0,0,5]]'  # Full rank diagonal matrix
-    diagonal_rank2 = '[[2,0,0],[0,0,0],[0,0,5]]'  # Diagonal matrix with rank 2
-    permutation = '[[0,1,0],[0,0,1],[1,0,0]]'   # Permutation matrix
+#     # Rectangular matrix examples
+#     tall_full_rank = '[[1,2],[3,4],[5,6]]'      # Tall matrix, full rank
+#     wide_full_rank = '[[1,2,3,4],[5,6,7,8]]'   # Wide matrix, full rank
+#     tall_rank_deficient = '[[1,2],[2,4],[3,6]]'  # Tall matrix, rank deficient
+#     # Wide matrix, rank deficient
+#     wide_rank_deficient = '[[1,2,3,4],[2,4,6,8]]'
 
-    rank_calculator.step_generator.add_step(r"\textbf{特殊矩阵求秩演示}")
+#     rank_calculator.step_generator.add_step(r"\textbf{矩形矩阵求秩演示}")
 
-    special_matrices = [
-        ("单位矩阵", identity),
-        ("满秩对角矩阵", diagonal_full),
-        ("秩为 2 的对角矩阵", diagonal_rank2),
-        ("置换矩阵", permutation)
-    ]
+#     rectangular_matrices = [
+#         ("高满秩矩阵", tall_full_rank),
+#         ("宽满秩矩阵", wide_full_rank),
+#         ("高秩不足矩阵", tall_rank_deficient),
+#         ("宽秩不足矩阵", wide_rank_deficient)
+#     ]
 
-    for name, matrix in special_matrices:
-        rank_calculator.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            rank_calculator.auto_matrix_rank(matrix)
-            display(Math(rank_calculator.get_steps_latex()))
-        except Exception as e:
-            rank_calculator.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(rank_calculator.get_steps_latex()))
-        rank_calculator.step_generator.add_step("\\" + "\\")
-
-
-def demo_symbolic_matrix():
-    """Demonstrate symbolic matrix rank computation."""
-    rank_calculator = Rank()
-
-    # Symbolic matrices
-    symbolic_2x2 = '[[a,b],[c,d]]'
-    symbolic_3x3 = '[[a,b,c],[d,e,f],[g,h,i]]'
-    symbolic_rank1 = '[[a,b],[2*a,2*b]]'
-    symbolic_rank2 = '[[a,b,c],[2*a,2*b,2*c], [c,d,e]]'
-
-    rank_calculator.step_generator.add_step(r"\textbf{符号矩阵求秩演示}")
-    rank_calculator.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0, 可作主元}")
-
-    symbolic_matrices = [
-        ("2×2 符号矩阵", symbolic_2x2),
-        ("3×3 符号矩阵", symbolic_3x3),
-        ("秩为 2 的符号矩阵", symbolic_rank2),
-        ("秩为 1 的符号矩阵", symbolic_rank1)
-    ]
-
-    for name, matrix in symbolic_matrices:
-        rank_calculator.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            rank_calculator.auto_matrix_rank(matrix)
-            display(Math(rank_calculator.get_steps_latex()))
-        except Exception as e:
-            rank_calculator.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(rank_calculator.get_steps_latex()))
-        rank_calculator.step_generator.add_step("\\" + "\\")
+#     for name, matrix in rectangular_matrices:
+#         rank_calculator.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             rank_calculator.auto_matrix_rank(matrix)
+#             display(Math(rank_calculator.get_steps_latex()))
+#         except Exception as e:
+#             rank_calculator.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(rank_calculator.get_steps_latex()))
+#         rank_calculator.step_generator.add_step("\\" + "\\")
 
 
-if __name__ == "__main__":
-    demo_basic_rank()
-    demo_rectangular_matrices()
-    demo_special_matrices()
-    demo_symbolic_matrix()
+# def demo_special_matrices():
+#     """Demonstrate special matrix rank computation."""
+#     rank_calculator = Rank()
+
+#     # Special matrix examples
+#     identity = '[[1,0,0],[0,1,0],[0,0,1]]'      # Identity matrix
+#     diagonal_full = '[[2,0,0],[0,3,0],[0,0,5]]'  # Full rank diagonal matrix
+#     diagonal_rank2 = '[[2,0,0],[0,0,0],[0,0,5]]'  # Diagonal matrix with rank 2
+#     permutation = '[[0,1,0],[0,0,1],[1,0,0]]'   # Permutation matrix
+
+#     rank_calculator.step_generator.add_step(r"\textbf{特殊矩阵求秩演示}")
+
+#     special_matrices = [
+#         ("单位矩阵", identity),
+#         ("满秩对角矩阵", diagonal_full),
+#         ("秩为 2 的对角矩阵", diagonal_rank2),
+#         ("置换矩阵", permutation)
+#     ]
+
+#     for name, matrix in special_matrices:
+#         rank_calculator.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             rank_calculator.auto_matrix_rank(matrix)
+#             display(Math(rank_calculator.get_steps_latex()))
+#         except Exception as e:
+#             rank_calculator.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(rank_calculator.get_steps_latex()))
+#         rank_calculator.step_generator.add_step("\\" + "\\")
+
+
+# def demo_symbolic_matrix():
+#     """Demonstrate symbolic matrix rank computation."""
+#     rank_calculator = Rank()
+
+#     # Symbolic matrices
+#     symbolic_2x2 = '[[a,b],[c,d]]'
+#     symbolic_3x3 = '[[a,b,c],[d,e,f],[g,h,i]]'
+#     symbolic_rank1 = '[[a,b],[2*a,2*b]]'
+#     symbolic_rank2 = '[[a,b,c],[2*a,2*b,2*c], [c,d,e]]'
+
+#     rank_calculator.step_generator.add_step(r"\textbf{符号矩阵求秩演示}")
+#     rank_calculator.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0, 可作主元}")
+
+#     symbolic_matrices = [
+#         ("2×2 符号矩阵", symbolic_2x2),
+#         ("3×3 符号矩阵", symbolic_3x3),
+#         ("秩为 2 的符号矩阵", symbolic_rank2),
+#         ("秩为 1 的符号矩阵", symbolic_rank1)
+#     ]
+
+#     for name, matrix in symbolic_matrices:
+#         rank_calculator.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             rank_calculator.auto_matrix_rank(matrix)
+#             display(Math(rank_calculator.get_steps_latex()))
+#         except Exception as e:
+#             rank_calculator.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(rank_calculator.get_steps_latex()))
+#         rank_calculator.step_generator.add_step("\\" + "\\")
+
+
+# if __name__ == "__main__":
+#     demo_basic_rank()
+#     demo_rectangular_matrices()
+#     demo_special_matrices()
+#     demo_symbolic_matrix()

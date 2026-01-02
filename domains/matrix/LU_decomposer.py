@@ -1,6 +1,7 @@
 from typing import Tuple
-from sympy import Matrix, Symbol, eye, latex, symbols, zeros
-from IPython.display import Math, display
+from sympy import Matrix, Symbol, eye, latex, zeros
+# from sympy import symbols
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -684,148 +685,148 @@ class LUDecomposition(CommonMatrixCalculator):
         return self.plu_decomposition(matrix_input, show_steps)
 
 
-def demo():
-    """Demonstrate LU decomposition"""
-    lu = LUDecomposition()
+# def demo():
+#     """Demonstrate LU decomposition"""
+#     lu = LUDecomposition()
 
-    # Example matrices
-    A1 = '[[2,1,1],[4,3,3],[8,7,9]]'
-    A2 = '[[1,2,3],[2,5,7],[3,7,10]]'
-    A3 = '[[2,4,6],[1,3,7],[1,1,1]]'
+#     # Example matrices
+#     A1 = '[[2,1,1],[4,3,3],[8,7,9]]'
+#     A2 = '[[1,2,3],[2,5,7],[3,7,10]]'
+#     A3 = '[[2,4,6],[1,3,7],[1,1,1]]'
 
-    # Gaussian elimination method
-    try:
-        lu.lu_decomposition_gaussian(A1)
-        display(Math(lu.get_steps_latex()))
-    except Exception as e:
-        lu.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(lu.get_steps_latex()))
+#     # Gaussian elimination method
+#     try:
+#         lu.lu_decomposition_gaussian(A1)
+#         display(Math(lu.get_steps_latex()))
+#     except Exception as e:
+#         lu.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(lu.get_steps_latex()))
 
-    # Doolittle method
-    try:
-        lu.lu_decomposition_doolittle(A2)
-        display(Math(lu.get_steps_latex()))
-    except Exception as e:
-        lu.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(lu.get_steps_latex()))
+#     # Doolittle method
+#     try:
+#         lu.lu_decomposition_doolittle(A2)
+#         display(Math(lu.get_steps_latex()))
+#     except Exception as e:
+#         lu.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(lu.get_steps_latex()))
 
-    # Crout method
-    try:
-        lu.lu_decomposition_crout(A3)
-        display(Math(lu.get_steps_latex()))
-    except Exception as e:
-        lu.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-        display(Math(lu.get_steps_latex()))
-
-
-def demo_plu():
-    """Demonstrate PLU decomposition"""
-    lu = LUDecomposition()
-
-    # Matrices requiring row exchanges
-    A_need_pivot_1 = '[[0,1,1],[1,1,1],[2,3,4]]'
-    A_need_pivot_2 = '[[1,2,3],[4,5,6],[7,8,9]]'
-    A_need_pivot_3 = '[[0,1,1],[4,3,3],[8,7,9]]'
-
-    lu.step_generator.add_step(r"\textbf{PLU 分解演示}")
-
-    cases = [A_need_pivot_1, A_need_pivot_2, A_need_pivot_3]
-
-    for matrix in cases:
-        try:
-            lu.plu_decomposition(matrix)
-            display(Math(lu.get_steps_latex()))
-        except Exception as e:
-            lu.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(lu.get_steps_latex()))
+#     # Crout method
+#     try:
+#         lu.lu_decomposition_crout(A3)
+#         display(Math(lu.get_steps_latex()))
+#     except Exception as e:
+#         lu.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#         display(Math(lu.get_steps_latex()))
 
 
-def demo_auto():
-    """Demonstrate automatic selection of decomposition method"""
-    lu = LUDecomposition()
+# def demo_plu():
+#     """Demonstrate PLU decomposition"""
+#     lu = LUDecomposition()
 
-    # Test matrices
-    test_matrices = [
-        ("可 LU 分解的矩阵", '[[2,1,1],[4,3,3],[8,7,9]]'),
-        ("需要 PLU 的矩阵", '[[0,1,1],[1,1,1],[2,3,4]]'),
-        ("对角占优矩阵", '[[3,1,1],[1,4,2],[1,1,5]]')
-    ]
+#     # Matrices requiring row exchanges
+#     A_need_pivot_1 = '[[0,1,1],[1,1,1],[2,3,4]]'
+#     A_need_pivot_2 = '[[1,2,3],[4,5,6],[7,8,9]]'
+#     A_need_pivot_3 = '[[0,1,1],[4,3,3],[8,7,9]]'
 
-    lu.step_generator.add_step(r"\textbf{自动 LU/PLU 分解演示}")
+#     lu.step_generator.add_step(r"\textbf{PLU 分解演示}")
 
-    for name, matrix in test_matrices:
-        lu.step_generator.add_step(f"\\textbf{{{name}}}")
-        try:
-            lu.auto_lu_decomposition(matrix)
-            display(Math(lu.get_steps_latex()))
-        except Exception as e:
-            lu.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
-            display(Math(lu.get_steps_latex()))
+#     cases = [A_need_pivot_1, A_need_pivot_2, A_need_pivot_3]
 
-
-def demo_symbolic():
-    """Demonstrate LU decomposition of symbolic matrices"""
-    lu = LUDecomposition()
-
-    a, b, c, d, e, f, g, h, i = symbols('a b c d e f g h i')
-
-    A_sym = Matrix([[a, b, c], [d, e, f], [g, h, i]])
-
-    lu.step_generator.add_step(r"\textbf{符号矩阵 LU 分解}")
-    lu.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0, 可作主元}")
-    lu.add_matrix(A_sym, "A")
-
-    try:
-        lu.lu_decomposition_gaussian(A_sym)
-        display(Math(lu.get_steps_latex()))
-    except Exception as ex:
-        lu.step_generator.add_step(f"\\text{{错误: }} {str(ex)}")
-        display(Math(lu.get_steps_latex()))
-
-    B_sym = Matrix([[a, b, c], [4, 5, 6], [g, h, i]])
-    lu.lu_decomposition_gaussian(B_sym)
-    display(Math(lu.get_steps_latex()))
+#     for matrix in cases:
+#         try:
+#             lu.plu_decomposition(matrix)
+#             display(Math(lu.get_steps_latex()))
+#         except Exception as e:
+#             lu.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(lu.get_steps_latex()))
 
 
-def demo_special_cases():
-    """Demonstrate special cases"""
-    lu = LUDecomposition()
+# def demo_auto():
+#     """Demonstrate automatic selection of decomposition method"""
+#     lu = LUDecomposition()
 
-    # Diagonal matrix
-    diag = '[[2,0,0],[0,3,0],[0,0,5]]'
+#     # Test matrices
+#     test_matrices = [
+#         ("可 LU 分解的矩阵", '[[2,1,1],[4,3,3],[8,7,9]]'),
+#         ("需要 PLU 的矩阵", '[[0,1,1],[1,1,1],[2,3,4]]'),
+#         ("对角占优矩阵", '[[3,1,1],[1,4,2],[1,1,5]]')
+#     ]
 
-    # Triangular matrix
-    triangular = '[[1,2,3],[0,4,5],[0,0,6]]'
+#     lu.step_generator.add_step(r"\textbf{自动 LU/PLU 分解演示}")
 
-    # Potentially undecomposable matrix
-    problematic = '[[0,1],[1,0]]'
-
-    lu.step_generator.add_step(r"\textbf{特殊情况演示}")
-
-    cases = [
-        ("对角矩阵", diag),
-        ("上三角矩阵", triangular),
-        ("可能无法分解的矩阵", problematic)
-    ]
-
-    for name, matrix in cases:
-        display(Math(f"\\textbf{{{name}}}"))
-        try:
-            lu.lu_decomposition_crout(matrix)
-            display(Math(lu.get_steps_latex()))
-        except Exception as e:
-            lu.step_generator.add_step(f"\\text{{分解失败: }} {str(e)}")
-            display(Math(lu.get_steps_latex()))
+#     for name, matrix in test_matrices:
+#         lu.step_generator.add_step(f"\\textbf{{{name}}}")
+#         try:
+#             lu.auto_lu_decomposition(matrix)
+#             display(Math(lu.get_steps_latex()))
+#         except Exception as e:
+#             lu.step_generator.add_step(f"\\text{{错误: }} {str(e)}")
+#             display(Math(lu.get_steps_latex()))
 
 
-if __name__ == "__main__":
-    # Run numerical demonstrations
-    demo()
-    # Run PLU demonstration
-    demo_plu()
-    # Run automatic decomposition demonstration
-    demo_auto()
-    # Run special cases demonstration
-    demo_special_cases()
-    # Run symbolic demonstration
-    demo_symbolic()
+# def demo_symbolic():
+#     """Demonstrate LU decomposition of symbolic matrices"""
+#     lu = LUDecomposition()
+
+#     a, b, c, d, e, f, g, h, i = symbols('a b c d e f g h i')
+
+#     A_sym = Matrix([[a, b, c], [d, e, f], [g, h, i]])
+
+#     lu.step_generator.add_step(r"\textbf{符号矩阵 LU 分解}")
+#     lu.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0, 可作主元}")
+#     lu.add_matrix(A_sym, "A")
+
+#     try:
+#         lu.lu_decomposition_gaussian(A_sym)
+#         display(Math(lu.get_steps_latex()))
+#     except Exception as ex:
+#         lu.step_generator.add_step(f"\\text{{错误: }} {str(ex)}")
+#         display(Math(lu.get_steps_latex()))
+
+#     B_sym = Matrix([[a, b, c], [4, 5, 6], [g, h, i]])
+#     lu.lu_decomposition_gaussian(B_sym)
+#     display(Math(lu.get_steps_latex()))
+
+
+# def demo_special_cases():
+#     """Demonstrate special cases"""
+#     lu = LUDecomposition()
+
+#     # Diagonal matrix
+#     diag = '[[2,0,0],[0,3,0],[0,0,5]]'
+
+#     # Triangular matrix
+#     triangular = '[[1,2,3],[0,4,5],[0,0,6]]'
+
+#     # Potentially undecomposable matrix
+#     problematic = '[[0,1],[1,0]]'
+
+#     lu.step_generator.add_step(r"\textbf{特殊情况演示}")
+
+#     cases = [
+#         ("对角矩阵", diag),
+#         ("上三角矩阵", triangular),
+#         ("可能无法分解的矩阵", problematic)
+#     ]
+
+#     for name, matrix in cases:
+#         display(Math(f"\\textbf{{{name}}}"))
+#         try:
+#             lu.lu_decomposition_crout(matrix)
+#             display(Math(lu.get_steps_latex()))
+#         except Exception as e:
+#             lu.step_generator.add_step(f"\\text{{分解失败: }} {str(e)}")
+#             display(Math(lu.get_steps_latex()))
+
+
+# if __name__ == "__main__":
+#     # Run numerical demonstrations
+#     demo()
+#     # Run PLU demonstration
+#     demo_plu()
+#     # Run automatic decomposition demonstration
+#     demo_auto()
+#     # Run special cases demonstration
+#     demo_special_cases()
+#     # Run symbolic demonstration
+#     demo_symbolic()

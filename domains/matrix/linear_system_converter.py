@@ -1,6 +1,7 @@
 from typing import List, Tuple, Union
-from sympy import Eq, Matrix, Rational, Symbol, latex, symbols, sympify, zeros
-from IPython.display import Math, display
+from sympy import Eq, Matrix, Symbol, latex, sympify, zeros
+# from sympy import Rational, symbols
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -226,100 +227,100 @@ class LinearSystemConverter(CommonMatrixCalculator):
         return equations
 
 
-def demo():
-    converter = LinearSystemConverter()
+# def demo():
+#     converter = LinearSystemConverter()
 
-    # Define symbols
-    x, y, z = symbols('x y z')
-    a, b, c, d, k, m, n = symbols('a b c d k m n')
+#     # Define symbols
+#     x, y, z = symbols('x y z')
+#     a, b, c, d, k, m, n = symbols('a b c d k m n')
 
-    # Example 1: Simple parametric system
+#     # Example 1: Simple parametric system
 
-    converter.step_generator.add_step(r"\textbf{示例1: 简单的参数系统}")
-    equations1 = [
-        Eq(a*x + b*y, c),
-        Eq(d*x - b*y, k)
-    ]
-    converter.show_equations_to_matrix(
-        equations1, unknowns=[x, y])
-    display(Math(converter.get_steps_latex()))
+#     converter.step_generator.add_step(r"\textbf{示例1: 简单的参数系统}")
+#     equations1 = [
+#         Eq(a*x + b*y, c),
+#         Eq(d*x - b*y, k)
+#     ]
+#     converter.show_equations_to_matrix(
+#         equations1, unknowns=[x, y])
+#     display(Math(converter.get_steps_latex()))
 
-    # Example 2: Mixed case - partially specified unknowns
+#     # Example 2: Mixed case - partially specified unknowns
 
-    converter.step_generator.add_step(r"\textbf{示例2: 混合情况}")
-    equations2 = [
-        Eq(2*x + a*y, b + 1),
-        Eq(b*x - 3*y, c)
-    ]
-    converter.show_equations_to_matrix(
-        equations2, unknowns=[x, y])
-    display(Math(converter.get_steps_latex()))
+#     converter.step_generator.add_step(r"\textbf{示例2: 混合情况}")
+#     equations2 = [
+#         Eq(2*x + a*y, b + 1),
+#         Eq(b*x - 3*y, c)
+#     ]
+#     converter.show_equations_to_matrix(
+#         equations2, unknowns=[x, y])
+#     display(Math(converter.get_steps_latex()))
 
-    # Example 3: 3-variable system with multiple parameters
+#     # Example 3: 3-variable system with multiple parameters
 
-    converter.step_generator.add_step(r"\textbf{示例3: 三变量多参数系统}")
-    equations3 = [
-        Eq(a*x + b*y + c*z, d),
-        Eq(2*x + k*y - z, m),
-        Eq(x + y + z, n)
-    ]
-    A3, x3, b3, _ = converter.show_equations_to_matrix(
-        equations3, unknowns=[x, y, z])
-    display(Math(converter.get_steps_latex()))
+#     converter.step_generator.add_step(r"\textbf{示例3: 三变量多参数系统}")
+#     equations3 = [
+#         Eq(a*x + b*y + c*z, d),
+#         Eq(2*x + k*y - z, m),
+#         Eq(x + y + z, n)
+#     ]
+#     A3, x3, b3, _ = converter.show_equations_to_matrix(
+#         equations3, unknowns=[x, y, z])
+#     display(Math(converter.get_steps_latex()))
 
-    # Example 4: Convert matrix form back to equations (with parameters)
+#     # Example 4: Convert matrix form back to equations (with parameters)
 
-    converter.step_generator.add_step(rf"\textbf{{示例4: 矩阵形式转回方程组(带参数)}}")
-    converter.show_matrix_to_equations(A3, x3, b3)
-    display(Math(converter.get_steps_latex()))
+#     converter.step_generator.add_step(rf"\textbf{{示例4: 矩阵形式转回方程组(带参数)}}")
+#     converter.show_matrix_to_equations(A3, x3, b3)
+#     display(Math(converter.get_steps_latex()))
 
-    # Example 5: Explicitly specify parameters
+#     # Example 5: Explicitly specify parameters
 
-    converter.step_generator.add_step(r"\textbf{示例5: 明确指定参数}")
-    equations5 = [
-        Eq(k*x + m*y, n),
-        Eq(2*k*x - y, 3*m)
-    ]
-    converter.show_equations_to_matrix(
-        equations5, unknowns=[x, y], parameters=[k, m, n])
-    display(Math(converter.get_steps_latex()))
+#     converter.step_generator.add_step(r"\textbf{示例5: 明确指定参数}")
+#     equations5 = [
+#         Eq(k*x + m*y, n),
+#         Eq(2*k*x - y, 3*m)
+#     ]
+#     converter.show_equations_to_matrix(
+#         equations5, unknowns=[x, y], parameters=[k, m, n])
+#     display(Math(converter.get_steps_latex()))
 
-    # Example 6: Physics system example - spring-mass system
+#     # Example 6: Physics system example - spring-mass system
 
-    converter.step_generator.add_step(r"\textbf{示例6: 物理系统示例}")
-    F1, F2, k1, k2, k3 = symbols('F1 F2 k1 k2 k3')
-    x1_sym, x2_sym = symbols('x1 x2')
+#     converter.step_generator.add_step(r"\textbf{示例6: 物理系统示例}")
+#     F1, F2, k1, k2, k3 = symbols('F1 F2 k1 k2 k3')
+#     x1_sym, x2_sym = symbols('x1 x2')
 
-    equations6 = [
-        Eq((k1 + k2)*x1_sym - k2*x2_sym, F1),
-        Eq(-k2*x1_sym + (k2 + k3)*x2_sym, F2)
-    ]
-    converter.show_equations_to_matrix(
-        equations6, unknowns=[x1_sym, x2_sym])
-    display(Math(converter.get_steps_latex()))
+#     equations6 = [
+#         Eq((k1 + k2)*x1_sym - k2*x2_sym, F1),
+#         Eq(-k2*x1_sym + (k2 + k3)*x2_sym, F2)
+#     ]
+#     converter.show_equations_to_matrix(
+#         equations6, unknowns=[x1_sym, x2_sym])
+#     display(Math(converter.get_steps_latex()))
 
-    converter.step_generator.add_step(r"\textbf{示例7: 数值示例}")
-    x, y = symbols('x y')
+#     converter.step_generator.add_step(r"\textbf{示例7: 数值示例}")
+#     x, y = symbols('x y')
 
-    equations7 = [
-        Eq(8*x - 3*y, 6),
-        Eq(10*x + 2*y, 8)
-    ]
-    converter.show_equations_to_matrix(
-        equations7, unknowns=[x, y])
-    display(Math(converter.get_steps_latex()))
+#     equations7 = [
+#         Eq(8*x - 3*y, 6),
+#         Eq(10*x + 2*y, 8)
+#     ]
+#     converter.show_equations_to_matrix(
+#         equations7, unknowns=[x, y])
+#     display(Math(converter.get_steps_latex()))
 
-    converter.step_generator.add_step(r"\textbf{示例8: 分数示例}")
-    x, y = symbols('x y')
+#     converter.step_generator.add_step(r"\textbf{示例8: 分数示例}")
+#     x, y = symbols('x y')
 
-    equations8 = [
-        Eq(8*x - Rational(5, 6)*y - 6*a, 0),
-        Eq(10*x + 2*y, 8)
-    ]
-    converter.show_equations_to_matrix(
-        equations8, unknowns=[x, y])
-    display(Math(converter.get_steps_latex()))
+#     equations8 = [
+#         Eq(8*x - Rational(5, 6)*y - 6*a, 0),
+#         Eq(10*x + 2*y, 8)
+#     ]
+#     converter.show_equations_to_matrix(
+#         equations8, unknowns=[x, y])
+#     display(Math(converter.get_steps_latex()))
 
 
-if __name__ == "__main__":
-    demo()
+# if __name__ == "__main__":
+#     demo()

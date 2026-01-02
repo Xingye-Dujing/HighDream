@@ -1,6 +1,6 @@
 from typing import Tuple
 from sympy import Matrix, latex, zeros
-from IPython.display import Math, display
+# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
@@ -398,102 +398,102 @@ class VectorProjectionSolver(CommonMatrixCalculator):
         return self.project_onto_subspace(vector_input, subspace_input, show_steps)
 
 
-# Demo functions
-def demo_line_projection():
-    """Demonstrate line projection"""
-    solver = VectorProjectionSolver()
+# # Demo functions
+# def demo_line_projection():
+#     """Demonstrate line projection"""
+#     solver = VectorProjectionSolver()
 
-    solver.step_generator.add_step(r"\textbf{直线投影演示}")
+#     solver.step_generator.add_step(r"\textbf{直线投影演示}")
 
-    # Example 1: Project onto coordinate axis
-    v1 = '[3,4]'
-    line1 = '[1,0]'  # x-axis
+#     # Example 1: Project onto coordinate axis
+#     v1 = '[3,4]'
+#     line1 = '[1,0]'  # x-axis
 
-    solver.step_generator.add_step(r"\textbf{示例 1: 投影到 $x$ 轴}")
-    solver.auto_project_vector(v1, line1)
-    display(Math(solver.get_steps_latex()))
+#     solver.step_generator.add_step(r"\textbf{示例 1: 投影到 $x$ 轴}")
+#     solver.auto_project_vector(v1, line1)
+#     display(Math(solver.get_steps_latex()))
 
-    # Example 2: Project onto diagonal line
-    v2 = '[2,3]'
-    line2 = '[1,1]'  # 45-degree line
+#     # Example 2: Project onto diagonal line
+#     v2 = '[2,3]'
+#     line2 = '[1,1]'  # 45-degree line
 
-    solver.step_generator.add_step(r"\textbf{示例 2: 投影到 45 度线}")
-    solver.auto_project_vector(v2, line2)
-    display(Math(solver.get_steps_latex()))
-
-
-def demo_plane_projection():
-    """Demonstrate plane projection"""
-    solver = VectorProjectionSolver()
-
-    solver.step_generator.add_step(r"\textbf{平面投影演示}")
-
-    # Example 1: Project onto xy-plane
-    v1 = '[1,2,3]'
-    plane1 = '[[1,0],[0,1],[0,0]]'  # xy-plane
-
-    solver.step_generator.add_step(r"\textbf{示例 1: 投影到 $xy$ 平面}")
-    solver.auto_project_vector(v1, plane1)
-    display(Math(solver.get_steps_latex()))
-
-    # Example 2: Project onto oblique plane
-    v2 = '[1,1,1]'
-    plane2 = '[[1,0],[0,1],[1,1]]'  # Oblique plane
-
-    solver.step_generator.add_step(r"\textbf{示例 2: 投影到斜平面}")
-    solver.auto_project_vector(v2, plane2)
-    display(Math(solver.get_steps_latex()))
+#     solver.step_generator.add_step(r"\textbf{示例 2: 投影到 45 度线}")
+#     solver.auto_project_vector(v2, line2)
+#     display(Math(solver.get_steps_latex()))
 
 
-def demo_degenerate_subspace():
-    """Demonstrate degenerate subspace projection"""
-    solver = VectorProjectionSolver()
+# def demo_plane_projection():
+#     """Demonstrate plane projection"""
+#     solver = VectorProjectionSolver()
 
-    solver.step_generator.add_step(r"\textbf{退化子空间投影演示}")
+#     solver.step_generator.add_step(r"\textbf{平面投影演示}")
 
-    # Example: Linearly dependent basis
-    v = '[1,2,3]'
-    # Second column is multiple of first
-    degenerate_basis = '[[1,2,3],[2,4,2],[3,6,1]]'
+#     # Example 1: Project onto xy-plane
+#     v1 = '[1,2,3]'
+#     plane1 = '[[1,0],[0,1],[0,0]]'  # xy-plane
 
-    solver.step_generator.add_step(r"\textbf{示例: 线性相关基}")
-    solver.auto_project_vector(v, degenerate_basis)
-    display(Math(solver.get_steps_latex()))
+#     solver.step_generator.add_step(r"\textbf{示例 1: 投影到 $xy$ 平面}")
+#     solver.auto_project_vector(v1, plane1)
+#     display(Math(solver.get_steps_latex()))
 
+#     # Example 2: Project onto oblique plane
+#     v2 = '[1,1,1]'
+#     plane2 = '[[1,0],[0,1],[1,1]]'  # Oblique plane
 
-def demo_gram_schmidt_process():
-    """Demonstrate Gram-Schmidt process"""
-    solver = VectorProjectionSolver()
-
-    solver.step_generator.add_step(r"\textbf{Gram-Schmidt 正交化演示}")
-
-    # Example
-    basis = '[[1,1,0],[1,0,1],[0,1,1]]'
-
-    solver.step_generator.add_step(r"\textbf{正交化过程}")
-    solver.gram_schmidt_orthogonalization(basis)
-    display(Math(solver.get_steps_latex()))
+#     solver.step_generator.add_step(r"\textbf{示例 2: 投影到斜平面}")
+#     solver.auto_project_vector(v2, plane2)
+#     display(Math(solver.get_steps_latex()))
 
 
-def demo_symbolic_projection():
-    """Demonstrate symbolic projection"""
-    solver = VectorProjectionSolver()
+# def demo_degenerate_subspace():
+#     """Demonstrate degenerate subspace projection"""
+#     solver = VectorProjectionSolver()
 
-    solver.step_generator.add_step(r"\textbf{符号投影演示}")
-    solver.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0}")
+#     solver.step_generator.add_step(r"\textbf{退化子空间投影演示}")
 
-    # Symbolic example
-    v = '[a,b,c]'
-    subspace = '[[1,0],[0,d],[0,0]]'  # xy-plane
+#     # Example: Linearly dependent basis
+#     v = '[1,2,3]'
+#     # Second column is multiple of first
+#     degenerate_basis = '[[1,2,3],[2,4,2],[3,6,1]]'
 
-    solver.step_generator.add_step(r"\textbf{符号向量投影到 $xy$ 平面}")
-    solver.auto_project_vector(v, subspace)
-    display(Math(solver.get_steps_latex()))
+#     solver.step_generator.add_step(r"\textbf{示例: 线性相关基}")
+#     solver.auto_project_vector(v, degenerate_basis)
+#     display(Math(solver.get_steps_latex()))
 
 
-if __name__ == "__main__":
-    demo_line_projection()
-    demo_plane_projection()
-    demo_degenerate_subspace()
-    demo_gram_schmidt_process()
-    demo_symbolic_projection()
+# def demo_gram_schmidt_process():
+#     """Demonstrate Gram-Schmidt process"""
+#     solver = VectorProjectionSolver()
+
+#     solver.step_generator.add_step(r"\textbf{Gram-Schmidt 正交化演示}")
+
+#     # Example
+#     basis = '[[1,1,0],[1,0,1],[0,1,1]]'
+
+#     solver.step_generator.add_step(r"\textbf{正交化过程}")
+#     solver.gram_schmidt_orthogonalization(basis)
+#     display(Math(solver.get_steps_latex()))
+
+
+# def demo_symbolic_projection():
+#     """Demonstrate symbolic projection"""
+#     solver = VectorProjectionSolver()
+
+#     solver.step_generator.add_step(r"\textbf{符号投影演示}")
+#     solver.step_generator.add_step(r"\textbf{假设所有符号表达式不为 0}")
+
+#     # Symbolic example
+#     v = '[a,b,c]'
+#     subspace = '[[1,0],[0,d],[0,0]]'  # xy-plane
+
+#     solver.step_generator.add_step(r"\textbf{符号向量投影到 $xy$ 平面}")
+#     solver.auto_project_vector(v, subspace)
+#     display(Math(solver.get_steps_latex()))
+
+
+# if __name__ == "__main__":
+#     demo_line_projection()
+#     demo_plane_projection()
+#     demo_degenerate_subspace()
+#     demo_gram_schmidt_process()
+#     demo_symbolic_projection()
