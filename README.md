@@ -56,7 +56,7 @@ HighDream Notebook 是一个基于 **Python** 和 **SymPy** 的符号计算工�
 ## 使用方法
 
 - **Python 代码调用**：请先参考 **main.ipynb** 中的示例。（记得安装第三方库）
-- **可视化网站**：运行 **app.py 或 HighDream.exe**。(我将录视频演示)
+- **可视化网站**：运行 **app_local.py 或 HighDream.exe**。(我将录视频演示)
 
 # HighDream Notebook
 
@@ -116,4 +116,4 @@ This project mainly consists of **three** architectures:
 ## Usage
 
 - **Python code invocation**: Please refer to the examples in **main.ipynb** first. (Remember to install third-party libraries)
-- **Visual website**: Run **app.py or HighDream.exe**. (I will record a video demonstration)
+- **Visual website**: Run **app_local.py or HighDream.exe**. (I will record a video demonstration)

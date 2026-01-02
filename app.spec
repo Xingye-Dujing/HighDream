@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# 使用命令 pyinstaller app.spec 进行打包
+# 使用命令 pyinstaller app_local.py 进行打包
 
 
 a = Analysis(
