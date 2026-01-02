@@ -1,0 +1,4 @@
+sympy
+flask
+matplotlib
+gevent
