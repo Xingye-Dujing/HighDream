@@ -116,7 +116,7 @@ class TaskManager:
                         task.error = result
                 except TimeoutError:
                     task.status = TaskStatus.FAILED
-                    task.error = "任务超时, 程序无法求解该题. 若确定其有初等函数解, 可尝试等价变形表达式再次运行计算."
+                    task.error = "任务超时, 程序无法求解该题. 若确定其有初等函数解, 可尝试等价变形表达式后再次运行计算."
 
             except Exception as e:
                 task.status = TaskStatus.FAILED

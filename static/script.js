@@ -839,7 +839,7 @@ function runCell(cell) {
 function renderExpressionResult(outputArea, data) {
   // data.expected: { expressions: [{latex, reason}, ...], tree_svg_url: '/static/trees/....svg' }
   const expressions = data.result || [];
-  const treeUrl = data.tree_svg_url || null;
+  // const treeUrl = data.tree_svg_url || null;
 
   let html = `<div class="math-output">`;
   if (expressions.length === 0) {
@@ -852,15 +852,15 @@ function renderExpressionResult(outputArea, data) {
     html += `</div>`;
   }
 
-  if (treeUrl) {
-    html += `<div class="expr-tree"><h3>推导树</h3>
-            <img src="${treeUrl}" alt="expression tree"
-                style="max-width:100%; border:1px solid var(--jp-border-color0); border-radius:8px;"
-                onerror="this.onerror=null; this.parentElement.innerHTML='&lt;h3&gt;推导树&lt;/h3&gt;&lt;div class=&quot;note&quot;&gt;图片加载失败，请自行到 static/trees 文件夹下查看&lt;/div&gt;'"/>
-          </div>`;
-  } else {
-    html += `<div class="expr-tree"><h3>推导树</h3><div class="note">没有可用的推导树(后端未生成).</div></div>`;
-  }
+  // if (treeUrl) {
+  //   html += `<div class="expr-tree"><h3>推导树</h3>
+  //           <img src="${treeUrl}" alt="expression tree"
+  //               style="max-width:100%; border:1px solid var(--jp-border-color0); border-radius:8px;"
+  //               onerror="this.onerror=null; this.parentElement.innerHTML='&lt;h3&gt;推导树&lt;/h3&gt;&lt;div class=&quot;note&quot;&gt;图片加载失败，请自行到 static/trees 文件夹下查看&lt;/div&gt;'"/>
+  //         </div>`;
+  // } else {
+  //   html += `<div class="expr-tree"><h3>推导树</h3><div class="note">没有可用的推导树(后端未生成).</div></div>`;
+  // }
 
   html += `</> `;
   outputArea.innerHTML = html;

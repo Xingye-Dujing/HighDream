@@ -1,9 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
-# 使用命令 pyinstaller app_local.py 进行打包
+# 使用命令 pyinstaller app_local.spec 进行打包
 
 
 a = Analysis(
-    ['app.py'],
+    ['app_local.py'],
     pathex=['F:\python_project\HighDream'],
     binaries=[],
     datas=[('static', 'static'), ('templates', 'templates')],
@@ -13,7 +13,7 @@ a = Analysis(
     runtime_hooks=[],
     excludes=['tkinter'],
     noarchive=False,
-    # 优化级别最高只能设置到 1, 设置到 2 会有问题
+    # Optimization level can only be set to 1, setting it to 2 will cause problems
     optimize=1,
 )
 pyz = PYZ(a.pure)

@@ -10,7 +10,7 @@ and handles data processing, error handling, and result formatting.
 # import uuid
 # form config import TREES_DIR
 from typing import Any, Dict, Tuple
-from sympy import Symbol, preorder_traversal, latex, sympify
+from sympy import Symbol, preorder_traversal, latex, simplify, sympify
 
 from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
 from domains import (
@@ -87,7 +87,7 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
         - expr: Expression parsing and analysis
     """
     try:
-        expression = data.get('expression', '')
+        expression = simplify(data.get('expression', ''))
         variable = data.get('variable', 'x')
 
         if operation_type == 'diff':
@@ -245,6 +245,7 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
             #     tree_svg_url = save_path
 
             # return True, (expressions_out, tree_svg_url)
+            return True, (expressions_out,)
 
         return False, f"Unsupported operation type: {operation_type}"
 
