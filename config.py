@@ -1,10 +1,10 @@
-import os
+# import os
 
 # Path settings
 TEMPLATE_FOLDER = 'templates'
 STATIC_FOLDER = 'static'
 TREES_DIR = STATIC_FOLDER + "/trees"
-os.makedirs(TREES_DIR, exist_ok=True)
+# os.makedirs(TREES_DIR, exist_ok=True)
 
 # Input render settings
 RENDER_SINGLE_MATRIX = ['matrix', 'ref', 'diag', 'eigen', 'rank', 'det', 'dependence',
