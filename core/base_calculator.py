@@ -272,7 +272,7 @@ class BaseCalculator(ABC):
             final_expr = exprs[-1]
 
             # Final simplification
-            simplified_expr = simplify(final_expr)
+            simplified_expr = simplify(final_expr, inverse=True)
             if simplified_expr != final_expr:
                 self.step_generator.steps[-1] = simplified_expr
                 final_expr = simplified_expr

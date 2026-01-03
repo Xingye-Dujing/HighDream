@@ -8,7 +8,10 @@ from sympy import (
 
 def is_elementary_expression(expr: Expr) -> bool:
     """Check if an expression is elementary."""
-    if not expr:
+
+    # Note: The expression might be S.Zero
+    # so we must explicitly check for None to determine if it's empty
+    if expr is None:
         return False
 
     # Base cases

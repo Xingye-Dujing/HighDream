@@ -132,6 +132,7 @@ def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     var = context['variable']
     coeff_first, expr_copy = expr.as_coeff_Mul(rational=True)
+
     num, den = fraction(expr_copy)
     if den == 1:
         coeff, func_part = expr_copy.as_content_primitive(radical=True)
@@ -145,9 +146,10 @@ def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     coeff *= coeff_first
 
+    # If there is a constant factor with a square root, extract it here.
     if isinstance(func_part, Mul) and func_part.args[0].is_constant():
         coeff *= func_part.args[0]
-        func_part = func_part/coeff
+        func_part /= func_part.args[0]
 
     if not expr.has(sqrt) and coeff.has(sqrt):
         coeff, func_part = expr.as_coeff_Mul()
