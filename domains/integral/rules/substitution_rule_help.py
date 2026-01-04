@@ -1,6 +1,6 @@
 from sympy import (
     Abs, Dummy, Eq, Expr, I, Integral, Pow, Rational, Symbol, Wild, acos, asin, atan,
-    diff, latex, log, integrate, preorder_traversal, sec, simplify, sin, solve, sqrt,
+    cancel, diff, latex, log, integrate, preorder_traversal, sec, simplify, sin, solve, sqrt,
     tan, together
 )
 
@@ -106,6 +106,10 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
              lambda x: x.is_positive])
     # Theta is real and positive to help simplify
     theta = Dummy('theta', real=True, positive=True)
+    # Note: cancel() is necessary to help simplify
+    # Simplify to the lowest terms to prevent matching issues with the result
+    # (e.g., sqrt(x**2-8)/(x**2-8) to 1/sqrt(x**2-8))
+    expr = cancel(expr)
 
     # Helper: attempt substitution given pattern, sub_expr, d(x)/d(theta), and back-substitution
     def _apply_trig_sub(pattern, x_of_theta, theta_of_x):
@@ -133,18 +137,21 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
                 return None
 
             new_subs = theta_of_x.subs(a, sqrt(a_val))
-            if pattern in ((a+var**2)**minus_sqrt_pow, (var**2-a)**minus_sqrt_pow):
-                result = log(Abs(sqrt(pattern.args[0]).subs(a, a_val)+var))
-            elif pattern == (a+var**2)**sqrt_pow:
-                result = a_val * \
-                    log(Abs(sqrt(pattern.args[0]).subs(
-                        a, a_val)+var))/2+var*sqrt(pattern.args[0]).subs(
-                        a, a_val)/2
-            elif pattern == (var**2-a)**sqrt_pow:
-                result = -a_val * \
-                    log(Abs(sqrt(pattern.args[0]).subs(
-                        a, a_val)+var))/2+var*sqrt(pattern.args[0]).subs(
-                        a, a_val)/2
+            if int_theta.has(log):
+                if pattern in ((a+var**2)**minus_sqrt_pow, (var**2-a)**minus_sqrt_pow):
+                    result = log(Abs(sqrt(pattern.args[0]).subs(a, a_val)+var))
+                elif pattern == (a+var**2)**sqrt_pow:
+                    result = a_val * \
+                        log(Abs(sqrt(pattern.args[0]).subs(
+                            a, a_val)+var))/2+var*sqrt(pattern.args[0]).subs(
+                            a, a_val)/2
+                elif pattern == (var**2-a)**sqrt_pow:
+                    result = -a_val * \
+                        log(Abs(sqrt(pattern.args[0]).subs(
+                            a, a_val)+var))/2+var*sqrt(pattern.args[0]).subs(
+                            a, a_val)/2
+                else:
+                    result = simplify(int_theta.subs(theta, new_subs))
             else:
                 result = simplify(int_theta.subs(theta, new_subs))
 
