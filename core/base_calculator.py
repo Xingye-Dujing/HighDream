@@ -4,6 +4,7 @@ from functools import lru_cache
 from typing import Deque, Dict, List, Tuple
 
 from sympy import Abs, Expr, Symbol, expand_log, latex, radsimp, simplify, sympify
+from sympy.simplify import fu
 
 from utils import (
     Context, MatcherList, Operation, RuleContext,
@@ -272,7 +273,7 @@ class BaseCalculator(ABC):
             final_expr = exprs[-1]
 
             # Final simplification
-            simplified_expr = simplify(final_expr, inverse=True)
+            simplified_expr = simplify(fu(final_expr), inverse=True)
             if simplified_expr != final_expr:
                 self.step_generator.steps[-1] = simplified_expr
                 final_expr = simplified_expr
