@@ -39,7 +39,10 @@ def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     f_prime = diff(denominator, var)
     ratio = simplify(numerator / f_prime)
 
-    var_latex, f_x_latex = latex(var), latex(denominator)
+    _, f_x = denominator.primitive()
+    var_latex, den_latex, f_x_latex = latex(
+        var), latex(denominator), latex(f_x)
+
     if ratio.is_constant():
         find = True
 
@@ -62,10 +65,10 @@ def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
                     break
 
     if ratio == 1:
-        result = ratio * log(abs(denominator))
+        result = log(abs(denominator))
         explaination = (
             f"对数积分法则($\\frac{{f'({var_latex})}}{{f({var_latex})}}$ 形式): $"
-            f"\\int \\frac{{{latex(f_prime)}}}{{{f_x_latex}}}\\,d{var_latex} = "
+            f"\\int \\frac{{{latex(f_prime)}}}{{{den_latex}}}\\,d{var_latex} = "
             f"\\ln|{f_x_latex}| + C$"
         )
     elif ratio == -1:
@@ -73,7 +76,7 @@ def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         explaination = (
             f"对数积分法则($\\frac{{f'({var_latex})}}{{f({var_latex})}}$ 形式): $"
             f"\\int {latex(expr)}\\,d{var_latex} = "
-            f"- \\int \\frac{{{latex(f_prime)}}}{{{f_x_latex}}}\\,d{var_latex} = "
+            f"- \\int \\frac{{{latex(f_prime)}}}{{{den_latex}}}\\,d{var_latex} = "
             f"- \\ln|{f_x_latex}| + C$"
         )
     else:
@@ -81,7 +84,7 @@ def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         explaination = (
             f"对数积分法则($\\frac{{f'({var_latex})}}{{f({var_latex})}}$ 形式): $"
             f"\\int {latex(expr)}\\,d{var_latex} = "
-            f"{latex(ratio)} \\int \\frac{{{latex(f_prime)}}}{{{f_x_latex}}}\\,d{var_latex} = "
+            f"{latex(ratio)} \\int \\frac{{{latex(f_prime)}}}{{{den_latex}}}\\,d{var_latex} = "
             f"{latex(ratio)} \\ln|{f_x_latex}| + C$"
         )
     return result, explaination

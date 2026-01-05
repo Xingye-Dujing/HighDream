@@ -3,7 +3,8 @@ from collections import deque
 from functools import lru_cache
 from typing import Deque, Dict, List, Tuple
 
-from sympy import Abs, Expr, Symbol, expand_log, latex, radsimp, simplify, sympify
+# from sympy import Abs
+from sympy import Expr, Symbol, expand_log, latex, radsimp, simplify, sympify
 from sympy.simplify import fu
 
 from utils import (
@@ -176,14 +177,14 @@ class BaseCalculator(ABC):
         # 1. Back substitute
         final_expr = self._back_subs(final_expr)
 
-        # 2. Assume the variable are positive real numbers and simplify final expression
-        var = final_expr.free_symbols.pop()
+        # # 2. Assume the variable are positive real numbers and simplify final expression
+        # var = final_expr.free_symbols.pop()
 
-        _t = Symbol('t', real=True, positive=True)
-        simplified_expr = simplify(final_expr.subs(var, _t).subs(_t, var).replace(
-            Abs, lambda arg: arg))
-        if simplified_expr != final_expr:
-            self.step_generator.add_step(simplified_expr, "假设所有变量为正实数, 化简表达式")
+        # _t = Symbol('t', real=True, positive=True)
+        # simplified_expr = simplify(final_expr.subs(var, _t).subs(_t, var).replace(
+        #     Abs, lambda arg: arg))
+        # if simplified_expr != final_expr:
+        #     self.step_generator.add_step(simplified_expr, "直接去掉所有绝对值, 再次化简表达式")
 
     def _sympify(self, expr: str) -> Expr:
         """Convert the input expression to a SymPy expression."""
