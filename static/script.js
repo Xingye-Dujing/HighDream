@@ -1187,6 +1187,7 @@ function loadNotebook() {
 
         cells.forEach((cellData, index) => {
           const cell = createCellElement(index, cellData.type);
+          setupCellEvents(cell);
 
           if (cellData.type === "code") {
             const textarea = cell.querySelector("textarea");
@@ -1253,7 +1254,6 @@ function loadNotebook() {
           }
 
           notebook.appendChild(cell);
-          setupCellEvents(cell);
         });
 
         cellCounter = cells.length;
