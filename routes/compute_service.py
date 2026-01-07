@@ -87,7 +87,11 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
         - expr: Expression parsing and analysis
     """
     try:
-        expression = radsimp(sympify(data.get('expression', '')))
+        # If it's a matrix string, the type after sympify is tuple
+        expression = sympify(data.get('expression', ''))
+        if not isinstance(expression, tuple):
+            expression = radsimp(expression)
+
         variable = data.get('variable', 'x')
 
         if operation_type == 'diff':
