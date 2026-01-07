@@ -644,6 +644,7 @@ function loadNotebook() {
 
           notebook.appendChild(cell);
           setupCellEvents(cell);
+          renderMathPreview(cell);
         });
 
         cellCounter = cells.length;

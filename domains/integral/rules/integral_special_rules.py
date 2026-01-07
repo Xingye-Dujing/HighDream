@@ -40,8 +40,6 @@ def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     ratio = simplify(numerator / f_prime)
 
     _, f_x = denominator.primitive()
-    var_latex, den_latex, f_x_latex = latex(
-        var), latex(denominator), latex(f_x)
 
     if ratio.is_constant():
         find = True
@@ -58,34 +56,38 @@ def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
                 other_factors = [f for f in factors if f != factor]
                 remaining = Mul(*other_factors) if other_factors else 1
 
-                ratio = simplify(remaining - f_prime)
+                ratio = simplify(remaining/f_prime)
+                denominator = f_x
 
                 if ratio.is_constant():
                     var_latex, f_x_latex = latex(var), latex(f_x)
                     break
 
+    var_latex, den_latex, f_x_latex = latex(
+        var), latex(denominator), latex(f_x)
+
     if ratio == 1:
-        result = log(abs(denominator))
+        result = log(Abs(f_x))
         explaination = (
             f"对数积分法则($\\frac{{f'({var_latex})}}{{f({var_latex})}}$ 形式): $"
             f"\\int \\frac{{{latex(f_prime)}}}{{{den_latex}}}\\,d{var_latex} = "
-            f"\\ln|{f_x_latex}| + C$"
+            f"\\log|{f_x_latex}| + C$"
         )
     elif ratio == -1:
-        result = -log(abs(denominator))
+        result = -log(Abs(f_x))
         explaination = (
             f"对数积分法则($\\frac{{f'({var_latex})}}{{f({var_latex})}}$ 形式): $"
             f"\\int {latex(expr)}\\,d{var_latex} = "
             f"- \\int \\frac{{{latex(f_prime)}}}{{{den_latex}}}\\,d{var_latex} = "
-            f"- \\ln|{f_x_latex}| + C$"
+            f"- \\log|{f_x_latex}| + C$"
         )
     else:
-        result = ratio * log(abs(denominator))
+        result = ratio * log(Abs(f_x))
         explaination = (
             f"对数积分法则($\\frac{{f'({var_latex})}}{{f({var_latex})}}$ 形式): $"
             f"\\int {latex(expr)}\\,d{var_latex} = "
             f"{latex(ratio)} \\int \\frac{{{latex(f_prime)}}}{{{den_latex}}}\\,d{var_latex} = "
-            f"{latex(ratio)} \\ln|{f_x_latex}| + C$"
+            f"{latex(ratio)} \\log|{f_x_latex}| + C$"
         )
     return result, explaination
 
