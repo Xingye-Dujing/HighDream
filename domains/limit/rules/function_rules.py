@@ -6,11 +6,8 @@ from sympy import (
 )
 from sympy.functions.elementary.trigonometric import InverseTrigonometricFunction, TrigonometricFunction
 
-from core import RuleRegistry
 from utils import MatcherFunctionReturn, RuleContext, RuleFunction, RuleFunctionReturn
 from domains.limit import get_limit_args
-
-_create_matcher = RuleRegistry.create_common_matcher
 
 
 def _create_rule(func: Union[exp, log, InverseTrigonometricFunction, TrigonometricFunction], func_name: str) -> RuleFunction:
@@ -25,6 +22,17 @@ def _create_rule(func: Union[exp, log, InverseTrigonometricFunction, Trigonometr
         return new_expr, f"应用{func_name}函数规则: ${latex(expr_limit)} = {latex(new_expr)}$"
 
     return rule_function
+
+
+def _create_matcher(func: Union[exp, log, InverseTrigonometricFunction, TrigonometricFunction]) -> MatcherFunctionReturn:
+    """Special create matcher function."""
+    def matcher_function(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+        # Don't restrict to var == context['variable']
+        if isinstance(expr, func):
+            return func.__name__.lower()
+        return None
+
+    return matcher_function
 
 
 # Generate all exp and log rules using the factory function
@@ -130,10 +138,4 @@ atan_matcher = _create_matcher(atan)
 sinh_matcher = _create_matcher(sinh)
 cosh_matcher = _create_matcher(cosh)
 tanh_matcher = _create_matcher(tanh)
-
-
-def pow_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    # Don't restrict to var == context['variable']
-    if isinstance(expr, Pow):
-        return 'pow'
-    return None
+pow_matcher = _create_matcher(Pow)
