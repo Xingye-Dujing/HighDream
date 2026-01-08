@@ -128,6 +128,10 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
 def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the const mul rule: c*f(x) dx = c * f(x) dx"""
+
+    if can_use_weierstrass(expr, context['variable']):
+        return None
+
     used = False
 
     var = context['variable']
@@ -174,6 +178,5 @@ def add_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     return None
 
 
-def mul_const_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
-    if not can_use_weierstrass(expr, context['variable']):
-        return 'mul_const'
+def mul_const_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+    return 'mul_const'

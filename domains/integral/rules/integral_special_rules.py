@@ -1,13 +1,13 @@
 from sympy import (
-    Abs, Expr, I, Integer, Integral, Mul, Wild, Rational, Symbol, diff, exp, fraction,
-    integrate, latex, log, powsimp, preorder_traversal, simplify, sqrt, together, sin, cos,
+    Abs, Expr, Integer, Integral, Mul, Rational, diff, exp, fraction,
+    integrate, latex, log, powsimp, simplify, together, sin, cos,
     tan, cot, sec, csc
 )
 from sympy.simplify.fu import fu
 
 from utils import (
     MatcherFunctionReturn, RuleContext, RuleFunctionReturn,
-    can_use_weierstrass, has_radical, is_elementary_expression
+    can_use_weierstrass, is_elementary_expression
 )
 from utils.latex_formatter import wrap_latex
 from domains.integral import (
@@ -251,6 +251,10 @@ def weierstrass_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunct
     - dx = 2dt/(1+t^2)
     """
     var = context['variable']
+
+    if not can_use_weierstrass(expr, var):
+        return None
+
     step_gene = context['step_generator']
 
     # Get substitution variable
@@ -325,7 +329,7 @@ def parts_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     return 'parts'
 
 
-def substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+def substitution_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     """Heuristic matcher for u-substitution in integration.
 
     Returns 'substitution' if the expression exhibits one of:
@@ -333,75 +337,7 @@ def substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRet
       2. Trigonometric substitution forms: sqrt(a^2−x^2), sqrt(a^2+x^2), sqrt(x^2−a^2)
       3. Nested radicals: (ax + b)^{p/q} with q > 1
     """
-    var = context['variable']
-
-    # Normalize expression into a list of factors (even for non-Mul)
-    expr = together(expr)
-    factors = list(expr.args) if expr.is_Mul else [expr]
-
-    # Strategy 1: Standard u-substitution pattern f(g(x)) * g'(x)
-    for factor in factors:
-        if not factor.args or factor.is_constant() or factor == var:
-            continue
-
-        flag = False
-        # Look for unary functions like 3^g(x), etc.
-        if factor.is_Pow and factor.args[1].has(var):
-            flag = True
-        # Look for unary functions like sin(g(x)), log(g(x)),1/g(x)^2 etc.
-        inner = factor.args[1] if flag else factor.args[0]
-
-        for original_term in preorder_traversal(inner):
-            if original_term == var or original_term.is_constant():
-                continue
-            check_list = [original_term]
-            # Introducing sqrt_term is to handle implicit f(x)^2 cases like x/(x**4+1), x**x*(log(x)+1)/(x**(2*x)+1)
-            sqrt_term = sqrt(original_term)
-            # Use a temporary variable with positive real assumptions to aid radical simplification
-            _t = Symbol('t', real=True, positive=True)
-            sqrt_term = simplify(sqrt_term.subs(var, _t).subs(_t, var).replace(
-                Abs, lambda arg: arg))
-            if not sqrt_term.has(I):
-                check_list.append(sqrt_term)
-            for term in check_list:
-                if term == var:
-                    continue
-
-                gp = simplify(diff(term, var))
-                if gp == 0:
-                    continue
-
-                # Compute the "remaining part" = expr / factor
-                outer_part = expr / factor
-
-                # Check if outer_part is a constant multiple of g'(x)
-                try:
-                    ratio = simplify(outer_part / gp)
-                except Exception:
-                    continue
-
-                if ratio.is_constant():
-                    return 'substitution'
-
-    # Strategy 2: Trigonometric substitution patterns
-
-    a = Wild('a', exclude=[var], properties=[
-             lambda x: x.is_positive])  # Assume a > 0
-    tri_sub_patterns = [(a - var**2)**sqrt_pow,
-                        (a + var**2)**sqrt_pow,
-                        (var**2 - a)**sqrt_pow,
-                        (a - var**2)**minus_sqrt_pow,
-                        (a + var**2)**minus_sqrt_pow,
-                        (var**2 - a)**minus_sqrt_pow]
-    for pattern in tri_sub_patterns:
-        if expr.find(pattern):
-            return 'substitution'
-
-    # Strategy 3: Radical expressions (e.g., (ax+b)^{1/n})
-    if has_radical(expr, var):
-        return 'substitution'
-
-    return None
+    return 'substitution'
 
 
 def f_x_mul_exp_g_x_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
@@ -421,11 +357,5 @@ def quotient_diff_form_matcher(expr: Expr, _context: RuleContext) -> MatcherFunc
     return None
 
 
-def weierstrass_substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
-
-    var = context['variable']
-
-    if can_use_weierstrass(expr, var):
-        return 'weierstrass_substitution'
-
-    return None
+def weierstrass_substitution_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+    return 'weierstrass_substitution'

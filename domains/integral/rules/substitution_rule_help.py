@@ -20,7 +20,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
 
     Returns the integrated result and explanation if successful.
     """
-    # Normalize factors: handle both Mul and non-Mul (e.g., single sin(x+2))
+    # Normalize expression into a list of factors (even for non-Mul)
     expr = together(expr)
     factors = list(expr.args) if expr.is_Mul else [expr]
 
@@ -28,11 +28,22 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
         if not factor.args or factor.is_constant() or factor == var:
             continue
 
-        for original_term in preorder_traversal(factor):
+        flag = False
+        # Look for unary functions like 3^g(x), etc.
+        if factor.is_Pow and factor.args[1].has(var):
+            flag = True
+        # Look for unary functions like sin(g(x)), log(g(x)),1/g(x)^2 etc.
+        inner = factor.args[1] if flag else factor.args[0]
+
+        term_list = [factor]
+        term_list += list(preorder_traversal(inner))
+
+        for original_term in term_list:
             if original_term == var or original_term.is_constant():
                 continue
 
             check_list = [original_term]
+            # Introducing sqrt_term is to handle implicit f(x)^2 cases like x/(x**4+1), x**x*(log(x)+1)/(x**(2*x)+1)
             sqrt_term = sqrt(original_term)
             # Use a temporary variable with positive real assumptions to aid radical simplification
             _t = Symbol('t', real=True, positive=True)
@@ -49,7 +60,20 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
                 if gp == 0:
                     continue
 
+                initial_ratio = simplify(expr/gp)
+                # Special case: g'(x) dx, let u = g(x), g'(x) dx = 1 du
+                if initial_ratio.is_constant():
+                    # Substitute u = g(x)
+                    u = step_gene.get_available_sym(var)
+                    step_gene.subs_dict[u] = term
+                    explanation = (
+                        f"换元法: 令 ${u.name} = {latex(term)}$, $d{u.name} = {latex(gp)}\\,d{var.name}$, "
+                        f"原式$ \\int {latex(expr)}\\,d{var.name}$ 化为 $ \\int {latex(initial_ratio)}\\,d{u.name}$"
+                    )
+                    return Integral(initial_ratio, u), explanation
+
                 try:
+                    # Compute the "remaining part" = expr / factor
                     outer_part = expr / factor  # The rest of the integrand
 
                     # Check if outer_part = k * g'(x) for some constant k
@@ -61,7 +85,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
                     u = step_gene.get_available_sym(var)
 
                     # Construct f(u)
-                    f_u = simplify((expr/gp/ratio).subs(term, u))
+                    f_u = simplify((initial_ratio/ratio).subs(term, u))
 
                     if f_u.has(var):
                         continue
