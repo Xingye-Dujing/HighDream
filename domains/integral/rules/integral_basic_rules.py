@@ -55,8 +55,9 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply the sum rule：(f+g) dx = f dx + g dx"""
     var = context['variable']
     var_latex, expr_latex = wrap_latex(var, expr)
+    # if isinstance(expr, Add):
+    expr_copy = expr
     prefix = "应用加法展开规则"
-    expr_copy = expr.expand()
 
     if isinstance(expr, (Mul, Pow)):
         num, den = fraction(expr)
@@ -113,7 +114,6 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         if not used:
             return None
 
-    # Comparing to diff's add_rule, we use list comprehension.
     integrals = []
     for term in expr_copy.args:
         if can_use_weierstrass(term, var):

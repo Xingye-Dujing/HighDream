@@ -24,6 +24,8 @@ class BaseCalculator(ABC):
         self.processed: set = set()
         self.cache: dict = {}
         self.sudden_end: List[bool, Expr] = [False, None]
+        # Only limits require rationalization of the denominator
+        self.is_radsimp: bool = False
         self.init_key_property()
         self._validate_properties()
         self._initialize_rules()
@@ -90,8 +92,9 @@ class BaseCalculator(ABC):
 
         Note: Force log simplification
         """
-
-        return expand_log(radsimp(expr), force=True)
+        if self.is_radsimp:
+            return expand_log(radsimp(expr), force=True)
+        return expand_log(expr, force=True)
 
     def _get_context_dict(self, **context: Context) -> RuleContext:
         context_dict = {}
@@ -188,7 +191,7 @@ class BaseCalculator(ABC):
 
     def _sympify(self, expr: str) -> Expr:
         """Convert the input expression to a SymPy expression."""
-        return radsimp(sympify(expr))
+        return sympify(expr)
 
     def _do_compute(self, expr: str, operation: Operation, **context: Context) -> None:
         """Perform the core symbolic computation and record each evaluation step."""

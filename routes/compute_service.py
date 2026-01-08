@@ -10,7 +10,7 @@ and handles data processing, error handling, and result formatting.
 # import uuid
 # form config import TREES_DIR
 from typing import Any, Dict, Tuple
-from sympy import Symbol, preorder_traversal, latex, sympify, radsimp
+from sympy import Symbol, preorder_traversal, latex, sympify
 
 from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
 from domains import (
@@ -87,11 +87,7 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
         - expr: Expression parsing and analysis
     """
     try:
-        # If it's a matrix string, the type after sympify is tuple
         expression = sympify(data.get('expression', ''))
-        if not isinstance(expression, tuple):
-            expression = radsimp(expression)
-
         variable = data.get('variable', 'x')
 
         if operation_type == 'diff':

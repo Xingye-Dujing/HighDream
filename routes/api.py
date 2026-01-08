@@ -206,7 +206,7 @@ def render_latex():
     expression = data.get('expression', '')
 
     try:
-        latex_output = latex(simplify(sympify(expression)))
+        latex_output = latex(sympify(expression))
 
         return jsonify({'success': True, 'latex': latex_output})
     except Exception as e:

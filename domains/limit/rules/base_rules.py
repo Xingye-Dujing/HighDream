@@ -194,18 +194,7 @@ def const_inf_add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """
     var, point, direction = get_limit_args(context)
     expr_limit = Limit(expr, var, point, dir=direction)
-    terms = expr.as_ordered_terms()
-
-    inf_sign = None
-    for term in terms:
-        # Find the sign from the first infinite term
-        lim_val = simplify(limit(term, var, point, dir=direction))
-        if lim_val not in (oo, -oo):
-            continue
-        inf_sign = 1 if lim_val == oo else -1 if lim_val == -oo else None
-        break
-
-    result = oo * inf_sign
+    result = expr_limit.doit()
 
     explanation = rf"应用\,趋于常数(有界)+-趋于无穷\, 规则(所有无穷项同号): ${latex(expr_limit)} = {latex(result)}$"
     return result, explanation
@@ -241,16 +230,7 @@ def const_inf_mul_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """
     var, point, direction = get_limit_args(context)
     expr_limit = Limit(expr, var, point, dir=direction)
-    factors = expr.as_ordered_factors()
-
-    count = 0
-    for factor in factors:
-        lim_val = simplify(limit(factor, var, point, dir=direction))
-        if lim_val == -oo or lim_val < 0:
-            count += 1
-
-    total_sign = -1 if (count % 2) else 1
-    result = oo * total_sign
+    result = expr_limit.doit()
 
     return result, rf"应用\,趋于非零常数(有界)(可无)$\cdot$趋于无穷\,规则: ${latex(expr_limit)} = {latex(result)}$"
 
@@ -281,16 +261,9 @@ def const_zero_div_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """
     var, point, direction = get_limit_args(context)
     expr_limit = Limit(expr, var, point, dir=direction)
-    num, _ = expr.as_numer_denom()
+    result = expr_limit.doit()
 
-    sign = 1 if direction == '+' else -1
-    # SymPy moves the minus sign to the numerator,
-    # so we only need to consider the sign of the limit of the numerator.
-    num_lim = simplify(limit(num, var, point, dir=direction).doit())
-    sign *= 1 if num_lim > 0 else -1
-    result = oo * sign
-
-    return result, rf"应用\,趋于非零常数(有界)/趋于0\,规则(可能需要通分再观察): ${latex(expr_limit)} = {latex(result)}$"
+    return result, rf"应用\,趋于非零常数(有界)/趋于0\,规则(可能需要先通分再观察): ${latex(expr_limit)} = {latex(result)}$"
 
 
 def conjugate_rationalize_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:

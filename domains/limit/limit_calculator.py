@@ -15,6 +15,8 @@ def create_limit_calculator(base_class):
 
         def __init__(self, max_lhopital: int = 5) -> None:
             super().__init__()
+            # Rationalizing the denominator is helpful for solving limits
+            self.is_radsimp: bool = True
             # Use a specialized step generator for two-sided limits' steps generator.
             self.step_generator = LimitStepGenerator()
             # Define lhopital rules
