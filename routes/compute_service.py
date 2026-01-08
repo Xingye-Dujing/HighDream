@@ -87,7 +87,7 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
         - expr: Expression parsing and analysis
     """
     try:
-        expression = sympify(data.get('expression', ''))
+        expression = data.get('expression', '')
         variable = data.get('variable', 'x')
 
         if operation_type == 'diff':

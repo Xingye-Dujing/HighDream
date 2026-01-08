@@ -11,7 +11,8 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['tkinter'],
+    # Exclude libraries not used in the exe
+    excludes=['tkinter', 'matplotlib', 'IPython', 'jupyter'],
     noarchive=False,
     # Optimization level can only be set to 1, setting it to 2 will cause problems
     optimize=1,
