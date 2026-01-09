@@ -196,7 +196,6 @@ def tan_power_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     return result, f"正切幂函数积分: $\\int \\tan^{{{n_latex}}}({var_latex})\\,d{var_latex} = \\frac{{\\tan^{{{n_latex}-1}}({var_latex})}}{{{n_latex}-1}} - \\int \\tan^{{{n_latex}-2}}({var_latex})\\,d{var_latex}$"
 
 
-pow_matcher = _create_matcher(Pow)
 log_matcher = _create_matcher(log)
 sin_matcher = _create_matcher(sin)
 cos_matcher = _create_matcher(cos)
@@ -216,6 +215,13 @@ def var_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
     if expr == var:
         return 'var'
+    return None
+
+
+def pow_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    var = context['variable']
+    if isinstance(expr, Pow) and expr.base == var and expr.exp.is_constant():
+        return 'pow'
     return None
 
 
