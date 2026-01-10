@@ -12,11 +12,11 @@
   --jp-layout-color2: #e7e7e7;
   --jp-brand-color0: #1976d2;
   --jp-brand-color1: #5b89cd;
-  --jp-error-color: #f44336;
-  --jp-success-color: #4caf50;
-  --jp-kernel-idle-color: #4caf50;
+  --jp-error-color: #9d2933;
+  --jp-success-color: #789262;
+  --jp-kernel-idle-color: #789262;
   --jp-kernel-busy-color: #ff9800;
-  --jp-kernel-error-color: #f44336;
+  --jp-kernel-error-color: #9d2933;
   --jp-cell-padding: 10px;
   --jp-cell-prompt-width: 100px;
   --jp-cell-prompt-opacity: 1;
@@ -808,10 +808,9 @@ a {
   border-radius: 8px;
   color: white;
   z-index: 3000;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
   transition: all 0.3s var(--animation-timing);
   transform: translateX(100%);
-  opacity: 0;
+  opacity: 0.8;
   max-width: 400px;
 }
 

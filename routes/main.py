@@ -135,3 +135,13 @@ def blueprint_canvas():
         str: Rendered HTML template for the blueprint canvas interface.
     """
     return render_template('blueprint_canvas.html')
+
+
+@main.route('/word_editor')
+def word_editor():
+    """Render the word editor page for symbolic computation document editing.
+
+    Returns:
+        str: Rendered HTML template for the word editor interface.
+    """
+    return render_template('word_editor.html')

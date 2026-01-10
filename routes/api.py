@@ -14,7 +14,49 @@ Routes:
     /static/trees   - Serve static tree diagram files
 """
 
-from sympy import Symbol, diff, integrate, latex, limit, simplify, sympify
+import traceback
+import sympy as sp
+from sympy import (
+    # Basic classes
+    Symbol, symbols, sympify, Expr, Integer, Rational, Float,
+    # Algebra
+    simplify, expand, factor, collect, apart, together, cancel,
+    # Calculus
+    diff, integrate, limit, Derivative, Integral, Limit,
+    # Equation solving
+    solve, solveset, linsolve, nonlinsolve, rsolve,
+    # Matrices
+    Matrix, ImmutableMatrix, eye, zeros, ones, diag, randMatrix,
+    # Linear algebra
+    det, transpose,
+    # Trigonometric functions
+    sin, cos, tan, cot, sec, csc,
+    asin, acos, atan, acot, asec, acsc,
+    sinh, cosh, tanh, coth, sech, csch,
+    asinh, acosh, atanh, acoth, asech, acsch,
+    # Exponential and logarithmic
+    exp, log,
+    # Other functions
+    sqrt, Abs, sign, conjugate, re, im, arg,
+    # Constants
+    pi, E, oo, I, zoo, nan,
+    # Summations, products
+    Sum, Product, summation, product,
+    # Series
+    series, limit_seq,
+    # Combinatorics
+    binomial, factorial, gamma,
+    # Polynomials
+    Poly,
+    # Differential equations
+    Function, dsolve, Eq,
+    # Vectors
+    MatrixSymbol,
+    # LaTeX output
+    latex, pretty,
+    # Numerical calculation
+    N, nsimplify,
+)
 from sympy.simplify.fu import fu
 from flask import Blueprint, request, jsonify, send_from_directory
 from domains import MatrixAnalyzer, MatrixCalculator, ProcessManager
@@ -284,3 +326,201 @@ def sympy_simplify():
         return jsonify({'success': True, 'result': result_str})
     except Exception as e:
         return jsonify({'success': False, 'error': f'{e}'})
+
+
+@api.route('/sympy_execute', methods=['POST'])
+def sympy_execute():
+    """Execute arbitrary SymPy code and return the result.
+
+    This endpoint allows users to write and execute SymPy code directly,
+    supporting functions like diff, integrate, limit, simplify, etc.
+
+    Expected JSON input:
+        code (str): The SymPy code to execute
+
+    Returns:
+        JSON response with either:
+            success (bool): True if execution succeeded
+            result (str): Result of the SymPy code execution
+            latex (str): LaTeX formatted result (if applicable)
+        or:
+            success (bool): False if execution failed
+            error (str): Error message describing the issue
+    """
+    data = request.json or {}
+    code = data.get('code', '')
+
+    if not code:
+        return jsonify({'success': False, 'error': 'Code cannot be empty'})
+
+    try:
+        # Prepare execution environment with all SymPy functions
+        exec_globals = {
+            # SymPy modules
+            'sp': sp,
+            'sympy': sp,
+            # Basic classes and functions
+            'Symbol': Symbol,
+            'symbols': symbols,
+            'sympify': sympify,
+            'Expr': Expr,
+            'Integer': Integer,
+            'Rational': Rational,
+            'Float': Float,
+            # Algebra
+            'simplify': simplify,
+            'expand': expand,
+            'factor': factor,
+            'collect': collect,
+            'apart': apart,
+            'together': together,
+            'cancel': cancel,
+            # Calculus
+            'diff': diff,
+            'integrate': integrate,
+            'limit': limit,
+            'Derivative': Derivative,
+            'Integral': Integral,
+            'Limit': Limit,
+            # Equation solving
+            'solve': solve,
+            'solveset': solveset,
+            'linsolve': linsolve,
+            'nonlinsolve': nonlinsolve,
+            'dsolve': dsolve,
+            'rsolve': rsolve,
+            'Eq': Eq,
+            # Matrices
+            'Matrix': Matrix,
+            'ImmutableMatrix': ImmutableMatrix,
+            'eye': eye,
+            'zeros': zeros,
+            'ones': ones,
+            'diag': diag,
+            'randMatrix': randMatrix,
+            # Linear algebra
+            'det': det,
+            'transpose': transpose,
+            # Trigonometric functions
+            'sin': sin,
+            'cos': cos,
+            'tan': tan,
+            'cot': cot,
+            'sec': sec,
+            'csc': csc,
+            'asin': asin,
+            'acos': acos,
+            'atan': atan,
+            'acot': acot,
+            'asec': asec,
+            'acsc': acsc,
+            'sinh': sinh,
+            'cosh': cosh,
+            'tanh': tanh,
+            'coth': coth,
+            'sech': sech,
+            'csch': csch,
+            'asinh': asinh,
+            'acosh': acosh,
+            'atanh': atanh,
+            'acoth': acoth,
+            'asech': asech,
+            'acsch': acsch,
+            # Exponential and logarithmic
+            'exp': exp,
+            'log': log,
+            'ln': log,
+            # Other functions
+            'sqrt': sqrt,
+            'Abs': Abs,
+            'sign': sign,
+            'conjugate': conjugate,
+            're': re,
+            'im': im,
+            'arg': arg,
+            # Constants
+            'pi': pi,
+            'E': E,
+            'oo': oo,
+            'I': I,
+            'zoo': zoo,
+            'nan': nan,
+            # Summations, products
+            'Sum': Sum,
+            'Product': Product,
+            'summation': summation,
+            'product': product,
+            # Series
+            'series': series,
+            'limit_seq': limit_seq,
+            # Combinatorics
+            'binomial': binomial,
+            'factorial': factorial,
+            'gamma': gamma,
+            # Polynomials
+            'Poly': Poly,
+            # Function class
+            'Function': Function,
+            # Vectors
+            'MatrixSymbol': MatrixSymbol,
+            # LaTeX output
+            'latex': latex,
+            'pretty': pretty,
+            # Numerical calculation
+            'N': N,
+            'nsimplify': nsimplify,
+            # Compatibility
+            'print': print,
+            'range': range,
+            'len': len,
+            'list': list,
+            'dict': dict,
+            'tuple': tuple,
+            'set': set,
+            'sum': sum,
+        }
+
+        # Execute code
+        exec_locals = {}
+        exec(code, exec_globals, exec_locals)
+
+        # Get last expression as result
+        result = None
+        for key, value in exec_locals.items():
+            if not key.startswith('_'):
+                result = value
+
+        # If no result, try to extract the last expression from code
+        if result is None:
+            # Try to parse the last expression in the code
+            lines = code.strip().split('\n')
+            last_line = lines[-1].strip()
+            if last_line and not last_line.startswith('#'):
+                try:
+                    result = eval(last_line, exec_globals, exec_locals)
+                except Exception:
+                    pass
+
+        if result is None:
+            return jsonify({'success': True, 'result': 'Code executed successfully but no return value'})
+
+        # Try to convert to string
+        result_str = str(result)
+
+        # Try to convert to LaTeX
+        try:
+            result_latex = latex(result)
+        except Exception:
+            result_latex = None
+
+        return jsonify({
+            'success': True,
+            'result': result_str,
+            'latex': result_latex
+        })
+
+    except Exception as e:
+        error_msg = f'Execution error: {str(e)}'
+        # Add detailed error information
+        error_details = traceback.format_exc()
+        return jsonify({'success': False, 'error': error_msg, 'details': error_details})

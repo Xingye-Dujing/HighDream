@@ -1,0 +1,644 @@
+#document-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+  min-height: calc(100vh - 96px);
+  background-color: var(--jp-layout-color1);
+}
+
+#document {
+  width: 100%;
+  max-width: 900px;
+  padding: 0 20px;
+}
+
+.a4-page {
+  background-color: white;
+  width: 100%;
+  min-height: 29.7cm;
+  padding: 40px 50px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+#content-area {
+  width: 100%;
+}
+
+.paragraph {
+  margin-bottom: 16px;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.paragraph:hover {
+  background-color: rgba(25, 118, 210, 0.05);
+}
+
+.paragraph.active {
+  background-color: rgba(25, 118, 210, 0.1);
+  border: 2px solid var(--jp-brand-color1);
+  padding: 6px;
+}
+
+.paragraph.moving-up {
+  animation: moveUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.paragraph.moving-down {
+  animation: moveDown 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes moveUp {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes moveDown {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.text-paragraph {
+  font-family: var(--font-family);
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--jp-ui-font-color0);
+}
+
+.text-paragraph textarea {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid transparent;
+  resize: vertical;
+  font-family: var(--font-family);
+  font-size: 14px;
+  line-height: 1.8;
+  background: transparent;
+  outline: none;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.text-paragraph textarea:focus {
+  border-color: var(--jp-brand-color1);
+  background-color: white;
+}
+
+.text-paragraph .text-render {
+  padding: 4px;
+  min-height: 40px;
+}
+
+.sympy-paragraph {
+  font-family: var(--font-family);
+}
+
+.sympy-paragraph .code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background-color: var(--jp-layout-color1);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.sympy-paragraph .code-label {
+  color: var(--jp-brand-color0);
+  font-weight: 600;
+}
+
+.sympy-paragraph .code-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sympy-paragraph .code-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--jp-ui-font-color1);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: all 0.2s;
+}
+
+.sympy-paragraph .code-actions button:hover {
+  background-color: var(--jp-layout-color2);
+  color: var(--jp-ui-font-color0);
+}
+
+.sympy-paragraph .code-input {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--jp-layout-color1);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 60px;
+  outline: none;
+}
+
+.sympy-paragraph .code-input:focus {
+  border-color: var(--jp-brand-color1);
+}
+
+.sympy-paragraph .code-input.collapsed {
+  display: none;
+}
+
+.sympy-paragraph .code-output {
+  margin-top: 12px;
+  padding: 16px;
+  background-color: var(--jp-cell-output-background);
+  border: 1px dashed var(--jp-border-color1);
+  border-radius: 4px;
+  min-height: 48px;
+  font-size: 15px;
+}
+
+.sympy-paragraph .code-output:empty {
+  display: none;
+}
+
+.sympy-paragraph .code-output.collapsed {
+  display: none;
+}
+
+.sympy-paragraph .run-button {
+  background-color: var(--jp-success-color);
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.sympy-paragraph .run-button:hover {
+  background-color: #388e3c;
+  transform: scale(1.05);
+}
+
+.sympy-paragraph .run-button:disabled {
+  background-color: var(--jp-border-color1);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.latex-paragraph {
+  font-family: var(--font-family);
+}
+
+.latex-paragraph .latex-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background-color: var(--jp-layout-color1);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.latex-paragraph .latex-label {
+  color: #952d8b;
+  font-weight: 600;
+}
+
+.latex-paragraph .latex-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.latex-paragraph .latex-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--jp-ui-font-color1);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: all 0.2s;
+}
+
+.latex-paragraph .latex-actions button:hover {
+  background-color: var(--jp-layout-color2);
+  color: var(--jp-ui-font-color0);
+}
+
+.latex-paragraph .latex-input {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--jp-layout-color1);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 4px;
+  font-family: var(--font-family);
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 60px;
+  outline: none;
+}
+
+.latex-paragraph .latex-input:focus {
+  border-color: #952d8b;
+}
+
+.latex-paragraph .latex-input.collapsed {
+  display: none;
+}
+
+.latex-paragraph .latex-render {
+  margin-top: 12px;
+  padding: 16px;
+  background-color: var(--jp-cell-output-background);
+  border: 1px dashed var(--jp-border-color1);
+  border-radius: 4px;
+  min-height: 48px;
+  font-size: 15px;
+  text-align: center;
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.latex-paragraph .latex-render.collapsed {
+  display: none;
+}
+
+.latex-paragraph .render-button {
+  background-color: #952d8b;
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.latex-paragraph .render-button:hover {
+  background-color: #7a2470;
+  transform: scale(1.05);
+}
+
+#toolbar {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.toolbar-section {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.toolbar-button {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.toolbar-button span {
+  margin-left: 4px;
+}
+
+.notification {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  padding: 0;
+  border-radius: 8px;
+  color: white;
+  z-index: 3000;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform: translateX(100%);
+  opacity: 0;
+  max-width: 400px;
+}
+
+.notification-show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.notification-hide {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  gap: 12px;
+}
+
+.notification-success {
+  background-color: var(--jp-success-color);
+}
+
+.notification-error {
+  background-color: var(--jp-error-color);
+}
+
+.notification i {
+  font-size: 20px;
+}
+
+.computing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: var(--jp-ui-font-color0);
+  font-family: var(--font-family);
+}
+
+.loading-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(25, 118, 210, 0.2);
+  border-top: 3px solid var(--jp-brand-color0);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+
+.loading-text {
+  font-size: 13px;
+  color: var(--jp-ui-font-color1);
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  color: var(--jp-error-color);
+  font-family: var(--font-family);
+  font-size: 12px;
+  padding: 12px;
+  background-color: rgba(244, 67, 54, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid var(--jp-error-color);
+  margin-top: 8px;
+}
+
+.success {
+  color: var(--jp-success-color);
+  padding: 12px;
+  background-color: rgba(76, 175, 80, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid var(--jp-success-color);
+  margin-top: 8px;
+}
+
+.empty-paragraph {
+  min-height: 40px;
+  border: 1px dashed var(--jp-border-color1);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--jp-ui-font-color1);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.empty-paragraph:hover {
+  border-color: var(--jp-brand-color1);
+  background-color: rgba(25, 118, 210, 0.05);
+}
+
+.paragraph-type-indicator {
+  position: absolute;
+  left: -30px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.paragraph:hover .paragraph-type-indicator {
+  opacity: 1;
+}
+
+.text-paragraph .paragraph-type-indicator {
+  background-color: var(--jp-ui-font-color1);
+  color: white;
+}
+
+.sympy-paragraph .paragraph-type-indicator {
+  background-color: var(--jp-brand-color0);
+  color: white;
+}
+
+.latex-paragraph .paragraph-type-indicator {
+  background-color: #952d8b;
+  color: white;
+}
+
+@media print {
+  #header,
+  #toolbar,
+  #math-keyboard,
+  .code-header,
+  .latex-header,
+  .code-actions,
+  .latex-actions,
+  .code-input,
+  .latex-input,
+  .notification,
+  .minimal-mode-toggle {
+    display: none !important;
+  }
+
+  #document-container {
+    padding: 0;
+    background-color: white;
+  }
+
+  .a4-page {
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .paragraph {
+    border: none;
+    padding: 8px 0;
+  }
+
+  .code-output,
+  .latex-render {
+    border: none;
+    background-color: white;
+  }
+}
+
+@media (max-width: 768px) {
+  .a4-page {
+    padding: 20px;
+  }
+
+  #toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .toolbar-section {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .toolbar-button {
+    flex-shrink: 0;
+  }
+}
+
+.paragraph.minimal-mode .code-header,
+.paragraph.minimal-mode .latex-header,
+.paragraph.minimal-mode .code-input,
+.paragraph.minimal-mode .latex-input,
+.paragraph.minimal-mode .text-input,
+.paragraph.minimal-mode .paragraph-type-indicator {
+  display: none !important;
+}
+
+.paragraph.minimal-mode {
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+
+.paragraph.minimal-mode:hover {
+  background: transparent;
+}
+
+.paragraph.minimal-mode .code-output,
+.paragraph.minimal-mode .latex-render,
+.paragraph.minimal-mode .text-render {
+  margin-top: 0;
+  border: none;
+  background: transparent;
+  padding: 4px 0;
+}
+
+.minimal-mode-toggle {
+  position: absolute;
+  right: -30px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  background-color: var(--jp-layout-color0);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 4px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--jp-ui-font-color1);
+  font-size: 10px;
+  z-index: 5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  visibility: hidden;
+}
+
+.paragraph:hover .minimal-mode-toggle {
+  opacity: 1;
+  visibility: visible;
+}
+
+.minimal-mode-toggle:hover {
+  background-color: var(--jp-brand-color0);
+  color: white;
+  border-color: var(--jp-brand-color0);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.paragraph.minimal-mode .minimal-mode-toggle {
+  opacity: 0;
+  visibility: visible;
+}
+
+.paragraph.minimal-mode:hover .minimal-mode-toggle {
+  opacity: 0.5;
+}
+
+.latex-paragraph .render-button {
+  display: none;
+}
+
+.sympy-paragraph .code-output {
+  margin-top: 12px;
+  padding: 16px;
+  background-color: transparent;
+  border: 1px dashed var(--jp-border-color1);
+  border-radius: 4px;
+  min-height: 48px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+}
+
+.sympy-paragraph .code-output:empty {
+  display: none;
+}
+
+.sympy-paragraph .code-output.success-flash {
+  animation: successFlash 0.5s ease;
+}
+
+@keyframes successFlash {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(76, 175, 80, 0.2);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
