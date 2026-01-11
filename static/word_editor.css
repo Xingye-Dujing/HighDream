@@ -1,9 +1,11 @@
+:root {
+  --word-font-family: "Consolas", serif;
+}
 #document-container {
   display: flex;
   justify-content: center;
   padding: 20px 0;
   min-height: calc(100vh - 96px);
-  background-color: var(--jp-layout-color1);
 }
 
 #document {
@@ -107,10 +109,6 @@
   min-height: 40px;
 }
 
-.sympy-paragraph {
-  font-family: var(--font-family);
-}
-
 .sympy-paragraph .code-header {
   display: flex;
   align-items: center;
@@ -154,7 +152,7 @@
   background-color: var(--jp-layout-color1);
   border: 1px solid var(--jp-border-color1);
   border-radius: 4px;
-  font-family: "Courier New", monospace;
+  font-family: var(--word-font-family);
   font-size: 13px;
   line-height: 1.6;
   resize: vertical;
@@ -210,10 +208,6 @@
   transform: none;
 }
 
-.latex-paragraph {
-  font-family: var(--font-family);
-}
-
 .latex-paragraph .latex-header {
   display: flex;
   align-items: center;
@@ -257,7 +251,7 @@
   background-color: var(--jp-layout-color1);
   border: 1px solid var(--jp-border-color1);
   border-radius: 4px;
-  font-family: var(--font-family);
+  font-family: var(--word-font-family);
   font-size: 13px;
   line-height: 1.6;
   resize: vertical;
@@ -320,6 +314,7 @@
 
 .toolbar-button {
   padding: 6px 10px;
+  font-family: var(--word-font-family);
   font-size: 12px;
 }
 
@@ -483,6 +478,7 @@
   #header,
   #toolbar,
   #math-keyboard,
+  #math-background,
   .code-header,
   .latex-header,
   .code-actions,
@@ -641,4 +637,353 @@
   100% {
     background-color: transparent;
   }
+}
+
+/* Auto-complete styles */
+.autocomplete {
+  position: relative;
+}
+
+.autocomplete-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(248, 250, 252, 0.98) 100%
+  );
+  border: 1px solid rgba(25, 118, 210, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  margin-top: 8px;
+  display: none;
+  backdrop-filter: blur(10px);
+  animation: slideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.autocomplete-suggestions.visible {
+  display: block;
+}
+
+.autocomplete-suggestions::-webkit-scrollbar {
+  width: 6px;
+}
+
+.autocomplete-suggestions::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.autocomplete-suggestions::-webkit-scrollbar-thumb {
+  background: rgba(25, 118, 210, 0.3);
+  border-radius: 3px;
+}
+
+.autocomplete-suggestions::-webkit-scrollbar-thumb:hover {
+  background: rgba(25, 118, 210, 0.5);
+}
+
+.autocomplete-suggestion {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-family: var(--word-font-family);
+  font-size: 13px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.autocomplete-suggestion:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-suggestion:hover,
+.autocomplete-suggestion.active {
+  background: linear-gradient(
+    135deg,
+    rgba(25, 118, 210, 0.08) 0%,
+    rgba(25, 118, 210, 0.12) 100%
+  );
+  border-left: 3px solid var(--jp-brand-color0);
+  padding-left: 11px;
+}
+
+.autocomplete-suggestion-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.autocomplete-suggestion-name {
+  font-weight: 600;
+  color: var(--jp-brand-color0);
+  font-size: 14px;
+  letter-spacing: 0.3px;
+}
+
+.autocomplete-suggestion:hover .autocomplete-suggestion-name,
+.autocomplete-suggestion.active .autocomplete-suggestion-name {
+  color: var(--jp-brand-color0);
+}
+
+.autocomplete-suggestion .suggestion-match {
+  color: var(--jp-brand-color0);
+  background: linear-gradient(
+    135deg,
+    rgba(25, 118, 210, 0.15) 0%,
+    rgba(25, 118, 210, 0.1) 100%
+  );
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+.autocomplete-suggestion:hover .suggestion-match,
+.autocomplete-suggestion.active .suggestion-match {
+  background: linear-gradient(
+    135deg,
+    rgba(25, 118, 210, 0.25) 0%,
+    rgba(25, 118, 210, 0.2) 100%
+  );
+  color: var(--jp-brand-color0);
+}
+
+.autocomplete-suggestion-signature {
+  font-family: var(--word-font-family);
+  font-size: 11px;
+  color: var(--jp-ui-font-color1);
+  background: rgba(0, 0, 0, 0.04);
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+.autocomplete-suggestion:hover .autocomplete-suggestion-signature,
+.autocomplete-suggestion.active .autocomplete-suggestion-signature {
+  background: rgba(25, 118, 210, 0.1);
+  color: var(--jp-brand-color0);
+}
+
+.autocomplete-suggestion-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.autocomplete-suggestion .suggestion-type {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: linear-gradient(
+    135deg,
+    rgba(156, 39, 176, 0.1) 0%,
+    rgba(156, 39, 176, 0.05) 100%
+  );
+  color: #9c27b0;
+  border: 1px solid rgba(156, 39, 176, 0.2);
+}
+
+.autocomplete-suggestion .suggestion-type.function {
+  background: linear-gradient(
+    135deg,
+    rgba(25, 118, 210, 0.1) 0%,
+    rgba(25, 118, 210, 0.05) 100%
+  );
+  color: #1976d2;
+  border-color: rgba(25, 118, 210, 0.2);
+}
+
+.autocomplete-suggestion .suggestion-type.class {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 152, 0, 0.1) 0%,
+    rgba(255, 152, 0, 0.05) 100%
+  );
+  color: #ff9800;
+  border-color: rgba(255, 152, 0, 0.2);
+}
+
+.autocomplete-suggestion .suggestion-type.constant {
+  background: linear-gradient(
+    135deg,
+    rgba(76, 175, 80, 0.1) 0%,
+    rgba(76, 175, 80, 0.05) 100%
+  );
+  color: #4caf50;
+  border-color: rgba(76, 175, 80, 0.2);
+}
+
+.autocomplete-suggestion-doc-cn {
+  font-size: 11px;
+  color: var(--jp-ui-font-color1);
+  font-style: normal;
+  line-height: 1.4;
+  max-width: 180px;
+  text-align: right;
+}
+
+.autocomplete-suggestion:hover .autocomplete-suggestion-doc-cn,
+.autocomplete-suggestion.active .autocomplete-suggestion-doc-cn {
+  color: var(--jp-ui-font-color0);
+}
+
+/* Floating Formula Editor Panel */
+.formula-editor-panel {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  width: 400px;
+  min-width: 300px;
+  min-height: 300px;
+  max-width: 600px;
+  max-height: 700px;
+  background-color: white;
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 1500;
+  display: flex;
+  flex-direction: column;
+  resize: both;
+  overflow: hidden;
+}
+
+.formula-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background-color: var(--jp-layout-color1);
+  border-bottom: 1px solid var(--jp-border-color1);
+  border-radius: 8px 8px 0 0;
+  cursor: move;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.formula-editor-header span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--jp-ui-font-color0);
+}
+
+.formula-editor-close-btn {
+  background: none;
+  border: none;
+  color: var(--jp-ui-font-color1);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.formula-editor-close-btn:hover {
+  background-color: var(--jp-layout-color2);
+  color: var(--jp-ui-font-color0);
+}
+
+.formula-editor-body {
+  padding: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.formula-editor-body .formula-categories {
+  display: flex;
+  margin-bottom: 10px;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.formula-editor-body .formula-category-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  border: 1px solid var(--jp-border-color1);
+  background: transparent;
+  color: var(--jp-ui-font-color1);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.formula-editor-body .formula-category-btn:hover {
+  background-color: var(--jp-layout-color2);
+  color: var(--jp-ui-font-color0);
+}
+
+.formula-editor-body .formula-category-btn.active {
+  background-color: var(--jp-brand-color0);
+  color: white;
+  border-color: var(--jp-brand-color0);
+}
+
+.formula-editor-body .formula-symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 8px;
+  padding: 4px;
+}
+
+.formula-editor-body .latex-symbol-btn {
+  padding: 10px 6px;
+  font-size: 14px;
+  border: 1px solid var(--jp-border-color1);
+  background-color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 70px;
+  word-break: break-word;
+  text-align: center;
+  overflow: hidden;
+}
+
+.formula-editor-body .latex-symbol-btn:hover {
+  background-color: var(--jp-brand-color0);
+  color: white;
+  border-color: var(--jp-brand-color0);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
+}
+
+.formula-editor-body .latex-symbol-btn .mjx-chtml {
+  font-size: 16px !important;
+  max-width: 100%;
+  overflow: hidden;
 }

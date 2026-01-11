@@ -34,14 +34,14 @@
           </button>
         </a>
 
+        <button class="header-btn" id="formulaEditorBtn" title="公式编辑器">
+          <i class="fas fa-keyboard"></i>
+        </button>
         <button class="header-btn" id="saveJsonBtn" title="保存为 JSON">
           <i class="fas fa-file-code"></i>
         </button>
         <button class="header-btn" id="loadBtn" title="加载文档">
           <i class="fas fa-folder-open"></i>
-        </button>
-        <button class="header-btn" id="toggleKeyboardBtn" title="切换虚拟键盘">
-          <i class="fas fa-keyboard"></i>
         </button>
         <button class="header-btn" id="toggleThemeBtn" title="切换主题">
           <i class="fas fa-moon"></i>
@@ -179,51 +179,6 @@
       </div>
     </div>
 
-    <div id="math-keyboard" class="keyboard-hidden">
-      <div class="keyboard-header">
-        <span>数学符号键盘</span>
-        <button id="closeKeyboardBtn" class="keyboard-close-btn">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="keyboard-content">
-        <div class="keyboard-row">
-          <button class="keyboard-key" data-value="x">x</button>
-          <button class="keyboard-key" data-value="y">y</button>
-          <button class="keyboard-key" data-value="z">z</button>
-          <button class="keyboard-key" data-value="t">t</button>
-          <button class="keyboard-key" data-value="n">n</button>
-        </div>
-        <div class="keyboard-row">
-          <button class="keyboard-key" data-value="a">a</button>
-          <button class="keyboard-key" data-value="b">b</button>
-          <button class="keyboard-key" data-value="c">c</button>
-          <button class="keyboard-key" data-value="pi">π</button>
-          <button class="keyboard-key" data-value="E">e</button>
-        </div>
-        <div class="keyboard-row">
-          <button class="keyboard-key" data-value="**">幂</button>
-          <button class="keyboard-key" data-value="sqrt()">平方根</button>
-          <button class="keyboard-key" data-value="()">括号</button>
-          <button class="keyboard-key" data-value="[]">方括号</button>
-        </div>
-        <div class="keyboard-row">
-          <button class="keyboard-key" data-value="sin()">sin</button>
-          <button class="keyboard-key" data-value="cos()">cos</button>
-          <button class="keyboard-key" data-value="tan()">tan</button>
-          <button class="keyboard-key" data-value="log()">log</button>
-          <button class="keyboard-key" data-value="exp()">exp</button>
-        </div>
-        <div class="keyboard-row">
-          <button class="keyboard-key" data-value="+">+</button>
-          <button class="keyboard-key" data-value="-">-</button>
-          <button class="keyboard-key" data-value="*">*</button>
-          <button class="keyboard-key" data-value="/">/</button>
-          <button class="keyboard-key" data-value="=">=</button>
-        </div>
-      </div>
-    </div>
-
     <div class="notification" id="notification">
       <div class="notification-content">
         <i class="fas fa-check-circle"></i>
@@ -233,9 +188,38 @@
 
     <input type="file" id="fileInput" accept=".json" style="display: none" />
 
+    <!-- Floating Formula Editor Panel -->
     <div
-      id="helpful-area"
-      style="display: none; width: 100%; height: 320px"
-    ></div>
+      id="formulaEditorPanel"
+      class="formula-editor-panel"
+      style="display: none"
+    >
+      <div class="formula-editor-header">
+        <span>公式编辑器</span>
+        <button class="formula-editor-close-btn" id="closeFormulaEditorBtn">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="formula-editor-body">
+        <div class="formula-categories">
+          <button class="formula-category-btn active" data-category="operators">
+            运算符
+          </button>
+          <button class="formula-category-btn" data-category="relations">
+            关系
+          </button>
+          <button class="formula-category-btn" data-category="greek">
+            希腊字母
+          </button>
+          <button class="formula-category-btn" data-category="functions">
+            函数
+          </button>
+          <button class="formula-category-btn" data-category="matrix">
+            矩阵
+          </button>
+        </div>
+        <div id="formulaSymbolGrid" class="formula-symbol-grid"></div>
+      </div>
+    </div>
   </body>
 </html>
