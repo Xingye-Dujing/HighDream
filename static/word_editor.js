@@ -933,7 +933,7 @@ function toggleAllMinimalMode() {
 }
 
 // Auto-complete functionality
-let currentAutocompleteIndex = -1;
+let currentAutocompleteIndex = 0;
 let currentSuggestions = [];
 
 function setupAutocomplete(textarea) {
@@ -1000,7 +1000,7 @@ function handleAutocompleteInput(textarea, suggestionsContainer) {
   }
 
   currentSuggestions = suggestions;
-  currentAutocompleteIndex = -1;
+  currentAutocompleteIndex = 0;  // Default select first suggestion
 
   showSuggestions(suggestionsContainer, suggestions, currentWord, textarea, wordStartPos);
 }
@@ -1059,6 +1059,15 @@ function showSuggestions(container, suggestions, currentWord, textarea, wordStar
     });
     container.appendChild(div);
   });
+
+
+  // Default select first suggestion
+  if (suggestions.length > 0) {
+    const firstItem = container.querySelector('.autocomplete-suggestion');
+    if (firstItem) {
+      firstItem.classList.add('active');
+    }
+  }
 }
 
 function hideSuggestions(container) {
@@ -1075,6 +1084,10 @@ function handleAutocompleteKeydown(e, textarea, suggestionsContainer) {
   }
 
   switch (e.key) {
+    case 'Escape':
+      e.preventDefault();
+      hideSuggestions(suggestionsContainer);
+      break;
     case 'ArrowDown':
       e.preventDefault();
       currentAutocompleteIndex = Math.min(currentAutocompleteIndex + 1, suggestionItems.length - 1);
@@ -1104,11 +1117,6 @@ function handleAutocompleteKeydown(e, textarea, suggestionsContainer) {
         e.preventDefault();
         hideSuggestions(suggestionsContainer);
       }
-      break;
-
-    case 'Escape':
-      e.preventDefault();
-      hideSuggestions(suggestionsContainer);
       break;
   }
 }
