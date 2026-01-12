@@ -205,7 +205,7 @@ def quotient_diff_form_rule(expr: Expr, context: RuleContext) -> RuleFunctionRet
         return None
 
     int_num, int_den = fraction(int_result)
-    if int_den.is_constant():
+    if int_num.is_constant() or int_den.is_constant():
         return None
     # If the number of operations in the numerator is greater than 3, it is not a simple form
     # We should try other methods first
