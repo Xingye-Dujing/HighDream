@@ -152,6 +152,200 @@ document.addEventListener("DOMContentLoaded", function () {
   animateMathBackground();
 });
 
+// LaTeX auto-completion items
+const latexCompletions = {
+  // Basic Symbols
+  'alpha': { type: 'symbol', doc: 'Alpha', docCn: '希腊字母α', signature: '\\alpha' },
+  'beta': { type: 'symbol', doc: 'Beta', docCn: '希腊字母β', signature: '\\beta' },
+  'gamma': { type: 'symbol', doc: 'Gamma', docCn: '希腊字母γ', signature: '\\gamma' },
+  'delta': { type: 'symbol', doc: 'Delta', docCn: '希腊字母δ', signature: '\\delta' },
+  'epsilon': { type: 'symbol', doc: 'Epsilon', docCn: '希腊字母ε', signature: '\\epsilon' },
+  'zeta': { type: 'symbol', doc: 'Zeta', docCn: '希腊字母ζ', signature: '\\zeta' },
+  'eta': { type: 'symbol', doc: 'Eta', docCn: '希腊字母η', signature: '\\eta' },
+  'theta': { type: 'symbol', doc: 'Theta', docCn: '希腊字母θ', signature: '\\theta' },
+  'iota': { type: 'symbol', doc: 'Iota', docCn: '希腊字母ι', signature: '\\iota' },
+  'kappa': { type: 'symbol', doc: 'Kappa', docCn: '希腊字母κ', signature: '\\kappa' },
+  'lambda': { type: 'symbol', doc: 'Lambda', docCn: '希腊字母λ', signature: '\\lambda' },
+  'mu': { type: 'symbol', doc: 'Mu', docCn: '希腊字母μ', signature: '\\mu' },
+  'nu': { type: 'symbol', doc: 'Nu', docCn: '希腊字母ν', signature: '\\nu' },
+  'xi': { type: 'symbol', doc: 'Xi', docCn: '希腊字母ξ', signature: '\\xi' },
+  'pi': { type: 'symbol', doc: 'Pi', docCn: '希腊字母π', signature: '\\pi' },
+  'rho': { type: 'symbol', doc: 'Rho', docCn: '希腊字母ρ', signature: '\\rho' },
+  'sigma': { type: 'symbol', doc: 'Sigma', docCn: '希腊字母σ', signature: '\\sigma' },
+  'tau': { type: 'symbol', doc: 'Tau', docCn: '希腊字母τ', signature: '\\tau' },
+  'upsilon': { type: 'symbol', doc: 'Upsilon', docCn: '希腊字母υ', signature: '\\upsilon' },
+  'phi': { type: 'symbol', doc: 'Phi', docCn: '希腊字母φ', signature: '\\phi' },
+  'chi': { type: 'symbol', doc: 'Chi', docCn: '希腊字母χ', signature: '\\chi' },
+  'psi': { type: 'symbol', doc: 'Psi', docCn: '希腊字母ψ', signature: '\\psi' },
+  'omega': { type: 'symbol', doc: 'Omega', docCn: '希腊字母ω', signature: '\\omega' },
+  'Gamma': { type: 'symbol', doc: 'Capital Gamma', docCn: '大写Γ', signature: '\\Gamma' },
+  'Delta': { type: 'symbol', doc: 'Capital Delta', docCn: '大写Δ', signature: '\\Delta' },
+  'Theta': { type: 'symbol', doc: 'Capital Theta', docCn: '大写Θ', signature: '\\Theta' },
+  'Lambda': { type: 'symbol', doc: 'Capital Lambda', docCn: '大写Λ', signature: '\\Lambda' },
+  'Sigma': { type: 'symbol', doc: 'Capital Sigma', docCn: '大写Σ', signature: '\\Sigma' },
+  'Phi': { type: 'symbol', doc: 'Capital Phi', docCn: '大写Φ', signature: '\\Phi' },
+  'Psi': { type: 'symbol', doc: 'Capital Psi', docCn: '大写Ψ', signature: '\\Psi' },
+  'Omega': { type: 'symbol', doc: 'Capital Omega', docCn: '大写Ω', signature: '\\Omega' },
+  // Operators
+  'frac': { type: 'command', doc: 'Fraction', docCn: '分数', signature: '\\frac{a}{b}' },
+  'sqrt': { type: 'command', doc: 'Square root', docCn: '平方根', signature: '\\sqrt{x}' },
+  'cbrt': { type: 'command', doc: 'Cube root', docCn: '立方根', signature: '\\sqrt[3]{x}' },
+  'sum': { type: 'command', doc: 'Summation', docCn: '求和', signature: '\\sum_{i=1}^{n}' },
+  'prod': { type: 'command', doc: 'Product', docCn: '求积', signature: '\\prod_{i=1}^{n}' },
+  'int': { type: 'command', doc: 'Integral', docCn: '积分', signature: '\\int_{a}^{b}' },
+  'oint': { type: 'command', doc: 'Contour integral', docCn: '环路积分', signature: '\\oint' },
+  'lim': { type: 'command', doc: 'Limit', docCn: '极限', signature: '\\lim_{x \\to a}' },
+  'infty': { type: 'symbol', doc: 'Infinity', docCn: '无穷大', signature: '\\infty' },
+  'partial': { type: 'symbol', doc: 'Partial derivative', docCn: '偏导数符号', signature: '\\partial' },
+  'nabla': { type: 'symbol', doc: 'Nabla', docCn: '梯度算子', signature: '\\nabla' },
+  'times': { type: 'symbol', doc: 'Times', docCn: '乘号', signature: '\\times' },
+  'div': { type: 'symbol', doc: 'Divide', docCn: '除号', signature: '\\div' },
+  'cdot': { type: 'symbol', doc: 'Dot product', docCn: '点乘', signature: '\\cdot' },
+  'pm': { type: 'symbol', doc: 'Plus minus', docCn: '正负号', signature: '\\pm' },
+  'mp': { type: 'symbol', doc: 'Minus plus', docCn: '负正号', signature: '\\mp' },
+  'leq': { type: 'symbol', doc: 'Less or equal', docCn: '小于等于', signature: '\\leq' },
+  'geq': { type: 'symbol', doc: 'Greater or equal', docCn: '大于等于', signature: '\\geq' },
+  'neq': { type: 'symbol', doc: 'Not equal', docCn: '不等于', signature: '\\neq' },
+  'approx': { type: 'symbol', doc: 'Approximately', docCn: '约等于', signature: '\\approx' },
+  'equiv': { type: 'symbol', doc: 'Equivalent', docCn: '恒等于', signature: '\\equiv' },
+  'll': { type: 'symbol', doc: 'Much less', docCn: '远小于', signature: '\\ll' },
+  'gg': { type: 'symbol', doc: 'Much greater', docCn: '远大于', signature: '\\gg' },
+  'cup': { type: 'symbol', doc: 'Union', docCn: '并集', signature: '\\cup' },
+  'cap': { type: 'symbol', doc: 'Intersection', docCn: '交集', signature: '\\cap' },
+  'subset': { type: 'symbol', doc: 'Subset', docCn: '子集', signature: '\\subset' },
+  'subseteq': { type: 'symbol', doc: 'Subset or equal', docCn: '子集或等于', signature: '\\subseteq' },
+  'supset': { type: 'symbol', doc: 'Superset', docCn: '超集', signature: '\\supset' },
+  'supseteq': { type: 'symbol', doc: 'Superset or equal', docCn: '超集或等于', signature: '\\supseteq' },
+  'in': { type: 'symbol', doc: 'Element', docCn: '属于', signature: '\\in' },
+  'notin': { type: 'symbol', doc: 'Not element', docCn: '不属于', signature: '\\notin' },
+  'forall': { type: 'symbol', doc: 'For all', docCn: '任意', signature: '\\forall' },
+  'exists': { type: 'symbol', doc: 'Exists', docCn: '存在', signature: '\\exists' },
+  'rightarrow': { type: 'symbol', doc: 'Right arrow', docCn: '右箭头', signature: '\\rightarrow' },
+  'leftarrow': { type: 'symbol', doc: 'Left arrow', docCn: '左箭头', signature: '\\leftarrow' },
+  'Rightarrow': { type: 'symbol', doc: 'Right double arrow', docCn: '右双箭头', signature: '\\Rightarrow' },
+  'Leftarrow': { type: 'symbol', doc: 'Left double arrow', docCn: '左双箭头', signature: '\\Leftarrow' },
+  'leftrightarrow': { type: 'symbol', doc: 'Left right arrow', docCn: '左右箭头', signature: '\\leftrightarrow' },
+  'Leftrightarrow': { type: 'symbol', doc: 'Left right double arrow', docCn: '左右双箭头', signature: '\\Leftrightarrow' },
+  // Trigonometric Functions
+  'sin': { type: 'function', doc: 'Sine', docCn: '正弦', signature: '\\sin(x)' },
+  'cos': { type: 'function', doc: 'Cosine', docCn: '余弦', signature: '\\cos(x)' },
+  'tan': { type: 'function', doc: 'Tangent', docCn: '正切', signature: '\\tan(x)' },
+  'cot': { type: 'function', doc: 'Cotangent', docCn: '余切', signature: '\\cot(x)' },
+  'sec': { type: 'function', doc: 'Secant', docCn: '正割', signature: '\\sec(x)' },
+  'csc': { type: 'function', doc: 'Cosecant', docCn: '余割', signature: '\\csc(x)' },
+  'arcsin': { type: 'function', doc: 'Arc sine', docCn: '反正弦', signature: '\\arcsin(x)' },
+  'arccos': { type: 'function', doc: 'Arc cosine', docCn: '反余弦', signature: '\\arccos(x)' },
+  'arctan': { type: 'function', doc: 'Arc tangent', docCn: '反正切', signature: '\\arctan(x)' },
+  'sinh': { type: 'function', doc: 'Hyperbolic sine', docCn: '双曲正弦', signature: '\\sinh(x)' },
+  'cosh': { type: 'function', doc: 'Hyperbolic cosine', docCn: '双曲余弦', signature: '\\cosh(x)' },
+  'tanh': { type: 'function', doc: 'Hyperbolic tangent', docCn: '双曲正切', signature: '\\tanh(x)' },
+  // Logarithms and Exponentials
+  'ln': { type: 'function', doc: 'Natural log', docCn: '自然对数', signature: '\\ln(x)' },
+  'log': { type: 'function', doc: 'Logarithm', docCn: '对数', signature: '\\log(x)' },
+  'log_{10}': { type: 'function', doc: 'Log base 10', docCn: '常用对数', signature: '\\log_{10}(x)' },
+  'exp': { type: 'function', doc: 'Exponential', docCn: '指数函数', signature: '\\exp(x)' },
+  'e': { type: 'symbol', doc: 'Euler number', docCn: '自然常数e', signature: 'e' },
+  // Matrices
+  'pmatrix': { type: 'environment', doc: 'Parenthesis matrix', docCn: '圆括号矩阵', signature: '\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}' },
+  'bmatrix': { type: 'environment', doc: 'Bracket matrix', docCn: '方括号矩阵', signature: '\\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}' },
+  'vmatrix': { type: 'environment', doc: 'Vertical bar matrix', docCn: '竖线矩阵(行列式)', signature: '\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix}' },
+  'Vmatrix': { type: 'environment', doc: 'Double vertical matrix', docCn: '双竖线矩阵', signature: '\\begin{Vmatrix} a & b \\\\ c & d \\end{Vmatrix}' },
+  'matrix': { type: 'environment', doc: 'Matrix', docCn: '矩阵', signature: '\\begin{matrix} a & b \\\\ c & d \\end{matrix}' },
+  // Other Common Commands
+  'hat': { type: 'command', doc: 'Hat accent', docCn: '帽子符号', signature: '\\hat{x}' },
+  'bar': { type: 'command', doc: 'Bar accent', docCn: '横线符号', signature: '\\bar{x}' },
+  'vec': { type: 'command', doc: 'Vector accent', docCn: '向量符号', signature: '\\vec{x}' },
+  'dot': { type: 'command', doc: 'Dot accent', docCn: '点符号', signature: '\\dot{x}' },
+  'ddot': { type: 'command', doc: 'Double dot accent', docCn: '双点符号', signature: '\\ddot{x}' },
+  'tilde': { type: 'command', doc: 'Tilde accent', docCn: '波浪线', signature: '\\tilde{x}' },
+  'overline': { type: 'command', doc: 'Overline', docCn: '上划线', signature: '\\overline{AB}' },
+  'underline': { type: 'command', doc: 'Underline', docCn: '下划线', signature: '\\underline{AB}' },
+  'overrightarrow': { type: 'command', doc: 'Over right arrow', docCn: '上右箭头', signature: '\\overrightarrow{AB}' },
+  'overleftarrow': { type: 'command', doc: 'Over left arrow', docCn: '上左箭头', signature: '\\overleftarrow{AB}' },
+  'overbrace': { type: 'command', doc: 'Over brace', docCn: '上花括号', signature: '\\overbrace{a+b+c}^{n}' },
+  'underbrace': { type: 'command', doc: 'Under brace', docCn: '下花括号', signature: '\\underbrace{a+b+c}_{n}' },
+  'binom': { type: 'command', doc: 'Binomial coefficient', docCn: '二项式系数', signature: '\\binom{n}{k}' },
+  'cases': { type: 'environment', doc: 'Cases environment', docCn: '分段函数', signature: '\\begin{cases} x & x>0 \\\\ -x & x\\leq 0 \\end{cases}' },
+  'stackrel': { type: 'command', doc: 'Stack relation', docCn: '堆叠符号', signature: '\\stackrel{\\text{def}}{=}' },
+  'underbrace': { type: 'command', doc: 'Underbrace', docCn: '下花括号', signature: '\\underbrace{a+b+c}_{n}' },
+  'overline': { type: 'command', doc: 'Overline', docCn: '上划线', signature: '\\overline{AB}' },
+  // Fractions and Radicals
+  'dfrac': { type: 'command', doc: 'Display fraction', docCn: '显示模式分数', signature: '\\dfrac{a}{b}' },
+  'cfrac': { type: 'command', doc: 'Continued fraction', docCn: '连分数', signature: '\\cfrac{a}{b}' },
+  // Brackets
+  'left(': { type: 'command', doc: 'Left parenthesis', docCn: '左圆括号', signature: '\\left(' },
+  'right)': { type: 'command', doc: 'Right parenthesis', docCn: '右圆括号', signature: '\\right)' },
+  'left[': { type: 'command', doc: 'Left bracket', docCn: '左方括号', signature: '\\left[' },
+  'right]': { type: 'command', doc: 'Right bracket', docCn: '右方括号', signature: '\\right]' },
+  'left\\{': { type: 'command', doc: 'Left brace', docCn: '左花括号', signature: '\\left\\{' },
+  'right\\}': { type: 'command', doc: 'Right brace', docCn: '右花括号', signature: '\\right\\}' },
+  'left|': { type: 'command', doc: 'Left absolute', docCn: '左竖线', signature: '\\left|' },
+  'right|': { type: 'command', doc: 'Right absolute', docCn: '右竖线', signature: '\\right|' },
+  'langle': { type: 'symbol', doc: 'Left angle', docCn: '左尖括号', signature: '\\langle' },
+  'rangle': { type: 'symbol', doc: 'Right angle', docCn: '右尖括号', signature: '\\rangle' },
+  // Spaces and alignments
+  'quad': { type: 'command', doc: 'Quad space', docCn: '大空格', signature: '\\quad' },
+  'qquad': { type: 'command', doc: 'Double quad space', docCn: '超大空格', signature: '\\qquad' },
+  // Differential symbols
+  'mathrm{d}': { type: 'command', doc: 'Differential d', docCn: '微分d', signature: '\\mathrm{d}x' },
+  'mathrm{d}x': { type: 'command', doc: 'Differential dx', docCn: '微分dx', signature: '\\mathrm{d}x' },
+  // Derivatives
+  'frac{d}{dx}': { type: 'command', doc: 'Derivative', docCn: '一阶导数', signature: '\\frac{d}{dx}' },
+  'frac{d^2}{dx^2}': { type: 'command', doc: 'Second derivative', docCn: '二阶导数', signature: '\\frac{d^2}{dx^2}' },
+  'frac{\\partial}{\\partial x}': { type: 'command', doc: 'Partial derivative', docCn: '偏导数', signature: '\\frac{\\partial}{\\partial x}' },
+  'frac{\\partial^2}{\\partial x^2}': { type: 'command', doc: 'Second partial derivative', docCn: '二阶偏导数', signature: '\\frac{\\partial^2}{\\partial x^2}' },
+  // Sums and Integrals Templates
+  'sum_{i=1}^{n}': { type: 'template', doc: 'Sum from 1 to n', docCn: '从1到n求和', signature: '\\sum_{i=1}^{n}' },
+  'sum_{n=1}^{\\infty}': { type: 'template', doc: 'Sum to infinity', docCn: '从1到无穷求和', signature: '\\sum_{n=1}^{\\infty}' },
+  'int_{a}^{b}': { type: 'template', doc: 'Definite integral', docCn: '定积分', signature: '\\int_{a}^{b} f(x)\\,\\mathrm{d}x' },
+  'int_{-\\infty}^{\\infty}': { type: 'template', doc: 'Integral from -inf to inf', docCn: '从负无穷到正无穷积分', signature: '\\int_{-\\infty}^{\\infty}' },
+  'int_{0}^{\\infty}': { type: 'template', doc: 'Integral from 0 to inf', docCn: '从0到无穷积分', signature: '\\int_{0}^{\\infty}' },
+  // Limits Templates
+  'lim_{x \\to 0}': { type: 'template', doc: 'Limit as x approaches 0', docCn: 'x趋近于0的极限', signature: '\\lim_{x \\to 0}' },
+  'lim_{x \\to \\infty}': { type: 'template', doc: 'Limit as x approaches infinity', docCn: 'x趋近于无穷的极限', signature: '\\lim_{x \\to \\infty}' },
+  'lim_{x \\to a}': { type: 'template', doc: 'Limit as x approaches a', docCn: 'x趋近于a的极限', signature: '\\lim_{x \\to a}' },
+  'lim_{n \\to \\infty}': { type: 'template', doc: 'Limit as n approaches infinity', docCn: 'n趋近于无穷的极限', signature: '\\lim_{n \\to \\infty}' },
+  // Matrix Templates
+  '2x2': { type: 'template', doc: '2x2 matrix', docCn: '2x2矩阵', signature: '\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}' },
+  '3x3': { type: 'template', doc: '3x3 matrix', docCn: '3x3矩阵', signature: '\\begin{pmatrix} a & b & c \\\\ d & e & f \\\\ g & h & i \\end{pmatrix}' },
+  'diag': { type: 'template', doc: 'Diagonal matrix', docCn: '对角矩阵', signature: '\\operatorname{diag}(a,b,c)' },
+  // Vectors
+  'vec{a}': { type: 'command', doc: 'Vector a', docCn: '向量a', signature: '\\vec{a}' },
+  'vec{v}': { type: 'command', doc: 'Vector v', docCn: '向量v', signature: '\\vec{v}' },
+  'vec{x}': { type: 'command', doc: 'Vector x', docCn: '向量x', signature: '\\vec{x}' },
+  // Absolute Values and Norms
+  '|x|': { type: 'template', doc: 'Absolute value', docCn: '绝对值', signature: '\\left|x\\right|' },
+  '||x||': { type: 'template', doc: 'Norm', docCn: '范数', signature: '\\left\\|x\\right\\|' },
+  // Superscripts and Subscripts
+  '^2': { type: 'template', doc: 'Square', docCn: '平方', signature: '^2' },
+  '^3': { type: 'template', doc: 'Cube', docCn: '立方', signature: '^3' },
+  '^n': { type: 'template', doc: 'Power n', docCn: 'n次方', signature: '^n' },
+  '_i': { type: 'template', doc: 'Subscript i', docCn: '下标i', signature: '_i' },
+  '_{i=1}': { type: 'template', doc: 'Subscript from 1', docCn: '下标从1开始', signature: '_{i=1}' },
+  // Common Mathematical Symbols
+  'nabla': { type: 'symbol', doc: 'Nabla operator', docCn: '梯度算子', signature: '\\nabla' },
+  'Delta': { type: 'symbol', doc: 'Delta', docCn: '变化量Δ', signature: '\\Delta' },
+  'ell': { type: 'symbol', doc: 'Ell', docCn: '手写体l', signature: '\\ell' },
+  'Re': { type: 'function', doc: 'Real part', docCn: '实部', signature: '\\Re(z)' },
+  'Im': { type: 'function', doc: 'Imaginary part', docCn: '虚部', signature: '\\Im(z)' },
+  'arg': { type: 'function', doc: 'Argument', docCn: '辐角', signature: '\\arg(z)' },
+  'mod': { type: 'function', doc: 'Modulo', docCn: '取模', signature: '\\mod{x}' },
+  'gcd': { type: 'function', doc: 'Greatest common divisor', docCn: '最大公约数', signature: '\\gcd(a,b)' },
+  'lcm': { type: 'function', doc: 'Least common multiple', docCn: '最小公倍数', signature: '\\lcm(a,b)' },
+  'max': { type: 'function', doc: 'Maximum', docCn: '最大值', signature: '\\max' },
+  'min': { type: 'function', doc: 'Minimum', docCn: '最小值', signature: '\\min' },
+  'sup': { type: 'function', doc: 'Supremum', docCn: '上确界', signature: '\\sup' },
+  'inf': { type: 'function', doc: 'Infimum', docCn: '下确界', signature: '\\inf' },
+  // Sets
+  'mathbb{N}': { type: 'symbol', doc: 'Natural numbers', docCn: '自然数集', signature: '\\mathbb{N}' },
+  'mathbb{Z}': { type: 'symbol', doc: 'Integers', docCn: '整数集', signature: '\\mathbb{Z}' },
+  'mathbb{Q}': { type: 'symbol', doc: 'Rational numbers', docCn: '有理数集', signature: '\\mathbb{Q}' },
+  'mathbb{R}': { type: 'symbol', doc: 'Real numbers', docCn: '实数集', signature: '\\mathbb{R}' },
+  'mathbb{C}': { type: 'symbol', doc: 'Complex numbers', docCn: '复数集', signature: '\\mathbb{C}' },
+  'emptyset': { type: 'symbol', doc: 'Empty set', docCn: '空集', signature: '\\emptyset' },
+  'setminus': { type: 'symbol', doc: 'Set difference', docCn: '集合差', signature: '\\setminus' },
+};
+
 function bindEvents() {
   // Toolbar button events
   document.getElementById('addTextBtn').addEventListener('click', () => addNewParagraph('text'));
@@ -403,14 +597,16 @@ function setupParagraphEvents(paragraph) {
   } else if (type === 'latex') {
     const textarea = paragraph.querySelector('.latex-input');
     const toggleBtn = paragraph.querySelector('.toggle-latex-btn');
+    // Setup autocomplete for LaTeX input and get the new textarea
+    const newTextarea = setupLatexAutocomplete(textarea);
 
-    textarea.addEventListener('input', function () {
+    newTextarea.addEventListener('input', function () {
       debounce(() => {
         renderLatex(paragraph);
-      }, 500)();
+      }, 200)();
     });
 
-    textarea.addEventListener('focus', function () {
+    newTextarea.addEventListener('focus', function () {
       setActiveParagraph(paragraph);
     });
 
@@ -446,6 +642,12 @@ function renderMarkdown(paragraph) {
 
   const content = textarea.value;
 
+  // Check if content contains SVG tag, if so, render as-is
+  if (content.trim().toLowerCase().startsWith('<svg') && content.trim().endsWith('</svg>')) {
+    render.innerHTML = content;
+    return;
+  }
+
   let html = content
     // Headers
     .replace(/^###### (.*$)/gim, '<h6>$1</h6>')
@@ -480,7 +682,7 @@ function renderMarkdown(paragraph) {
     .replace(/~~(.*?)~~/gim, '<del>$1</del>');
 
   // Handle multiple consecutive line breaks (paragraphs)
-  html = html.replace(/(<br>\s*){2,}/gim, '</p><p>');
+  html = html.replace(/(<br>\s*){2+}/gim, '</p><p>');
   html = '<p>' + html + '</p>';
 
   render.innerHTML = html || '<span style="color: #999;">空段落</span>';
@@ -596,7 +798,7 @@ function formatText(format) {
     textarea.focus();
     textarea.dispatchEvent(new Event('input'));
   } else {
-    showNotification('请先选择一个文本段落', 'error');
+    showNotification('请先选择一个富文本段落', 'error');
   }
 }
 
@@ -1053,7 +1255,7 @@ function showSuggestions(container, suggestions, currentWord, textarea, wordStar
     `;
 
     div.addEventListener('click', function () {
-      applySuggestion(textarea, suggestion.name, wordStartPos, textarea.selectionEnd);
+      applySuggestion(textarea, suggestion.signature, wordStartPos, textarea.selectionEnd);
       hideSuggestions(container);
       textarea.focus();
     });
@@ -1110,7 +1312,7 @@ function handleAutocompleteKeydown(e, textarea, suggestionsContainer) {
         const wordMatch = beforeCursor.match(/([a-zA-Z_][a-zA-Z0-9_]*)$/);
         const wordStartPos = cursorPos - wordMatch[1].length;
 
-        applySuggestion(textarea, currentSuggestions[currentAutocompleteIndex].name, wordStartPos, cursorPos);
+        applySuggestion(textarea, currentSuggestions[currentAutocompleteIndex].signature, wordStartPos, cursorPos);
         hideSuggestions(suggestionsContainer);
       } else if (e.key === 'Tab') {
         // If no suggestion is selected, just hide and let tab work normally
@@ -1132,13 +1334,225 @@ function updateActiveSuggestion(items) {
   });
 }
 
-function applySuggestion(textarea, suggestionName, startPos, endPos) {
+function applySuggestion(textarea, suggestionSignature, startPos, endPos) {
   const value = textarea.value;
-  const newValue = value.substring(0, startPos) + suggestionName + value.substring(endPos);
+  const newValue = value.substring(0, startPos) + suggestionSignature + value.substring(endPos);
   textarea.value = newValue;
 
   // Move cursor after the inserted suggestion
-  const newCursorPos = startPos + suggestionName.length;
+  const newCursorPos = startPos + suggestionSignature.length;
+  textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+  // Trigger input event
+  textarea.dispatchEvent(new Event('input'));
+}
+
+
+// LaTeX Auto-complete functionality
+let currentLatexAutocompleteIndex = -1;
+let currentLatexSuggestions = [];
+
+function setupLatexAutocomplete(textarea) {
+  // Wrap textarea in autocomplete container
+  const wrapper = textarea.parentElement;
+  if (!wrapper.classList.contains('autocomplete')) {
+    wrapper.classList.add('autocomplete');
+  }
+
+  // Create suggestions container if it doesn't exist
+  let suggestionsContainer = wrapper.querySelector('.autocomplete-suggestions');
+  if (!suggestionsContainer) {
+    suggestionsContainer = document.createElement('div');
+    suggestionsContainer.className = 'autocomplete-suggestions latex-suggestions';
+    wrapper.appendChild(suggestionsContainer);
+  }
+
+  // Remove existing event listeners by cloning
+  const newTextarea = textarea.cloneNode(true);
+  textarea.parentNode.replaceChild(newTextarea, textarea);
+
+  // Add input event listener
+  newTextarea.addEventListener('input', function (_) {
+    handleLatexAutocompleteInput(newTextarea, suggestionsContainer);
+  });
+
+  // Add keyboard event listener
+  newTextarea.addEventListener('keydown', function (e) {
+    handleLatexAutocompleteKeydown(e, newTextarea, suggestionsContainer);
+  });
+
+  // Hide suggestions when clicking outside
+  document.addEventListener('click', function (e) {
+    if (!wrapper.contains(e.target)) {
+      hideLatexSuggestions(suggestionsContainer);
+    }
+  });
+
+  return newTextarea;
+}
+
+function handleLatexAutocompleteInput(textarea, suggestionsContainer) {
+  const value = textarea.value;
+  const cursorPos = textarea.selectionStart;
+
+  // Find the current word being typed (including backslash)
+  const beforeCursor = value.substring(0, cursorPos);
+  const wordMatch = beforeCursor.match(/(\\?[a-zA-Z_][a-zA-Z0-9_]*)$/);
+
+  if (!wordMatch) {
+    hideLatexSuggestions(suggestionsContainer);
+    return;
+  }
+
+  let currentWord = wordMatch[1];
+  let wordStartPos = cursorPos - currentWord.length;
+
+  // Get matching suggestions
+  const suggestions = getLatexMatchingSuggestions(currentWord);
+
+  if (suggestions.length === 0 || currentWord.length < 1) {
+    hideLatexSuggestions(suggestionsContainer);
+    return;
+  }
+
+  currentLatexSuggestions = suggestions;
+  currentLatexAutocompleteIndex = 0; // Default select first suggestion
+
+  showLatexSuggestions(suggestionsContainer, suggestions, currentWord, textarea, wordStartPos);
+}
+
+function getLatexMatchingSuggestions(prefix) {
+  const suggestions = [];
+  let lowerPrefix = prefix.toLowerCase();
+
+  // If prefix starts with backslash, remove it for matching
+  if (lowerPrefix.startsWith('\\')) {
+    lowerPrefix = lowerPrefix.substring(1);
+  }
+
+  for (const [name, info] of Object.entries(latexCompletions)) {
+    if (name.toLowerCase().startsWith(lowerPrefix)) {
+      suggestions.push({ name, ...info });
+    }
+  }
+
+  // Sort by name length (shorter matches first)
+  suggestions.sort((a, b) => a.name.length - b.name.length);
+  // Limit to 10 suggestions
+  return suggestions.slice(0, 10);
+}
+
+function showLatexSuggestions(container, suggestions, currentWord, textarea, wordStartPos) {
+  container.innerHTML = '';
+  container.classList.add('visible');
+
+  suggestions.forEach((suggestion, index) => {
+    const div = document.createElement('div');
+    div.className = 'autocomplete-suggestion latex-suggestion-item';
+
+    // Default select first suggestion
+    if (index === 0) {
+      div.classList.add('active');
+    }
+
+    // Highlight the matching part
+    const matchIndex = suggestion.name.toLowerCase().indexOf(currentWord.toLowerCase());
+    const beforeMatch = suggestion.name.substring(0, matchIndex);
+    const match = suggestion.name.substring(matchIndex, matchIndex + currentWord.length);
+    const afterMatch = suggestion.name.substring(matchIndex + currentWord.length);
+
+    div.innerHTML = `
+      <div class="autocomplete-suggestion-content">
+        <span class="autocomplete-suggestion-name">
+          ${beforeMatch}<span class="suggestion-match">${match}</span>${afterMatch}
+        </span>
+        <span class="autocomplete-suggestion-signature">${suggestion.signature}</span>
+      </div>
+      <div class="autocomplete-suggestion-meta">
+        <span class="autocomplete-suggestion-doc-cn">${suggestion.docCn || suggestion.doc}</span>
+        <span class="suggestion-type ${suggestion.type}">${suggestion.type}</span>
+      </div>
+    `;
+
+    div.addEventListener('click', function () {
+      applyLatexSuggestion(textarea, suggestion.name, wordStartPos, textarea.selectionEnd);
+      hideLatexSuggestions(container);
+      textarea.focus();
+    });
+    container.appendChild(div);
+  });
+}
+
+function hideLatexSuggestions(container) {
+  container.classList.remove('visible');
+  currentLatexSuggestions = [];
+  currentLatexAutocompleteIndex = -1;
+}
+
+function handleLatexAutocompleteKeydown(e, textarea, suggestionsContainer) {
+  const suggestionItems = suggestionsContainer.querySelectorAll('.latex-suggestion-item');
+
+  if (!suggestionsContainer.classList.contains('visible')) {
+    return;
+  }
+
+  switch (e.key) {
+    case 'Escape':
+      e.preventDefault();
+      hideLatexSuggestions(suggestionsContainer);
+      break;
+
+    case 'ArrowDown':
+      e.preventDefault();
+      currentLatexAutocompleteIndex = Math.min(currentLatexAutocompleteIndex + 1, suggestionItems.length - 1);
+      updateLatexActiveSuggestion(suggestionItems);
+      break;
+
+    case 'ArrowUp':
+      e.preventDefault();
+      currentLatexAutocompleteIndex = Math.max(currentLatexAutocompleteIndex - 1, -1);
+      updateLatexActiveSuggestion(suggestionItems);
+      break;
+
+    case 'Enter':
+    case 'Tab':
+      e.preventDefault();
+      // Use the first suggestion if none is selected, otherwise use the selected one
+      const indexToUse = currentLatexAutocompleteIndex >= 0 ? currentLatexAutocompleteIndex : 0;
+      if (currentLatexSuggestions[indexToUse]) {
+        const value = textarea.value;
+        const cursorPos = textarea.selectionStart;
+        const beforeCursor = value.substring(0, cursorPos);
+        const wordMatch = beforeCursor.match(/(\\?[a-zA-Z_][a-zA-Z0-9_]*)$/);
+        const wordStartPos = cursorPos - wordMatch[1].length;
+
+        applyLatexSuggestion(textarea, currentLatexSuggestions[indexToUse].name, wordStartPos, cursorPos);
+        hideLatexSuggestions(suggestionsContainer);
+      }
+      break;
+  }
+}
+
+function updateLatexActiveSuggestion(items) {
+  items.forEach((item, index) => {
+    if (index === currentLatexAutocompleteIndex) {
+      item.classList.add('active');
+      item.scrollIntoView({ block: 'nearest' });
+    } else {
+      item.classList.remove('active');
+    }
+  });
+}
+
+function applyLatexSuggestion(textarea, suggestionName, startPos, endPos) {
+  const value = textarea.value;
+  // Check if the suggestion starts with backslash
+  const latexCode = latexCompletions[suggestionName] ? latexCompletions[suggestionName].signature : suggestionName;
+  const newValue = value.substring(0, startPos) + latexCode + value.substring(endPos);
+  textarea.value = newValue;
+
+  // Move cursor after the inserted suggestion
+  const newCursorPos = startPos + latexCode.length;
   textarea.setSelectionRange(newCursorPos, newCursorPos);
 
   // Trigger input event

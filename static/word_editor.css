@@ -486,7 +486,8 @@
   .code-input,
   .latex-input,
   .notification,
-  .minimal-mode-toggle {
+  .minimal-mode-toggle,
+  .code-output div {
     display: none !important;
   }
 
@@ -677,6 +678,7 @@
   }
 }
 
+/* SymPy autocomplete styles (Blue theme) */
 .autocomplete-suggestions.visible {
   display: block;
 }
@@ -851,6 +853,119 @@
 .autocomplete-suggestion:hover .autocomplete-suggestion-doc-cn,
 .autocomplete-suggestion.active .autocomplete-suggestion-doc-cn {
   color: var(--jp-ui-font-color0);
+}
+
+/* Latex autocomplete styles (Purple theme) */
+.autocomplete-suggestions.latex-suggestions {
+  border: 1px solid rgba(149, 45, 139, 0.2);
+  box-shadow: 0 8px 32px rgba(149, 45, 139, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.autocomplete-suggestions.latex-suggestions::-webkit-scrollbar-thumb {
+  background: rgba(149, 45, 139, 0.3);
+}
+
+.autocomplete-suggestions.latex-suggestions::-webkit-scrollbar-thumb:hover {
+  background: rgba(149, 45, 139, 0.5);
+}
+
+.autocomplete-suggestion.latex-suggestion-item:hover,
+.autocomplete-suggestion.latex-suggestion-item.active {
+  background: linear-gradient(
+    135deg,
+    rgba(149, 45, 139, 0.08) 0%,
+    rgba(149, 45, 139, 0.12) 100%
+  );
+  border-left: 3px solid #952d8b;
+  padding-left: 11px;
+}
+
+.autocomplete-suggestion.latex-suggestion-item .autocomplete-suggestion-name {
+  color: #952d8b;
+}
+
+.autocomplete-suggestion.latex-suggestion-item:hover
+  .autocomplete-suggestion-name,
+.autocomplete-suggestion.latex-suggestion-item.active
+  .autocomplete-suggestion-name {
+  color: #952d8b;
+}
+
+.autocomplete-suggestion.latex-suggestion-item .suggestion-match {
+  color: #952d8b;
+  background: linear-gradient(
+    135deg,
+    rgba(149, 45, 139, 0.15) 0%,
+    rgba(149, 45, 139, 0.1) 100%
+  );
+}
+
+.autocomplete-suggestion.latex-suggestion-item:hover .suggestion-match,
+.autocomplete-suggestion.latex-suggestion-item.active .suggestion-match {
+  background: linear-gradient(
+    135deg,
+    rgba(149, 45, 139, 0.25) 0%,
+    rgba(149, 45, 139, 0.2) 100%
+  );
+  color: #952d8b;
+}
+
+.autocomplete-suggestion.latex-suggestion-item:hover
+  .autocomplete-suggestion-signature,
+.autocomplete-suggestion.latex-suggestion-item.active
+  .autocomplete-suggestion-signature {
+  background: rgba(149, 45, 139, 0.1);
+  color: #952d8b;
+}
+
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.function {
+  background: linear-gradient(
+    135deg,
+    rgba(149, 45, 139, 0.1) 0%,
+    rgba(149, 45, 139, 0.05) 100%
+  );
+  color: #952d8b;
+  border-color: rgba(149, 45, 139, 0.2);
+}
+
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.symbol {
+  background: linear-gradient(
+    135deg,
+    rgba(156, 39, 176, 0.1) 0%,
+    rgba(156, 39, 176, 0.05) 100%
+  );
+  color: #9c27b0;
+  border-color: rgba(156, 39, 176, 0.2);
+}
+
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.command {
+  background: linear-gradient(
+    135deg,
+    rgba(142, 36, 170, 0.1) 0%,
+    rgba(142, 36, 170, 0.05) 100%
+  );
+  color: #8e24aa;
+  border-color: rgba(142, 36, 170, 0.2);
+}
+
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.environment {
+  background: linear-gradient(
+    135deg,
+    rgba(123, 31, 162, 0.1) 0%,
+    rgba(123, 31, 162, 0.05) 100%
+  );
+  color: #7b1fa2;
+  border-color: rgba(123, 31, 162, 0.2);
+}
+
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.template {
+  background: linear-gradient(
+    135deg,
+    rgba(106, 27, 154, 0.1) 0%,
+    rgba(106, 27, 154, 0.05) 100%
+  );
+  color: #6a1b9a;
+  border-color: rgba(106, 27, 154, 0.2);
 }
 
 /* Floating Formula Editor Panel */

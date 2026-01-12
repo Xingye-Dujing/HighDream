@@ -58,3 +58,8 @@
 
 - **中文**: 完善积分部分的规则和匹配器，当前只能处理简单的积分计算，需要扩展更多复杂的积分场景支持
 - **English**: Improve the rules and matcher, as it currently can only handle simple integral calculations and needs to support more complex integration scenarios
+
+## CSS and JavaScript Files Refactoring
+
+- **中文**: 所有 CSS 和 JS 文件都需要进行重构，以提高代码质量和维护性
+- **English**: All CSS and JS files need to be refactored to improve code quality and maintainability
