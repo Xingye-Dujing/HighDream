@@ -1,5 +1,5 @@
 from sympy import (
-    Abs, Expr, Integer, Integral, Mul, Rational, diff, exp, fraction,
+    Abs, Expr, Integer, Integral, Mul, Pow, Rational, diff, exp, fraction,
     integrate, latex, log, powsimp, simplify, together, sin, cos,
     tan, cot, sec, csc
 )
@@ -250,6 +250,9 @@ def weierstrass_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunct
     - cos(x) = (1-t^2)/(1+t^2)
     - dx = 2dt/(1+t^2)
     """
+    if not isinstance(expr, (Mul, Pow)):
+        return None
+
     var = context['variable']
 
     if not can_use_weierstrass(expr, var):
