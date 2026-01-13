@@ -1,6 +1,10 @@
 sympy
 flask
-matplotlib
-IPython
 gevent
-jupyter
+
+# Optional：
+
+# IPython
+# jupyter (if you want to use main.ipynb)
+# pyinstaller (if you want to build a standalone executable)
+# matplotlib (if you want to visualize equivalent expression derivation trees)
