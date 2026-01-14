@@ -18,7 +18,7 @@ import traceback
 import sympy as sp
 from sympy import (
     # Basic classes
-    Symbol, symbols, sympify, Expr, Integer, Rational, Float,
+    Symbol, symbols, sympify, Expr, Integer, Rational, Float, Piecewise,
     # Algebra
     simplify, expand, factor, collect, apart, together, cancel,
     # Calculus
@@ -279,7 +279,7 @@ def sympy_calculate():
 
     try:
         expr = sympify(expression)
-        var = Symbol(variable)
+        var = Symbol(variable, real=True)
 
         if operation_type == 'diff':
             result = diff(expr, var)
@@ -349,6 +349,7 @@ def sympy_execute():
     """
     data = request.json or {}
     code = data.get('code', '')
+    x, y, t, a, b = symbols('x y t a b', real=True)
 
     if not code:
         return jsonify({'success': False, 'error': 'Code cannot be empty'})
@@ -367,6 +368,7 @@ def sympy_execute():
             'Integer': Integer,
             'Rational': Rational,
             'Float': Float,
+            'Piecewise': Piecewise,
             # Algebra
             'simplify': simplify,
             'expand': expand,
@@ -478,6 +480,12 @@ def sympy_execute():
             'tuple': tuple,
             'set': set,
             'sum': sum,
+            # Symbols
+            'x': x,
+            'y': y,
+            't': t,
+            'a': a,
+            'b': b,
         }
 
         # Execute code
@@ -503,6 +511,10 @@ def sympy_execute():
 
         if result is None:
             return jsonify({'success': True, 'result': 'Code executed successfully but no return value'})
+
+        # Auto simplify
+        if isinstance(result, Expr):
+            result = simplify(result)
 
         # Try to convert to string
         result_str = str(result)

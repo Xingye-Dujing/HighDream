@@ -107,6 +107,7 @@
 .text-paragraph .text-render {
   padding: 4px;
   min-height: 40px;
+  overflow: auto;
 }
 
 .sympy-paragraph .code-header {
@@ -277,8 +278,7 @@
   font-size: 15px;
   text-align: center;
   max-height: 280px;
-  overflow-y: auto;
-  overflow-x: auto;
+  overflow: auto;
 }
 
 .latex-paragraph .latex-render.collapsed {
@@ -618,6 +618,7 @@
   min-height: 48px;
   font-size: 15px;
   transition: all 0.3s ease;
+  overflow: auto;
 }
 
 .sympy-paragraph .code-output:empty {
