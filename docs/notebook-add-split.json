@@ -1,0 +1,32 @@
+[
+  {
+    "type": "code",
+    "content": "(2*exp(x)-1)/(exp(x)+3)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/(1+exp(x))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(3*sin(x)-2*cos(x))/(cos(x)+2*sin(x))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(sin(x)+2*cos(x))/(cos(x)+2*sin(x))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(2*sin(x)+cos(x))/(cos(x)+sin(x))+3",
+    "operationType": "integral",
+    "variable": "x"
+  }
+]

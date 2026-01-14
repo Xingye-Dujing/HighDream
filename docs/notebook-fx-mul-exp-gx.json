@@ -1,0 +1,32 @@
+[
+  {
+    "type": "code",
+    "content": "(1+x-1/x)*exp(x+1/x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(1+x-1/x)*exp(x+1/x)+x",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(1+x-1/x)*exp(x+1/x)+sin(x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "exp(cos(x))*(1-x*sin(x))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(1+x-1/x)*exp(x+1/x)+x",
+    "operationType": "integral",
+    "variable": "x"
+  }
+]

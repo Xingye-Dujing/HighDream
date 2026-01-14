@@ -1,0 +1,74 @@
+[
+  {
+    "type": "text",
+    "content": "# 在此，我演示一道题目的求解"
+  },
+  {
+    "type": "latex",
+    "content": "问:当 \\;x \\in [0,1] \\; 时, \\; f(x)=\\int_{0}^{1} |t^3-x^3| \\; \\mathrm{d}t, \\; 求此处的 \\; f(x) \\; 解析式."
+  },
+  {
+    "type": "latex",
+    "content": "答：当 \\;x \\in [0,1] \\; 位于积分区间内, \\int_{0}^{1} |t^3-x^3| \\; \\mathrm{d}t = \\int_{0}^{x} \\left(x^3-t^3\\right) \\mathrm{d}t + \\int_{x}^{1} \\left(t^3-x^3\\right) \\mathrm{d}t"
+  },
+  {
+    "type": "latex",
+    "content": "\\int \\left(t^3-x^3\\right) \\; \\mathrm{d}t = \\frac{t^{4}}{4} - t x^{3}"
+  },
+  {
+    "type": "sympy",
+    "content": "expr=t**3-x**3\nres=integrate(expr, t)"
+  },
+  {
+    "type": "latex",
+    "content": "\\int_{x}^{1} \\left(t^3-x^3\\right) \\mathrm{d}t = \\frac{3 x^{4}}{4} - x^{3} + \\frac{1}{4}"
+  },
+  {
+    "type": "sympy",
+    "content": "expr=t**4/4 - t*x**3\nres=expr.subs(t, 1)-expr.subs(t, x)"
+  },
+  {
+    "type": "latex",
+    "content": "\\int \\left(x^3-t^3\\right) \\; \\mathrm{d}t = - \\frac{t^{4}}{4} + t x^{3}"
+  },
+  {
+    "type": "sympy",
+    "content": "expr=x**3-t**3\nres=integrate(expr, t)"
+  },
+  {
+    "type": "latex",
+    "content": "\\int_{0}^{x} \\left(x^3-t^3\\right) = \\frac{3x^4}{4}"
+  },
+  {
+    "type": "sympy",
+    "content": "expr=-t**4/4 + t*x**3\nres=expr.subs(t, x)-expr.subs(t, 0)"
+  },
+  {
+    "type": "latex",
+    "content": "当 \\; x \\in [0,1] \\; 位于积分区间内, \\int_{0}^{1} |t^3-x^3| \\; \\mathrm{d}t = \\frac{3 x^{4}}{2} - x^{3} + \\frac{1}{4}"
+  },
+  {
+    "type": "sympy",
+    "content": "expr=3*x**4/4 - x**3 + Rational(1, 4)+3*x**4/4"
+  },
+  {
+    "type": "text",
+    "content": "我们也可以使用 SymPy 一次性求出，而不展示中间过程"
+  },
+  {
+    "type": "sympy",
+    "content": "res_1=integrate(t**3-x**3, (t, x, 1))\nres_2=integrate(x**3-t**3, (t, 0, x))\nres=res_1+res_2"
+  },
+  {
+    "type": "text",
+    "content": "但 SymPy 对分段函数（含绝对值函数）的处理能力不强，我们不能一下子求出。必须如上面手动分开来算。（Maple 可以直接求出来，Maple 是真的强大）"
+  },
+  {
+    "type": "sympy",
+    "content": "expr=abs(t**3-x**3)\nres=integrate(expr, t)"
+  },
+  {
+    "type": "sympy",
+    "content": "expr=abs(t**3-x**3)\nres=integrate(expr, (t,0,1))"
+  }
+]

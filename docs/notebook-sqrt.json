@@ -1,0 +1,74 @@
+[
+  {
+    "type": "code",
+    "content": "sqrt(3+x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/sqrt(3+x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "sqrt(8+x**2)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/sqrt(2+x**2)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "sqrt(2-x**2)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/sqrt(2-x**2)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "sqrt(x**2-8)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/sqrt(x**2-2)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/(x*sqrt(x**2-2))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "sqrt(2)*acos(sqrt(2)/x)/2",
+    "operationType": "diff",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x/sqrt(x**2-2)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "sqrt(x**2-2)",
+    "operationType": "diff",
+    "variable": "x"
+  }
+]

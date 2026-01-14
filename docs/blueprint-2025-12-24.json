@@ -1,0 +1,315 @@
+{
+  "version": "1.0",
+  "timestamp": "2025-12-24T17:30:14.001Z",
+  "nodes": {
+    "node-1": {
+      "id": "node-1",
+      "type": "expression",
+      "x": 100,
+      "y": 100,
+      "width": 220,
+      "height": 150,
+      "title": "表达式节点",
+      "data": {
+        "expression": "exp(3*x+100)"
+      },
+      "inputs": [],
+      "outputs": [
+        {}
+      ]
+    },
+    "node-2": {
+      "id": "node-2",
+      "type": "operation",
+      "x": 119,
+      "y": 397,
+      "width": 220,
+      "height": 150,
+      "title": "运算节点",
+      "data": {
+        "operation": "integral",
+        "variable": "x",
+        "limitPoint": "0"
+      },
+      "inputs": [],
+      "outputs": [
+        {}
+      ]
+    },
+    "node-3": {
+      "id": "node-3",
+      "type": "result",
+      "x": 429,
+      "y": 377,
+      "width": 191,
+      "height": 136,
+      "title": "结果节点",
+      "data": {
+        "result": "∫ exp(3*x+100) dx = exp(3*x + 100)/3",
+        "resultExpression": "exp(3*x + 100)/3"
+      },
+      "inputs": [
+        {},
+        {}
+      ],
+      "outputs": [
+        {}
+      ]
+    },
+    "node-5": {
+      "id": "node-5",
+      "type": "text",
+      "x": 111,
+      "y": 637,
+      "width": 220,
+      "height": 150,
+      "title": "文本节点",
+      "data": {
+        "text": "测试"
+      },
+      "inputs": [],
+      "outputs": []
+    },
+    "node-6": {
+      "id": "node-6",
+      "type": "render",
+      "x": 438,
+      "y": 15,
+      "width": 180,
+      "height": 120,
+      "title": "渲染节点",
+      "data": {
+        "latex": "exp(3*x+100)"
+      },
+      "inputs": [
+        {}
+      ],
+      "outputs": []
+    },
+    "node-7": {
+      "id": "node-7",
+      "type": "render",
+      "x": 767,
+      "y": 279,
+      "width": 220,
+      "height": 150,
+      "title": "渲染节点",
+      "data": {
+        "latex": "exp(3*x + 100)/3"
+      },
+      "inputs": [
+        {}
+      ],
+      "outputs": []
+    },
+    "node-8": {
+      "id": "node-8",
+      "type": "simplify",
+      "x": 431,
+      "y": 171,
+      "width": 220,
+      "height": 150,
+      "title": "化简节点",
+      "data": {
+        "result": "simplify(exp(3*x+100)) = exp(3*x + 100)",
+        "resultExpression": "exp(3*x + 100)"
+      },
+      "inputs": [
+        {}
+      ],
+      "outputs": [
+        {}
+      ]
+    },
+    "node-9": {
+      "id": "node-9",
+      "type": "render",
+      "x": 748,
+      "y": 36,
+      "width": 220,
+      "height": 150,
+      "title": "渲染节点",
+      "data": {
+        "latex": "exp(3*x + 100)"
+      },
+      "inputs": [
+        {}
+      ],
+      "outputs": []
+    },
+    "node-10": {
+      "id": "node-10",
+      "type": "result",
+      "x": 792,
+      "y": 508,
+      "width": 220,
+      "height": 150,
+      "title": "结果节点",
+      "data": {
+        "result": "d/dx(exp(3*x + 100)/3) = exp(3*x + 100)",
+        "resultExpression": "exp(3*x + 100)"
+      },
+      "inputs": [
+        {},
+        {}
+      ],
+      "outputs": [
+        {}
+      ]
+    },
+    "node-11": {
+      "id": "node-11",
+      "type": "operation",
+      "x": 463,
+      "y": 591,
+      "width": 220,
+      "height": 150,
+      "title": "运算节点",
+      "data": {
+        "operation": "diff",
+        "variable": "x",
+        "limitPoint": "0"
+      },
+      "inputs": [],
+      "outputs": [
+        {}
+      ]
+    },
+    "node-12": {
+      "id": "node-12",
+      "type": "render",
+      "x": 1096,
+      "y": 525,
+      "width": 220,
+      "height": 150,
+      "title": "渲染节点",
+      "data": {
+        "latex": "exp(3*x + 100)"
+      },
+      "inputs": [
+        {}
+      ],
+      "outputs": []
+    }
+  },
+  "connections": [
+    {
+      "id": "conn-1766597255342-pwk6gxo9o",
+      "output": {
+        "nodeId": "node-1",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-6",
+        "portType": "input",
+        "portIndex": 0
+      }
+    },
+    {
+      "id": "conn-1766597259573-c9vh0qc4u",
+      "output": {
+        "nodeId": "node-2",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-3",
+        "portType": "input",
+        "portIndex": 1
+      }
+    },
+    {
+      "id": "conn-1766597261703-929suw8co",
+      "output": {
+        "nodeId": "node-1",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-3",
+        "portType": "input",
+        "portIndex": 0
+      }
+    },
+    {
+      "id": "conn-1766597292934-u2j0ywu0g",
+      "output": {
+        "nodeId": "node-3",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-7",
+        "portType": "input",
+        "portIndex": 0
+      }
+    },
+    {
+      "id": "conn-1766597324637-pmb6d7fg3",
+      "output": {
+        "nodeId": "node-1",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-8",
+        "portType": "input",
+        "portIndex": 0
+      }
+    },
+    {
+      "id": "conn-1766597328064-2baynpvwl",
+      "output": {
+        "nodeId": "node-8",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-9",
+        "portType": "input",
+        "portIndex": 0
+      }
+    },
+    {
+      "id": "conn-1766597356947-enxf8yoc4",
+      "output": {
+        "nodeId": "node-3",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-10",
+        "portType": "input",
+        "portIndex": 0
+      }
+    },
+    {
+      "id": "conn-1766597359355-5n4rsc8vg",
+      "output": {
+        "nodeId": "node-11",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-10",
+        "portType": "input",
+        "portIndex": 1
+      }
+    },
+    {
+      "id": "conn-1766597365144-k6opkwdwo",
+      "output": {
+        "nodeId": "node-10",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-12",
+        "portType": "input",
+        "portIndex": 0
+      }
+    }
+  ],
+  "nodeCounter": 12
+}

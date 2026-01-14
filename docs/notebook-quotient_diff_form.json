@@ -1,0 +1,44 @@
+[
+  {
+    "type": "code",
+    "content": "(x*cos(x)-sin(x))/x**2",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "sin(x)/x",
+    "operationType": "diff",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x*sin(x)/(x+sin(x))**2",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(1-cos(x))/(x+sin(x))",
+    "operationType": "diff",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x+x*sin(x)/(x+sin(x))**2",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(1-log(x))/(x-log(x))**2",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(1-log(x))/(x-log(x))**2+sin(x)",
+    "operationType": "integral",
+    "variable": "x"
+  }
+]

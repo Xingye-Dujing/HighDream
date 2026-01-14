@@ -1,0 +1,99 @@
+[
+  {
+    "type": "code",
+    "content": "[1,b,3],[4,2,1]\n[0,4,5],[6,4,a]",
+    "operationType": "operations",
+    "variable": "x",
+    "operationSymbol": "+"
+  },
+  {
+    "type": "code",
+    "content": "[1,2,3],[4,2,1]\n[0,4,5],[a,4,3]",
+    "operationType": "operations",
+    "variable": "x",
+    "operationSymbol": "-"
+  },
+  {
+    "type": "code",
+    "content": "[1,2,3],[4,a,1]",
+    "operationType": "operations",
+    "variable": "x",
+    "operationSymbol": "T"
+  },
+  {
+    "type": "code",
+    "content": "[a,b],[c,d]",
+    "operationType": "invert",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "[1,2],[4,2]",
+    "operationType": "svd",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "[1,2],[4,2]",
+    "operationType": "schur",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "[1,2],[4,2]",
+    "operationType": "singular",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "[1,2],[4,2]",
+    "operationType": "diag",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "[1,2],[4,2]",
+    "operationType": "orthogonal",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "[1,2],[4,2]",
+    "operationType": "LU",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "[1,2],[4,2]",
+    "operationType": "rank",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "[1,2],[4,2]",
+    "operationType": "det",
+    "variable": "x",
+    "detType": "1"
+  },
+  {
+    "type": "code",
+    "content": "[1,2],[4,2]",
+    "operationType": "det",
+    "variable": "x",
+    "detType": "2"
+  },
+  {
+    "type": "code",
+    "content": "[1,2],[4,2]",
+    "operationType": "ref",
+    "variable": "x",
+    "targetForm": "ref"
+  },
+  {
+    "type": "code",
+    "content": "[1,2],[4,2]",
+    "operationType": "ref",
+    "variable": "x",
+    "targetForm": "rref"
+  }
+]

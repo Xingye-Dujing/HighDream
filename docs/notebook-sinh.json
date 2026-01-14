@@ -1,0 +1,50 @@
+[
+  {
+    "type": "code",
+    "content": "sinh(x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "cosh(x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "tanh(x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/sinh(x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/cosh(x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/tanh(x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/(exp(x)-exp(-x))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "exp(x)/(exp(x)-exp(-x))",
+    "operationType": "integral",
+    "variable": "x"
+  }
+]

@@ -1,0 +1,114 @@
+[
+  {
+    "type": "code",
+    "content": "((8+3*x-x^2)^(1/3)-2)/(x+x^2)",
+    "operationType": "limit",
+    "variable": "x",
+    "point": "0",
+    "direction": "+",
+    "maxLhopitalCount": "5"
+  },
+  {
+    "type": "code",
+    "content": "1+1/x**2-1/x**3*ln((2+x)/(2-x))",
+    "operationType": "limit",
+    "variable": "x",
+    "point": "0",
+    "direction": "+",
+    "maxLhopitalCount": "5"
+  },
+  {
+    "type": "markdown",
+    "content": "后面的多余步骤都是验证乘法拆分的正确性（即验证拆分两项的极限都存在），因而不可删去"
+  },
+  {
+    "type": "code",
+    "content": "1+1/x**2-1/x**3*ln((2+x)/(2-x))",
+    "operationType": "limit",
+    "variable": "x",
+    "point": "oo",
+    "direction": "+",
+    "maxLhopitalCount": "5"
+  },
+  {
+    "type": "code",
+    "content": "(cos(x*exp(x))-cos(x*exp(-x)))/x**3",
+    "operationType": "limit",
+    "variable": "x",
+    "point": "0",
+    "direction": "+",
+    "maxLhopitalCount": "5"
+  },
+  {
+    "type": "code",
+    "content": "(1-1/x)^x",
+    "operationType": "limit",
+    "variable": "x",
+    "point": "0",
+    "direction": "+",
+    "maxLhopitalCount": "5"
+  },
+  {
+    "type": "code",
+    "content": "(1-1/n)^n",
+    "operationType": "limit",
+    "variable": "x",
+    "point": "oo",
+    "direction": "+",
+    "maxLhopitalCount": "5"
+  },
+  {
+    "type": "code",
+    "content": "(exp(sin(x))-exp(tan(x))+ln(1+x^3))/(sin(x^2))",
+    "operationType": "limit",
+    "variable": "x",
+    "point": "0",
+    "direction": "+",
+    "maxLhopitalCount": "5"
+  },
+  {
+    "type": "code",
+    "content": "((1+x)**(3/x)-exp(3))/x",
+    "operationType": "limit",
+    "variable": "x",
+    "point": "0",
+    "direction": "+",
+    "maxLhopitalCount": "5"
+  },
+  {
+    "type": "code",
+    "content": "ln(1+3*x)*sin(6*x)*ln(1+x)/(5*x**3*sin(7*x)*(exp(10*x)-1))",
+    "operationType": "limit",
+    "variable": "x",
+    "point": "0",
+    "direction": "+",
+    "maxLhopitalCount": "5"
+  },
+  {
+    "type": "code",
+    "content": "(exp(10*x)-1)*ln(1+3*x)*sin(6*x)*ln(1+x)/(5*x**3*sin(7*x))",
+    "operationType": "limit",
+    "variable": "x",
+    "point": "0",
+    "direction": "+",
+    "maxLhopitalCount": "5"
+  },
+  {
+    "type": "code",
+    "content": "tan(x)/(20*(3*exp(10*x)-3))",
+    "operationType": "limit",
+    "variable": "x",
+    "point": "0",
+    "direction": "+",
+    "maxLhopitalCount": "5"
+  },
+  {
+    "type": "code",
+    "content": "(8*exp(10*x)-8)/ln(1+x)*sin(x)",
+    "operationType": "limit",
+    "variable": "x",
+    "point": "0",
+    "direction": "+",
+    "maxLhopitalCount": "5"
+  }
+]

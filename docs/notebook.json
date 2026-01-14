@@ -1,0 +1,128 @@
+[
+  {
+    "type": "code",
+    "content": "atan(x)*log((x**2+1))*x",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x**2*log(x**2 + 1)*atan(x)/2 - x**2*atan(x)/2 - x*log(x**2 + 1)/2 + 3*x/2 + log(x**2 + 1)*atan(x)/2 - 3*atan(x)/2",
+    "operationType": "diff",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x^2*log(x^2+1)*atan(x)/2-x^2*atan(x)/2-x*log(x^2+1)/2+3*x/2+log(x^2+1)*atan(x)/2-3*atan(x)/2",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x*log(x**2+1)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "log(x**2+1)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(2*x+3)/(x**2+3*x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "2*x/(x**2+1)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "3/(x+3)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x**2/(x**2+3)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "2*x/(x**2+3)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "cos(x)/sin(x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x/(2*x+2)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "8/(x**2+1)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "8/(x**2+8)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/(x^3+1)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/(exp(x)+exp(-x))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "atan(exp(x))",
+    "operationType": "diff",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "-(-log(2-x)+log(x+2))/x^3",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(x^2*(log(x-2)-log(x+2))+4*x-4*log(2-x)+4*log(x+2))/(8*x^2)",
+    "operationType": "diff",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x^x*(log(x)+1)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x^x*log(x)+x^x",
+    "operationType": "integral",
+    "variable": "x"
+  }
+]

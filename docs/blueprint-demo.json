@@ -1,0 +1,315 @@
+{
+  "version": "1.0",
+  "timestamp": "2025-12-24T17:40:54.330Z",
+  "nodes": {
+    "node-1": {
+      "id": "node-1",
+      "type": "expression",
+      "x": 163,
+      "y": 327,
+      "width": 220,
+      "height": 150,
+      "title": "表达式节点",
+      "data": {
+        "expression": "sin(x)*cos(x)"
+      },
+      "inputs": [],
+      "outputs": [
+        {}
+      ]
+    },
+    "node-2": {
+      "id": "node-2",
+      "type": "operation",
+      "x": 139,
+      "y": 591,
+      "width": 220,
+      "height": 150,
+      "title": "运算节点",
+      "data": {
+        "operation": "integral",
+        "variable": "x",
+        "limitPoint": "0"
+      },
+      "inputs": [],
+      "outputs": [
+        {}
+      ]
+    },
+    "node-3": {
+      "id": "node-3",
+      "type": "result",
+      "x": 648,
+      "y": 415,
+      "width": 191,
+      "height": 136,
+      "title": "结果节点",
+      "data": {
+        "result": "∫ sin(x)*cos(x) dx = sin(x)**2/2",
+        "resultExpression": "sin(x)**2/2"
+      },
+      "inputs": [
+        {},
+        {}
+      ],
+      "outputs": [
+        {}
+      ]
+    },
+    "node-5": {
+      "id": "node-5",
+      "type": "text",
+      "x": 129,
+      "y": 62,
+      "width": 220,
+      "height": 150,
+      "title": "文本节点",
+      "data": {
+        "text": "演示"
+      },
+      "inputs": [],
+      "outputs": []
+    },
+    "node-6": {
+      "id": "node-6",
+      "type": "render",
+      "x": 624,
+      "y": 39,
+      "width": 180,
+      "height": 120,
+      "title": "渲染节点",
+      "data": {
+        "latex": "sin(x)*cos(x)"
+      },
+      "inputs": [
+        {}
+      ],
+      "outputs": []
+    },
+    "node-7": {
+      "id": "node-7",
+      "type": "render",
+      "x": 1065,
+      "y": 349,
+      "width": 220,
+      "height": 150,
+      "title": "渲染节点",
+      "data": {
+        "latex": "sin(x)**2/2"
+      },
+      "inputs": [
+        {}
+      ],
+      "outputs": []
+    },
+    "node-8": {
+      "id": "node-8",
+      "type": "simplify",
+      "x": 630,
+      "y": 204,
+      "width": 220,
+      "height": 150,
+      "title": "化简节点",
+      "data": {
+        "result": "simplify(sin(x)*cos(x)) = sin(2*x)/2",
+        "resultExpression": "sin(2*x)/2"
+      },
+      "inputs": [
+        {}
+      ],
+      "outputs": [
+        {}
+      ]
+    },
+    "node-9": {
+      "id": "node-9",
+      "type": "render",
+      "x": 1011,
+      "y": 128,
+      "width": 220,
+      "height": 150,
+      "title": "渲染节点",
+      "data": {
+        "latex": "sin(2*x)/2"
+      },
+      "inputs": [
+        {}
+      ],
+      "outputs": []
+    },
+    "node-10": {
+      "id": "node-10",
+      "type": "result",
+      "x": 983,
+      "y": 576,
+      "width": 220,
+      "height": 150,
+      "title": "结果节点",
+      "data": {
+        "result": "d/dx(sin(x)**2/2) = sin(2*x)/2",
+        "resultExpression": "sin(2*x)/2"
+      },
+      "inputs": [
+        {},
+        {}
+      ],
+      "outputs": [
+        {}
+      ]
+    },
+    "node-11": {
+      "id": "node-11",
+      "type": "operation",
+      "x": 574,
+      "y": 619,
+      "width": 220,
+      "height": 150,
+      "title": "运算节点",
+      "data": {
+        "operation": "diff",
+        "variable": "x",
+        "limitPoint": "0"
+      },
+      "inputs": [],
+      "outputs": [
+        {}
+      ]
+    },
+    "node-12": {
+      "id": "node-12",
+      "type": "render",
+      "x": 1327,
+      "y": 568,
+      "width": 220,
+      "height": 150,
+      "title": "渲染节点",
+      "data": {
+        "latex": "sin(2*x)/2"
+      },
+      "inputs": [
+        {}
+      ],
+      "outputs": []
+    }
+  },
+  "connections": [
+    {
+      "id": "conn-1766597255342-pwk6gxo9o",
+      "output": {
+        "nodeId": "node-1",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-6",
+        "portType": "input",
+        "portIndex": 0
+      }
+    },
+    {
+      "id": "conn-1766597259573-c9vh0qc4u",
+      "output": {
+        "nodeId": "node-2",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-3",
+        "portType": "input",
+        "portIndex": 1
+      }
+    },
+    {
+      "id": "conn-1766597261703-929suw8co",
+      "output": {
+        "nodeId": "node-1",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-3",
+        "portType": "input",
+        "portIndex": 0
+      }
+    },
+    {
+      "id": "conn-1766597292934-u2j0ywu0g",
+      "output": {
+        "nodeId": "node-3",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-7",
+        "portType": "input",
+        "portIndex": 0
+      }
+    },
+    {
+      "id": "conn-1766597324637-pmb6d7fg3",
+      "output": {
+        "nodeId": "node-1",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-8",
+        "portType": "input",
+        "portIndex": 0
+      }
+    },
+    {
+      "id": "conn-1766597328064-2baynpvwl",
+      "output": {
+        "nodeId": "node-8",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-9",
+        "portType": "input",
+        "portIndex": 0
+      }
+    },
+    {
+      "id": "conn-1766597356947-enxf8yoc4",
+      "output": {
+        "nodeId": "node-3",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-10",
+        "portType": "input",
+        "portIndex": 0
+      }
+    },
+    {
+      "id": "conn-1766597359355-5n4rsc8vg",
+      "output": {
+        "nodeId": "node-11",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-10",
+        "portType": "input",
+        "portIndex": 1
+      }
+    },
+    {
+      "id": "conn-1766597365144-k6opkwdwo",
+      "output": {
+        "nodeId": "node-10",
+        "portType": "output",
+        "portIndex": 0
+      },
+      "input": {
+        "nodeId": "node-12",
+        "portType": "input",
+        "portIndex": 0
+      }
+    }
+  ],
+  "nodeCounter": 12
+}

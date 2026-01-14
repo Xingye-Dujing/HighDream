@@ -1,0 +1,56 @@
+[
+  {
+    "type": "code",
+    "content": "(x-1)/(sqrt(x)+1)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(1-x^2)/(1+x^2)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "asin(x)/x^2",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "-1/(cos(x)*tan(x))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "exp(atan(x))/(1+x^2)^2",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x*atan(x)*log(x^2+1)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x*exp(x)/(exp(x)+1)^2",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(log(log(x)))^2/(x*log(x))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(1+sin(x)^2)*sin(2*x)",
+    "operationType": "integral",
+    "variable": "x"
+  }
+]

@@ -1,0 +1,54 @@
+[
+  {
+    "type": "text",
+    "content": "# 演示"
+  },
+  {
+    "type": "text",
+    "content": "### 一. &nbsp; LaTex 段落演示"
+  },
+  {
+    "type": "latex",
+    "content": "\\sqrt{x} \\int \\sin(x) \\cos(x)"
+  },
+  {
+    "type": "latex",
+    "content": "\\begin{align}&\\int x \\log{\\left(x^{2} + 1 \\right)}\\, dx\\newline&=\\frac{\\int \\log{\\left(u \\right)}\\, du}{2} \\quad \\text{换元法: 令 $u = x^{2} + 1$, $du = 2 x\\,dx$, 原式$ \\int x \\log{\\left(x^{2} + 1 \\right)}\\,dx$ 化为 $ \\frac{1}{2} \\int \\log{\\left(u \\right)}\\,du$}\\newline&=C + \\frac{u \\left(\\log{\\left(u \\right)} - 1\\right)}{2} \\quad \\text{应用对数函数规则: $\\int \\log{\\left(u \\right)}\\, du = u \\log{\\left(u \\right)} - u$}\\newline&=C + \\frac{x^{2} \\log{\\left(x^{2} + 1 \\right)}}{2} - \\frac{x^{2}}{2} + \\frac{\\log{\\left(x^{2} + 1 \\right)}}{2} \\quad \\text{回代换元变量}\\end{align}"
+  },
+  {
+    "type": "text",
+    "content": "### 二. &nbsp; SymPy 段落演示"
+  },
+  {
+    "type": "sympy",
+    "content": "res = diff(x*sin(x)-ln(x), x)"
+  },
+  {
+    "type": "sympy",
+    "content": "res = integrate(x*sin(x)-ln(x), x)"
+  },
+  {
+    "type": "text",
+    "content": "想让在 **结果区渲染 res**, 就需要最后一行是  <u>a = res 或 res = ...</u>"
+  },
+  {
+    "type": "sympy",
+    "content": "res=0\nfor i in range(101):\n    res+=i\na=res"
+  },
+  {
+    "type": "latex",
+    "content": "\\frac{d}{dx}\\sqrt{x \\sin(x)} + 8=\\frac{\\sqrt{x \\sin{\\left(x \\right)}} \\left(\\frac{x \\cos{\\left(x \\right)}}{2} + \\frac{\\sin{\\left(x \\right)}}{2}\\right)}{x \\sin{\\left(x \\right)}}=\\frac{\\sqrt{x \\sin{\\left(x \\right)}} \\left(\\frac{x}{\\tan{\\left(x \\right)}} + 1\\right)}{2 x}"
+  },
+  {
+    "type": "sympy",
+    "content": "res=diff(sqrt(x*sin(x))+8,x)"
+  },
+  {
+    "type": "text",
+    "content": "### 三. &nbsp; SVG 演示"
+  },
+  {
+    "type": "text",
+    "content": "<svg width=\"736\" height=\"100\" xmlns=\"http://www.w3.org/2000/svg\">\n  <!-- 宣纸底色背景 -->\n  <rect width=\"100%\" height=\"100%\" fill=\"#F8F3E6\" rx=\"8\" ry=\"8\"/>\n\n  <!-- 定义胭脂红渐变 -->\n  <defs>\n    <linearGradient id=\"yanzhi\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"#C2356D\"/>\n      <stop offset=\"100%\" stop-color=\"#B33F5A\"/>\n    </linearGradient>\n  </defs>\n\n  <!-- 居中文字 -->\n  <text \n    x=\"368\" \n    y=\"50\" \n    font-family=\"'Ma Shan Zheng', 'STXingkai', 'KaiTi', serif\" \n    font-size=\"28\"\n    fill=\"url(#yanzhi)\"\n    text-anchor=\"middle\"\n    dominant-baseline=\"middle\"\n    letter-spacing=\"2\"\n  >\n    HighDream\n  </text>\n</svg>"
+  }
+]
