@@ -1,0 +1,42 @@
+[
+  {
+    "type": "latex",
+    "content": "问: \\arcsin(x)+\\arccos(x)= \\;?"
+  },
+  {
+    "type": "latex",
+    "content": "答: \\frac{d}{dx} \\left(\\arcsin(x)+\\arccos(x)\\right)=0"
+  },
+  {
+    "type": "sympy",
+    "content": "expr=asin(x)+acos(x)\nres=diff(expr, x)"
+  },
+  {
+    "type": "latex",
+    "content": "\\arcsin(x)+\\arccos(x)=C"
+  },
+  {
+    "type": "latex",
+    "content": "令 \\; x=0, \\; \\arcsin(0)+\\arccos(0)=\\frac{\\pi}{2}=C"
+  },
+  {
+    "type": "latex",
+    "content": "\\arcsin(x)+\\arccos(x)=\\frac{\\pi}{2}"
+  },
+  {
+    "type": "latex",
+    "content": "同理可求 \\; \\sin^2(x)+\\cos^2(x)=1"
+  },
+  {
+    "type": "latex",
+    "content": "拓展: \\int \\left(\\arcsin(x)+\\arccos(x)\\right) \\; \\mathrm{d}x = \\int \\frac{\\pi}{2} \\; \\mathrm{d}x =\\frac{\\pi}{2}x"
+  },
+  {
+    "type": "text",
+    "content": "注意：SymPy 无法化简 arcsin(x)+arccos(x) 到常数"
+  },
+  {
+    "type": "sympy",
+    "content": "expr=asin(x)+acos(x)\nres=integrate(expr, x)"
+  }
+]

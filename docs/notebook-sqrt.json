@@ -7,6 +7,18 @@
   },
   {
     "type": "code",
+    "content": "x*sqrt(x^2-1)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x*sqrt(x^2+1)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
     "content": "1/sqrt(3+x)",
     "operationType": "integral",
     "variable": "x"

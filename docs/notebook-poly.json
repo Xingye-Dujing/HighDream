@@ -52,5 +52,41 @@
     "content": "1/(x+1)**2",
     "operationType": "integral",
     "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x^2/sqrt(x^2+1)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x^2/sqrt(x^2+3)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(x^2+6)/sqrt(x^2+3)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(x^2+x)/sqrt(x^2+3)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(x^3+x)/sqrt(x^2+3)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(x^4+x)/sqrt(x^2+3)",
+    "operationType": "integral",
+    "variable": "x"
   }
 ]

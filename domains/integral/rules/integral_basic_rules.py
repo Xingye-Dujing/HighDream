@@ -14,7 +14,7 @@ def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr, str, bool]:
     expr_apart = expr_copy.apart()
 
     # If the rational fraction is reducible
-    if expr_apart != expr_copy:
+    if expr_apart != expr_copy and isinstance(expr_apart, Add):
         return expr_apart, "(有理分式)化为真分式或部分分式分解", False
 
     # If the rational fraction is not reducible:

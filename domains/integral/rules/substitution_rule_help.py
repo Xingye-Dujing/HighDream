@@ -1,7 +1,7 @@
 from sympy import (
     Abs, Dummy, Eq, Expr, I, Integral, Pow, Rational, Symbol, Wild, acos, asin, atan,
-    cancel, diff, latex, log, integrate, preorder_traversal, sec, simplify, sin, solve, sqrt,
-    tan, together
+    cancel, diff, fraction, latex, log, integrate, preorder_traversal, sec, simplify,
+    sin, solve, sqrt, symbols, tan, together
 )
 
 from core import BaseStepGenerator
@@ -28,6 +28,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
         if not factor.args or factor.is_constant() or factor == var:
             continue
 
+        # Extract internal factors for subsequent traversal
         flag = False
         # Look for unary functions like 3^g(x), etc.
         if factor.is_Pow and factor.args[1].has(var):
@@ -36,6 +37,10 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
         inner = factor.args[1] if flag else factor.args[0]
 
         term_list = [factor]
+        # If it's 1/den, extract den specially, e.g. x/sqrt(x^2+1) extracts sqrt(x^2+1)
+        num, den = fraction(factor)
+        if num == 1:
+            term_list.append(den)
         term_list += list(preorder_traversal(inner))
 
         for original_term in term_list:
@@ -124,16 +129,24 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
 
     Returns the integrated result and explanation if successful.
     """
+
+    # Note: cancel() is necessary to help simplify
+    # Simplify to the lowest terms to prevent matching issues with the result
+    # (e.g., sqrt(x**2-8)/(x**2-8) to 1/sqrt(x**2-8))
+    expr = cancel(expr)
+
+    num, den = fraction(expr)
+    if den != 1 and list(den.args):
+        den_arg = list(den.args)[0]
+        if num != 1 or not num.is_polynomial() or not den_arg.is_polynomial():
+            return None
+
     # Assume a > 0 and theta is real to help SymPy's simplify:
     # These assumptions are necessary for Integral to work correctly !!!
     a = Wild('a', exclude=[var], properties=[
              lambda x: x.is_positive])
     # Theta is real and positive to help simplify
     theta = Dummy('theta', real=True, positive=True)
-    # Note: cancel() is necessary to help simplify
-    # Simplify to the lowest terms to prevent matching issues with the result
-    # (e.g., sqrt(x**2-8)/(x**2-8) to 1/sqrt(x**2-8))
-    expr = cancel(expr)
 
     # Helper: attempt substitution given pattern, sub_expr, d(x)/d(theta), and back-substitution
     def _apply_trig_sub(pattern, x_of_theta, theta_of_x):
@@ -161,7 +174,9 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
                 return None
 
             new_subs = theta_of_x.subs(a, sqrt(a_val))
-            if int_theta.has(log):
+
+            # Cannot use isinstance and .has(log) to check
+            if len(int_theta.args) == 2:
                 if pattern in ((a+var**2)**minus_sqrt_pow, (var**2-a)**minus_sqrt_pow):
                     result = log(Abs(sqrt(pattern.args[0]).subs(a, a_val)+var))
                 elif pattern == (a+var**2)**sqrt_pow:
@@ -234,6 +249,108 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
         return result
 
     return None
+
+
+def try_undetermined_coeffs_for_radicals(expr: Expr, var: Symbol) -> RuleFunctionReturn:
+    """Attempt to solve integrals of the form (P(x))/(sqrt(ax^2+bx+c)) dx using undetermined coefficients method.
+
+    For integrals of the form  (P(x))/(sqrt(ax^2+bx+c)) dx where P(x) is a polynomial,
+    we assume the antiderivative has the form Q(x)*sqrt(ax^2+bx+c) + K ((1/sqrt(ax^2+bx+c)) dx)
+    where Q(x) is a polynomial of degree deg(P)-1, and K is a constant.
+    """
+    # Check if expression is of the form P(x)/sqrt(ax^2+bx+c)
+    num, den = fraction(expr)
+    if num == 1 or not isinstance(den, Pow) or list(den.args)[1] != Rational(1, 2):
+        return None
+
+    # Extract ax^2 + bx + c from sqrt(ax^2+bx+c)
+    radicand = list(den.args)[0]
+
+    # Check if it's a quadratic expression ax^2 + bx + c
+    if not radicand.is_Add or len(radicand.args) < 2 or len(radicand.args) > 3:
+        return None
+    quad_poly = radicand.expand()
+    if not quad_poly.is_polynomial(var) or quad_poly.as_poly(var).degree() != 2:
+        return None
+
+    # Check if numerator is a polynomial (any degree)
+    if not num.is_polynomial(var):
+        return None
+    num_degree = num.as_poly(var).degree()
+    if num_degree < 0:  # Constant numerator (degree 0)
+        return None
+
+    # Generate polynomial Q(x) of degree (num_degree - 1)
+    # Q(x) = C0 + C1*x + C2*x**2 + ... + C_{m}*x**m where m = num_degree - 1
+    m = num_degree - 1
+    coeffs = symbols(f'C0:{m+1}')  # C0, C1, ..., Cm
+    Q = sum(coeffs[i] * var**i for i in range(m+1))
+
+    # Constant K for the integral term
+    K = Symbol('K')
+
+    # Assumed antiderivative: Q(x)*sqrt(radicand) + K * ∫(1/sqrt(radicand)) dx
+    assumed_antiderivative = Q * \
+        sqrt(radicand) + K * Integral(1/sqrt(radicand), var)
+
+    # Differentiate assumed antiderivative
+    diff_assumed = diff(assumed_antiderivative, var).expand().simplify()
+
+    # Clear denominator by multiplying by sqrt(radicand)
+    lhs_multiplied = (diff_assumed * sqrt(radicand)).expand()
+    rhs_multiplied = num.expand()
+
+    # Equation: lhs_multiplied - rhs_multiplied = 0
+    equation_to_solve = (lhs_multiplied - rhs_multiplied).expand()
+
+    # Collect coefficients for powers of var
+    collected_eq = equation_to_solve.as_poly(var)
+    if collected_eq is None:
+        return None
+
+    # Get all coefficients (should be zero)
+    coeff_equations = list(collected_eq.all_coeffs())
+
+    # Solve for all unknowns: [C0, C1, ..., Cm, K]
+    unknowns = list(coeffs) + [K]
+    solutions = solve(coeff_equations, unknowns, dict=True)
+
+    if not solutions or len(solutions) == 0:
+        return None
+
+    # Use first solution
+    sol = solutions[0]
+    Q_solved = Q.subs(sol)
+    K_val = sol[K]
+
+    # Construct final result
+    integral_sqrt_inv = Integral(1/sqrt(radicand), var)
+    result = Q_solved * sqrt(radicand) + K_val * integral_sqrt_inv
+
+    # Generate coefficient display string
+    coeff_values = []
+    for i, c in enumerate(coeffs):
+        val = sol[c]
+        coeff_values.append(f"C_{i} = {latex(val)}")
+
+    coeff_values.append(f"K = {latex(K_val)}")
+
+    if not coeff_values:  # Handle case where all coefficients are zero
+        coeff_display = "所有系数均为零"
+    else:
+        coeff_display = rf",\;".join(coeff_values)
+
+    var_latex, radicand_latex, expr_latex, result_latex = latex(
+        var), latex(radicand), latex(expr), latex(result)
+
+    explanation = (
+        rf"形如$\int \frac{{P(x)}}{{\sqrt{{ax^2+bx+c}}}}dx\;$使用待定系数法:\;"
+        rf"设原函数为\;$Q(x) \sqrt{{{radicand_latex}}} + K \int \frac{{1}}{{\sqrt{{{radicand_latex}}}}}dx$,\;"
+        rf"其中\;$Q(x)$为\;{m}\;次多项式.\;通过求导并比较系数, 解得：\;${coeff_display}$,\;即\;"
+        rf"$\int {expr_latex}\,d{var_latex} = {result_latex}$"
+    )
+
+    return result, explanation
 
 
 def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:

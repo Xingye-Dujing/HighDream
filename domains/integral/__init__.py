@@ -4,7 +4,8 @@ from .rules.parts_rule_help import select_parts_u_dv
 from .rules.substitution_rule_help import (
     try_radical_substitution,
     try_standard_substitution,
-    try_trig_substitution
+    try_trig_substitution,
+    try_undetermined_coeffs_for_radicals
 )
 from .rules.f_x_mul_exp_g_x_rule_help import handle_fx_mul_exp_gx, special_add_split_exp_term
 from .rules.integral_basic_rules import (

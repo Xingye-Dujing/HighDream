@@ -124,5 +124,23 @@
     "content": "x^x*log(x)+x^x",
     "operationType": "integral",
     "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "asin(x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "acos(x)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "asin(x)+acos(x)",
+    "operationType": "integral",
+    "variable": "x"
   }
 ]

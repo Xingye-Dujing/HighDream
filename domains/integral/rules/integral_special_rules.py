@@ -15,6 +15,7 @@ from domains.integral import (
     try_radical_substitution,
     try_standard_substitution,
     try_trig_substitution,
+    try_undetermined_coeffs_for_radicals,
     special_add_split_exp_term,
     handle_fx_mul_exp_gx
 )
@@ -152,6 +153,10 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         return result
 
     # Strategy 2: Trigonometric substitutions for sqrt(a^2 +- x^2) etc.
+    result = try_undetermined_coeffs_for_radicals(expr, var)
+    if result:
+        return result
+
     result = try_trig_substitution(expr, var)
     if result:
         return result
