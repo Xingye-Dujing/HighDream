@@ -1,6 +1,6 @@
 from typing import Tuple
 # from IPython.display import Math, display
-from sympy import Expr, latex
+from sympy import Expr, latex, pprint
 
 from utils import Context, Operation, RuleContext
 from .base_calculator import BaseCalculator
@@ -17,7 +17,7 @@ class SelectRuleCalculator(BaseCalculator):
             expr, rule_context))
 
         # display(Math(latex(expr)))
-        print(expr)
+        pprint(operation(expr), use_unicode=True)
         print("以下规则可应用：")
         for i, rule in enumerate(applicable_rules_list):
             print(f"{i+1}. {rule.__name__}")
@@ -27,7 +27,7 @@ class SelectRuleCalculator(BaseCalculator):
 
         if result:
             # display(Math(latex(result[0])))
-            print(latex(result[0]))
+            pprint(result[0], use_unicode=True)
             return result
 
         print("此规则无法应用，请重新选择.")

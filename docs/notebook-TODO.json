@@ -37,6 +37,12 @@
   },
   {
     "type": "code",
+    "content": "1/(3+sin(x)^2)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
     "content": "1/(4*sin(x)^2+9*cos(x)^2)",
     "operationType": "integral",
     "variable": "x"
@@ -56,12 +62,6 @@
   {
     "type": "code",
     "content": "sin(x)*cos(x)/(sin(x)+cos(x))",
-    "operationType": "integral",
-    "variable": "x"
-  },
-  {
-    "type": "code",
-    "content": "x^2/(x^2+1)^2",
     "operationType": "integral",
     "variable": "x"
   }

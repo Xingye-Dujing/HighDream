@@ -104,10 +104,6 @@ def inverse_trig_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         var_latex = wrap_latex(var)
         return acos(var), f"反余弦函数积分: $\\int \\frac{{-1}}{{\\sqrt{{1 - {var}^2}}}}\\,d{var_latex} = \\arccos({var}) + C$"
 
-    if expr.equals(1/(1 + var**2)):
-        var_latex = wrap_latex(var)
-        return atan(var), f"反正切函数积分: $\\int \\frac{{1}}{{1 + {var}^2}}\\,d{var_latex} = \\arctan({var}) + C$"
-
     return None
 
 
@@ -118,15 +114,29 @@ def inverse_tangent_linear_rule(expr: Expr, context: RuleContext) -> RuleFunctio
     """
     var = context['variable']
     var_latex = wrap_latex(var)
-
     # SymPy puts the constant term at the front
     m = expr.base.args[0]
     sqrt_m = sqrt(m)
-    result = (1/sqrt_m) * atan(var/sqrt_m)
     m_latex = wrap_latex(m)
-    sqrt_m_latex = wrap_latex(sqrt_m)
+    sqrt_m_latex = "" if sqrt_m.equals(1) else wrap_latex(sqrt_m)
 
-    return result, f"线性逆切函数积分: $\\int \\frac{{1}}{{{var_latex}^2 + {m_latex}}}\\,d{var_latex} = \\frac{{1}}{{{sqrt_m_latex}}} \\arctan\\left(\\frac{{{var_latex}}}{{{sqrt_m_latex}}}\\right) + C$"
+    if expr.exp == -1:
+        if m.equals(1):
+            return atan(var), f"反正切函数积分: $\\int \\frac{{1}}{{1 + {var}^2}}\\,d{var_latex} = \\arctan({var}) + C$"
+
+        result = (1/sqrt_m) * atan(var/sqrt_m)
+        return result, f"线性逆切函数积分: $\\int \\frac{{1}}{{{var_latex}^2 + {m_latex}}}\\,d{var_latex} = \\frac{{1}}{{{sqrt_m_latex}}} \\arctan\\left(\\frac{{{var_latex}}}{{{sqrt_m_latex}}}\\right) + C$"
+
+    if expr.exp == -2:
+        step_gene = context['step_generator']
+        u = step_gene.get_available_sym(var)
+        step_gene.subs_dict[u] = atan(var/sqrt_m)
+        return Integral(cos(u)**2/(m*sqrt_m), u), f"令 ${u.name} = {latex(atan(var/sqrt_m))}$, 则 ${latex(var)} = {sqrt_m_latex}\\, \\tan\\left({u.name}\\right) $"
+
+    n = -expr.exp
+    res = var/(2*m*(n-1)*(expr.base)**(n-1))+((2*n-3)/(2*m*(n-1))) * \
+        Integral(1/(expr.base)**(n-1), var)
+    return res, f"使用递推公式: $\\int \\frac{{1}}{{(a x^2 + b)^n}} \\, dx = \\frac{{x}}{{2b(n-1)(a x^2 + b)^{{n-1}}}} + \\frac{{2n - 3}}{{2b(n-1)}} \\int \\frac{{1}}{{(a x^2 + b)^{{n-1}}}} \\, dx$"
 
 
 def tanh_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
@@ -324,7 +334,7 @@ def inverse_tangent_linear_matcher(expr: Expr, context: RuleContext) -> MatcherF
     var = context['variable']
 
     # Match pattern 1/(var^2 + m) where m > 0
-    if expr.is_Pow and expr.exp == -1:
+    if expr.is_Pow and expr.exp < 0 and expr.exp.is_Integer:
         denominator = expr.base
         terms = denominator.args
         # SymPy puts the constant term at the front
