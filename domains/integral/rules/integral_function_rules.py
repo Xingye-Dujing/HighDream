@@ -73,16 +73,19 @@ def exp_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     For a^x dx = a^x / ln(a) + C
     For e^x dx = e^x + C (special case)
     """
+
     var = context['variable']
+
+    if expr.equals(exp(var)):
+        var_latex = wrap_latex(var)
+        return expr, f"自然指数函数积分: $\\int e^{{{var_latex}}}\\,d{var_latex} = e^{{{var_latex}}} + C$"
+
     base, exponent = expr.as_base_exp()
-    var_latex = wrap_latex(var)
 
     # Check if it's e^x (natural exponential)
-    if base == exp(1) and exponent == var:
-        result = expr
-        return result, f"自然指数函数积分: $\\int e^{{{var_latex}}}\\,d{var_latex} = e^{{{var_latex}}} + C$"
     # General case: a^x where a > 0 and a != 1
     if exponent == var and base.is_positive and base.is_real and base != 1:
+        var_latex = wrap_latex(var)
         result = expr / log(base)
         base_latex = wrap_latex(base)
         return result, f"指数函数积分: $\\int {base_latex}^{{{var_latex}}}\\,d{var_latex} = \\frac{{{base_latex}^{{{var_latex}}}}}{{\\ln({base_latex})}} + C$"
@@ -92,15 +95,18 @@ def exp_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
 def inverse_trig_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     var = context['variable']
-    var_latex = wrap_latex(var)
-    mapping = {
-        1/sqrt(1 - var**2): (asin(var), f"反正弦函数积分: $\\int \\frac{{1}}{{\\sqrt{{1 - {var}^2}}}}\\,d{var_latex} = \\arcsin({var}) + C$"),
-        -1/sqrt(1 - var**2): (acos(var), f"反余弦函数积分: $\\int \\frac{{-1}}{{\\sqrt{{1 - {var}^2}}}}\\,d{var_latex} = \\arccos({var}) + C$"),
-        1/(1 + var**2): (atan(var), f"反正切函数积分: $\\int \\frac{{1}}{{1 + {var}^2}}\\,d{var_latex} = \\arctan({var}) + C$")
-    }
-    for key, (res, desc) in mapping.items():
-        if expr.equals(key):
-            return res, desc
+
+    if expr.equals(1/sqrt(1 - var**2)):
+        var_latex = wrap_latex(var)
+        return asin(var), f"反正弦函数积分: $\\int \\frac{{1}}{{\\sqrt{{1 - {var}^2}}}}\\,d{var_latex} = \\arcsin({var}) + C$"
+
+    if expr.equals(1/sqrt(var**2-1)):
+        var_latex = wrap_latex(var)
+        return acos(var), f"反余弦函数积分: $\\int \\frac{{-1}}{{\\sqrt{{1 - {var}^2}}}}\\,d{var_latex} = \\arccos({var}) + C$"
+
+    if expr.equals(1/(1 + var**2)):
+        var_latex = wrap_latex(var)
+        return atan(var), f"反正切函数积分: $\\int \\frac{{1}}{{1 + {var}^2}}\\,d{var_latex} = \\arctan({var}) + C$"
 
     return None
 
@@ -225,30 +231,12 @@ def pow_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     return None
 
 
-def inverse_trig_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
-    var = context['variable']
-    patterns = [1/sqrt(1 - var**2), -1/sqrt(1 - var**2), 1/(1 + var**2)]
-    if any(expr == p for p in patterns):
-        return 'inverse_trig'
-    return None
+def inverse_trig_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+    return 'inverse_trig'
 
 
-def exp_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
-    """Extended matcher for exponential expressions including a^x where a can be any base."""
-    var = context['variable']
-    # Match direct exp(x) form
-    if expr == exp(var):
-        return 'exp'
-
-    # Check if expression is of the form a^x
-    if expr.is_Pow:
-        base, exponent = expr.as_base_exp()
-        # Match e^x or a^x where a > 0, a != 1, and exponent is the integration variable
-        if (base == exp(1) and exponent == var) or \
-           (exponent == var and base.is_positive and base.is_real and base != 1):
-            return 'exp'
-
-    return None
+def exp_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+    return 'exp'
 
 
 def sec_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
@@ -259,7 +247,7 @@ def sec_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct sec(x) or 1/cos(x)
-    if expr == sec(var) or expr == 1/cos(var):
+    if expr.equals(sec(var)) or expr.equals(1/cos(var)):
         return 'sec'
     return None
 
@@ -272,7 +260,7 @@ def csc_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct csc(x) or 1/sin(x)
-    if expr == csc(var) or expr == 1/sin(var):
+    if expr.equals(csc(var)) or expr.equals(1/sin(var)):
         return 'csc'
     return None
 
@@ -285,7 +273,7 @@ def cot_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct cot(x) or 1/tan(x)
-    if expr == cot(var) or expr == 1/tan(var):
+    if expr.equals(cot(var)) or expr.equals(1/tan(var)):
         return 'cot'
 
     return None
@@ -299,7 +287,7 @@ def csch_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct csch(x) or 1/sinh(x)
-    if expr == csch(var) or expr == 1/sinh(var):
+    if expr.equals(csch(var)) or expr.equals(1/sinh(var)):
         return 'csch'
     return None
 
@@ -312,7 +300,7 @@ def sech_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct sech(x) or 1/cosh(x)
-    if expr == sech(var) or expr == 1/cosh(var):
+    if expr.equals(sech(var)) or expr.equals(1/cosh(var)):
         return 'sech'
     return None
 
@@ -325,7 +313,7 @@ def coth_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct coth(x) or 1/tanh(x)
-    if expr == coth(var) or expr == 1/tanh(var):
+    if expr.equals(coth(var)) or expr.equals(1/tanh(var)):
         return 'coth'
 
     return None

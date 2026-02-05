@@ -169,7 +169,7 @@ def scalar_multiple_row_rule(matrix: Matrix, _context: RuleContext) -> RuleFunct
 
             new_matrix = Matrix(new_rows)
             result_expr = common_factor * Determinant(new_matrix)
-            return result_expr, f"$提取公因子 {latex(common_factor)} 从行 {i + 1}$"
+            return result_expr, rf"$提取公因子 {latex(common_factor)}\,从行 {i + 1}$"
 
         except Exception:
             pass
@@ -218,7 +218,7 @@ def scalar_multiple_column_rule(matrix: Matrix, _context: RuleContext) -> RuleFu
 
             new_matrix = Matrix(new_rows)
             result_expr = common_factor * Determinant(new_matrix)
-            return result_expr, f"$提取公因子 {latex(common_factor)} 从列 {j + 1}$"
+            return result_expr, rf"$提取公因子 {latex(common_factor)}\,从列 {j + 1}$"
 
         except Exception:
             continue

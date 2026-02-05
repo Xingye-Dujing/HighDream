@@ -14,7 +14,7 @@ def handle_fx_mul_exp_gx(expr: Expr, exp_term: exp, another_term: Expr, context:
     diff_m_x = simplify(diff(m_x, var))
     f_x = simplify(diff_m_x + diff_g_x * m_x)
     add_term = simplify((another_term - f_x)*exp_term)
-    if add_term == 0:
+    if add_term.equals(0):
         result = simplify(m_x*exp_term)
     else:
         return None

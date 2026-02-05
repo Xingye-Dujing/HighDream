@@ -3,9 +3,7 @@ from collections import deque
 from functools import lru_cache
 from typing import Deque, Dict, List, Tuple
 
-# from sympy import Abs
 from sympy import Expr, Symbol, expand_log, latex, radsimp, simplify, sympify
-from sympy.simplify import fu
 
 from utils import (
     Context, MatcherList, Operation, RuleContext,
@@ -72,7 +70,8 @@ class BaseCalculator(ABC):
 
     def _get_cached_result(self, expr: Expr, operation: Operation, **context: Context) -> Operation:
         """Return a cached result if available, otherwise compute and cache the result."""
-        key = (str(expr), str(context))
+        # Solve the problem: unhashable type: 'MutableDenseMatrix'
+        key = (expr, str(context))
         if key not in self.cache:
             self.cache[key] = self._perform_operation(
                 expr, operation, **context)
@@ -161,12 +160,12 @@ class BaseCalculator(ABC):
             return final_expr
         # Iterate through the substitution dictionary in reverse order
         # This ensures proper back substitution since later substitutions depend on earlier ones
-        for key, value in reversed(list(subs_dict.items())):
-            final_expr = simplify(final_expr.subs(key, value), inverse=True)
+        for key, value in reversed(subs_dict.items()):
+            final_expr = final_expr.subs(key, value)
 
         self.step_generator.add_step(final_expr, "回代换元变量")
 
-        return final_expr
+        return simplify(final_expr, inverse=True)
 
     def _final_postprocess(self, final_expr: Expr) -> None:
         """Apply domain-aware simplification by assuming all free symbols are positive real numbers.
@@ -210,35 +209,27 @@ class BaseCalculator(ABC):
         initial_operation = self._get_cached_result(expr, operation, **context)
         self.step_generator.add_step(initial_operation)
 
-        try:
-            simple_expr = self._cached_simplify(expr)
-            if simple_expr != expr:
-                expr = simple_expr
-                initial_operation = self._get_cached_result(
-                    expr, operation, **context)
-                self.step_generator.add_step(initial_operation, "简化表达式")
-        # Solve the problem: unhashable type: 'MutableDenseMatrix'
-        except Exception:
-            pass
+        simple_expr = self._cached_simplify(expr)
+        if simple_expr != expr:
+            expr = simple_expr
+            initial_operation = self._get_cached_result(
+                expr, operation, **context)
+            self.step_generator.add_step(initial_operation, "简化表达式")
 
         # BFS using a queue.
         queue: Deque[Expr] = deque([expr])
-        # Solve the problem: unhashable type: 'MutableDenseMatrix'
-        expr_key = str(expr)
         expr_to_operation: Dict[Expr, Operation] = {
-            expr_key: initial_operation}
+            expr: initial_operation}
 
         while queue:
             direct_compute = False
 
             current_expr = queue.popleft()
-            # Solve the problem: unhashable type: 'MutableDenseMatrix'
-            current_expr_key = str(current_expr)
-            current_operation = expr_to_operation.get(current_expr_key)
+            current_operation = expr_to_operation.get(current_expr)
 
-            if current_expr_key in self.processed:
+            if current_expr in self.processed:
                 direct_compute = True
-            self.processed.add(current_expr_key)
+            self.processed.add(current_expr)
 
             # Extract the unique variable from the expression for substitution.
             symbol_list = list(current_expr.free_symbols)
@@ -253,7 +244,7 @@ class BaseCalculator(ABC):
             new_expr, explanation, expr_to_operation = self._update_expression(
                 current_expr, operation, expr_to_operation, direct_compute, **context)
 
-            current_step = expr_to_operation[expr_key]
+            current_step = expr_to_operation[expr]
             current_step = self._step_expr_postprocess(current_step)
 
             if self.sudden_end[0]:
@@ -269,7 +260,7 @@ class BaseCalculator(ABC):
                     new_expr, operation) else new_expr.atoms(operation)
                 for s in sub_exprs:
                     sub_expr = s.args[0]
-                    expr_to_operation[str(sub_expr)] = s
+                    expr_to_operation[sub_expr] = s
                     queue.append(sub_expr)
 
         if not self.sudden_end[0]:
@@ -277,7 +268,7 @@ class BaseCalculator(ABC):
             final_expr = exprs[-1]
 
             # Final simplification
-            simplified_expr = simplify(fu(final_expr), inverse=True)
+            simplified_expr = simplify(final_expr, inverse=True)
             if simplified_expr != final_expr:
                 self.step_generator.steps[-1] = simplified_expr
                 final_expr = simplified_expr

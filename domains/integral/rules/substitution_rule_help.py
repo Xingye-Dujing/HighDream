@@ -25,7 +25,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
     factors = list(expr.args) if expr.is_Mul else [expr]
 
     for factor in factors:
-        if not factor.args or factor.is_constant() or factor == var:
+        if not factor.args or factor.is_constant() or factor.equals(var):
             continue
 
         # Extract internal factors for subsequent traversal
@@ -39,12 +39,12 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
         term_list = [factor]
         # If it's 1/den, extract den specially, e.g. x/sqrt(x^2+1) extracts sqrt(x^2+1)
         num, den = fraction(factor)
-        if num == 1:
+        if num.equals(1):
             term_list.append(den)
         term_list += list(preorder_traversal(inner))
 
         for original_term in term_list:
-            if original_term == var or original_term.is_constant():
+            if original_term.equals(var) or original_term.is_constant():
                 continue
 
             check_list = [original_term]
@@ -58,11 +58,11 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
                 check_list.append(sqrt_term)
 
             for term in check_list:
-                if term == var:
+                if term.equals(var):
                     continue
 
                 gp = simplify(diff(term, var))  # g'(x)
-                if gp == 0:
+                if gp.equals(0):
                     continue
 
                 initial_ratio = simplify(expr/gp)
@@ -98,10 +98,10 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
                     step_gene.subs_dict[u] = term
                     new_expr = ratio * Integral(f_u, u)
 
-                    ratio_latex = '' if ratio == 1 else (
-                        '-' if ratio == -1 else latex(ratio))
-                    gp_latex = '' if gp == 1 else (
-                        '-' if gp == -1 else latex(gp))
+                    ratio_latex = '' if ratio.equals(1) else (
+                        '-' if ratio.equals(-1) else latex(ratio))
+                    gp_latex = '' if gp.equals(1) else (
+                        '-' if gp.equals(-1) else latex(gp))
 
                     explanation = (
                         f"换元法: 令 ${u.name} = {latex(term)}$, $d{u.name} = {gp_latex}\\,d{var.name}$, "
@@ -184,7 +184,7 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
                         log(Abs(sqrt(pattern.args[0]).subs(
                             a, a_val)+var))/2+var*sqrt(pattern.args[0]).subs(
                             a, a_val)/2
-                elif pattern == (var**2-a)**sqrt_pow:
+                elif pattern.equals((var**2-a)**sqrt_pow):
                     result = -a_val * \
                         log(Abs(sqrt(pattern.args[0]).subs(
                             a, a_val)+var))/2+var*sqrt(pattern.args[0]).subs(
@@ -260,7 +260,7 @@ def try_undetermined_coeffs_for_radicals(expr: Expr, var: Symbol) -> RuleFunctio
     """
     # Check if expression is of the form P(x)/sqrt(ax^2+bx+c)
     num, den = fraction(expr)
-    if num == 1 or not isinstance(den, Pow) or list(den.args)[1] != Rational(1, 2):
+    if num.equals(1) or not isinstance(den, Pow) or list(den.args)[1] != Rational(1, 2):
         return None
 
     # Extract ax^2 + bx + c from sqrt(ax^2+bx+c)

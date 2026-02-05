@@ -19,13 +19,13 @@ def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr, str, bool]:
 
     # If the rational fraction is not reducible:
     # 1. irreducible linear poly:
-    if degree(den) == 1:
+    if degree(den).equals(1):
         q, r = div(num, den)
         result = q + r/den
         return result, "裂项(分母为一次多项式)", False
 
     # 2. irreducible quadratic poly:
-    if degree(den) == 2:
+    if degree(den).equals(2):
         # The simplest irreducible quadratic poly, no decomposition required
         if num.is_constant():
             result = integrate(expr_copy, var)
@@ -68,9 +68,9 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         used = False
         if den != 1 and num.is_polynomial() and den.is_polynomial():
             # The simplest linear poly, no decomposition required
-            if degree(den) == 1 and not isinstance(result, Add):
+            if degree(den).equals(1) and not isinstance(result, Add):
                 return None
-            if expr == 1/(var**2+1):
+            if expr.equals(1/(var**2+1)):
                 return None
             # If expr is rational fraction, performing partial fraction decomposition.
             result, prefix, is_direct_return = handle_poly(num, den, var)
@@ -101,8 +101,9 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
                     part2 = beta_val
                     result = Integral(part1, var) + Integral(part2, var)
                     return result, f"$构造等式(分子 = \\alpha \\cdot 分母导数 + \\beta \\cdot 分母)进行裂项: \\int {expr_latex}\\,d {var_latex} = {latex(result)}$"
-            except Exception as e:
-                print(f"Error in add_rule: {e}")
+            except Exception:
+                # print(f"Error in add_rule: {e}")
+                pass
 
         # Handle the expressions containing non-polynomial elements such as log
         if not used:
@@ -135,7 +136,7 @@ def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     coeff_first, expr_copy = expr.as_coeff_Mul(rational=True)
 
     num, den = fraction(expr_copy)
-    if den == 1:
+    if den.equals(1):
         coeff, func_part = expr_copy.as_content_primitive(radical=True)
     else:
         coeff_num, func_num = num.as_content_primitive(radical=True)
@@ -156,9 +157,9 @@ def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         coeff, func_part = expr.as_coeff_Mul()
 
     var_latex, expr_latex, func_part_latex = wrap_latex(var, expr, func_part)
-    if coeff == -1:
+    if coeff.equals(-1):
         return -Integral(func_part, var), f"负号提出: $\\int {expr_latex}\\,d{var} = -\\int {func_part_latex}\\,d{var_latex}$"
-    if coeff != 1:
+    if not coeff.equals(1):
         return coeff * Integral(func_part, var), f"常数因子提取: $\\int {expr_latex}\\,d{var} = {latex(coeff)} \\int {func_part_latex}\\,d{var_latex}$"
     if used:
         return Integral(func_part, var), f"约分: $\\int {expr_latex}\\,d{var} = \\int {func_part_latex}\\,d{var_latex}$"

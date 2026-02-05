@@ -136,6 +136,10 @@ def circulant_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionR
     """
     n = matrix.rows
 
+    if n <= 2:
+        # Rule system handles 1x1 and 2x2 via direct computation
+        return None
+
     first_row = list(matrix.row(0))
 
     # Check each subsequent row
@@ -157,6 +161,10 @@ def symmetric_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionR
 
     This matcher uses SymPy's built-in is_symmetric() method.
     """
+
+    if matrix.rows <= 2:
+        # Rule system handles 1x1 and 2x2 via direct computation
+        return None
 
     if matrix.is_symmetric():
         return 'symmetric'

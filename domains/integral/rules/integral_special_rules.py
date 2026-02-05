@@ -31,26 +31,29 @@ def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     divided by that same function, which results in the natural logarithm of the
     absolute value of that function.
     """
-    find = False
-
-    var = context['variable']
-
     # More general approach for f'(x)/f(x)
     numerator, denominator = fraction(expr)
+
+    if denominator.equals(1):
+        return None
+
+    find = False
+    var = context['variable']
+
     f_prime = diff(denominator, var)
     ratio = simplify(numerator / f_prime)
 
-    _, f_x = denominator.primitive()
-
     if ratio.is_constant():
         find = True
+
+    _, f_x = denominator.primitive()
 
     # Also check if expression can be rearranged to this form
     if not find and expr.is_Mul:
         # Look for patterns like f'(x) * (1/f(x))
         factors = expr.args
         for factor in factors:
-            if factor.is_Pow and factor.args[1] == -1:
+            if factor.is_Pow and factor.args[1].equals(-1):
                 f_x = factor.args[0]
                 f_prime = diff(f_x, var)
                 # Create the rest of the multiplication
@@ -61,20 +64,24 @@ def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
                 denominator = f_x
 
                 if ratio.is_constant():
+                    find = True
                     var_latex, f_x_latex = latex(var), latex(f_x)
                     break
+
+    if not find:
+        return None
 
     var_latex, den_latex, f_x_latex = latex(
         var), latex(denominator), latex(f_x)
 
-    if ratio == 1:
+    if ratio.equals(1):
         result = log(Abs(f_x))
         explaination = (
             f"对数积分法则($\\frac{{f'({var_latex})}}{{f({var_latex})}}$ 形式): $"
             f"\\int \\frac{{{latex(f_prime)}}}{{{den_latex}}}\\,d{var_latex} = "
             f"\\log|{f_x_latex}| + C$"
         )
-    elif ratio == -1:
+    elif ratio.equals(-1):
         result = -log(Abs(f_x))
         explaination = (
             f"对数积分法则($\\frac{{f'({var_latex})}}{{f({var_latex})}}$ 形式): $"
@@ -294,43 +301,13 @@ def weierstrass_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunct
     return result, explaination
 
 
-def logarithmic_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+def logarithmic_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     """Heuristic matcher for f'(x)/f(x) integration pattern.
 
     Returns 'logarithmic' if the expression matches the pattern where the
     numerator is the derivative of the denominator.
     """
-    # Extract numerator and denominator
-    numerator, denominator = expr.as_numer_denom()
-
-    if denominator == 1:
-        return None
-
-    var = context['variable']
-
-    # Calculate derivative of denominator
-    f_prime = diff(denominator, var)
-    ratio = simplify(numerator - f_prime)
-
-    if ratio.is_constant():
-        return 'logarithmic'
-
-    # Also check if expression can be rearranged to this form
-    if expr.is_Mul:
-        # Look for patterns like f'(x) * (1/f(x))
-        factors = expr.args
-        for factor in factors:
-            if factor.is_Pow and factor.args[1] == -1:
-                f_x = factor.args[0]
-                f_prime = diff(f_x, var)
-                # Create the rest of the multiplication
-                other_factors = [f for f in factors if f != factor]
-                remaining = Mul(*other_factors) if other_factors else 1
-                ratio = simplify(remaining / f_prime)
-                if ratio.is_constant():
-                    return 'logarithmic'
-
-    return None
+    return 'logarithmic'
 
 
 def parts_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
@@ -359,7 +336,7 @@ def f_x_mul_exp_g_x_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctio
 def quotient_diff_form_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     if isinstance(expr, Mul):
         _, den = fraction(expr)
-        if den == 1:
+        if den.equals(1):
             return None
         return 'quotient_diff_form'
     return None
