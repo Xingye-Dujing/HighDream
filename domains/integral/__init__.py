@@ -33,7 +33,8 @@ from .rules.integral_special_rules import (
     parts_matcher, parts_rule, substitution_matcher, substitution_rule,
     f_x_mul_exp_g_x_matcher, f_x_mul_exp_g_x_rule,
     weierstrass_substitution_matcher, weierstrass_substitution_rule,
-    quotient_diff_form_matcher, quotient_diff_form_rule
+    quotient_diff_form_matcher, quotient_diff_form_rule,
+    quadratic_sqrt_reciprocal_matcher, quadratic_sqrt_reciprocal_rule
 )
 
 __all__ = [
@@ -78,15 +79,16 @@ RULE_DICT: RuleDict = {
     'quotient_diff_form': quotient_diff_form_rule,
     'substitution': substitution_rule,
     'weierstrass_substitution': weierstrass_substitution_rule,
+    "quadratic_sqrt_reciprocal": quadratic_sqrt_reciprocal_rule,
     'parts': parts_rule,
 }
 
 # Note: Earlier entries have higher priority.
 MATCHER_LIST: MatcherList = [
     const_matcher, var_matcher, logarithmic_matcher, substitution_matcher, f_x_mul_exp_g_x_matcher,
-    quotient_diff_form_matcher, add_matcher, mul_const_matcher, pow_matcher, exp_matcher,
-    log_matcher, sin_matcher, cos_matcher, tan_matcher, sin_power_matcher, cos_power_matcher,
-    tan_power_matcher, sec_matcher, csc_matcher, cot_matcher, exp_matcher, log_matcher, sinh_matcher,
-    cosh_matcher, tanh_matcher, csch_matcher, sech_matcher, coth_matcher, inverse_trig_matcher,
-    inverse_tangent_linear_matcher, weierstrass_substitution_matcher, parts_matcher
+    quotient_diff_form_matcher, add_matcher, mul_const_matcher, quadratic_sqrt_reciprocal_matcher,
+    pow_matcher, exp_matcher, log_matcher, sin_matcher, cos_matcher, tan_matcher, sin_power_matcher,
+    cos_power_matcher, tan_power_matcher, sec_matcher, csc_matcher, cot_matcher, exp_matcher,
+    log_matcher, sinh_matcher,  cosh_matcher, tanh_matcher, csch_matcher, sech_matcher, coth_matcher,
+    inverse_trig_matcher, inverse_tangent_linear_matcher, weierstrass_substitution_matcher, parts_matcher
 ]

@@ -64,5 +64,11 @@
     "content": "sqrt(3)*(atan(tan(x/2)/sqrt(3))+atan(sqrt(3)*tan(x/2)))/6",
     "operationType": "diff",
     "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/sqrt(x*(4-x))",
+    "operationType": "integral",
+    "variable": "x"
   }
 ]

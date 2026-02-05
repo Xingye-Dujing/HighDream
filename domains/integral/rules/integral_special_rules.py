@@ -1,7 +1,7 @@
 from sympy import (
-    Abs, Expr, Integer, Integral, Mul, Pow, Rational, diff, exp, fraction,
-    integrate, latex, log, powsimp, simplify, together, sin, cos,
-    tan, cot, sec, csc
+    Abs, Expr, Integer, Integral, Mul, Pow, Poly, PolynomialError, Rational,
+    diff, exp, fraction, integrate, latex, log, powsimp, simplify, together,
+    sin, cos, tan, cot, sec, csc, sqrt
 )
 from sympy.simplify.fu import fu
 
@@ -301,6 +301,44 @@ def weierstrass_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunct
     return result, explaination
 
 
+def quadratic_sqrt_reciprocal_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Handle 1/sqrt(ax^2+bx+c) dx"""
+    num, den = fraction(expr)
+    if not num.equals(1):
+        return None
+
+    if den.is_Pow:
+        if not den.exp.equals(Rational(1, 2)):
+            return None
+        inner = den.base
+    else:
+        return None
+
+    var = context['variable']
+    try:
+        poly = Poly(inner, var)
+    except PolynomialError:
+        return None
+
+    if poly.degree() != 2:
+        return None
+
+    coeffs = poly.all_coeffs()
+    if len(coeffs) != 3:
+        return None
+
+    step_gene = context['step_generator']
+    a, b, c = coeffs
+    t = var+b/(2*a)
+    k = 4*a*c-b**2
+    if k.equals(0):
+        return (t*Integral(1/t, var))/abs(t), f"完全平方开根"
+
+    u = step_gene.get_available_sym(var)
+    step_gene.subs_dict[u] = t
+    return Integral(simplify(1/sqrt(a*u**2+k/(4*a))), u), f"二元一次函数配方并令\\;${u.name} = {latex(t)}$"
+
+
 def logarithmic_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     """Heuristic matcher for f'(x)/f(x) integration pattern.
 
@@ -344,3 +382,7 @@ def quotient_diff_form_matcher(expr: Expr, _context: RuleContext) -> MatcherFunc
 
 def weierstrass_substitution_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     return 'weierstrass_substitution'
+
+
+def quadratic_sqrt_reciprocal_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+    return 'quadratic_sqrt_reciprocal'
