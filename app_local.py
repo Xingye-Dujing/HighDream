@@ -30,7 +30,7 @@ def create_app():
 if __name__ == '__main__':
     # Function to run the server
     def start_server():
-        server = pywsgi.WSGIServer(('127.0.0.1', 5000), create_app())
+        server = pywsgi.WSGIServer(('127.0.0.1', 5000), create_app(), log=None)
         server.serve_forever()
 
     # Start server in a separate thread

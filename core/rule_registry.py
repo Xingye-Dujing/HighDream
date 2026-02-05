@@ -1,11 +1,11 @@
-from typing import Union
+from typing import Generator, Union
 
 from sympy import Expr, exp, latex, log
 from sympy.functions.elementary.trigonometric import InverseTrigonometricFunction, TrigonometricFunction
 
 from utils import (
     MatcherFunction, MatcherFunctionReturn, MatcherList,
-    Operation, RuleContext, RuleDict, RuleFunction, RuleFunctionReturn, RuleList
+    Operation, RuleContext, RuleDict, RuleFunction, RuleFunctionReturn
 )
 
 
@@ -39,14 +39,18 @@ class RuleRegistry:
         self._register_all_rules(rules)
         self._register_all_matchers(matchers)
 
-    def get_applicable_rules(self, expr: Expr, context: RuleContext) -> RuleList:
+    def get_applicable_rules(self, expr: Expr, context: RuleContext) -> Generator[RuleFunction, None, None]:
         """Return all rules applicable to the given expression."""
-        applicable = []
         for matcher in self._matchers:
+            # print(f"Matcher {matcher.__name__} matched.")
             rule_name = matcher(expr, context)
+            if rule_name is None:
+                continue
             if rule_name in self._rules:
-                applicable.append(self._rules[rule_name])
-        return applicable
+                # print(f"Rule {rule_name} matched.")
+                yield self._rules[rule_name]
+            # else:
+                # raise ValueError(f"Rule {rule_name} not found.")
 
     @staticmethod
     def create_common_rule(operation: Operation, func_name: str) -> RuleFunction:

@@ -46,5 +46,23 @@
     "content": "(sqrt(1+x^2)+sqrt(1-x^2))/sqrt(1-x^4)",
     "operationType": "integral",
     "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/(1-x^2)^(5/2)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "sin(x)*cos(x)/(sin(x)+cos(x))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "x^2/(x^2+1)^2",
+    "operationType": "integral",
+    "variable": "x"
   }
 ]

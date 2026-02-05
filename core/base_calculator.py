@@ -140,11 +140,11 @@ class BaseCalculator(ABC):
             new_expr, explanation = self._apply_rule(
                 current_expr, operation, **context)
         # Replace all occurrences of operation(current, var) with new_expr
+        current_operation = self._get_cached_result(
+            current_expr, operation, **context)
         for key in list(expr_to_operation.keys()):
             expr_to_operation[key] = expr_to_operation[key].subs(
-                self._get_cached_result(
-                    current_expr, operation, **context), new_expr
-            )
+                current_operation, new_expr)
         return new_expr, explanation, expr_to_operation
 
     def _back_subs(self, final_expr: Expr) -> None:

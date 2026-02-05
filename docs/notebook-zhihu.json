@@ -61,12 +61,6 @@
   },
   {
     "type": "code",
-    "content": "1/(1-x^2)^(5/2)",
-    "operationType": "integral",
-    "variable": "x"
-  },
-  {
-    "type": "code",
     "content": "x*cos(x)^2",
     "operationType": "integral",
     "variable": "x"

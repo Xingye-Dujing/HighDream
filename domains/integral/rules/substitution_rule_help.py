@@ -110,9 +110,9 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
 
                     return new_expr, explanation
 
-                except (ZeroDivisionError, ValueError, TypeError, NotImplementedError) as e:
+                except (ZeroDivisionError, ValueError, TypeError, NotImplementedError):
                     # Safely skip problematic cases (e.g., division by zero, unsupported ops)
-                    print(f"Warning: Standard substitution failed for {e}")
+                    # print(f"Warning: Standard substitution failed for {e}")
                     continue
 
     return None

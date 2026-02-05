@@ -13,11 +13,8 @@ class SelectRuleCalculator(BaseCalculator):
         """Apply rule to the expression and return result with explanation."""
         rule_context: RuleContext = self._get_context_dict(**context)
 
-        applicable_rules_list = self._rule_registry.get_applicable_rules(
-            expr, rule_context)
-        for rule in applicable_rules_list[:]:
-            if not self._check_rule_is_can_apply(rule):
-                applicable_rules_list.remove(rule)
+        applicable_rules_list = list(self._rule_registry.get_applicable_rules(
+            expr, rule_context))
 
         # display(Math(latex(expr)))
         print(expr)

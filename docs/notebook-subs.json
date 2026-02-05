@@ -70,5 +70,11 @@
     "content": "asin(x)/sqrt(1-x^2)",
     "operationType": "integral",
     "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "sin(sqrt(x))*x",
+    "operationType": "integral",
+    "variable": "x"
   }
 ]

@@ -28,5 +28,11 @@
     "content": "(1+x-1/x)*exp(x+1/x)+x",
     "operationType": "integral",
     "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "exp(sin(x))*(x*cos(x)^3 - sin(x))/cos(x)^2",
+    "operationType": "integral",
+    "variable": "x"
   }
 ]
