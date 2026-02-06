@@ -1,5 +1,5 @@
 from sympy import (
-    Abs, Dummy, Eq, Expr, I, Integral, Pow, Rational, Symbol, Wild, acos, asin, atan,
+    Add, Abs, Dummy, Eq, Expr, I, Integral, Pow, Rational, Symbol, Wild, acos, asin, atan,
     cancel, diff, fraction, latex, log, integrate, preorder_traversal, sec, simplify,
     sin, solve, sqrt, symbols, tan, together
 )
@@ -44,25 +44,24 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
         term_list += list(preorder_traversal(inner))
 
         for original_term in term_list:
-            if original_term.equals(var) or original_term.is_constant():
+            # Preventing infinite loops
+            if original_term.equals(var) or original_term.equals(-var) or original_term.is_constant():
                 continue
 
             check_list = [original_term]
             # Introducing sqrt_term is to handle implicit f(x)^2 cases like x/(x**4+1), x**x*(log(x)+1)/(x**(2*x)+1)
             sqrt_term = sqrt(original_term)
             # Use a temporary variable with positive real assumptions to aid radical simplification
-            _t = Symbol('t', real=True, positive=True)
+            _t = Dummy('t', real=True, positive=True)
             sqrt_term = simplify(sqrt_term.subs(var, _t)).subs(_t, var).replace(
                 Abs, lambda arg: arg)
-            if not sqrt_term.has(I):
+            if not sqrt_term.has(I) and not sqrt_term.equals(var) and not sqrt_term.equals(-var):
                 check_list.append(sqrt_term)
 
             for term in check_list:
-                if term.equals(var):
-                    continue
 
                 gp = simplify(diff(term, var))  # g'(x)
-                if gp.equals(0):
+                if gp.equals(0):  # g'(x) = 0
                     continue
 
                 initial_ratio = simplify(expr/gp)
@@ -364,6 +363,10 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
 
     Returns the integrated result and explanation if successful.
     """
+    # Exclude log(f(x)+sqrt(f(x)))
+    if isinstance(expr, log) and isinstance(expr.args[0], Add):
+        return None
+
     # Collect all power expressions that are proper fractional powers of x
     candidates = [atom for atom in expr.atoms(Pow) if isinstance(
         atom.exp, Rational) and -1 < atom.exp < 1 and atom.base.has(var)]
@@ -385,16 +388,20 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
             sol = solve(equation, var)
             if not sol:
                 continue
-            x_of_u = sol[0]  # Take principal solution
+            x_of_u = sol[0]
+            # Assume that the variable is always positive.
+            # Fix 1/((2*x^2+1)*sqrt(x^2+1)) dx
+            if x_of_u.has(-1) and -x_of_u in sol:
+                x_of_u = -x_of_u
         except Exception:
             continue
 
         try:
             dx_du = diff(x_of_u, u)
+            # Replace any exact match of 'rad' with u
+            new_expr = expr.subs(rad, u)
             # Substitute: every occurrence of 'var' to x(u), and rad to u
-            new_expr = expr.subs(var, x_of_u)
-            # Also replace any exact match of 'rad' with u (handles nested cases)
-            new_expr = new_expr.subs(rad, u)
+            new_expr = new_expr.subs(var, x_of_u)
             if new_expr.has(var) or new_expr.has(rad):
                 continue
             new_expr = simplify(new_expr * dx_du)

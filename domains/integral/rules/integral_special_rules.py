@@ -323,12 +323,11 @@ def quadratic_sqrt_reciprocal_rule(expr: Expr, context: RuleContext) -> RuleFunc
     if poly.degree() != 2:
         return None
 
-    coeffs = poly.all_coeffs()
-    if len(coeffs) != 3:
+    a, b, c = poly.all_coeffs()
+    if a.equals(0) or b.equals(0):
         return None
 
     step_gene = context['step_generator']
-    a, b, c = coeffs
     t = var+b/(2*a)
     k = 4*a*c-b**2
     if k.equals(0):

@@ -116,7 +116,7 @@ class BaseCalculator(ABC):
 
             result = rule(expr, rule_context)
             if result:
-                # print(f"rule: {rule.__name__}")
+                print(f"rule: {rule.__name__}")
                 return result
 
         # Fallback to SymPy if no rule matches

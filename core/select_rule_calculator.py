@@ -28,6 +28,7 @@ class SelectRuleCalculator(BaseCalculator):
         if result:
             # display(Math(latex(result[0])))
             pprint(result[0], use_unicode=True)
+            print(result[1])
             return result
 
         print("此规则无法应用，请重新选择.")

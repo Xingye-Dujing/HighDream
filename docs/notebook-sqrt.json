@@ -94,5 +94,35 @@
     "content": "sqrt((4+3*x)/(2*x+3))",
     "operationType": "integral",
     "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "sqrt((1+x)/(1-x))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/sqrt(exp(x)+1)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/((2*x^2+1)*sqrt(x^2+1))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "-atan(1/sqrt(1-1/(x^2+1)))",
+    "operationType": "diff",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "-atan(sqrt(x^2+1)/x)",
+    "operationType": "diff",
+    "variable": "x"
   }
 ]
