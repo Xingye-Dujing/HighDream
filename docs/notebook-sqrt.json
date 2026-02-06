@@ -82,5 +82,17 @@
     "content": "sqrt(x**2-2)",
     "operationType": "diff",
     "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "sqrt((1+x)/(2*x+3))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "sqrt((4+3*x)/(2*x+3))",
+    "operationType": "integral",
+    "variable": "x"
   }
 ]

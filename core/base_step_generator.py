@@ -1,7 +1,8 @@
 from abc import ABC
 from typing import List, Tuple
 
-from sympy import Dummy, Expr, Symbol, latex
+from sympy import Expr, Symbol, latex
+# from sympy import Dummy
 
 
 available_sym_chars = [
@@ -37,7 +38,8 @@ class BaseStepGenerator(ABC):
         if var.name in self.available_sym_chars:
             self.available_sym_chars.remove(var.name)
         if not self.available_sym_chars:
-            return Dummy(var.name)
+            raise ValueError("No more available symbols")
+            # return Dummy(var.name)
         new_sym_char = self.available_sym_chars[0]
         self.available_sym_chars.remove(new_sym_char)
         return Symbol(new_sym_char)

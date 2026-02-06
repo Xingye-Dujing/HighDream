@@ -260,7 +260,7 @@ def try_undetermined_coeffs_for_radicals(expr: Expr, var: Symbol) -> RuleFunctio
     """
     # Check if expression is of the form P(x)/sqrt(ax^2+bx+c)
     num, den = fraction(expr)
-    if num.equals(1) or not isinstance(den, Pow) or list(den.args)[1] != Rational(1, 2):
+    if num.equals(1) or not isinstance(den, Pow) or list(den.args)[1] != sqrt_pow:
         return None
 
     # Extract ax^2 + bx + c from sqrt(ax^2+bx+c)
@@ -365,11 +365,8 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
     Returns the integrated result and explanation if successful.
     """
     # Collect all power expressions that are proper fractional powers of x
-    candidates = []
-    for atom in expr.atoms(Pow):
-        base, _exp = atom.base, atom.exp
-        if isinstance(_exp, Rational) and -1 < _exp < 1 and base.has(var):
-            candidates.append(atom)
+    candidates = [atom for atom in expr.atoms(Pow) if isinstance(
+        atom.exp, Rational) and -1 < atom.exp < 1 and atom.base.has(var)]
 
     # Sort by depth (simplest first) – optional but improves success rate
     candidates.sort(key=lambda r: r.count_ops())
@@ -377,14 +374,10 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
     for rad in candidates:
         base, _exp = rad.base, rad.exp  # rad = base**exp
         q = _exp.q  # denominator
-        p = _exp.p  # numerator, -1 < p < q
+        p = _exp.p  # numerator
 
         # We set u = rad = base**(p/q), then base = u**(q/p)
         # To proceed, we need to express x in terms of u.
-        # This is only feasible if base is linear in x (e.g., x, x+1, 2*x-3)
-        if not base.is_polynomial(var) or base.as_poly(var).degree() != 1:
-            continue  # Skip non-linear bases like x**2 + sqrt(x)
-
         # Solve base = u**(q/p) for x
         try:
             u = step_gene.get_available_sym(var)

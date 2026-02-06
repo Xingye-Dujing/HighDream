@@ -108,35 +108,43 @@ def inverse_trig_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
 
 def inverse_tangent_linear_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
-    """Apply the rule for 1/(x^2 + m) form: 1/(x^2 + m) dx = (1/sqrt(m))*arctan(x/sqrt(m)) + C
+    """Handles integrals of the form 1/(x^2 + m)^n."""
 
-    Handles integrals of the form 1/(x^2 + m) where m > 0.
-    """
     var = context['variable']
     var_latex = wrap_latex(var)
     # SymPy puts the constant term at the front
     m = expr.base.args[0]
-    sqrt_m = sqrt(m)
     m_latex = wrap_latex(m)
-    sqrt_m_latex = "" if sqrt_m.equals(1) else wrap_latex(sqrt_m)
+    if m > 0:
+        sqrt_m = sqrt(m)
+        sqrt_m_latex = "" if sqrt_m.equals(1) else wrap_latex(sqrt_m)
 
-    if expr.exp == -1:
-        if m.equals(1):
-            return atan(var), f"反正切函数积分: $\\int \\frac{{1}}{{1 + {var}^2}}\\,d{var_latex} = \\arctan({var}) + C$"
+        if expr.exp.equals(-1):
+            if m.equals(1):
+                return atan(var), f"反正切函数积分: $\\int \\frac{{1}}{{1 + {var}^2}}\\,d{var_latex} = \\arctan({var}) + C$"
 
-        result = (1/sqrt_m) * atan(var/sqrt_m)
-        return result, f"线性逆切函数积分: $\\int \\frac{{1}}{{{var_latex}^2 + {m_latex}}}\\,d{var_latex} = \\frac{{1}}{{{sqrt_m_latex}}} \\arctan\\left(\\frac{{{var_latex}}}{{{sqrt_m_latex}}}\\right) + C$"
+            result = (1/sqrt_m) * atan(var/sqrt_m)
+            return result, f"反正切函数积分: $\\int \\frac{{1}}{{{var_latex}^2 + {m_latex}}}\\,d{var_latex} = \\frac{{1}}{{{sqrt_m_latex}}} \\arctan\\left(\\frac{{{var_latex}}}{{{sqrt_m_latex}}}\\right) + C$"
 
-    if expr.exp == -2:
-        step_gene = context['step_generator']
-        u = step_gene.get_available_sym(var)
-        step_gene.subs_dict[u] = atan(var/sqrt_m)
-        return Integral(cos(u)**2/(m*sqrt_m), u), f"令 ${u.name} = {latex(atan(var/sqrt_m))}$, 则 ${latex(var)} = {sqrt_m_latex}\\, \\tan\\left({u.name}\\right) $"
+        if expr.exp.equals(-2):
+            step_gene = context['step_generator']
+            u = step_gene.get_available_sym(var)
+            step_gene.subs_dict[u] = atan(var/sqrt_m)
+            return Integral(cos(u)**2/(m*sqrt_m), u), f"令 ${u.name} = {latex(atan(var/sqrt_m))}$, 则 ${latex(var)} = {sqrt_m_latex}\\, \\tan\\left({u.name}\\right) $"
 
+        n = -expr.exp
+        res = var/(2*m*(n-1)*(expr.base)**(n-1))+((2*n-3)/(2*m*(n-1))) * \
+            Integral(1/(expr.base)**(n-1), var)
+        return res, f"使用递推公式: $\\int \\frac{{1}}{{(a x^2 + b^2)^n}} \\, dx = \\frac{{x}}{{2b^2(n-1)(a x^2 + b^2)^{{n-1}}}} + \\frac{{2n - 3}}{{2b^2(n-1)}} \\int \\frac{{1}}{{(a x^2 + b^2)^{{n-1}}}} \\, dx$"
+
+    sqrt_m = sqrt(-m)
+    if expr.exp.equals(-1):
+        res = 1/(2*sqrt_m)*(log(abs(var-sqrt_m))-log(abs(var+sqrt_m)))
+        return res, f"反切函数积分: $\\int \\frac{{1}}{{{latex(expr.base)}}}\\,d{var_latex} = {latex(res)} + C$"
     n = -expr.exp
-    res = var/(2*m*(n-1)*(expr.base)**(n-1))+((2*n-3)/(2*m*(n-1))) * \
-        Integral(1/(expr.base)**(n-1), var)
-    return res, f"使用递推公式: $\\int \\frac{{1}}{{(a x^2 + b)^n}} \\, dx = \\frac{{x}}{{2b(n-1)(a x^2 + b)^{{n-1}}}} + \\frac{{2n - 3}}{{2b(n-1)}} \\int \\frac{{1}}{{(a x^2 + b)^{{n-1}}}} \\, dx$"
+    res = 1/(2*(n-1)*sqrt_m**2)*((3-2*n)*Integral(1/(expr.base)
+                                                  ** (n-1), var)-var/((expr.base)**(n-1)))
+    return res, f"使用递推公式: $\\int \\frac{{1}}{{(x^2 - b^2)^n}} \\, dx = \\frac{{1}}{{2(n-1)b^2}} \\left[ (3 - 2n) \\int \\frac{{1}}{{(x^2 - b^2)^{{n-1}}}} \\, dx - \\frac{{x}}{{(x^2 - b^2)^{{n-1}}}} \\right]$"
 
 
 def tanh_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
@@ -330,15 +338,13 @@ def coth_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
 
 
 def inverse_tangent_linear_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
-    """Matcher for expressions of the form 1/(x^2 + m) where m is a positive constant."""
+    """Matcher for expressions of the form 1/(x^2 + m)^n"""
     var = context['variable']
 
-    # Match pattern 1/(var^2 + m) where m > 0
     if expr.is_Pow and expr.exp < 0 and expr.exp.is_Integer:
-        denominator = expr.base
-        terms = denominator.args
+        terms = expr.base.args
         # SymPy puts the constant term at the front
-        if denominator.is_Add and len(terms) == 2 and terms[1] == var**2 and terms[0] > 0:
+        if expr.base.is_Add and len(terms) == 2 and terms[1].equals(var**2) and terms[0].is_constant():
             return 'inverse_tangent_linear'
 
     return None
