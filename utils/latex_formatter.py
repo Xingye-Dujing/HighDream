@@ -1,7 +1,9 @@
 from typing import Tuple, Union
-from sympy import Expr, Matrix, latex, sympify
-from domains.matrix.linear_system_converter import LinearSystemConverter
+
+from sympy import Basic, Expr, Matrix, latex, sympify
+
 import config
+from domains.matrix.linear_system_converter import LinearSystemConverter
 
 
 def _wrap_latex(expr: Expr) -> str:
@@ -17,7 +19,7 @@ def _wrap_latex(expr: Expr) -> str:
         return expr_latex
 
     # Special handling for common mathematical operations where parentheses
-    # are typically not wrapped
+    # are typically not wrapped.
     if expr.is_Pow:  # Exponentiation
         return expr_latex
     if expr.is_Indexed:  # Indexed objects
@@ -29,7 +31,7 @@ def _wrap_latex(expr: Expr) -> str:
     return f"\\left({expr_latex}\\right)"
 
 
-def wrap_latex(*expr: Expr) -> Union[str, Tuple]:
+def wrap_latex(*expr: [Basic | Expr]) -> Union[str, Tuple]:
     return _wrap_latex(expr[0]) if len(expr) == 1 else tuple(_wrap_latex(e) for e in expr)
 
 
@@ -39,7 +41,7 @@ def str_to_latex(expr: str, operation_type: str = None) -> str:
     This function safely parses and renders expressions based on context:
     - For matrix-related operations, it is rendered as a matrix.
     - For multi-line inputs, each line is rendered separately.
-    - For linear systems, equations are formatted in a cases environment.
+    - For linear systems, equations are formatted in a cases' environment.
     - Otherwise, the expression is rendered as-is via SymPy's latex().
     """
     if operation_type in config.RENDER_SINGLE_MATRIX:

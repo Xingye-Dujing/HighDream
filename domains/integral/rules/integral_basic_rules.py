@@ -1,5 +1,5 @@
 from sympy import (
-    Add, Expr, Eq, Integral, Mul,  Pow, atan, degree, div, fraction,
+    Add, Expr, Eq, Integral, Mul, Pow, atan, degree, div, fraction,
     integrate, powsimp, latex, radsimp, solve, simplify, symbols, sqrt
 )
 
@@ -7,9 +7,9 @@ from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn, can_us
 from utils.latex_formatter import wrap_latex
 
 
-def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr, str, bool]:
+def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr | None, str | None, bool | None]:
     """Handle polynomial expressions for integration"""
-    # If expr is rational fraction, performing partial fraction decomposition.
+    # If expr is a rational fraction, performing partial fraction decomposition.
     expr_copy = num / den
     expr_apart = expr_copy.apart()
 
@@ -18,10 +18,10 @@ def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr, str, bool]:
         return expr_apart, "(有理分式)化为真分式或部分分式分解", False
 
     # If the rational fraction is not reducible:
-    # 1. irreducible linear poly:
+    # 1. Irreducible linear poly:
     if degree(den).equals(1):
         q, r = div(num, den)
-        result = q + r/den
+        result = q + r / den
         return result, "裂项(分母为一次多项式)", False
 
     # 2. irreducible quadratic poly:
@@ -32,7 +32,7 @@ def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr, str, bool]:
             if result.has(atan):
                 return result, \
                     rf"(分母为二次多项式且分子为常数)分母配方/提公因子凑 $ \frac{{1}}{{b}} \frac{{1}}{{u^2+1}} $ 法", True
-            # If square roots are needed during decomposition, another algorithm should be used
+            # If square roots are needed during decomposition, another algorithm should be used.
             return expr_copy.apart(full=True).doit(), "(有理分式)化为真分式或部分分式分解", False
 
         den_diff = den.diff()
@@ -42,17 +42,17 @@ def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr, str, bool]:
                     (alpha, beta))
         alpha_val, beta_val = sol[alpha], sol[beta]
 
-        part1 = alpha_val*den_diff/den
-        part2 = beta_val/den
+        part1 = alpha_val * den_diff / den
+        part2 = beta_val / den
         expr_copy = part1 + part2
         return expr_copy, rf"(分母为不可约二次) $构造等式(分子 = \alpha \cdot 分母导数 + \beta)进行裂项$", False
 
-    # Cases like 1/(x**2+1)**2 that have already been reduced to the simplest form will reach here
+    # Cases like 1/(x**2+1)**2 that have already been reduced to the simplest form will reach here.
     return None, None, False
 
 
 def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
-    """Apply the sum rule：(f+g) dx = f dx + g dx"""
+    """Apply the sum rule：(f+g) dx = f dx + g dx."""
     var = context['variable']
     var_latex, expr_latex = wrap_latex(var, expr)
     # if isinstance(expr, Add):
@@ -61,18 +61,18 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     if isinstance(expr, (Mul, Pow)):
         num, den = fraction(expr)
-        # If expr is rational fraction, make sure it is a true fraction.
+        # If expr is a rational fraction, make sure it is a true fraction.
         q, r = div(num, den)
-        result = q + r/den
+        result = q + r / den
 
         used = False
         if den != 1 and num.is_polynomial() and den.is_polynomial():
             # The simplest linear poly, no decomposition required
             if degree(den).equals(1) and not isinstance(result, Add):
                 return None
-            if expr.equals(1/(var**2+1)):
+            if expr.equals(1 / (var ** 2 + 1)):
                 return None
-            # If expr is rational fraction, performing partial fraction decomposition.
+            # If expr is a rational fraction, performing partial fraction decomposition.
             result, prefix, is_direct_return = handle_poly(num, den, var)
             # 1. Have already been reduced to the simplest form
             if not result:
@@ -93,17 +93,18 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
             alpha, beta = symbols('alpha beta')
             try:
                 # Construct the identity: num = alpha * den_diff + beta
-                sol = solve(Eq(num, alpha * den_diff + beta*den),
+                sol = solve(Eq(num, alpha * den_diff + beta * den),
                             (alpha, beta))
                 alpha_val, beta_val = sol[alpha], sol[beta]
                 if alpha_val.is_constant() and beta_val.is_constant():
-                    part1 = radsimp(alpha_val*den_diff/den)
+                    part1 = radsimp(alpha_val * den_diff / den)
                     part2 = beta_val
                     result = Integral(part1, var) + Integral(part2, var)
-                    return result, f"$构造等式(分子 = \\alpha \\cdot 分母导数 + \\beta \\cdot 分母)进行裂项: \\int {expr_latex}\\,d {var_latex} = {latex(result)}$"
-            except Exception:
-                # print(f"Error in add_rule: {e}")
-                pass
+                    return result, (f"$构造等式(分子 = \\alpha \\cdot 分母导数 + \\beta \\cdot 分母)进行裂项: "
+                                    f"\\int {expr_latex}\\,d {var_latex} = {latex(result)}$")
+            except Exception as e:
+                print(f"Error in add_rule: {e}")
+                # pass
 
         # Handle the expressions containing non-polynomial elements such as log
         if not used:
@@ -128,7 +129,7 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
 
 def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
-    """Apply the const mul rule: c*f(x) dx = c * f(x) dx"""
+    """Apply the const mul rule: c*f(x) dx = c * f(x) dx."""
 
     used = False
 
@@ -143,8 +144,8 @@ def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         coeff_den, func_den = den.as_content_primitive(radical=True)
         if coeff_num != 1 or coeff_den != 1:
             used = True
-        coeff = simplify(coeff_num/coeff_den)
-        func_part = simplify(func_num/func_den)
+        coeff = simplify(coeff_num / coeff_den)
+        func_part = simplify(func_num / func_den)
 
     coeff *= coeff_first
 
@@ -158,9 +159,11 @@ def mul_const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     var_latex, expr_latex, func_part_latex = wrap_latex(var, expr, func_part)
     if coeff.equals(-1):
-        return -Integral(func_part, var), f"负号提出: $\\int {expr_latex}\\,d{var} = -\\int {func_part_latex}\\,d{var_latex}$"
+        return -Integral(func_part,
+                         var), f"负号提出: $\\int {expr_latex}\\,d{var} = -\\int {func_part_latex}\\,d{var_latex}$"
     if not coeff.equals(1):
-        return coeff * Integral(func_part, var), f"常数因子提取: $\\int {expr_latex}\\,d{var} = {latex(coeff)} \\int {func_part_latex}\\,d{var_latex}$"
+        return (coeff * Integral(func_part, var),
+                f"常数因子提取: $\\int {expr_latex}\\,d{var} = {latex(coeff)} \\int {func_part_latex}\\,d{var_latex}$")
     if used:
         return Integral(func_part, var), f"约分: $\\int {expr_latex}\\,d{var} = \\int {func_part_latex}\\,d{var_latex}$"
 

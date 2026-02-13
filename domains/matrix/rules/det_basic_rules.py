@@ -41,7 +41,7 @@ def zero_row_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
     rows = matrix.tolist()
     for i, row in enumerate(rows):
         if all(element == 0 for element in row):
-            return Integer(0), f"第 {i+1} 行为零行, 行列式为 0"
+            return Integer(0), f"第 {i + 1} 行为零行, 行列式为 0"
     return None
 
 
@@ -56,7 +56,7 @@ def zero_column_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionRetur
     cols = matrix.T.tolist()
     for i, col in enumerate(cols):
         if all(element == 0 for element in col):
-            return Integer(0), f"第 {i+1} 列为零列, 行列式为 0"
+            return Integer(0), f"第 {i + 1} 列为零列, 行列式为 0"
     return None
 
 
@@ -73,7 +73,7 @@ def duplicate_row_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionRet
     for i in range(n):
         for j in range(i + 1, n):
             if rows[i] == rows[j]:
-                return Integer(0), f"第 {i+1} 行和第 {j+1} 行相同, 行列式为 0"
+                return Integer(0), f"第 {i + 1} 行和第 {j + 1} 行相同, 行列式为 0"
     return None
 
 
@@ -91,7 +91,7 @@ def duplicate_column_rule(matrix: Matrix, _context: RuleContext) -> RuleFunction
     for i in range(n):
         for j in range(i + 1, n):
             if cols[i] == cols[j]:
-                return Integer(0), f"第 {i+1} 列和第 {j+1} 列相同, 行列式为 0"
+                return Integer(0), f"第 {i + 1} 列和第 {j + 1} 列相同, 行列式为 0"
     return None
 
 
@@ -157,7 +157,7 @@ def scalar_multiple_row_rule(matrix: Matrix, _context: RuleContext) -> RuleFunct
             if common_factor in (1, -1):
                 continue
 
-            # Construct new matrix with the i-th row divided by the common factor
+            # Construct the new matrix with the i-th row divided by the common factor.
             new_rows = []
             for row_idx in range(n):
                 if row_idx == i:
@@ -205,7 +205,7 @@ def scalar_multiple_column_rule(matrix: Matrix, _context: RuleContext) -> RuleFu
             if common_factor in (1, -1):
                 continue
 
-            # Build new matrix with the j-th column divided by the common factor
+            # Build the new matrix with the j-th column divided by the common factor.
             new_rows = []
             for i in range(matrix.rows):
                 new_row = []
@@ -265,7 +265,7 @@ def linear_combination_rule(matrix: Matrix, _context: RuleContext) -> RuleFuncti
                     new_zeros = 0
                     for col in range(n):
                         new_val = matrix[target_row, col] + \
-                            factor * matrix[source_row, col]
+                                  factor * matrix[source_row, col]
                         if new_val == 0:
                             new_zeros += 1
 
@@ -297,7 +297,7 @@ def linear_combination_rule(matrix: Matrix, _context: RuleContext) -> RuleFuncti
                     new_zeros = 0
                     for row in range(n):
                         new_val = matrix[row, target_col] + \
-                            factor * matrix[row, source_col]
+                                  factor * matrix[row, source_col]
                         if new_val == 0:
                             new_zeros += 1
 
@@ -308,7 +308,7 @@ def linear_combination_rule(matrix: Matrix, _context: RuleContext) -> RuleFuncti
                             target_col, source_col, pivot_row, factor)
                         transform_type = 'column'
 
-    # Apply best transformation
+    # Apply the best transformation
     if transform_type == 'row':
         target_row, source_row, _, factor = best_transform
         new_rows = []
@@ -398,7 +398,7 @@ def diagonal_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionRe
 
 
 def triangular_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
-    """Matches upper or lower triangular matrix."""
+    """Matches upper or lower the triangular matrix."""
 
     if is_upper_triangular(matrix) or is_lower_triangular(matrix):
         return 'triangular'
@@ -408,7 +408,7 @@ def triangular_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunction
 def scalar_multiple_row_matcher(matrix: Matrix, _context: RuleContext) -> MatcherFunctionReturn:
     """Matches matrices where at least one row has a nontrivial common factor.
 
-    Specifically, checks each row for a greatest common divisor (GCD) of its
+    Specifically, check each row for the greatest common divisor (GCD) of its
     nonzero elements that is not a unit (i.e., != +-1).
     """
 
@@ -453,7 +453,7 @@ def linear_combination_matcher(matrix: Matrix, _context: RuleContext) -> Matcher
     """Matches matrix that can benefit from a determinant-preserving linear combination
     (elementary row or column operation) to introduce new zero entries.
 
-    This matcher avoids applying the rule to small matrix (<= 2x2), where direct
+    This matcher avoids applying the rule to small matrix (<= 2*2), where direct
     evaluation is more efficient, and skips matrix already sparse enough that
     further simplification is unlikely to help. It then checks whether any valid
     row or column operation of the form R_i <- R_i + c*R_j or C_i <- C_i + c*C_j
@@ -462,7 +462,7 @@ def linear_combination_matcher(matrix: Matrix, _context: RuleContext) -> Matcher
 
     n = matrix.rows
 
-    # Skip small matrix - direct computation is preferable
+    # Skip the small matrix - direct computation is preferable
     if n <= 2:
         return None
 
@@ -471,11 +471,11 @@ def linear_combination_matcher(matrix: Matrix, _context: RuleContext) -> Matcher
                      for j in range(n) if matrix[i, j] == 0)
     zero_ratio = zero_count / total_elements
 
-    # If matrix is already > 50% zeros, likely not worth transforming
+    # If the matrix is already > 50% zeros, likely not worth transforming.
     if zero_ratio > 0.5:
         return None
 
-    # Avoid over-sparse rows/columns (e.g., > 60% zeros) - diminishing returns
+    # Avoid over-sparse rows/columns (e.g., > 60% zeros) - diminishing returns.
     sparsity_threshold = 0.6
     for i in range(n):
         if sum(1 for j in range(n) if matrix[i, j] == 0) / n > sparsity_threshold:
@@ -498,11 +498,11 @@ def linear_combination_matcher(matrix: Matrix, _context: RuleContext) -> Matcher
                     except (ZeroDivisionError, TypeError):
                         continue
 
-                    # Look for at least one new zero created in a previously nonzero position
+                    # Look for at least one new zero created in a previously nonzero position.
                     for col in range(n):
                         if matrix[target_row, col] != 0:
                             new_val = matrix[target_row, col] + \
-                                factor * matrix[source_row, col]
+                                      factor * matrix[source_row, col]
                             if new_val == 0:
                                 return 'linear_combination'
 
@@ -520,11 +520,11 @@ def linear_combination_matcher(matrix: Matrix, _context: RuleContext) -> Matcher
                     except (ZeroDivisionError, TypeError):
                         continue
 
-                    # Look for at least one new zero in a previously nonzero position
+                    # Look for at least one new zero in a previously nonzero position.
                     for row in range(n):
                         if matrix[row, target_col] != 0:
                             new_val = matrix[row, target_col] + \
-                                factor * matrix[row, source_col]
+                                      factor * matrix[row, source_col]
                             if new_val == 0:
                                 return 'linear_combination'
 

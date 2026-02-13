@@ -1,7 +1,7 @@
 from sympy import E, Expr, Integer, Pow, exp, latex, log, sin, simplify
 
+from domains.limit.limit_help_func import check_function_tends_to_zero
 from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
-from domains.limit import check_function_tends_to_zero
 
 
 def _get_limit_args(context: RuleContext) -> tuple:
@@ -16,13 +16,13 @@ def sin_over_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Applies the standard limit rule: u to 0, sin(u)/u to 1.
 
     To expressions of the form:
-        - sin(f(x))/g(x)   where f(x)/g(x) to c (constant),
-        - sin(f(x))*h(x)   where f(x)*h(x) to c (constant).
+        - sin(f(x))/g(x) where f(x)/g(x) to c (constant),
+        - sin(f(x))*h(x) where f(x)*h(x) to c (constant).
 
     The rule is applicable only when the inner argument f(x) tends to 0 at the limit point.
     """
     var, point, _, dir_sup = _get_limit_args(context)
-    ratio = None
+    ratio, sin_arg = None, None
 
     if expr.is_Mul:
         # Handle product form: sin(f(x))*h(x)
@@ -34,8 +34,7 @@ def sin_over_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
             else:
                 other_factor *= arg
         sin_arg = sin_factor.args[0]
-        ratio = sin_arg * other_factor
-        den = 1/other_factor
+        ratio = sin_arg * other_factor  # type: ignore
     else:
         # Handle quotient form: sin(f(x))/g(x)
         num, den = expr.as_numer_denom()
@@ -73,10 +72,10 @@ def sin_over_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
 
 def one_plus_one_over_x_pow_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
-    """Applies the standard exponential limit: u to 0, (1+u)^(1/u) = e,
+    """Applies the standard exponential limit: u to 0, (1+u)^(1/u) = e.
 
     To expressions of the form:
-        - (1+f(x))^{g(x)}   where f(x) to 0 and f(x)*g(x) to c (constant),
+        - (1+f(x))^{g(x)} where f(x) to 0 and f(x)*g(x) to c (constant),
         - equivalently, (1+1/h(x))^h(x) when h(x) yo +-oo.
 
     The rule is valid only if the base tends to 1 and the product f(x)*exponent
@@ -113,14 +112,12 @@ def ln_one_plus_x_over_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionR
     """Applies the standard logarithmic limit: u to 0, ln(1+u)/u = 1.
 
     To expressions of the form:
-        - ln(1+f(x))/g(x)   where f(x)/g(x) to c (constant),
-        - ln(1+f(x))*h(x)   where f(x)*h(x) to c (constant).
+        - ln(1+f(x))/g(x) where f(x)/g(x) to c (constant),
+        - ln(1+f(x))*h(x) where f(x)*h(x) to c (constant).
 
     The rule is valid only when f(x) to 0 as x approaches the limit point from the given direction.
     """
     var, point, dir_sup, _ = _get_limit_args(context)
-
-    ratio = None
 
     if expr.is_Mul:
         # Handle product form: ln(1+f(x))*h(x)
@@ -135,7 +132,7 @@ def ln_one_plus_x_over_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionR
     else:
         # Handle quotient form: ln(1+f(x))/g(x)
         numerator, denominator = expr.as_numer_denom()
-        f = numerator.args[0] - 1
+        f = numerator.args[0] - 1  # type: ignore
         ratio = simplify(f / denominator)
 
     # Build LaTeX explanation
@@ -182,7 +179,7 @@ def g_over_exp_minus_one_rule(expr: Expr, context: RuleContext) -> RuleFunctionR
 
     # Build LaTeX explanation
     ratio_latex = "" if ratio == 1 else latex(ratio)
-    f_latex, var_latex, point_latex = latex(f),  latex(var), latex(point)
+    f_latex, var_latex, point_latex = latex(f), latex(var), latex(point)
     lim_expr = f"\\lim_{{{var_latex} \\to {point_latex}{dir_sup}}}"
 
     result = Integer(1) if ratio == 1 else ratio
@@ -195,13 +192,13 @@ def g_over_exp_minus_one_rule(expr: Expr, context: RuleContext) -> RuleFunctionR
     elif ratio != 1 and f == var:
         rule_text = (
             f"{lim_expr} {expr_latex} = "
-            f"{ratio_latex} {lim_expr} \\frac{{{var_latex}}}{{e^{{{var_latex}}} - 1}} = {result_latex }"
+            f"{ratio_latex} {lim_expr} \\frac{{{var_latex}}}{{e^{{{var_latex}}} - 1}} = {result_latex}"
         )
     # General case
     else:
         rule_text = (
             f"{lim_expr} {expr_latex} = "
-            f"{ratio_latex} \\lim_{{t \\to 0{dir_sup}}} \\frac{{t}}{{e^t - 1}} = {result_latex }"
+            f"{ratio_latex} \\lim_{{t \\to 0{dir_sup}}} \\frac{{t}}{{e^t - 1}} = {result_latex}"
             f" \\quad \\text{{(令 }} t = {f_latex} \\text{{)}}"
         )
 
@@ -220,7 +217,7 @@ def g_over_ln_one_plus_rule(expr: Expr, context: RuleContext) -> RuleFunctionRet
     """
     var, point, _, dir_sup = _get_limit_args(context)
     num, den = expr.as_numer_denom()
-    f = den.args[0] - 1
+    f = den.args[0] - 1  # type: ignore
     ratio = simplify(num / f)
 
     # Build LaTeX explanation
@@ -231,7 +228,6 @@ def g_over_ln_one_plus_rule(expr: Expr, context: RuleContext) -> RuleFunctionRet
 
     result = Integer(1) if ratio == 1 else ratio
 
-    rule_text = ''
     if ratio != 1 and f != var:
         lim_expr = f"\\lim_{{t \\to {point_latex}{dir_sup}}}"
         rule_text = (
@@ -274,7 +270,6 @@ def g_over_sin_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     result = Integer(1) if ratio == 1 else ratio
 
-    rule_text = ""
     if ratio != 1 and f != var:
         lim_expr_t = f"\\lim_{{t \\to {point_latex}{dir_sup}}}"
         rule_text = (
@@ -300,13 +295,11 @@ def exp_minus_one_over_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionR
 
     To expressions of the form:
         (e^f(x)-1}/g(x) or (e^f(x)-1)*h(x),
-    where f(x) to 0 and the effective ratio f(x)/g(x) or f(x)*h(x) tends to a finite constant.
+    where f(x) to 0 and the effective ratio f(x)/g(x) or f(x)*h(x) tends to be a finite constant.
 
     This rule is valid only when f(x) to 0 at the limit point from the specified direction.
     """
     var, point, _, dir_sup = _get_limit_args(context)
-
-    ratio = None
 
     if expr.is_Mul:
         # Handle product form: (e^f(x)-1)*h(x)
@@ -319,7 +312,7 @@ def exp_minus_one_over_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionR
         # Extract e^f(x) -1
         exp_part = [a for a in exp_factor.args if a.has(exp)]
         f = exp_part[0].args[0]
-        ratio = simplify(f * other_factor)
+        ratio = simplify(f * other_factor)  # type: ignore
     else:
         # Handle quotient form: (e^f(x)-1)/g(x)
         numerator, denominator = expr.as_numer_denom()
@@ -355,9 +348,9 @@ def exp_minus_one_over_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionR
 def sin_over_x_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matches expressions that can be reduced to the standard limit: u to 0, sin(u)/u = 1.
 
-    i.e., forms like:
+    I.e., forms like:
         sin(f(x))/g(x) or sin(f(x))*h(x),
-    where f(x) to 0 and the effective ratio f(x)/g(x) or product f(x)*h(x) tends to a nonzero constant.
+    where f(x) to 0 and the effective ratio f(x)/g(x) or product f(x)*h(x) tends to be a nonzero constant.
 
     This matcher only returns 'sin_over_x' if:
       1. The sine argument f(x) to 0 as x to point (from the given direction).
@@ -376,7 +369,7 @@ def sin_over_x_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRetur
 
         if sin_factor is not None:
             sin_arg = sin_factor.args[0]
-            product = sin_arg * other_factor
+            product = sin_arg * other_factor  # type: ignore
             if not product.has(var) and check_function_tends_to_zero(sin_arg, var, point, direction):
                 return 'sin_over_x'
     else:
@@ -422,7 +415,7 @@ def ln_one_plus_x_over_x_matcher(expr: Expr, context: RuleContext) -> MatcherFun
 
     This includes forms like:
         ln(1+f(x))/g(x) or ln(1+f(x))*h(x),
-    where f(x) to 0 and the effective coefficient f(x)/g(x) or f(x)*h(x) tends to a finite constant.
+    where f(x) to 0, and the effective coefficient f(x)/g(x) or f(x)*h(x) tends to be a finite constant.
 
     The matcher returns 'ln_one_plus_x_over_x' if:
       1. The logarithm argument is of the form 1+f(x) with f(x) to 0,
@@ -461,11 +454,11 @@ def exp_minus_one_over_x_matcher(expr: Expr, context: RuleContext) -> MatcherFun
 
     This includes forms like:
         (e^f(x)-1)/g(x) or (e^f(x)-1)*h(x),
-    where f(x) to 0 and the effective coefficient f(x)/g(x) or f(x)*h(x) tends to a finite constant.
+    where f(x) to 0, and the effective coefficient f(x)/g(x) or f(x)*h(x) tends to be a finite constant.
 
     The matcher returns 'exp_minus_one_over_x' if:
       1. The expression contains a term of the form e^f(x)-1,
-      2. f(x) to 0 at the limit point (from the specified direction),
+      2. F(x) to 0 at the limit point (from the specified direction),
       3. The asymptotic ratio f(x)/denominator (after canonical normalization)
          converges to a constant independent of the limit variable.
     """
@@ -483,7 +476,7 @@ def exp_minus_one_over_x_matcher(expr: Expr, context: RuleContext) -> MatcherFun
             exp_part = [a for a in exp_factor.args if a.has(exp)]
             if exp_part:
                 f = exp_part[0].args[0]
-                product = f * other_factor
+                product = f * other_factor  # type: ignore
                 if not product.has(var) and check_function_tends_to_zero(f, var, point, direction):
                     return 'exp_minus_one_over_x'
     else:
@@ -501,18 +494,18 @@ def exp_minus_one_over_x_matcher(expr: Expr, context: RuleContext) -> MatcherFun
 
 
 def g_over_sin_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
-    """Matches expressions that reduce to the reciprocal of the standard sine limit: u to 0, u/sin(u) = 1,
+    """Matches expressions that reduce to the reciprocal of the standard sine limit: u to 0, u/sin(u) = 1.
 
-    i.e., forms like:
+    I.e., forms like:
         g(x)/sin(f(x)),
-    where f(x) to 0 and the ratio g(x)/f(x) tends to a finite constant.
+    where f(x) to 0 and the ratio g(x)/f(x) tends to be a finite constant.
 
     This pattern arises when the denominator is sin(f(x)) with f(x) to 0,
     and the numerator behaves asymptotically like a constant multiple of f(x).
 
     The matcher returns 'g_over_sin' if:
       1. The denominator is exactly sin(f(x)),
-      2. f(x) to 0 as x approaches the limit point (from the given direction),
+      2. F(x) to 0 as x approaches the limit point (from the given direction),
       3. The ratio g(x) / f(x) converges to a constant independent of the limit variable.
     """
     var, point, direction, _ = _get_limit_args(context)
@@ -526,18 +519,18 @@ def g_over_sin_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRetur
 
 
 def g_over_ln_one_plus_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
-    """Matches expressions that reduce to the reciprocal of the standard logarithmic limit: u to 0, u/ln(1+u) = 1,
+    """Matches expressions that reduce to the reciprocal of the standard logarithmic limit: u to 0, u/ln(1+u) = 1.
 
-    i.e., forms like:
+    I.e., forms like:
         g(x)/ln(1+f(x)),
-    where f(x) to 0 and the ratio g(x)/f(x) tends to a finite constant.
+    where f(x) to 0 and the ratio g(x)/f(x) tends to be a finite constant.
 
     This pattern arises when the denominator is ln(1+f(x)) with f(x) to 0,
     and the numerator behaves asymptotically like a constant multiple of f(x).
 
     The matcher returns 'g_over_ln_one_plus' if:
       1. The denominator is exactly log(1 + f(x)),
-      2. f(x) to 0 as x approaches the limit point (from the given direction),
+      2. F(x) to 0 as x approaches the limit point (from the given direction),
       3. The ratio g(x)/f(x) converges to a constant independent of the limit variable.
     """
     var, point, direction, _ = _get_limit_args(context)
@@ -551,18 +544,18 @@ def g_over_ln_one_plus_matcher(expr: Expr, context: RuleContext) -> MatcherFunct
 
 
 def g_over_exp_minus_one_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
-    """Matches expressions that reduce to the reciprocal of the standard exponential limit: u to 0, u/(e^u-1) = 1,
+    """Matches expressions that reduce to the reciprocal of the standard exponential limit: u to 0, u/(e^u-1) = 1.
 
-    i.e., forms like:
+    I.e., forms like:
         g(x)/(e^f(x)-1),
-    where f(x) to 0 and the ratio g(x)/f(x) tends to a finite constant.
+    where f(x) to 0 and the ratio g(x)/f(x) tends to be a finite constant.
 
     This pattern arises when the denominator is exactly e^f(x) - 1 with f(x) to 0,
     and the numerator behaves asymptotically like a constant multiple of f(x).
 
     The matcher returns 'g_over_exp_minus_one' if:
       1. The denominator is precisely exp(f(x)) - 1 (a two-term sum with one exp and one -1),
-      2. f(x) to 0 as x approaches the limit point (from the given direction),
+      2. F(x) to 0 as x approaches the limit point (from the given direction),
       3. The ratio g(x)/f(x) converges to a constant independent of the limit variable.
     """
     var, point, direction, _ = _get_limit_args(context)

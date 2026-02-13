@@ -1,7 +1,9 @@
 from sympy import Matrix, eye, latex, zeros
-# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
+
+
+# from IPython.display import Math, display
 
 
 class Inverter(CommonMatrixCalculator):
@@ -12,7 +14,8 @@ class Inverter(CommonMatrixCalculator):
     Gauss-Jordan elimination method. It also handles special matrix types.
     """
 
-    def is_square(self, matrix: Matrix) -> bool:
+    @staticmethod
+    def is_square(matrix: Matrix) -> bool:
         """Check if a matrix is square."""
         return matrix.rows == matrix.cols
 
@@ -47,7 +50,8 @@ class Inverter(CommonMatrixCalculator):
             self.step_generator.add_step(r"\text{矩阵行列式不为 0, 可逆}")
         return True
 
-    def check_special_matrix(self, matrix: Matrix) -> str:
+    @staticmethod
+    def check_special_matrix(matrix: Matrix) -> str:
         """Identify special types of matrices that have optimized inversion methods.
 
 
@@ -57,7 +61,7 @@ class Inverter(CommonMatrixCalculator):
         """
         n = matrix.rows
 
-        # Check if it's an identity matrix
+        # Check if it is an identity matrix
         if matrix == eye(n):
             return "identity"
 
@@ -73,7 +77,7 @@ class Inverter(CommonMatrixCalculator):
         if is_diagonal:
             return "diagonal"
 
-        # Check if it's a permutation matrix (only one 1 per row/column, rest 0)
+        # Check if it is a permutation matrix (only one 1 per row/column, rest 0)
         is_permutation = True
         for i in range(n):
             row_ones = 0
@@ -92,7 +96,7 @@ class Inverter(CommonMatrixCalculator):
         if is_permutation:
             return "permutation"
 
-        # Check if it's a triangular matrix
+        # Check if it is a triangular matrix
         is_upper_triangular = True
         is_lower_triangular = True
         for i in range(n):
@@ -108,14 +112,15 @@ class Inverter(CommonMatrixCalculator):
 
         return "general"
 
-    def inverse_by_augmented(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True, is_clear: bool = True) -> Matrix:
+    def inverse_by_augmented(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True,
+                             is_clear: bool = True) -> Matrix | None:
         """Compute matrix inverse using the augmented matrix method.
 
         This method creates an augmented matrix [A|I] and applies Gauss-Jordan
         elimination to transform it into [I|A^-1].
 
         Returns:
-            Matrix: The inverse of the input matrix, or None if not invertible
+            Matrix: The inverse of the input matrix, or None if not invertible.
         """
         if is_clear:
             self.step_generator.clear()
@@ -126,7 +131,7 @@ class Inverter(CommonMatrixCalculator):
             self.step_generator.add_step(r"\textbf{方法一: 增广矩阵法}")
             self.add_matrix(A, "A")
 
-        # Check if matrix is invertible
+        # Check if the matrix is invertible
         if not self.is_invertible(A, show_steps, is_clear=False):
             return None
 
@@ -142,7 +147,7 @@ class Inverter(CommonMatrixCalculator):
         for i in range(n):
             if show_steps:
                 self.step_generator.add_step(
-                    f"\\text{{第 {i+1} 步: 处理第 {i+1} 列}}")
+                    f"\\text{{第 {i + 1} 步: 处理第 {i + 1} 列}}")
 
             # Find pivot element
             pivot_row = i
@@ -155,7 +160,7 @@ class Inverter(CommonMatrixCalculator):
             if pivot_row != i:
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{行交换: }} R_{i+1} \\leftrightarrow  R_{pivot_row+1}")
+                        f"\\text{{行交换: }} R_{i + 1} \\leftrightarrow  R_{pivot_row + 1}")
                 augmented.row_swap(i, pivot_row)
                 if show_steps:
                     self.add_matrix(augmented, f"[A|I]")
@@ -165,7 +170,7 @@ class Inverter(CommonMatrixCalculator):
             if pivot != 1:
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{归一化: }} R_{i+1} \\times {latex(1/pivot)}")
+                        f"\\text{{归一化: }} R_{i + 1} \\times {latex(1 / pivot)}")
                 augmented[i, :] = augmented[i, :] / pivot
                 if show_steps:
                     self.add_matrix(augmented, f"[A|I]")
@@ -176,17 +181,16 @@ class Inverter(CommonMatrixCalculator):
                     factor = augmented[j, i]
                     if show_steps:
                         self.step_generator.add_step(
-                            f"\\text{{消元: }} R_{j+1} - {latex(factor)} \\times R_{i+1}"
+                            f"\\text{{消元: }} R_{j + 1} - {latex(factor)} \\times R_{i + 1}"
                         )
-                    augmented[j, :] = augmented[j, :] - \
-                        factor * augmented[i, :]
+                    augmented[j, :] = augmented[j, :] - factor * augmented[i, :]
                     if show_steps:
                         self.add_matrix(augmented, f"[A|I]")
 
-        # Extract inverse matrix from right half of augmented matrix
+        # Extract the inverse matrix from right half of augmented matrix
         A_inv = augmented[:, n:]
 
-        # Simplify result if requested
+        # Simplify the result if requested
         if simplify_result:
             A_inv_simplified = self.simplify_matrix(A_inv)
         else:
@@ -213,7 +217,8 @@ class Inverter(CommonMatrixCalculator):
 
         return A_inv_simplified
 
-    def inverse_by_adjugate(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True, is_clear: bool = True) -> Matrix:
+    def inverse_by_adjugate(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True,
+                            is_clear: bool = True) -> Matrix | None:
         """
         Compute matrix inverse using the adjugate method.
 
@@ -221,7 +226,7 @@ class Inverter(CommonMatrixCalculator):
         where adj(A) is the adjugate matrix (transpose of cofactor matrix).
 
         Returns:
-            Matrix: The inverse of the input matrix, or None if not invertible
+            Matrix: The inverse of the input matrix, or None if not invertible.
         """
         if is_clear:
             self.step_generator.clear()
@@ -232,7 +237,7 @@ class Inverter(CommonMatrixCalculator):
             self.step_generator.add_step(r"\textbf{方法二: 伴随矩阵法}")
             self.add_matrix(A, "A")
 
-        # Check if matrix is invertible
+        # Check if the matrix is invertible
         if not self.is_invertible(A, show_steps, is_clear=False):
             return None
 
@@ -252,14 +257,15 @@ class Inverter(CommonMatrixCalculator):
             for j in range(n):
                 # Calculate algebraic cofactor
                 minor = A.minor_submatrix(i, j)
-                cofactor = (-1)**(i+j) * minor.det()
+                cofactor = (-1) ** (i + j) * minor.det()
                 cofactor_matrix[i, j] = cofactor
 
                 if show_steps:
                     self.step_generator.add_step(
-                        f"C_{{{i+1}{j+1}}} = (-1)^{{{i+j+2}}} \\cdot \\det(M_{{{i+1}{j+1}}}) = {latex(cofactor)}"
+                        f"C_{{{i + 1}{j + 1}}} = (-1)^{{{i + j + 2}}} \\cdot "
+                        f"\\det(M_{{{i + 1}{j + 1}}}) = {latex(cofactor)}"
                     )
-                    self.add_matrix(minor, f"M_{{{i+1}{j+1}}}")
+                    self.add_matrix(minor, f"M_{{{i + 1}{j + 1}}}")
 
         if show_steps:
             self.add_matrix(cofactor_matrix, "C")
@@ -273,7 +279,7 @@ class Inverter(CommonMatrixCalculator):
         # Calculate inverse matrix
         A_inv = adjugate / det_A
 
-        # Simplify result if requested
+        # Simplify the result if requested
         if simplify_result:
             A_inv_simplified = self.simplify_matrix(A_inv)
         else:
@@ -305,14 +311,15 @@ class Inverter(CommonMatrixCalculator):
 
         return A_inv_simplified
 
-    def inverse_by_lu_decomposition(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True, is_clear: bool = True) -> Matrix:
+    def inverse_by_lu_decomposition(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True,
+                                    is_clear: bool = True) -> Matrix | None:
         """Compute matrix inverse using LU decomposition method.
 
         This method decomposes A into L*U and then solves AX = I column by column,
         where X will be A^-1.
 
         Returns:
-            Matrix: The inverse of the input matrix, or None if not invertible
+            Matrix: The inverse of the input matrix, or None if not invertible.
         """
         if is_clear:
             self.step_generator.clear()
@@ -323,7 +330,7 @@ class Inverter(CommonMatrixCalculator):
             self.step_generator.add_step(r"\textbf{方法三: LU 分解法}")
             self.add_matrix(A, "A")
 
-        # Check if matrix is invertible
+        # Check if the matrix is invertible
         if not self.is_invertible(A, show_steps, is_clear=False):
             return None
 
@@ -340,7 +347,7 @@ class Inverter(CommonMatrixCalculator):
                 U[i, j] = A[i, j] - sum_val
 
             # Calculate L's i-th column
-            for j in range(i+1, n):
+            for j in range(i + 1, n):
                 sum_val = sum(L[j, k] * U[k, i] for k in range(i))
                 if U[i, i] == 0:
                     self.step_generator.add_step(r"\textbf{不能进行 LU 分解}")
@@ -361,7 +368,7 @@ class Inverter(CommonMatrixCalculator):
             else:
                 self.step_generator.add_step(r"\text{LU 分解错误}")
 
-        # Solve equation systems L * Y = I and U * X = Y to find inverse
+        # Solve equation systems L * Y = I and U * X = Y to find inverse.
         if show_steps:
             self.add_step("步骤 2: 解方程组求逆")
             self.step_generator.add_step(
@@ -373,7 +380,7 @@ class Inverter(CommonMatrixCalculator):
         # Solve for each column
         for col in range(n):
             if show_steps:
-                self.step_generator.add_step(f"\\text{{求解第 {col+1} 列}}")
+                self.step_generator.add_step(f"\\text{{求解第 {col + 1} 列}}")
 
             # Forward substitution to solve L * y = e_col
             y = zeros(n, 1)
@@ -382,8 +389,8 @@ class Inverter(CommonMatrixCalculator):
 
             if show_steps:
                 self.step_generator.add_step(
-                    f"\\text{{(1) 前代法求解 }} L \\cdot \\boldsymbol{{y_{{{col+1}}}}} = \\boldsymbol{{e_{{{col+1}}}}}")
-                self.add_matrix(e, f"\\boldsymbol{{e_{{{col+1}}}}}")
+                    f"\\text{{(1) 前代法求解 }} L \\cdot \\boldsymbol{{y_{{{col + 1}}}}} = \\boldsymbol{{e_{{{col + 1}}}}}")
+                self.add_matrix(e, f"\\boldsymbol{{e_{{{col + 1}}}}}")
 
             for i in range(n):
                 sum_val = sum(L[i, j] * y[j] for j in range(i))
@@ -393,45 +400,49 @@ class Inverter(CommonMatrixCalculator):
                     # Show forward substitution steps
                     if i == 0:
                         self.step_generator.add_step(
-                            f"y_{{{i+1}}} = \\frac{{e_{{{i+1}}}}}{{L_{{{i+1}{i+1}}}}} = \\frac{{{latex(e[i])}}}{{{latex(L[i, i])}}} = {latex(y[i])}")
+                            f"y_{{{i + 1}}} = \\frac{{e_{{{i + 1}}}}}{{L_{{{i + 1}{i + 1}}}}} = "
+                            f"\\frac{{{latex(e[i])}}}{{{latex(L[i, i])}}} = {latex(y[i])}")
                     else:
                         sum_terms = " + ".join(
-                            [f"L_{{{i+1}{j+1}}} \\cdot y_{{{j+1}}}" for j in range(i)])
+                            [f"L_{{{i + 1}{j + 1}}} \\cdot y_{{{j + 1}}}" for j in range(i)])
                         self.step_generator.add_step(
-                            f"y_{{{i+1}}} = \\frac{{e_{{{i+1}}} - ({sum_terms})}}{{L_{{{i+1}{i+1}}}}} = \\frac{{{latex(e[i])} - ({latex(sum_val)})}}{{{latex(L[i, i])}}} = {latex(y[i])}")
+                            f"y_{{{i + 1}}} = \\frac{{e_{{{i + 1}}} - ({sum_terms})}}{{L_{{{i + 1}{i + 1}}}}} = "
+                            f"\\frac{{{latex(e[i])} - ({latex(sum_val)})}}{{{latex(L[i, i])}}} = {latex(y[i])}")
 
             if show_steps:
-                self.add_matrix(y, f"\\boldsymbol{{y_{{{col+1}}}}}")
+                self.add_matrix(y, f"\\boldsymbol{{y_{{{col + 1}}}}}")
 
             # Backward substitution to solve U * x = y
             x = zeros(n, 1)
             if show_steps:
                 self.step_generator.add_step(
-                    f"\\text{{(2) 回代法求解 }} U \\cdot \\boldsymbol{{x_{{{col+1}}}}} = \\boldsymbol{{y_{{{col+1}}}}}")
+                    f"\\text{{(2) 回代法求解 }} U \\cdot \\boldsymbol{{x_{{{col + 1}}}}} = \\boldsymbol{{y_{{{col + 1}}}}}")
 
-            for i in range(n-1, -1, -1):
-                sum_val = sum(U[i, j] * x[j] for j in range(i+1, n))
+            for i in range(n - 1, -1, -1):
+                sum_val = sum(U[i, j] * x[j] for j in range(i + 1, n))
                 x[i] = (y[i] - sum_val) / U[i, i]
 
                 if show_steps:
-                    if i == n-1:
+                    if i == n - 1:
                         self.step_generator.add_step(
-                            f"x_{{{i+1}}} = \\frac{{y_{{{i+1}}}}}{{U_{{{i+1}{i+1}}}}} = \\frac{{{latex(y[i])}}}{{{latex(U[i, i])}}} = {latex(x[i])}")
+                            f"x_{{{i + 1}}} = \\frac{{y_{{{i + 1}}}}}{{U_{{{i + 1}{i + 1}}}}} = "
+                            f"\\frac{{{latex(y[i])}}}{{{latex(U[i, i])}}} = {latex(x[i])}")
                     else:
                         sum_terms = " + ".join(
-                            [f"U_{{{i+1}{j+1}}} \\cdot x_{{{j+1}}}" for j in range(i+1, n)])
+                            [f"U_{{{i + 1}{j + 1}}} \\cdot x_{{{j + 1}}}" for j in range(i + 1, n)])
                         self.step_generator.add_step(
-                            f"x_{{{i+1}}} = \\frac{{y_{{{i+1}}} - ({sum_terms})}}{{U_{{{i+1}{i+1}}}}} = \\frac{{{latex(y[i])} - ({latex(sum_val)})}}{{{latex(U[i, i])}}} = {latex(x[i])}")
+                            f"x_{{{i + 1}}} = \\frac{{y_{{{i + 1}}} - ({sum_terms})}}{{U_{{{i + 1}{i + 1}}}}} = "
+                            f"\\frac{{{latex(y[i])} - ({latex(sum_val)})}}{{{latex(U[i, i])}}} = {latex(x[i])}")
 
             if show_steps:
-                self.add_matrix(x, f"\\boldsymbol{{x_{{{col+1}}}}}")
-                self.step_generator.add_step(f"\\text{{第 {col+1} 列求解完成}}")
+                self.add_matrix(x, f"\\boldsymbol{{x_{{{col + 1}}}}}")
+                self.step_generator.add_step(f"\\text{{第 {col + 1} 列求解完成}}")
 
             # Store solution in inverse matrix
             for i in range(n):
                 A_inv[i, col] = x[i]
 
-        # Simplify result if requested
+        # Simplify the result if requested
         if simplify_result:
             A_inv_simplified = self.simplify_matrix(A_inv)
         else:
@@ -458,14 +469,15 @@ class Inverter(CommonMatrixCalculator):
 
         return A_inv_simplified
 
-    def inverse_by_gauss_jordan(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True, is_clear: bool = True) -> Matrix:
+    def inverse_by_gauss_jordan(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True,
+                                is_clear: bool = True) -> Matrix | None:
         """Compute matrix inverse using Gauss-Jordan elimination method.
 
-        Directly applies Gauss-Jordan elimination on matrix A while simultaneously
+        Directly applies Gauss-Jordan elimination on the matrix A while simultaneously
         applying the same operations on an identity matrix to produce A^-1.
 
         Returns:
-            Matrix: The inverse of the input matrix, or None if not invertible
+            Matrix: The inverse of the input matrix, or None if not invertible.
         """
         if is_clear:
             self.step_generator.clear()
@@ -476,7 +488,7 @@ class Inverter(CommonMatrixCalculator):
             self.step_generator.add_step(r"\textbf{方法四: 高斯-约当消元法}")
             self.add_matrix(A, "A")
 
-        # Check if matrix is invertible
+        # Check if the matrix is invertible
         if not self.is_invertible(A, show_steps, is_clear=False):
             return None
 
@@ -491,7 +503,7 @@ class Inverter(CommonMatrixCalculator):
 
         for col in range(n):
             if show_steps:
-                self.step_generator.add_step(f"\\text{{处理第 {col+1} 列}}")
+                self.step_generator.add_step(f"\\text{{处理第 {col + 1} 列}}")
 
             # Find pivot element
             pivot_row = col
@@ -504,7 +516,7 @@ class Inverter(CommonMatrixCalculator):
             if pivot_row != col:
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{行交换: }} R_{{{col+1}}} \\leftrightarrow R_{{{pivot_row+1}}}")
+                        f"\\text{{行交换: }} R_{{{col + 1}}} \\leftrightarrow R_{{{pivot_row + 1}}}")
                 A_work.row_swap(col, pivot_row)
                 A_inv.row_swap(col, pivot_row)
                 if show_steps:
@@ -516,7 +528,8 @@ class Inverter(CommonMatrixCalculator):
             if pivot != 1:
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{归一化: }} \\frac{{1}}{{{latex(pivot)}}} \\cdot R_{{{col+1}}} \\rightarrow R_{{{col+1}}} ")
+                        f"\\text{{归一化: }} \\frac{{1}}{{{latex(pivot)}}} \\cdot R_{{{col + 1}}} "
+                        f"\\rightarrow R_{{{col + 1}}} ")
                 A_work[col, :] = A_work[col, :] / pivot
                 A_inv[col, :] = A_inv[col, :] / pivot
                 if show_steps:
@@ -529,7 +542,8 @@ class Inverter(CommonMatrixCalculator):
                     factor = A_work[row, col]
                     if show_steps:
                         self.step_generator.add_step(
-                            f"\\text{{消元: }} R_{{{row+1}}} - {latex(factor)} \\cdot R_{{{col+1}}} \\rightarrow R_{{{row+1}}}"
+                            f"\\text{{消元: }} R_{{{row + 1}}} - {latex(factor)} \\cdot R_{{{col + 1}}} "
+                            f"\\rightarrow R_{{{row + 1}}}"
                         )
                     A_work[row, :] = A_work[row, :] - factor * A_work[col, :]
                     A_inv[row, :] = A_inv[row, :] - factor * A_inv[col, :]
@@ -537,7 +551,7 @@ class Inverter(CommonMatrixCalculator):
                         self.add_matrix(A_work, "A")
                         self.add_matrix(A_inv, "A^{-1}")
 
-        # Simplify result if requested
+        # Simplify the result if requested
         if simplify_result:
             A_inv_simplified = self.simplify_matrix(A_inv)
         else:
@@ -564,14 +578,15 @@ class Inverter(CommonMatrixCalculator):
 
         return A_inv_simplified
 
-    def inverse_special_matrices(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True, is_clear: bool = True) -> Matrix:
+    def inverse_special_matrices(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True,
+                                 is_clear: bool = True) -> Matrix:
         """Compute inverse of special matrices using optimized methods.
 
         Handles specific matrix types like identity, diagonal, permutation,
         triangular matrices with specialized algorithms for better efficiency.
 
         Returns:
-            Matrix: The inverse of the input matrix, or None if not invertible
+            Matrix: The inverse of the input matrix, or None if not invertible.
         """
         if is_clear:
             self.step_generator.clear()
@@ -608,7 +623,7 @@ class Inverter(CommonMatrixCalculator):
                 A_inv[i, i] = 1 / A[i, i]
                 if show_steps:
                     self.step_generator.add_step(
-                        f"a_{{{i+1}{i+1}}}^{{-1}} = \\frac{{1}}{{{latex(A[i,i])}}} = {latex(A_inv[i,i])}")
+                        f"a_{{{i + 1}{i + 1}}}^{{-1}} = \\frac{{1}}{{{latex(A[i, i])}}} = {latex(A_inv[i, i])}")
 
         elif matrix_type == "permutation":
             if show_steps:
@@ -629,27 +644,29 @@ class Inverter(CommonMatrixCalculator):
 
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{回代法求解 }} A \\cdot \\boldsymbol{{x_{{{col+1}}}}} = \\boldsymbol{{e_{{{col+1}}}}}")
-                    self.add_matrix(e, f"\\boldsymbol{{e_{{{col+1}}}}}")
+                        f"\\text{{回代法求解 }} A \\cdot \\boldsymbol{{x_{{{col + 1}}}}} = \\boldsymbol{{e_{{{col + 1}}}}}")
+                    self.add_matrix(e, f"\\boldsymbol{{e_{{{col + 1}}}}}")
 
                 # Backward substitution process
-                for i in range(n-1, -1, -1):
-                    sum_val = sum(A[i, j] * x[j] for j in range(i+1, n))
+                for i in range(n - 1, -1, -1):
+                    sum_val = sum(A[i, j] * x[j] for j in range(i + 1, n))
                     x[i] = (e[i] - sum_val) / A[i, i]
 
                     if show_steps:
-                        if i == n-1:
+                        if i == n - 1:
                             self.step_generator.add_step(
-                                f"x_{{{i+1}}} = \\frac{{e_{{{i+1}}}}}{{A_{{{i+1}{i+1}}}}} = \\frac{{{latex(e[i])}}}{{{latex(A[i, i])}}} = {latex(x[i])}")
+                                f"x_{{{i + 1}}} = \\frac{{e_{{{i + 1}}}}}{{A_{{{i + 1}{i + 1}}}}} = "
+                                f"\\frac{{{latex(e[i])}}}{{{latex(A[i, i])}}} = {latex(x[i])}")
                         else:
                             sum_terms = " + ".join(
-                                [f"A_{{{i+1}{j+1}}} \\cdot x_{{{j+1}}}" for j in range(i+1, n)])
+                                [f"A_{{{i + 1}{j + 1}}} \\cdot x_{{{j + 1}}}" for j in range(i + 1, n)])
                             self.step_generator.add_step(
-                                f"x_{{{i+1}}} = \\frac{{e_{{{i+1}}} - ({sum_terms})}}{{A_{{{i+1}{i+1}}}}} = \\frac{{{latex(e[i])} - ({latex(sum_val)})}}{{{latex(A[i, i])}}} = {latex(x[i])}")
+                                f"x_{{{i + 1}}} = \\frac{{e_{{{i + 1}}} - ({sum_terms})}}{{A_{{{i + 1}{i + 1}}}}} = "
+                                f"\\frac{{{latex(e[i])} - ({latex(sum_val)})}}{{{latex(A[i, i])}}} = {latex(x[i])}")
 
                 if show_steps:
-                    self.add_matrix(x, f"\\boldsymbol{{x_{{{col+1}}}}}")
-                    self.step_generator.add_step(f"\\text{{第 {col+1} 列求解完成}}")
+                    self.add_matrix(x, f"\\boldsymbol{{x_{{{col + 1}}}}}")
+                    self.step_generator.add_step(f"\\text{{第 {col + 1} 列求解完成}}")
 
                 for i in range(n):
                     A_inv[i, col] = x[i]
@@ -666,8 +683,8 @@ class Inverter(CommonMatrixCalculator):
 
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{前代法求解 }} A \\cdot \\boldsymbol{{x_{{{col+1}}}}} = \\boldsymbol{{e_{{{col+1}}}}}")
-                    self.add_matrix(e, f"\\boldsymbol{{e_{{{col+1}}}}}")
+                        f"\\text{{前代法求解 }} A \\cdot \\boldsymbol{{x_{{{col + 1}}}}} = \\boldsymbol{{e_{{{col + 1}}}}}")
+                    self.add_matrix(e, f"\\boldsymbol{{e_{{{col + 1}}}}}")
 
                 # Forward substitution process
                 for i in range(n):
@@ -677,21 +694,23 @@ class Inverter(CommonMatrixCalculator):
                     if show_steps:
                         if i == 0:
                             self.step_generator.add_step(
-                                f"x_{{{i+1}}} = \\frac{{e_{{{i+1}}}}}{{A_{{{i+1}{i+1}}}}} = \\frac{{{latex(e[i])}}}{{{latex(A[i, i])}}} = {latex(x[i])}")
+                                f"x_{{{i + 1}}} = \\frac{{e_{{{i + 1}}}}}{{A_{{{i + 1}{i + 1}}}}} = "
+                                f"\\frac{{{latex(e[i])}}}{{{latex(A[i, i])}}} = {latex(x[i])}")
                         else:
                             sum_terms = " + ".join(
-                                [f"A_{{{i+1}{j+1}}} \\cdot x_{{{j+1}}}" for j in range(i)])
+                                [f"A_{{{i + 1}{j + 1}}} \\cdot x_{{{j + 1}}}" for j in range(i)])
                             self.step_generator.add_step(
-                                f"x_{{{i+1}}} = \\frac{{e_{{{i+1}}} - ({sum_terms})}}{{A_{{{i+1}{i+1}}}}} = \\frac{{{latex(e[i])} - ({latex(sum_val)})}}{{{latex(A[i, i])}}} = {latex(x[i])}")
+                                f"x_{{{i + 1}}} = \\frac{{e_{{{i + 1}}} - ({sum_terms})}}{{A_{{{i + 1}{i + 1}}}}} = "
+                                f"\\frac{{{latex(e[i])} - ({latex(sum_val)})}}{{{latex(A[i, i])}}} = {latex(x[i])}")
 
                 if show_steps:
-                    self.add_matrix(x, f"\\boldsymbol{{x_{{{col+1}}}}}")
-                    self.step_generator.add_step(f"\\text{{第 {col+1} 列求解完成}}")
+                    self.add_matrix(x, f"\\boldsymbol{{x_{{{col + 1}}}}}")
+                    self.step_generator.add_step(f"\\text{{第 {col + 1} 列求解完成}}")
 
                 for i in range(n):
                     A_inv[i, col] = x[i]
 
-        # Simplify result if requested
+        # Simplify the result if requested
         if simplify_result and A_inv is not None:
             A_inv_simplified = self.simplify_matrix(A_inv)
         else:
@@ -718,7 +737,8 @@ class Inverter(CommonMatrixCalculator):
 
         return A_inv_simplified
 
-    def auto_matrix_inverse(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True, is_clear: bool = True) -> Matrix:
+    def auto_matrix_inverse(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True,
+                            is_clear: bool = True) -> Matrix | None:
         """
         Automatically select the best method to compute matrix inverse.
 
@@ -727,7 +747,7 @@ class Inverter(CommonMatrixCalculator):
         For general matrices, multiple methods are attempted.
 
         Returns:
-            Matrix: The inverse of the input matrix, or None if not invertible
+            Matrix: The inverse of the input matrix, or None if not invertible.
         """
         if is_clear:
             self.step_generator.clear()
@@ -784,17 +804,17 @@ class Inverter(CommonMatrixCalculator):
             if show_steps:
                 self.step_generator.add_step(f"\\text{{高斯-约当消元法失败: {str(e)}}}")
 
-        # Check consistency of results
+        # Check the consistency of results
         if show_steps and len(results) > 1:
             self.add_step("方法一致性检查:")
             methods = list(results.keys())
             consistent = True
-            for i in range(len(methods)-1):
+            for i in range(len(methods) - 1):
                 if results[methods[i]] is None:
                     continue
-                if results[methods[i+1]] is None:
+                if results[methods[i + 1]] is None:
                     continue
-                if results[methods[i]] != results[methods[i+1]]:
+                if results[methods[i]] != results[methods[i + 1]]:
                     consistent = False
                     break
 
@@ -809,7 +829,6 @@ class Inverter(CommonMatrixCalculator):
                 return result
 
         return None
-
 
 # # Demo functions
 # def demo_basic_inverse():
@@ -885,7 +904,7 @@ class Inverter(CommonMatrixCalculator):
 
 #     # Singular matrix examples
 #     singular1 = '[[1,2,3],[4,5,6],[7,8,9]]'  # Linearly dependent rows
-#     singular2 = '[[1,1],[1,1]]'  # Identical rows
+#     singular2 = '[[1,1],[1,1]]'  # Identical rows.
 
 #     inverter.step_generator.add_step(r"\textbf{奇异矩阵演示}")
 

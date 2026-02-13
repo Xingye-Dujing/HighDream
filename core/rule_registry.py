@@ -1,6 +1,7 @@
-from typing import Generator, Union
+from typing import Generator, Type
 
 from sympy import Expr, exp, latex, log
+from sympy.functions.elementary.hyperbolic import HyperbolicFunction
 from sympy.functions.elementary.trigonometric import InverseTrigonometricFunction, TrigonometricFunction
 
 from utils import (
@@ -50,25 +51,31 @@ class RuleRegistry:
                 # print(f"Rule {rule_name} matched.")
                 yield self._rules[rule_name]
             # else:
-                # raise ValueError(f"Rule {rule_name} not found.")
+            # raise ValueError(f"Rule {rule_name} not found.")
 
     @staticmethod
     def create_common_rule(operation: Operation, func_name: str) -> RuleFunction:
-        """Creates a commom rule function."""
+        """Creates a common rule function."""
+
         def rule_function(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
             var = context['variable']
             expr_diff = operation(expr, var)
             result = expr_diff.doit()
-            return result,  f"应用{func_name}函数规则: ${latex(expr_diff)} = {latex(result)}$"
+            return result, f"应用{func_name}函数规则: ${latex(expr_diff)} = {latex(result)}$"
 
         return rule_function
 
     @staticmethod
-    def create_common_matcher(func: Union[exp, log, InverseTrigonometricFunction, TrigonometricFunction]) -> MatcherFunction:
-        """Creates a commom matcher function for a given function."""
+    def create_common_matcher(
+            func: Type[
+                exp | log | InverseTrigonometricFunction |
+                TrigonometricFunction | HyperbolicFunction]) -> MatcherFunction:
+        """Creates a common matcher function for a given function."""
+
         def matcher_function(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
             if isinstance(expr, func) and expr.args[0] == context['variable']:
                 # Return the lowercase name of the function
                 return func.__name__.lower()
             return None
+
         return matcher_function

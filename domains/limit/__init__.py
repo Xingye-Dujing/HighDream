@@ -1,20 +1,7 @@
 from typing import List
+
 from utils import RuleDict, MatcherList
 from .limit_step_generator import LimitStepGenerator
-from .limit_help_func import (
-    check_combination_indeterminate,
-    check_function_tends_to_zero,
-    check_limit_exists,
-    check_limit_exists_oo,
-    get_limit_args,
-    is_constant,
-    is_indeterminate_form,
-    is_infinite,
-    is_zero,
-)
-from .rules.check_split import (
-    check_add_split, check_div_split, check_mul_split
-)
 from .rules.base_rules import (
     small_o_add_rule, small_o_add_matcher,
     const_inf_mul_rule, const_inf_mul_matcher,
@@ -27,6 +14,14 @@ from .rules.base_rules import (
     direct_substitution_rule, direct_substitution_matcher,
     conjugate_rationalize_matcher, conjugate_rationalize_rule
 )
+from .rules.function_rules import (
+    acos_matcher, acos_rule, asin_matcher, asin_rule, atan_matcher, atan_rule,
+    cos_matcher, cos_rule, cosh_matcher, cosh_rule,
+    cot_matcher, cot_rule, csc_matcher, csc_rule, exp_matcher, exp_rule,
+    log_matcher, log_rule, pow_matcher, pow_rule, sec_matcher, sec_rule,
+    sin_matcher, sin_rule, sinh_matcher, sinh_rule, tan_matcher, tan_rule,
+    tanh_matcher, tanh_rule
+)
 from .rules.important_rules import (
     ln_one_plus_x_over_x_matcher, ln_one_plus_x_over_x_rule,
     one_plus_one_over_x_pow_x_matcher, one_plus_one_over_x_pow_x_rule,
@@ -35,14 +30,6 @@ from .rules.important_rules import (
     g_over_sin_rule, g_over_sin_matcher,
     g_over_ln_one_plus_rule, g_over_ln_one_plus_matcher,
     g_over_exp_minus_one_rule, g_over_exp_minus_one_matcher,
-)
-from .rules.function_rules import (
-    acos_matcher, acos_rule, asin_matcher, asin_rule, atan_matcher, atan_rule,
-    cos_matcher, cos_rule, cosh_matcher, cosh_rule,
-    cot_matcher, cot_rule, csc_matcher, csc_rule, exp_matcher, exp_rule,
-    log_matcher, log_rule, pow_matcher, pow_rule, sec_matcher, sec_rule,
-    sin_matcher, sin_rule, sinh_matcher, sinh_rule, tan_matcher, tan_rule,
-    tanh_matcher, tanh_rule
 )
 from .rules.lhopital_rules import (
     lhopital_direct_matcher, lhopital_direct_rule,
@@ -153,9 +140,9 @@ MATCHER_LIST: MatcherList = [
     # Power/log transformation (general a^b → exp(b*ln a))
     pow_matcher,
     # Lhopital rules — only for indeterminate forms
-    lhopital_power_matcher,             # 0^0, 1^oo, oo^0
-    lhopital_inf_minus_inf_matcher,     # oo-oo
-    lhopital_direct_matcher,            # 0/0, oo/oo, 0*oo → converted to quotient
+    lhopital_power_matcher,  # 0^0, 1^oo, oo^0
+    lhopital_inf_minus_inf_matcher,  # oo-oo
+    lhopital_direct_matcher,  # 0/0, oo/oo, 0*oo → converted to quotient
     # oo*0 (placed after direct quotient to avoid redundancy)
     lhopital_zero_times_inf_matcher,
     # Elementary function matchers (NO indeterminacy check — must come last!)

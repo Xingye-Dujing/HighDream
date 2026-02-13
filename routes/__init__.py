@@ -1,5 +1,5 @@
-from .main import main
 from .api import api
+from .main import main
 
 __all__ = [
     'main',

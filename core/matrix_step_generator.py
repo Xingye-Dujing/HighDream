@@ -1,7 +1,7 @@
 from typing import List
 
 
-class MatrixStepGenerator():
+class MatrixStepGenerator:
     """Generate and manage step-by-step mathematical operations in LaTeX format.
 
     This class provides functionality to collect individual calculation steps

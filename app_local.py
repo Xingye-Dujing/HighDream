@@ -1,15 +1,17 @@
-import time
 import threading
+import time
 import webbrowser
+
+from flask import Flask
+from gevent import pywsgi
+
+from config import TEMPLATE_FOLDER, STATIC_FOLDER
+from routes import main, api
+
 
 # NOTE: This import is required when packaging with PyInstaller !!!
 # import matplotlib.backends.backend_svg
 
-
-from gevent import pywsgi
-from flask import Flask
-from config import TEMPLATE_FOLDER, STATIC_FOLDER
-from routes import main, api
 
 # matplotlib.use('Agg')
 
@@ -32,6 +34,7 @@ if __name__ == '__main__':
     def start_server():
         server = pywsgi.WSGIServer(('127.0.0.1', 5000), create_app(), log=None)
         server.serve_forever()
+
 
     # Start server in a separate thread
     server_thread = threading.Thread(target=start_server)

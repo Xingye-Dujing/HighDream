@@ -72,7 +72,7 @@ def pow_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
             f"$\\frac{{d}}{{d{var_latex}}}\\left({expr_latex}\\right) = {new_expr_latex}$"
         )
 
-    # Case 4: f(x)^g(x), both depend on var
+    # Case 4: f(x)^g(x), both depend on the var
     # Apply logarithmic differentiation: d/dx [u^v] = u^v * (v' * ln(u) + v * u'/u)
     if base.has(var) and exponent.has(var):
         # Special case one: x^x
@@ -81,20 +81,20 @@ def pow_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         # Special case two: x^f(x)
         elif base == var:
             new_expr = expr * (
-                Derivative(exponent, var) * log(base) +
-                exponent / base
+                    Derivative(exponent, var) * log(base) +
+                    exponent / base
             )
         # Special case three: f(x)^x
         elif exponent == var:
             new_expr = expr * (
-                log(base) +
-                exponent * Derivative(base, var) / base
+                    log(base) +
+                    exponent * Derivative(base, var) / base
             )
         # General case: f(x)^g(x)
         else:
             new_expr = expr * (
-                Derivative(exponent, var) * log(base) +
-                exponent * Derivative(base, var) / base
+                    Derivative(exponent, var) * log(base) +
+                    exponent * Derivative(base, var) / base
             )
         new_expr_latex = wrap_latex(new_expr)
         return new_expr, (
@@ -120,7 +120,6 @@ atan_rule = _create_rule("反正切")
 sinh_rule = _create_rule("双曲正弦")
 cosh_rule = _create_rule("双曲余弦")
 tanh_rule = _create_rule("双曲正切")
-
 
 # Generate all matcher functions using the factory function
 exp_matcher = _create_matcher(exp)

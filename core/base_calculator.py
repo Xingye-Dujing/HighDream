@@ -3,7 +3,7 @@ from collections import deque
 from functools import lru_cache
 from typing import Deque, Dict, List, Tuple
 
-from sympy import Expr, Symbol, expand_log, latex, radsimp, simplify, sympify
+from sympy import Expr, Matrix, Symbol, expand_log, latex, radsimp, simplify, sympify
 
 from utils import (
     Context, MatcherList, Operation, RuleContext,
@@ -16,27 +16,23 @@ from .rule_registry import RuleRegistry
 class BaseCalculator(ABC):
     """Abstract base class for symbolic expression evaluators that support step-by-step evaluation."""
 
-    def __init__(self) -> None:
+    def __init__(self, operation: [Operation | None] = None, rule_dict: [RuleDict | None] = None,
+                 matcher_list: [MatcherList | None] = None) -> None:
+        # Note: The following three attributes must be initialized in the subclass.
+        self.operation: [Operation | None] = operation
+        self.rule_dict: [RuleDict | None] = rule_dict
+        self.matcher_list: [MatcherList | None] = matcher_list
         self._rule_registry = RuleRegistry()
         self.step_generator = BaseStepGenerator()
         self.processed: set = set()
         self.cache: dict = {}
-        self.sudden_end: List[bool, Expr] = [False, None]
-        # Only limits require rationalization of the denominator
+        # Note: This list always contains exactly two elements.
+        self.sudden_end: List[bool | Expr | None] = [False, None]
+        # Only limit require rationalization of the denominator,
+        # Because rationalizing the denominator facilitates solving limit.
         self.is_radsimp: bool = False
-        self.init_key_property()
         self._validate_properties()
         self._initialize_rules()
-
-    @abstractmethod
-    def init_key_property(self) -> None:
-        """Initialize key properties of the calculator.
-
-        These attributes will be validated after this method is called.
-        """
-        self.operation: Operation = None
-        self.rule_dict: RuleDict = None
-        self.matcher_list: MatcherList = None
 
     def _initialize_rules(self) -> None:
         """Register all rules and matchers."""
@@ -44,11 +40,12 @@ class BaseCalculator(ABC):
 
     def _validate_properties(self) -> None:
         """Validate the key properties of the calculator."""
-        required_attrs: List[str] = ['operation', 'rule_dict', 'matcher_list']
-        for attr in required_attrs:
-            if getattr(self, attr) is None:
-                raise ValueError(
-                    f"Attribute '{attr}' must be initialized in init_key_property")
+        required_attrs = ['operation', 'rule_dict', 'matcher_list']
+        missing_attrs = [attr for attr in required_attrs if getattr(self, attr) is None]
+        if missing_attrs:
+            raise ValueError(
+                f"Attributes {missing_attrs} must be initialized in init_key_property()."
+            )
 
     def reset_process(self) -> None:
         """Reset internal state to prepare for a new calculation.
@@ -59,18 +56,20 @@ class BaseCalculator(ABC):
         self.step_generator.reset()
         self.sudden_end = [False, None]
 
-    def _context_split(self, **context: Context) -> Symbol:
+    @staticmethod
+    def _context_split(**context: Context) -> Symbol:
         """Only fit Derivative, Integral."""
         return context.get('variable')
 
     def _perform_operation(self, expr: Expr, operation: Operation, **context: Context) -> Operation:
-        """Perform the specified operation on the expression and return the result."""
+        """Perform the specified operation on the expression.
+
+        Only fit Derivative, Integral."""
         var = self._context_split(**context)
         return operation(expr, var)
 
-    def _get_cached_result(self, expr: Expr, operation: Operation, **context: Context) -> Operation:
-        """Return a cached result if available, otherwise compute and cache the result."""
-        # Solve the problem: unhashable type: 'MutableDenseMatrix'
+    def _get_cached_operation(self, expr: Expr, operation: Operation, **context: Context) -> Operation:
+        """Return a cached operation if available, otherwise compute and cache the operation."""
         key = (expr, str(context))
         if key not in self.cache:
             self.cache[key] = self._perform_operation(
@@ -81,7 +80,7 @@ class BaseCalculator(ABC):
     def _step_expr_postprocess(step_expr: Expr) -> Expr:
         """Postprocess a step expression before adding it to the step generator.
 
-        eg. IntegralCalculator: Add constant of integration
+        E.g., IntegralCalculator: Add constant of integration
         """
         return step_expr
 
@@ -89,8 +88,7 @@ class BaseCalculator(ABC):
     def _cached_simplify(self, expr: Expr) -> Expr:
         """Return a simplified version of the expression, using caching to avoid redundant computation.
 
-        Note: Force log simplification
-        """
+        Note: Force log simplification"""
         if self.is_radsimp:
             return expand_log(radsimp(expr), force=True)
         return expand_log(expr, force=True)
@@ -99,11 +97,13 @@ class BaseCalculator(ABC):
         context_dict = {}
         for key, value in context.items():
             context_dict[key] = value
-        # Add step_generator to the rule context to allow rule functions to control steps freely by accessing the step generator.
+        # Add step_generator to the rule context to allow rule functions to control steps freely by accessing the
+        # step generator.
         context_dict['step_generator'] = self.step_generator
         return context_dict
 
-    def _check_rule_is_can_apply(self, _rule: RuleFunction) -> bool:
+    @staticmethod
+    def _check_rule_is_can_apply(_rule: RuleFunction) -> bool:
         return True
 
     def _apply_rule(self, expr: Expr, operation: Operation, **context: Context) -> Tuple[Expr, str]:
@@ -126,10 +126,12 @@ class BaseCalculator(ABC):
             self.sudden_end = [True, operation_obj]
         return operation_val, f"需手动计算表达式: ${latex(operation_obj)}$"
 
-    def _update_expression(self, current_expr: Expr, operation: Operation, expr_to_operation: Dict[Expr, Operation], direct_compute: bool, **context: Context) -> Tuple[Expr, str, Dict[Expr, Operation]]:
+    def _update_expression(self, current_expr: Expr | Matrix, operation: Operation,
+                           expr_to_operation: Dict[str | Expr, Operation], direct_compute: bool, **context: Context) \
+            -> Tuple[Expr, str, Dict[Expr, Operation]]:
 
         if direct_compute:
-            current_operation = self._get_cached_result(
+            current_operation = self._get_cached_operation(
                 current_expr, operation, **context)
             new_expr = current_operation.doit()
             if not is_elementary_expression(new_expr):
@@ -139,27 +141,27 @@ class BaseCalculator(ABC):
             new_expr, explanation = self._apply_rule(
                 current_expr, operation, **context)
         # Replace all occurrences of operation(current, var) with new_expr
-        current_operation = self._get_cached_result(
+        current_operation = self._get_cached_operation(
             current_expr, operation, **context)
         for key in list(expr_to_operation.keys()):
             expr_to_operation[key] = expr_to_operation[key].subs(
                 current_operation, new_expr)
         return new_expr, explanation, expr_to_operation
 
-    def _back_subs(self, final_expr: Expr) -> None:
+    def _back_subs(self, final_expr: Expr) -> Expr:
         """Perform back substitution by iterating through the substitution dictionary in reverse order.
 
         The keys are post-substitution variables and values are pre-substitution expressions.
         Since substitutions were added in order, back substitution requires reverse iteration.
 
         Args:
-            final_expr: The final expression to perform back substitution on
+            final_expr: The final expression to perform back substitution on.
         """
         subs_dict = self.step_generator.subs_dict
         if not subs_dict:
             return final_expr
-        # Iterate through the substitution dictionary in reverse order
-        # This ensures proper back substitution since later substitutions depend on earlier ones
+        # Iterate through the substitution dictionary in reverse order,
+        # This ensures proper back substitution since later substitutions depend on earlier ones.
         for key, value in reversed(subs_dict.items()):
             final_expr = final_expr.subs(key, value)
 
@@ -167,7 +169,7 @@ class BaseCalculator(ABC):
 
         return simplify(final_expr, inverse=True)
 
-    def _final_postprocess(self, final_expr: Expr) -> None:
+    def final_postprocess(self, final_expr: Expr) -> None:
         """Apply domain-aware simplification by assuming all free symbols are positive real numbers.
 
         This step helps reduce expressions like sqrt(x^2) to x, log(x^2)/2 to log(x), etc.,
@@ -177,7 +179,7 @@ class BaseCalculator(ABC):
             return
 
         # 1. Back substitute
-        final_expr = self._back_subs(final_expr)
+        self._back_subs(final_expr)
 
         # # 2. Assume the variable are positive real numbers and simplify final expression
         # var = final_expr.free_symbols.pop()
@@ -190,7 +192,7 @@ class BaseCalculator(ABC):
 
     def _sympify(self, expr: str) -> Expr:
         """Convert the input expression to a SymPy expression."""
-        return sympify(expr)
+        return sympify(expr)  # type: ignore
 
     def _do_compute(self, expr: str, operation: Operation, **context: Context) -> None:
         """Perform the core symbolic computation and record each evaluation step."""
@@ -206,13 +208,13 @@ class BaseCalculator(ABC):
         else:
             context['variable'] = Symbol("x")
 
-        initial_operation = self._get_cached_result(expr, operation, **context)
+        initial_operation = self._get_cached_operation(expr, operation, **context)
         self.step_generator.add_step(initial_operation)
 
         simple_expr = self._cached_simplify(expr)
         if simple_expr != expr:
             expr = simple_expr
-            initial_operation = self._get_cached_result(
+            initial_operation = self._get_cached_operation(
                 expr, operation, **context)
             self.step_generator.add_step(initial_operation, "简化表达式")
 
@@ -256,10 +258,10 @@ class BaseCalculator(ABC):
 
             if new_expr != current_operation:
                 # Extract sub-expressions to continue processing.
-                sub_exprs = [new_expr] if isinstance(
-                    new_expr, operation) else new_expr.atoms(operation)
+                sub_exprs: List[Expr] = [new_expr] if isinstance(new_expr, operation) \
+                    else new_expr.atoms(operation)
                 for s in sub_exprs:
-                    sub_expr = s.args[0]
+                    sub_expr: Expr = s.args[0]  # type: ignore
                     expr_to_operation[sub_expr] = s
                     queue.append(sub_expr)
 
@@ -273,7 +275,7 @@ class BaseCalculator(ABC):
                 self.step_generator.steps[-1] = simplified_expr
                 final_expr = simplified_expr
 
-            self._final_postprocess(final_expr)
+            self.final_postprocess(final_expr)
 
     def _compute(self, expr: str, **context: Context) -> None:
         """Compute the step-by-step evaluation of the given expression.
@@ -306,7 +308,7 @@ class BaseCalculator(ABC):
 
         Args:
             expr: A string representation of the symbolic expression to evaluate.
-            **context: The evaluation context, which can include variables, points, and directions.
+            **context: The evaluation context, which can include variables, points and directions.
 
         Returns:
             A LaTeX string representing the step-by-step evaluation process.

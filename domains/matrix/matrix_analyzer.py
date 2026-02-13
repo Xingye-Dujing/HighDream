@@ -1,8 +1,9 @@
 from typing import Dict
+
 from sympy import Matrix, latex, sympify
 
-from .ref_calculator import RefCalculator
 from .SVD_solver import SVDSolver
+from .ref_calculator import RefCalculator
 
 svd_solver = SVDSolver()
 ref_calculator = RefCalculator()
@@ -15,11 +16,12 @@ class MatrixAnalyzer:
     eigenvalues, eigenvectors, and reduced row echelon form (REF).
     """
 
-    def _parse_matrix_expression(self, matrix_input: str) -> Matrix:
+    @staticmethod
+    def _parse_matrix_expression(matrix_input: str) -> Matrix:
         """Parse a string representation of a matrix into a SymPy Matrix.
 
         Args:
-            matrix_input (str): String representation of the matrix in format '[[1, 2], [3, 4]]'
+            matrix_input (str): String representation of the matrix in the format '[[1, 2], [3, 4]]'
 
         Returns:
             Matrix: A SymPy Matrix object
@@ -59,7 +61,7 @@ class MatrixAnalyzer:
         if analysis_types is None:
             analysis_types = ['ref', 'rank', 'determinant',
                               'eigenvalues', 'eigenvectors', 'svd']
-        results = {}
+        results: Dict[str, str | List[str]] = {}
 
         try:
             matrix = self._parse_matrix_expression(matrix_expr)

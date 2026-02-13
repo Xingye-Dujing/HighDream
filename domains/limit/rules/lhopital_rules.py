@@ -1,13 +1,13 @@
 from typing import Tuple
 
 from sympy import (
-    Expr, Function, Limit, Mul, Pow, S, Symbol, acos, acot, asin, atan, coth,
+    Basic, Expr, Function, Limit, Mul, Pow, S, Symbol, acos, acot, asin, atan, coth,
     cos, cosh, cot, csc, diff, exp, latex, log, oo, sec, series, simplify,
     sin, sinh, tan, tanh, together
 )
 
+from domains.limit.limit_help_func import get_limit_args
 from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
-from domains.limit import get_limit_args
 
 
 def _is_zero(expr: Expr) -> bool:
@@ -24,12 +24,12 @@ def _extract_num_den(expr: Expr) -> Tuple[Expr, Expr]:
     """Extract the numerator and denominator of an expression in canonical rational form.
 
     This function first rewrites the input expression using together() to combine
-    nested fractions and put it into a single rational form (i.e., A/B where A and B
+    nested fractions and puts it into a single rational form (i.e., A/B where A and B
     are simplified expressions with no embedded divisions). It then uses SymPy's
     .as_numer_denom() to extract the numerator and denominator.
 
     The result satisfies:
-        expr == num / den   (up to simplification)
+        expr == num / den (up to simplification)
     and den is guaranteed to be non-zero in symbolic form (though may evaluate to zero
     for specific substitutions).
     """
@@ -44,11 +44,11 @@ def _get_type(a: Expr, b: Expr) -> str:
 
     This function identifies common indeterminate forms that arise in limit evaluation,
     specifically:
-      - '0/0'       when both numerator and denominator tend to zero,
-      - 'oo/oo'     when both tend to (positive or negative) infinity.
+      - '0/0' when both numerator and denominator tend to zero.
+      - 'oo/oo' when both tend to (positive or negative) infinity.
 
     The inputs a and b are expected to be the limit values (not the original expressions),
-    typically obtained via _limit_or_series.
+    typically get via _limit_or_series.
     """
 
     if _is_zero(a) and _is_zero(b):
@@ -58,7 +58,7 @@ def _get_type(a: Expr, b: Expr) -> str:
     return "no_match"
 
 
-def _limit_or_series(expr: Expr, var: Symbol, point: Expr, direction: str) -> Expr | None:
+def _limit_or_series(expr: [Basic | Expr], var: Symbol, point: Expr, direction: str) -> Expr | None:
     """Attempt to evaluate the limit of expr as var approaches point from the given direction.
 
     If direct limit evaluation fails (e.g., due to complexity or unsupported forms),
@@ -93,8 +93,8 @@ def _get_indeterminate_type(numerator: Expr, denominator: Expr, var: Symbol, poi
     indeterminate form of type 0/0 or oo/oo as var approaches point from the given direction.
 
     To handle limits at infinity, the function applies the standard substitution:
-        x to 1/t   as x to oo  (with t to 0+),
-        x to 1/t   as x to -oo (with t to 0-).
+        x to 1/t as x to oo (with t to 0+),
+        x to 1/t as x to -oo (with t to 0-).
     This transforms the problem into a finite-limit evaluation at t = 0.
 
     The function uses _limit_or_series to compute asymptotic values of numerator and denominator,
@@ -105,10 +105,10 @@ def _get_indeterminate_type(numerator: Expr, denominator: Expr, var: Symbol, poi
     if _is_infinite(point):
         t = Symbol('t', positive=True)  # t > 0 ensures real substitution
         dir_t = '+' if point == oo else '-'
-        num_t = numerator.subs(var, 1/t)
-        den_t = denominator.subs(var, 1/t)
-        a = _limit_or_series(num_t, t, 0, dir_t)
-        b = _limit_or_series(den_t, t, 0, dir_t)
+        num_t = numerator.subs(var, 1 / t)
+        den_t = denominator.subs(var, 1 / t)
+        a = _limit_or_series(num_t, t, 0, dir_t)  # type: ignore
+        b = _limit_or_series(den_t, t, 0, dir_t)  # type: ignore
     # Finite limit point: evaluate directly
     else:
         a = _limit_or_series(numerator, var, point, direction)
@@ -124,7 +124,7 @@ def _count_nodes(expr: Expr) -> int:
     the structural complexity of the expression and can be used as a heuristic
     for simplification cost, pattern matching priority, or result comparison.
 
-    - Atomic expressions (e.g., Symbol, Integer, Pi) have 1 node.
+    - Atomic expressions (e.g., Symbol, Integer, Pi) have one node.
     - For compound expressions, the count is 1 (for the current node) plus the
       sum of counts from all arguments.
 
@@ -142,13 +142,13 @@ def _count_nodes(expr: Expr) -> int:
         >>> _count_nodes(x)
         1
         >>> _count_nodes(x + y)
-        3  # Add(x, y): 1 (Add) + 1 (x) + 1 (y)
+        3 # Add(x, y): 1 (Add) + 1 (x) + 1 (y)
         >>> _count_nodes(sin(x))
-        2  # sin(x): 1 (sin) + 1 (x)
+        2 # sin(x): 1 (sin) + 1 (x)
     """
     if not expr.args:
         return 1
-    return 1 + sum(_count_nodes(arg) for arg in expr.args)
+    return 1 + sum(_count_nodes(arg) for arg in expr.args)  # type: ignore
 
 
 def _count_special_functions(expr: Expr) -> int:
@@ -156,10 +156,10 @@ def _count_special_functions(expr: Expr) -> int:
 
     This function recursively traverses the expression tree and counts nodes that are
     instances of common elementary functions, including:
-      - Trigonometric: sin, cos, tan, cot, sec, csc
-      - Inverse trig: asin, acos, atan, acot
-      - Hyperbolic: sinh, cosh, tanh, coth
-      - Exponential/logarithmic: exp, log (includes ln)
+      - Trigonometric: sin, cos, tan, cot, sec, csc.
+      - Inverse trig: asin, acos, atan, acot.
+      - Hyperbolic: sinh, cosh, tanh, coth.
+      - Exponential/logarithmic: exp, log (includes ln).
 
     Note:
         - log in SymPy represents the natural logarithm (i.e., ln); no separate ln symbol exists.
@@ -190,11 +190,11 @@ def _count_special_functions(expr: Expr) -> int:
 
     def _count(node: Expr) -> int:
         if isinstance(node, Function):
-            # Check if the function class is in our whitelist
+            # Check if the function class is in our allowlist
             if type(node) in SPECIAL_FUNCS:
-                return 1 + sum(_count(arg) for arg in node.args)
+                return 1 + sum(_count(arg) for arg in node.args)  # type: ignore
         # Recurse into arguments for non-function or non-special-function nodes
-        return sum(_count(arg) for arg in node.args) if node.args else 0
+        return sum(_count(arg) for arg in node.args) if node.args else 0  # type: ignore
 
     return _count(expr)
 
@@ -204,7 +204,7 @@ def _has_fraction(expr: Expr) -> bool:
 
     A fraction is defined as any subexpression that represents division,
     which in SymPy typically appears as:
-      - A power with a negative integer or symbolic exponent (e.g., x**(-1), x**(-n)),
+      - A power with a negative integer or symbolic exponent (e.g., x**(-1), x**(-n)).
       - Or, more generally, any structure that would render as a denominator.
 
     This function recursively traverses the expression tree and returns True
@@ -223,14 +223,14 @@ def _has_fraction(expr: Expr) -> bool:
         bool: True if the expression contains a symbolic fraction; False otherwise.
     """
 
-    #  Power with negative exponent yo indicates 1/(something)
+    #  Power with negative exponent indicates 1/(something)
     if expr.is_Pow:
-        # Check if exponent is negative (works for integers, symbols, and expressions)
+        # Check if exponent is negative (works for integers, symbols and expressions)
         if expr.exp.is_negative is True:
             return True
 
     # Recurse into arguments
-    return any(_has_fraction(arg) for arg in expr.args)
+    return any(_has_fraction(arg) for arg in expr.args)  # type: ignore
 
 
 def _count_products(expr: Expr) -> int:
@@ -255,15 +255,15 @@ def _count_products(expr: Expr) -> int:
         >>> _count_products(x*y)
         1
         >>> _count_products(x*y*z)
-        2  # Mul(x, y, z) to x*y*z requires two multiplications
+        2 # Mul(x, y, z) to x*y*z requires two multiplications
         >>> _count_products((x*y)+(z*w))
-        2  # one in each term
+        2 # one in each term.
     """
     if expr.is_Mul:
         # An n-ary Mul node implies (n-1) multiplication operations
-        return (len(expr.args) - 1) + sum(_count_products(arg) for arg in expr.args)
+        return (len(expr.args) - 1) + sum(_count_products(arg) for arg in expr.args)  # type: ignore
     # Recurse into all arguments for non-Mul composite expressions (Add, Pow, Function, etc.)
-    return sum(_count_products(arg) for arg in expr.args) if expr.args else 0
+    return sum(_count_products(arg) for arg in expr.args) if expr.args else 0  # type: ignore
 
 
 def _count_powers(expr: Expr) -> int:
@@ -271,7 +271,7 @@ def _count_powers(expr: Expr) -> int:
     for symbolic (variable-containing) powers.
 
     Each Pow node contributes:
-      - 2 points if either base or exponent contains a symbol (indicating non-constant behavior),
+      - 2 points if either base or exponent contains a symbol (indicating non-constant behavior).
       - 1 point if both base and exponent are fully constant (e.g., 2**3, pi**e).
 
     The score is recursive: nested powers (e.g., (x**y)**z) are counted at every level.
@@ -293,8 +293,8 @@ def _count_powers(expr: Expr) -> int:
         >>> _count_powers(x**y)
         2
         >>> _count_powers((x**2)**3)
-        3  # outer Pow (symbolic base to +2) + inner Pow (symbolic base to +1? Wait-see note below)
-        # Actually: inner = x**2 to 2; outer = (..)**3 to base has x to 2; total = 2 + 2 = 4?
+        3 # outer Pow (symbolic base to +2) + inner Pow (symbolic base to +1? Wait-see note below)
+        # Actually: inner = x**2 to 2; outer = (...)**3 to base has x to 2; total = 2 + 2 = 4?
         # But our logic adds recursively: outer returns 2 + count(inner), inner returns 2 to total 4.
         # So example corrected:
         >>> _count_powers((x**2)**3)
@@ -305,10 +305,10 @@ def _count_powers(expr: Expr) -> int:
         # Determine if the power is "symbolic" (i.e., depends on variables)
         is_symbolic = base.has(Symbol) or _exp.has(Symbol)
         weight = 2 if is_symbolic else 1
-        return weight + _count_powers(base) + _count_powers(_exp)
+        return weight + _count_powers(base) + _count_powers(_exp)  # type: ignore
 
     # Recurse into all arguments for non-Pow composite expressions
-    return sum(_count_powers(arg) for arg in expr.args) if expr.args else 0
+    return sum(_count_powers(arg) for arg in expr.args) if expr.args else 0  # type: ignore
 
 
 def _estimate_derivative_complexity(numerator: Expr, denominator: Expr, var: Symbol) -> int:
@@ -317,63 +317,62 @@ def _estimate_derivative_complexity(numerator: Expr, denominator: Expr, var: Sym
     This function computes the formal derivative of the ratio numerator/denominator
     using the identity:
 
-        d/d(var) (N/D) = N' / D'   [heuristic approximation for complexity estimation]
+        d/d(var) (N/D) = N' / D' [heuristic approximation for complexity estimation]
 
     > Note: This is not the true quotient rule derivative ((N'·D - N·D')/D²),
-    > but a simplified proxy used solely to gauge relative complexity of applying
+    > but a simplified proxy used solely to gauge the relative complexity of applying
     > lhopital's rule or similar transformations. The goal is comparative scoring,
     > not mathematical correctness of the derivative itself.
 
     The complexity score combines multiple weighted heuristics:
-      - Total expression tree size (_count_nodes)
-      - Occurrences of special functions (trig, exp, log, etc.)
-      - Presence of fractional subexpressions
-      - Number of multiplication operations
-      - Weighted count of power operations (symbolic powers penalized more)
+      - Total expression tree size (_count_nodes).
+      - Occurrences of special functions (trig, exp, log, etc.).
+      - Presence of fractional subexpressions.
+      - Number of multiplication operations.
+      - Weighted count of power operations (symbolic powers penalized more).
 
     Lower scores indicate simpler expressions.
 
     Args:
         numerator (Expr): Numerator of the original fraction.
-        denominator (Expr): Denominator of the original fraction.
-        var (Symbol): Differentiation variable.
+        Denominator (Expr): Denominator of the original fraction.
+        Var (Symbol): Differentiation variable.
 
     Returns:
         int: Non-negative integer representing estimated complexity.
 
     Example:
         >>> _estimate_derivative_complexity(sin(x), x, x)
-        # Computes derivative of sin(x)/x to approx as cos(x)/1 to moderate score
+        # Computes derivative of sin(x)/x to approx as cos(x)/1 to moderate score.
     """
+    # Compute derivative proxies
+    num_diff = simplify(diff(numerator, var))
+    den_diff = simplify(diff(denominator, var))
     try:
-        # Compute derivative proxies
-        num_diff = simplify(diff(numerator, var))
-        den_diff = simplify(diff(denominator, var))
-
         # Avoid division by zero or undefined forms
         if den_diff == 0:
             # If denominator derivative vanishes, the heuristic breaks down;
             # assign high penalty to discourage this path.
-            return 10**6
+            return 10 ** 6
 
         # Form the heuristic derivative ratio
         derivative_ratio = num_diff / den_diff
 
         # Simplify to reduce artificial complexity from unsimplified forms
-        # Use cautious simplification to avoid expensive transformations
+        # Use cautious simplification to avoid expensive transformations.
         result = simplify(derivative_ratio)
 
     except Exception:
-        # Fallback on raw ratio if simplification fails (e.g., due to timeouts or singularities)
+        # Fallback on the raw ratio if simplification fails (e.g., due to timeouts or singularities)
         result = simplify(num_diff / den_diff)
 
     # Aggregate weighted complexity metrics
     complexity = (
-        _count_nodes(result)
-        + 2 * _count_special_functions(result)
-        + (5 if _has_fraction(result) else 0)
-        + _count_products(result)
-        + 3 * _count_powers(result)
+            _count_nodes(result)
+            + 2 * _count_special_functions(result)
+            + (5 if _has_fraction(result) else 0)
+            + _count_products(result)
+            + 3 * _count_powers(result)
     )
 
     return max(0, int(complexity))
@@ -385,10 +384,11 @@ def _choose_best_conversion(f: Expr, g: Expr, var: Symbol) -> str:
     Given two expressions f and g that form an indeterminate product like f*g
     (e.g., 0*oo), this function evaluates two canonical rewritings:
       - zero_over_zero: Rewrite as f / (1/g) to 0/0 form
-      - inf_over_inf: Rewrite as g / (1/f) to oo/oo form
+      - inf_over_inf: Rewrite as g / (1/f) to the oo/oo form.
 
     The choice is based on a heuristic complexity estimate of the resulting derivative
-    ratio after one application of Lhopital's rule. The goal is to minimize symbolic
+    ratio after one application of Lhopital's rule.
+    The goal is to minimize the symbolic
     explosion and favor simpler subsequent differentiation.
 
     Strategy:
@@ -398,8 +398,8 @@ def _choose_best_conversion(f: Expr, g: Expr, var: Symbol) -> str:
 
     Args:
         f (Expr): First factor in the indeterminate product (e.g., tends to 0).
-        g (Expr): Second factor (e.g., tends to oo).
-        var (Symbol): Limit variable.
+        G (Expr): Second factor (e.g., tends to oo).
+        Var (Symbol): Limit variable.
 
     Returns:
         str: Either "zero_over_zero" or "inf_over_inf".
@@ -414,19 +414,19 @@ def _choose_best_conversion(f: Expr, g: Expr, var: Symbol) -> str:
         than log(x) / (1/x) (oo/oo), so "zero_over_zero" is preferred.
     """
     try:
-        # Estimate complexity for 0/0 form: f / (1/g) to numerator=f, denominator=1/g
-        zero_zero_complexity = _estimate_derivative_complexity(f, 1/g, var)
+        # Estimate complexity for 0/0 form: f / (1/g) to numerator=f, denominator=1/g.
+        zero_zero_complexity = _estimate_derivative_complexity(f, 1 / g, var)
     except Exception:
         # Fallback to high penalty if transformation fails (e.g., division by zero)
         zero_zero_complexity = float('inf')
 
     try:
         # Estimate complexity for oo/oo form: g / (1/f) to numerator=g, denominator=1/f
-        inf_inf_complexity = _estimate_derivative_complexity(g, 1/f, var)
+        inf_inf_complexity = _estimate_derivative_complexity(g, 1 / f, var)
     except Exception:
         inf_inf_complexity = float('inf')
 
-    # Prefer zero_over_zero in case of tie (often more stable numerically and symbolically)
+    # Prefer zero_over_zero for when of tie (often more stable numerically and symbolically)
     if zero_zero_complexity <= inf_inf_complexity:
         return "zero_over_zero"
     return "inf_over_inf"
@@ -436,7 +436,7 @@ def lhopital_direct_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn
     """Apply Lhopital's Rule directly to a limit expression in 0/0 or oo/oo form.
 
     This rule transforms:
-        x to a, f(x)/g(x)  to  x to a f'(x)/g'(x)
+        x to a, f(x)/g(x) to x to a f'(x)/g'(x)
     provided the original limit is an indeterminate form of type 0/0 or oo/oo.
     """
     var, point, direction = get_limit_args(context)
@@ -449,7 +449,7 @@ def lhopital_direct_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn
         num_deriv = simplify(diff(num, var))
         den_deriv = simplify(diff(den, var))
 
-        new_expr = Limit(simplify(num_deriv/den_deriv),
+        new_expr = Limit(simplify(num_deriv / den_deriv),
                          var, point, dir=direction)
 
         # Map internal type to display form
@@ -471,11 +471,11 @@ def lhopital_direct_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn
 def lhopital_zero_times_inf_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply Lhopital's Rule to indeterminate forms of type 0 * +-oo.
 
-    This function handles expressions like f * g where one factor tends to 0
+    This function handles expressions like f * g where one factor tends to 0,
     and the other to +-oo as var to point. It:
-      1. Identifies which factor is vanishing and which is divergent,
+      1. Identifies, which factor is vanishing and, which is divergent,
       2. Rewrites the product into a quotient (either 0/0 or oo/oo),
-      3. Selects the conversion that minimizes estimated derivative complexity,
+      3. Select the conversion that minimizes estimated derivative complexity,
       4. Applies Lhopital's Rule once and returns the new limit.
     """
     var, point, direction = get_limit_args(context)
@@ -483,18 +483,18 @@ def lhopital_zero_times_inf_rule(expr: Expr, context: RuleContext) -> RuleFuncti
     f, g = expr.args
 
     # Choose optimal rewriting strategy
-    conversion_type = _choose_best_conversion(f, g, var)
+    conversion_type = _choose_best_conversion(f, g, var)  # type: ignore
 
     if conversion_type == "zero_over_zero":
         # Rewrite as f / (1/g) to 0/0
         numerator = f
-        denominator = 1/g
+        denominator = 1 / g  # type: ignore
         display_type = rf'\frac{{0}}{{0}}'
 
     else:  # conversion_type == "inf_over_inf"
         # Rewrite as g / (1/f) to oo/oo
         numerator = g
-        denominator = 1/f
+        denominator = 1 / f  # type: ignore
         display_type = rf'\frac{{\infty}}{{\infty}}'
 
     conversion_explanation = (
@@ -525,7 +525,7 @@ def lhopital_inf_minus_inf_rule(expr: Expr, context: RuleContext) -> RuleFunctio
     as var to point. It rewrites the difference into a quotient using the identity:
         f-g = (1/g-1/f) / (1/(f*g))
 
-    which yields a 0/0 form under typical conditions (since 1/f to 0 and 1/g to 0).
+    Which yields a 0/0 form under typical conditions (since 1/f to 0 and 1/g to 0).
     The resulting quotient is then processed via one step of Lhopital's Rule.
     """
 
@@ -534,8 +534,8 @@ def lhopital_inf_minus_inf_rule(expr: Expr, context: RuleContext) -> RuleFunctio
     f, g = expr.args
 
     try:
-        numerator = 1/g - 1/f
-        denominator = 1/(f * g)
+        numerator = 1 / g - 1 / f  # type: ignore
+        denominator = 1 / (f * g)
 
         conversion_explanation = (
             f"原式为 $\\infty - \\infty$ 型不定式, 通过代数变形转换为 $\\frac{{0}}{{0}}$ 或 $\\frac{{\\infty}}{{\\infty}}$ 型:"
@@ -567,7 +567,7 @@ def lhopital_power_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         f(x)^g(x) = exp(g(x)*ln(f(x)))
     to convert the power expression into an exponential of a product.
     The resulting exponent g(x)*log(f(x)) typically becomes a 0*oo form,
-    which can then be handled by other rules (e.g., hopital_zero_times_inf_rule).
+    which can then be handled by other rules (e.g., lhopital_zero_times_inf_rule).
     """
 
     var, point, direction = get_limit_args(context)
@@ -577,7 +577,7 @@ def lhopital_power_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     lim_base = _limit_or_series(base, var, point, direction)
     lim_exp = _limit_or_series(exp_arg, var, point, direction)
 
-    # Classify indeterminate type
+    # Classify the indeterminate type
     if _is_zero(lim_base) and _is_zero(lim_exp):
         typ = "0^0"
     elif _is_infinite(lim_base) and _is_zero(lim_exp):
@@ -685,7 +685,7 @@ def lhopital_power_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionR
 
     # Match the three canonical indeterminate power forms
     if (base_zero and exp_zero) or \
-       (base_inf and exp_zero) or \
-       (base_is_one and exp_inf):
+            (base_inf and exp_zero) or \
+            (base_is_one and exp_inf):
         return "lhopital_power"
     return None

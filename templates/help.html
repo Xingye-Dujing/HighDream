@@ -1,119 +1,119 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>HighDream Notebook 文档</title>
-    <link rel="stylesheet" href="static/help.css" />
-  </head>
-  <body>
-    <div id="help-container">
-      <ul class="header">
+    <link rel="stylesheet" href="static/help.css"/>
+</head>
+<body>
+<div id="help-container">
+    <ul class="header">
         <li>
-          <a href="/">HighDream Notebook</a>
+            <a href="/">HighDream Notebook</a>
         </li>
-      </ul>
+    </ul>
 
-      <h1><strong>HighDream Notebook</strong> 文档</h1>
+    <h1><strong>HighDream Notebook</strong> 文档</h1>
 
-      <div class="warning">
+    <div class="warning">
         <p>
-          <strong>注意:</strong>&nbsp;&nbsp;
-          出现的所有图中，箭头的方向无实际意义，上面文字所指可能是前对后，也可能是后对前
+            <strong>注意:</strong>&nbsp;&nbsp;
+            出现的所有图中，箭头的方向无实际意义，上面文字所指可能是前对后，也可能是后对前
         </p>
-      </div>
+    </div>
 
-      <h2>一.&nbsp;&nbsp;项目概述</h2>
+    <h2>一.&nbsp;&nbsp;项目概述</h2>
 
-      <h3>1.&nbsp;&nbsp;这个项目是做什么的？</h3>
-      <p>
+    <h3>1.&nbsp;&nbsp;这个项目是做什么的？</h3>
+    <p>
         HighDream Notebook 是一个基于 <strong>Python</strong> 和
         <strong>SymPy</strong> 的符号计算工具。它采用模块化设计，通过<strong>
-          BFS 算法和规则驱动</strong
-        >的方式实现<strong>微分、积分、极限、矩阵、等价形式</strong>等数学问题的自动化求解，并<strong>提供其求解过程</strong>。
-      </p>
+        BFS 算法和规则驱动</strong
+    >的方式实现<strong>微分、积分、极限、矩阵、等价形式</strong>等数学问题的自动化求解，并<strong>提供其求解过程</strong>。
+    </p>
 
-      <h3>2.&nbsp;&nbsp;我为什么要做这个项目？</h3>
-      <p>
+    <h3>2.&nbsp;&nbsp;我为什么要做这个项目？</h3>
+    <p>
         我在上高中时苦于立体几何和圆锥曲线的计算，就一直在想如果计算机能够帮助我自动计算并提供计算过程就好了。高中没有时间去搞这个，大一又忘了这件事。于是拖到今年9月，大二开学后终于开始了它的制作。前前后后将近3个月，断断续续地终于完成了它的大概框架。
-      </p>
+    </p>
 
-      <h3>3.&nbsp;&nbsp;我为什么要将其取名为 HighDream？</h3>
-      <p>
+    <h3>3.&nbsp;&nbsp;我为什么要将其取名为 HighDream？</h3>
+    <p>
         正如之前所说，这个点子起源于高中，是我高中之梦
         <strong>(The Dream of High School)</strong>。而 high dream
         译为陶醉的梦，网易有道词典上说它有无法接受现实的含义。在这里，我只取其陶醉之意。
         <strong
-          >我幻想着未来有一天，计算机能够拥有极强的智能性，推动人类理论知识的发展。</strong
+        >我幻想着未来有一天，计算机能够拥有极强的智能性，推动人类理论知识的发展。</strong
         >
         所以，出于高中之梦，出于我的幻想，将其名定为
         <strong>HighDream</strong>。
-      </p>
+    </p>
 
-      <h3>4.&nbsp;&nbsp;这个项目有什么特性？</h3>
-      <ul>
+    <h3>4.&nbsp;&nbsp;这个项目有什么特性？</h3>
+    <ul>
         <li><strong>逐步求解</strong>：显示完整的计算过程，便于教学和理解；</li>
         <li><strong>规则模式匹配</strong>：基于模式匹配的规则应用；</li>
         <li>
-          <strong>多领域支持</strong
-          >：微分、积分、极限、矩阵运算、等价形式变换；
+            <strong>多领域支持</strong
+            >：微分、积分、极限、矩阵运算、等价形式变换；
         </li>
         <li><strong>LaTeX 输出</strong>：支持数学公式的美观渲染；</li>
         <li><strong>可扩展架构</strong>：易于添加新的计算规则和运算类型；</li>
         <li>
-          <strong>两种使用方式</strong>：Jupyter Notebook 上 Python
-          代码调用；图形化网页。
+            <strong>两种使用方式</strong>：Jupyter Notebook 上 Python
+            代码调用；图形化网页。
         </li>
-      </ul>
+    </ul>
 
-      <h3>5.&nbsp;&nbsp;技术栈</h3>
-      <ul>
+    <h3>5.&nbsp;&nbsp;技术栈</h3>
+    <ul>
         <li><strong>编程语言</strong>：Python 3.11.6</li>
         <li>
-          <strong>核心库</strong
-          >：SymPy（符号计算库），Flask（可视化网页制作），matplotlib（绘制表达式推导树），IPython
+            <strong>核心库</strong
+            >：SymPy（符号计算库），Flask（可视化网页制作），matplotlib（绘制表达式推导树），IPython
         </li>
         <li><strong>输出格式</strong>：LaTeX</li>
-      </ul>
+    </ul>
 
-      <h3>6.&nbsp;&nbsp;特别指出</h3>
-      <p>
+    <h3>6.&nbsp;&nbsp;特别指出</h3>
+    <p>
         全程 <strong>AI</strong> 辅助完成，由衷<strong> 感谢 </strong>国内各大
         AI。
-      </p>
+    </p>
 
-      <h3>7.&nbsp;&nbsp;其它碎语</h3>
-      <p>
+    <h3>7.&nbsp;&nbsp;其它碎语</h3>
+    <p>
         如果你对符号计算感兴趣，我建议你先从 Python 的 <strong>Sympy</strong>
         入手，符号功能相当完善，就是速度确实慢了点。但对于符号计算来说，速度并不重要。Sympy
         在网上有很多的案例，因而 AI 可以很好地回答 SymPy
         的相关问题和编写相关代码。
-      </p>
-      <p>
+    </p>
+    <p>
         如果你只需要最终结果，那请使用
         <strong>Wolfram Alpha 或 Wolfram Mathematica</strong>。Wolfram
         系列是符号计算的神；如果你只需要数值近似，那 <strong>matlab</strong>
         是你的不二选择。网上的破解教程很多，自行探索即可。
-      </p>
-      <p>
+    </p>
+    <p>
         另外一提，目前已有其它提供中间过程的工具，比如
         <strong>MathDF</strong
         >。如果翻墙的话，还能见到更多。大家自行选择用哪个就好。奥，对了，MathDF
         的计算有时候会出错，记得自行检验一下。
-      </p>
-      <p>
+    </p>
+    <p>
         如果你追求性能，可使用 C++ 的
         <strong>SymEngine</strong>。但
         <strong>新手不建议，新手不建议，新手不建议</strong> 。对于 SymEngine，
         国内 AI
         给的使用方法基本全是错误的。就连介绍上也是错误百出。以我目前看源代码了解的，<strong
-          >它还没有实现积分和极限功能，就连化简也是局部分别重写，功能相当相当局限</strong
-        >
+    >它还没有实现积分和极限功能，就连化简也是局部分别重写，功能相当相当局限</strong
+    >
         。国外 AI 我还没用过，大家可自行尝试。如果你使用
         SymEngine，拦住你的第一步就是安装它，第二步就是没有详细教程，纯靠自己摸索，第三步是功能有限，需要自己写很多。后面
         <strong
-          >我会依次出使用 conan 安装 SymEngine，从源码编译 SymEngine
-          及其使用它的教程</strong
+        >我会依次出使用 conan 安装 SymEngine，从源码编译 SymEngine
+            及其使用它的教程</strong
         >
         。对此感兴趣的可以留意一下。如果你想自己学习 SymEngine，放弃让 AI
         给你提供使用教程的思路，AI
@@ -121,94 +121,94 @@
         Github 网址和它的开发人员使用 doxygen
         自动生成的参考文档。但必须夸一下，它里面有测试代码。所以，这个测试代码就是它最好的教程了。综上，你要学习它，靠不了互联网，靠不了
         AI，只能靠自己。<strong
-          >你自己可以看源代码猜测使用方法，可以看 doxygen 自动生成的 C++ API
-          Reference，还可以看 tests 文件下的测试代码或者等我出一些教程</strong
-        >
+    >你自己可以看源代码猜测使用方法，可以看 doxygen 自动生成的 C++ API
+        Reference，还可以看 tests 文件下的测试代码或者等我出一些教程</strong
+    >
         。除此之外，就真的没有参考了。
-      </p>
+    </p>
 
-      <p>
+    <p>
         如果你已经安装了 Wolfram 系列，可以使用
         <strong>WolframScript</strong> 来开发提供中间计算过程的工具。对于
         WolframScript，AI
         给的代码总体上都没错。但国内模型，尤其是通义千问，<strong
-          >在获取命令行参数时，总是拿参数列表整体去赋值，而不是索引取值</strong
-        >
+    >在获取命令行参数时，总是拿参数列表整体去赋值，而不是索引取值</strong
+    >
         。与 SymEngine 不同的，WolScript 有着详细的文档参考。但要注意，WolScript
         的语法很不同于一般的编程语言。
-      </p>
+    </p>
 
-      <p>
+    <p>
         <strong
-          >我目前已经实现了使用 SymEngine 和 WolframScript
-          来提供中间求导过程的工具，这两个方案将随着 HighDream Notebook
-          一起公开。</strong
+        >我目前已经实现了使用 SymEngine 和 WolframScript
+            来提供中间求导过程的工具，这两个方案将随着 HighDream Notebook
+            一起公开。</strong
         >
         与 SymPy 方案不同的，那里我使用的是<strong> 递归 (DFS)</strong>
         ，以及将<strong> 匹配和处理杂糅 </strong>，不分隔开。
-      </p>
+    </p>
 
-      <p>
+    <p>
         我做的这个工具，相对 Wolfram, Matlab 以及 SymPy 和 SymEngine
         本身来说，<strong
-          >简单的不能再简单，局限的不能再局限，仅仅能适用初入大学的学生，而且正确率还不能保证</strong
-        >
+    >简单的不能再简单，局限的不能再局限，仅仅能适用初入大学的学生，而且正确率还不能保证</strong
+    >
         。总而言之，我做这个仅仅是为了完成我高中的想法，也是为了给同样有此想法的人提供一些思路。我目前探索出了
         SymPy, SymEngine 和 WolframScript 三种方案， BFS 和 DFS
         两种算法，命令行（代码）和可视化网站两种使用方式。感兴趣的人可在我的基础上进行拓展延伸。
-      </p>
+    </p>
 
-      <p>
+    <p>
         最后，我可以肯定，能开发出仅提供符号计算结果的开发者，都能很快地实现我这个工具。他们只是觉得提供过程没有必要罢了。他们才是牛人，我仅仅是踩在他们的肩膀上，得以窥探星空一角。如果没有他们，我是绝不能做出来的，或者说，绝不是大二的我，目前的我，能够做出来的。我由衷地
         <strong>感谢他们的开源，同时也感谢互联网上所有仍追寻开源的人们</strong>
         。互联网上的免费开源资源促成了如今的我。所以现在的我将把在符号计算上探索出的所有内容都分享出来。希望能够对你们提供一些帮助。
-      </p>
+    </p>
 
-      <h2>二.&nbsp;&nbsp;架构设计</h2>
+    <h2>二.&nbsp;&nbsp;架构设计</h2>
 
-      <p>这个项目主要分为 <strong>三种</strong>架构：</p>
-      <h3>(1)&nbsp;&nbsp;微分、积分、极限、行列式所采用的：</h3>
-      <img src="/static/images/system_architecture_1.svg" alt="架构一" />
-      <h3>(2)&nbsp;&nbsp;矩阵相关运算所采用的：</h3>
-      <img src="/static/images/system_architecture_2.svg" alt="架构二" />
-      <h3>(3)&nbsp;&nbsp;前端调用后端计算所采用的：</h3>
-      <img src="/static/images/system_architecture_3.svg" alt="架构三" />
+    <p>这个项目主要分为 <strong>三种</strong>架构：</p>
+    <h3>(1)&nbsp;&nbsp;微分、积分、极限、行列式所采用的：</h3>
+    <img src="/static/images/system_architecture_1.svg" alt="架构一"/>
+    <h3>(2)&nbsp;&nbsp;矩阵相关运算所采用的：</h3>
+    <img src="/static/images/system_architecture_2.svg" alt="架构二"/>
+    <h3>(3)&nbsp;&nbsp;前端调用后端计算所采用的：</h3>
+    <img src="/static/images/system_architecture_3.svg" alt="架构三"/>
 
-      <h2>三.&nbsp;&nbsp;核心类详解</h2>
-      <div class="core-class">
+    <h2>三.&nbsp;&nbsp;核心类详解</h2>
+    <div class="core-class">
         <a href="/help/base_calculator"
-          ><strong>BaseCalculator</strong> (core/base_calcukator.py)</a
+        ><strong>BaseCalculator</strong> (core/base_calcukator.py)</a
         >
         <a href="/help/base_step_generator"
-          ><strong>BaseStepGenerator</strong> (core/base_step_generator.py)</a
+        ><strong>BaseStepGenerator</strong> (core/base_step_generator.py)</a
         >
         <a href="/help/rule_registry"
-          ><strong>RuleRegistry</strong> (core/rule_registry.py)</a
+        ><strong>RuleRegistry</strong> (core/rule_registry.py)</a
         >
         <a href="/help/common_matrix_calculator"
-          ><strong>CommonMatrixCalculator</strong>
-          (core/common_matrix_calculator.py)</a
+        ><strong>CommonMatrixCalculator</strong>
+            (core/common_matrix_calculator.py)</a
         >
         <a href="/help/matrix_step_generator"
-          ><strong>MatrixStepGenerator</strong>
-          (core/matrix_step_generator.py)</a
+        ><strong>MatrixStepGenerator</strong>
+            (core/matrix_step_generator.py)</a
         >
-      </div>
+    </div>
 
-      <h2>四.&nbsp;&nbsp;使用方法</h2>
-      <p>
+    <h2>四.&nbsp;&nbsp;使用方法</h2>
+    <p>
         Python 代码调用：请先自行参照
         <strong>main.ipynb</strong> 的示例。(记得将第三方库安装好)
-      </p>
-      <p>可视化网站：</p>
-      <p>（1）运行 <strong>python app_local.py</strong></p>
-      <p>（2）运行 <strong>HighDreamWeb.exe</strong></p>
-      <p>
+    </p>
+    <p>可视化网站：</p>
+    <p>（1）运行 <strong>python app_local.py</strong></p>
+    <p>（2）运行 <strong>HighDreamWeb.exe</strong></p>
+    <p>
         （3）访问
         <a href="https://high-dream.vercel.app/"
-          ><strong>https://high-dream.vercel.app/</strong></a
+        ><strong>https://high-dream.vercel.app/</strong></a
         >（国内需翻墙且此方式仅供体验, 计算速度很慢）
-      </p>
-    </div>
-  </body>
+    </p>
+</div>
+</body>
 </html>

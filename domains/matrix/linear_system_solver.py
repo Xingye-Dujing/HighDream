@@ -1,8 +1,11 @@
 from typing import List
+
 from sympy import Matrix, eye, latex, symbols, zeros
-# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
+
+
+# from IPython.display import Math, display
 
 
 class LinearSystemSolver(CommonMatrixCalculator):
@@ -28,7 +31,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
         """
         if variables is None:
             n = A.cols
-            variables = [f'x_{i+1}' for i in range(n)]
+            variables = [f'x_{i + 1}' for i in range(n)]
 
         equations = []
         for i in range(A.rows):
@@ -52,7 +55,8 @@ class LinearSystemSolver(CommonMatrixCalculator):
         for eq in equations:
             self.add_equation(eq)
 
-    def is_square(self, matrix: Matrix) -> bool:
+    @staticmethod
+    def is_square(matrix: Matrix) -> bool:
         """Check if a matrix is square."""
         return matrix.rows == matrix.cols
 
@@ -62,7 +66,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
         Parameters:
             A: Coefficient matrix
             b: Constant vector
-            show_steps: Whether to display analysis steps
+            show_steps: Whether to display analysis steps.
 
         Returns:
             str: System type classification
@@ -78,7 +82,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
             self.add_step(f"常数向量 \\boldsymbol{{b}}: {m} \\times 1")
             self.add_vector(b, "\\boldsymbol{b}")
 
-        # Check if it's a square system
+        # Check if it is a square system
         if m == n:
             det_A = A.det()
             if show_steps:
@@ -89,7 +93,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
                     self.add_step("系统有唯一解")
                 return "unique_solution"
 
-            # Check ranks to determine if there are infinite solutions or no solution
+            # Check ranks to determine if there are infinite solutions or no solution.
             rank_A = A.rank()
             augmented = A.row_join(b)
             rank_augmented = augmented.rank()
@@ -130,7 +134,8 @@ class LinearSystemSolver(CommonMatrixCalculator):
             self.add_step("超定系统无精确解, 使用最小二乘法")
         return "overdetermined"
 
-    def check_special_matrix(self, matrix: Matrix) -> str:
+    @staticmethod
+    def check_special_matrix(matrix: Matrix) -> str:
         """Identify special types of matrices.
 
         Parameters:
@@ -143,7 +148,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
         if n > matrix.cols:
             return "general"
 
-        # Check if it's an identity matrix
+        # Check if it is an identity matrix
         if matrix == eye(n):
             return "identity"
 
@@ -159,7 +164,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
         if is_diagonal:
             return "diagonal"
 
-        # Check if it's a permutation matrix (only one 1 per row/column, rest 0)
+        # Check if it is a permutation matrix (only one 1 per row/column, rest 0)
         is_permutation = True
         for i in range(n):
             row_ones = 0
@@ -178,7 +183,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
         if is_permutation:
             return "permutation"
 
-        # Check if it's a triangular matrix
+        # Check if it is a triangular matrix
         is_upper_triangular = True
         is_lower_triangular = True
         for i in range(n):
@@ -194,13 +199,14 @@ class LinearSystemSolver(CommonMatrixCalculator):
 
         return "general"
 
-    def solve_singular_system(self, A_input: str, b_input: str, show_steps: bool = True) -> Matrix:
+    def solve_singular_system(self, A_input: str | Matrix, b_input: str | Matrix,
+                              show_steps: bool = True) -> Matrix | None:
         """Solve singular systems (square matrices with determinant 0).
 
         Parameters:
             A_input: Coefficient matrix
             b_input: Constant vector
-            show_steps: Whether to display solution steps
+            show_steps: Whether to display solution steps.
 
         Returns:
             Solution vector or None if no solution exists
@@ -228,15 +234,15 @@ class LinearSystemSolver(CommonMatrixCalculator):
             self.add_step("简化行阶梯形:")
             self.add_matrix(rref_matrix, "[A|\\boldsymbol{b}]_{rref}")
 
-        # Check if solution exists
+        # Check if the solution exists
         has_solution = True
         for i in range(n):
-            # If coefficient part is all zeros but constant term is non-zero, no solution
+            # If coefficient part is all zeros but constant term is non-zero, no solution.
             if all(rref_matrix[i, j] == 0 for j in range(n)) and rref_matrix[i, n] != 0:
                 has_solution = False
                 if show_steps:
                     self.add_step(
-                        f"第 {i+1} 行: 0 = {latex(rref_matrix[i, n])} ≠ 0，系统无解")
+                        f"第 {i + 1} 行: 0 = {latex(rref_matrix[i, n])} ≠ 0，系统无解")
                 break
 
         if not has_solution:
@@ -259,8 +265,8 @@ class LinearSystemSolver(CommonMatrixCalculator):
                 free_cols.append(j)
 
         if show_steps:
-            self.add_step(f"主元列: {[c+1 for c in pivot_cols]}")
-            self.add_step(f"自由变量列: {[c+1 for c in free_cols]}")
+            self.add_step(f"主元列: {[c + 1 for c in pivot_cols]}")
+            self.add_step(f"自由变量列: {[c + 1 for c in free_cols]}")
 
         # If all variables are pivot variables, there's a unique solution
         # (though theoretically singular matrices shouldn't have unique solutions,
@@ -280,7 +286,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
             return x_simplified
 
         # Create free variable symbols
-        free_vars = symbols(f't_1:{len(free_cols)+1}')
+        free_vars = symbols(f't_1:{len(free_cols) + 1}')
 
         # Build solution vector
         x = zeros(n, 1)
@@ -308,7 +314,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
             self.add_equation(
                 "\\boldsymbol{x} = \\boldsymbol{x_p} + \\sum t \\boldsymbol{h}")
 
-            # Show particular solution
+            # Show the particular solution
             x_particular = zeros(n, 1)
             for i in range(n):
                 if i in pivot_cols:
@@ -328,20 +334,21 @@ class LinearSystemSolver(CommonMatrixCalculator):
                         x_homogeneous[pivot_col] = - \
                             rref_matrix[pivot_rows[i], free_col]
                     self.add_vector(
-                        x_homogeneous, f"\\boldsymbol{{h_{j+1}}}")
+                        x_homogeneous, f"\\boldsymbol{{h_{j + 1}}}")
 
         if show_steps:
             self.add_vector(x, "\\boldsymbol{x}")
 
         return x
 
-    def solve_underdetermined_system(self, A_input: str, b_input: str, show_steps: bool = True) -> Matrix:
+    def solve_underdetermined_system(self, A_input: str | Matrix, b_input: str | Matrix,
+                                     show_steps: bool = True) -> Matrix | None:
         """Solve underdetermined systems (introducing free variables).
 
         Parameters:
             A_input: Coefficient matrix
             b_input: Constant vector
-            show_steps: Whether to display solution steps
+            show_steps: Whether to display solution steps.
 
         Returns:
             Solution vector with free variables
@@ -369,7 +376,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
             self.add_step("简化行阶梯形:")
             self.add_matrix(rref_matrix, "[A|\\boldsymbol{b}]_{rref}")
 
-        # Check if solution exists
+        # Check if the solution exists
         for i in range(m):
             if all(rref_matrix[i, j] == 0 for j in range(n)) and rref_matrix[i, n] != 0:
                 if show_steps:
@@ -391,11 +398,11 @@ class LinearSystemSolver(CommonMatrixCalculator):
                 free_cols.append(j)
 
         if show_steps:
-            self.add_step(f"主元列: {[c+1 for c in pivot_cols]}")
-            self.add_step(f"自由变量列: {[c+1 for c in free_cols]}")
+            self.add_step(f"主元列: {[c + 1 for c in pivot_cols]}")
+            self.add_step(f"自由变量列: {[c + 1 for c in free_cols]}")
 
         # Create free variable symbols
-        free_vars = symbols(f't_1:{len(free_cols)+1}')
+        free_vars = symbols(f't_1:{len(free_cols) + 1}')
 
         # Build solution vector
         x = zeros(n, 1)
@@ -432,21 +439,22 @@ class LinearSystemSolver(CommonMatrixCalculator):
                     for i, pivot_col in enumerate(pivot_cols):
                         x_homogeneous[pivot_col] = -rref_matrix[i, free_col]
                     self.add_vector(
-                        x_homogeneous, f"\\boldsymbol{{h_{j+1}}}")
+                        x_homogeneous, f"\\boldsymbol{{h_{j + 1}}}")
 
         if show_steps:
             self.add_vector(x, "\\boldsymbol{x}")
 
         return x
 
-    def solve_overdetermined_system(self, A_input: str, b_input: str, show_steps: bool = True, simplify_result: bool = True) -> Matrix:
+    def solve_overdetermined_system(self, A_input: str | Matrix, b_input: str | Matrix, show_steps: bool = True,
+                                    simplify_result: bool = True) -> Matrix | None:
         """Solve overdetermined systems (least squares method).
 
         Parameters:
             A_input: Coefficient matrix
             b_input: Constant vector
             show_steps: Whether to display solution steps
-            simplify_result: Whether to simplify the result
+            simplify_result: Whether to simplify the result.
 
         Returns:
             Least squares solution or None if failed
@@ -507,13 +515,14 @@ class LinearSystemSolver(CommonMatrixCalculator):
                 self.add_step(f"求解失败: {str(e)}")
             return None
 
-    def solve_by_gaussian_elimination(self, A_input: str, b_input: str, show_steps: bool = True) -> Matrix:
+    def solve_by_gaussian_elimination(self, A_input: str | Matrix, b_input: str | Matrix,
+                                      show_steps: bool = True) -> Matrix:
         """Method 1: Gaussian elimination.
 
         Parameters:
             A_input: Coefficient matrix
             b_input: Constant vector
-            show_steps: Whether to display solution steps
+            show_steps: Whether to display solution steps.
 
         Returns:
             Solution vector
@@ -522,7 +531,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
-        # Check system type
+        # Check the system type
         system_type = self.check_system_type(A, b, False)
 
         if system_type == "underdetermined":
@@ -546,7 +555,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
         # Gaussian elimination
         for i in range(min(m, n)):
             if show_steps:
-                self.add_step(f"第 {i+1} 步: 处理第 {i+1} 列")
+                self.add_step(f"第 {i + 1} 步: 处理第 {i + 1} 列")
 
             # Find pivot
             pivot_row = i
@@ -559,7 +568,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
             if pivot_row != i:
                 if show_steps:
                     self.add_step(
-                        f"行交换: R_{i+1} \\leftrightarrow  R_{pivot_row+1}")
+                        f"行交换: R_{i + 1} \\leftrightarrow  R_{pivot_row + 1}")
                 augmented.row_swap(i, pivot_row)
                 if show_steps:
                     self.add_matrix(augmented, "[A|\\boldsymbol{{b}}]")
@@ -567,27 +576,26 @@ class LinearSystemSolver(CommonMatrixCalculator):
             # If pivot is 0, skip this column
             if augmented[i, i] == 0:
                 if show_steps:
-                    self.add_step(f"第 {i+1} 列主元为 0，跳过")
+                    self.add_step(f"第 {i + 1} 列主元为 0，跳过")
                 continue
 
             # Normalize pivot row
             pivot = augmented[i, i]
             if pivot != 1:
                 if show_steps:
-                    self.add_step(f"归一化: R_{i+1} \\times {latex(1/pivot)}")
+                    self.add_step(f"归一化: R_{i + 1} \\times {latex(1 / pivot)}")
                 augmented[i, :] = augmented[i, :] / pivot
                 if show_steps:
                     self.add_matrix(augmented, "[A|\\boldsymbol{b}]")
 
             # Eliminate other rows
-            for j in range(i+1, m):
+            for j in range(i + 1, m):
                 if augmented[j, i] != 0:
                     factor = augmented[j, i]
                     if show_steps:
                         self.add_step(
-                            f"消元: R_{j+1} - {latex(factor)} \\times R_{i+1}")
-                    augmented[j, :] = augmented[j, :] - \
-                        factor * augmented[i, :]
+                            f"消元: R_{j + 1} - {latex(factor)} \\times R_{i + 1}")
+                    augmented[j, :] = augmented[j, :] - factor * augmented[i, :]
                     if show_steps:
                         self.add_matrix(augmented, "[A|\\boldsymbol{b}]")
 
@@ -597,22 +605,25 @@ class LinearSystemSolver(CommonMatrixCalculator):
 
         # Back substitution
         x = zeros(n, 1)
-        for i in range(min(m, n)-1, -1, -1):
+        for i in range(min(m, n) - 1, -1, -1):
             if augmented[i, i] == 0:
                 continue
 
-            sum_val = sum(augmented[i, j] * x[j] for j in range(i+1, n))
+            sum_val = sum(augmented[i, j] * x[j] for j in range(i + 1, n))
             x[i] = (augmented[i, n] - sum_val) / augmented[i, i]
 
             if show_steps:
-                if i == min(m, n)-1:
+                if i == min(m, n) - 1:
                     self.add_step(
-                        f"x_{{{i+1}}} = \\frac{{b_{{{i+1}}}}}{{A_{{{i+1}{i+1}}}}} = \\frac{{{latex(augmented[i, n])}}}{{{latex(augmented[i, i])}}} = {latex(x[i])}")
+                        f"x_{{{i + 1}}} = \\frac{{b_{{{i + 1}}}}}{{A_{{{i + 1}{i + 1}}}}} = "
+                        f"\\frac{{{latex(augmented[i, n])}}}{{{latex(augmented[i, i])}}} = {latex(x[i])}")
                 else:
                     sum_terms = " + ".join(
-                        [f"A_{{{i+1}{j+1}}} \\cdot x_{{{j+1}}}" for j in range(i+1, n)])
+                        [f"A_{{{i + 1}{j + 1}}} \\cdot x_{{{j + 1}}}" for j in range(i + 1, n)])
                     self.add_step(
-                        f"x_{{{i+1}}} = \\frac{{b_{{{i+1}}} - ({sum_terms})}}{{A_{{{i+1}{i+1}}}}} = \\frac{{{latex(augmented[i, n])} - ({latex(sum_val)})}}{{{latex(augmented[i, i])}}} = {latex(x[i])}")
+                        f"x_{{{i + 1}}} = \\frac{{b_{{{i + 1}}} - ({sum_terms})}}{{A_{{{i + 1}{i + 1}}}}} = "
+                        f"\\frac{{{latex(augmented[i, n])} - ({latex(sum_val)})}}{{{latex(augmented[i, i])}}} "
+                        f"= {latex(x[i])}")
 
         # Simplify results
         x_simplified = self.simplify_matrix(x)
@@ -635,13 +646,13 @@ class LinearSystemSolver(CommonMatrixCalculator):
 
         return x_simplified
 
-    def solve_by_gauss_jordan(self, A_input: str, b_input: str, show_steps: bool = True) -> Matrix:
+    def solve_by_gauss_jordan(self, A_input: str | Matrix, b_input: str | Matrix, show_steps: bool = True) -> Matrix:
         """Method 2: Gauss-Jordan elimination.
 
         Parameters:
             A_input: Coefficient matrix
             b_input: Constant vector
-            show_steps: Whether to display solution steps
+            show_steps: Whether to display solution steps.
 
         Returns:
             Solution vector
@@ -650,7 +661,6 @@ class LinearSystemSolver(CommonMatrixCalculator):
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
-        # Check system type
         system_type = self.check_system_type(A, b, False)
 
         if system_type == "underdetermined":
@@ -674,7 +684,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
         # Gauss-Jordan elimination
         for i in range(min(m, n)):
             if show_steps:
-                self.add_step(f"第 {i+1} 步: 处理第 {i+1} 列")
+                self.add_step(f"第 {i + 1} 步: 处理第 {i + 1} 列")
 
             # Find pivot
             pivot_row = i
@@ -687,7 +697,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
             if pivot_row != i:
                 if show_steps:
                     self.add_step(
-                        f"行交换: R_{i+1} \\leftrightarrow  R_{pivot_row+1}")
+                        f"行交换: R_{i + 1} \\leftrightarrow  R_{pivot_row + 1}")
                 augmented.row_swap(i, pivot_row)
                 if show_steps:
                     self.add_matrix(augmented, "[A|\\boldsymbol{b}]")
@@ -695,14 +705,14 @@ class LinearSystemSolver(CommonMatrixCalculator):
             # If pivot is 0, skip this column
             if augmented[i, i] == 0:
                 if show_steps:
-                    self.add_step(f"第 {i+1} 列主元为 0, 跳过")
+                    self.add_step(f"第 {i + 1} 列主元为 0, 跳过")
                 continue
 
             # Normalize pivot row
             pivot = augmented[i, i]
             if pivot != 1:
                 if show_steps:
-                    self.add_step(f"归一化: R_{i+1} \\times {latex(1/pivot)}")
+                    self.add_step(f"归一化: R_{i + 1} \\times {latex(1 / pivot)}")
                 augmented[i, :] = augmented[i, :] / pivot
                 if show_steps:
                     self.add_matrix(augmented, "[A|\\boldsymbol{b}]")
@@ -713,9 +723,8 @@ class LinearSystemSolver(CommonMatrixCalculator):
                     factor = augmented[j, i]
                     if show_steps:
                         self.add_step(
-                            f"消元: R_{j+1} - {latex(factor)} \\times R_{i+1}")
-                    augmented[j, :] = augmented[j, :] - \
-                        factor * augmented[i, :]
+                            f"消元: R_{j + 1} - {latex(factor)} \\times R_{i + 1}")
+                    augmented[j, :] = augmented[j, :] - factor * augmented[i, :]
                     if show_steps:
                         self.add_matrix(augmented, "[A|\\boldsymbol{b}]")
 
@@ -749,13 +758,14 @@ class LinearSystemSolver(CommonMatrixCalculator):
 
         return x_simplified
 
-    def solve_by_matrix_inverse(self, A_input: str, b_input: str, show_steps: bool = True) -> Matrix:
+    def solve_by_matrix_inverse(self, A_input: str | Matrix, b_input: str | Matrix,
+                                show_steps: bool = True) -> Matrix | None:
         """Method 3: Matrix inversion method.
 
         Parameters:
             A_input: Coefficient matrix
             b_input: Constant vector
-            show_steps: Whether to display solution steps
+            show_steps: Whether to display solution steps.
 
         Returns:
             Solution vector or None if matrix is not invertible
@@ -764,7 +774,6 @@ class LinearSystemSolver(CommonMatrixCalculator):
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
-        # Check system type
         system_type = self.check_system_type(A, b, False)
 
         if system_type == "underdetermined":
@@ -832,13 +841,14 @@ class LinearSystemSolver(CommonMatrixCalculator):
                 self.add_step(f"求逆失败: {str(e)}")
             return None
 
-    def solve_by_lu_decomposition(self, A_input: str, b_input: str, show_steps: bool = True) -> Matrix:
+    def solve_by_lu_decomposition(self, A_input: str | Matrix, b_input: str | Matrix,
+                                  show_steps: bool = True) -> Matrix | None:
         """Method 4: LU decomposition method.
 
         Parameters:
             A_input: Coefficient matrix
             b_input: Constant vector
-            show_steps: Whether to display solution steps
+            show_steps: Whether to display solution steps.
 
         Returns:
             Solution vector or None if LU decomposition fails
@@ -847,7 +857,6 @@ class LinearSystemSolver(CommonMatrixCalculator):
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
-        # Check system type
         system_type = self.check_system_type(A, b, False)
 
         if system_type == "underdetermined":
@@ -879,7 +888,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
                 U[i, j] = A[i, j] - sum_val
 
             # Calculate L's i-th column
-            for j in range(i+1, n):
+            for j in range(i + 1, n):
                 sum_val = sum(L[j, k] * U[k, i] for k in range(i))
                 if U[i, i] == 0:
                     if show_steps:
@@ -905,7 +914,8 @@ class LinearSystemSolver(CommonMatrixCalculator):
         if show_steps:
             self.add_step("解方程组:")
             self.add_equation(
-                "解: L \\cdot \\boldsymbol{y} = \\boldsymbol{b} \\quad \\text{和} \\quad U \\cdot \\boldsymbol{x} = \\boldsymbol{y}")
+                "解: L \\cdot \\boldsymbol{y} = \\boldsymbol{b} \\quad \\text{和} "
+                "\\quad U \\cdot \\boldsymbol{x} = \\boldsymbol{y}")
 
         # Forward substitution to solve L * y = b
         y = zeros(n, 1)
@@ -920,12 +930,14 @@ class LinearSystemSolver(CommonMatrixCalculator):
             if show_steps:
                 if i == 0:
                     self.add_step(
-                        f"y_{{{i+1}}} = \\frac{{b_{{{i+1}}}}}{{L_{{{i+1}{i+1}}}}} = \\frac{{{latex(b[i])}}}{{{latex(L[i, i])}}} = {latex(y[i])}")
+                        f"y_{{{i + 1}}} = \\frac{{b_{{{i + 1}}}}}{{L_{{{i + 1}{i + 1}}}}} = "
+                        f"\\frac{{{latex(b[i])}}}{{{latex(L[i, i])}}} = {latex(y[i])}")
                 else:
                     sum_terms = " + ".join(
-                        [f"L_{{{i+1}{j+1}}} \\cdot y_{{{j+1}}}" for j in range(i)])
+                        [f"L_{{{i + 1}{j + 1}}} \\cdot y_{{{j + 1}}}" for j in range(i)])
                     self.add_step(
-                        f"y_{{{i+1}}} = \\frac{{b_{{{i+1}}} - ({sum_terms})}}{{L_{{{i+1}{i+1}}}}} = \\frac{{{latex(b[i])} - ({latex(sum_val)})}}{{{latex(L[i, i])}}} = {latex(y[i])}")
+                        f"y_{{{i + 1}}} = \\frac{{b_{{{i + 1}}} - ({sum_terms})}}{{L_{{{i + 1}{i + 1}}}}} = "
+                        f"\\frac{{{latex(b[i])} - ({latex(sum_val)})}}{{{latex(L[i, i])}}} = {latex(y[i])}")
 
         if show_steps:
             self.add_vector(y, "\\boldsymbol{y}")
@@ -936,19 +948,21 @@ class LinearSystemSolver(CommonMatrixCalculator):
             self.add_step(
                 "(2) 回代法求解 U \\cdot \\boldsymbol{x} = \\boldsymbol{y}")
 
-        for i in range(n-1, -1, -1):
-            sum_val = sum(U[i, j] * x[j] for j in range(i+1, n))
+        for i in range(n - 1, -1, -1):
+            sum_val = sum(U[i, j] * x[j] for j in range(i + 1, n))
             x[i] = (y[i] - sum_val) / U[i, i]
 
             if show_steps:
-                if i == n-1:
+                if i == n - 1:
                     self.add_step(
-                        f"x_{{{i+1}}} = \\frac{{y_{{{i+1}}}}}{{U_{{{i+1}{i+1}}}}} = \\frac{{{latex(y[i])}}}{{{latex(U[i, i])}}} = {latex(x[i])}")
+                        f"x_{{{i + 1}}} = \\frac{{y_{{{i + 1}}}}}{{U_{{{i + 1}{i + 1}}}}} = "
+                        f"\\frac{{{latex(y[i])}}}{{{latex(U[i, i])}}} = {latex(x[i])}")
                 else:
                     sum_terms = " + ".join(
-                        [f"U_{{{i+1}{j+1}}} \\cdot x_{{{j+1}}}" for j in range(i+1, n)])
+                        [f"U_{{{i + 1}{j + 1}}} \\cdot x_{{{j + 1}}}" for j in range(i + 1, n)])
                     self.add_step(
-                        f"x_{{{i+1}}} = \\frac{{y_{{{i+1}}} - ({sum_terms})}}{{U_{{{i+1}{i+1}}}}} = \\frac{{{latex(y[i])} - ({latex(sum_val)})}}{{{latex(U[i, i])}}} = {latex(x[i])}")
+                        f"x_{{{i + 1}}} = \\frac{{y_{{{i + 1}}} - ({sum_terms})}}{{U_{{{i + 1}{i + 1}}}}} = "
+                        f"\\frac{{{latex(y[i])} - ({latex(sum_val)})}}{{{latex(U[i, i])}}} = {latex(x[i])}")
 
         x_simplified = self.simplify_matrix(x)
 
@@ -970,22 +984,22 @@ class LinearSystemSolver(CommonMatrixCalculator):
 
         return x_simplified
 
-    def solve_by_cramers_rule(self, A_input: str, b_input: str, show_steps: bool = True) -> Matrix:
+    def solve_by_cramers_rule(self, A_input: str | Matrix, b_input: str | Matrix,
+                              show_steps: bool = True) -> Matrix | None:
         """Method 5: Cramer's rule.
 
         Parameters:
             A_input: Coefficient matrix
             b_input: Constant vector
-            show_steps: Whether to display solution steps
+            show_steps: Whether to display solution steps.
 
         Returns:
-            Solution vector or None if Cramer's rule cannot be applied
+            Solution vector or None if Cramer's rule cannot be applied.
         """
         self.step_generator.clear()
         A = self.parse_matrix_input(A_input)
         b = self.parse_vector_input(b_input)
 
-        # Check system type
         system_type = self.check_system_type(A, b, False)
 
         if system_type == "underdetermined":
@@ -1028,11 +1042,12 @@ class LinearSystemSolver(CommonMatrixCalculator):
             det_A_i = A_i.det()
 
             if show_steps:
-                self.add_step(f"计算 x_{{{i+1}}}:")
-                self.add_matrix(A_i, f"A_{{{i+1}}}")
-                self.add_step(f"\\det(A_{{{i+1}}}) = {latex(det_A_i)}")
+                self.add_step(f"计算 x_{{{i + 1}}}:")
+                self.add_matrix(A_i, f"A_{{{i + 1}}}")
+                self.add_step(f"\\det(A_{{{i + 1}}}) = {latex(det_A_i)}")
                 self.add_step(
-                    f"x_{{{i+1}}} = \\frac{{\\det(A_{{{i+1}}})}}{{\\det(A)}} = \\frac{{{latex(det_A_i)}}}{{{latex(det_A)}}}")
+                    f"x_{{{i + 1}}} = \\frac{{\\det(A_{{{i + 1}}})}}{{\\det(A)}} = "
+                    f"\\frac{{{latex(det_A_i)}}}{{{latex(det_A)}}}")
 
             x[i] = det_A_i / det_A
 
@@ -1056,7 +1071,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
 
         return x_simplified
 
-    def solve(self, A_input: str, b_input: str, method: str = 'auto', show_steps: bool = True) -> Matrix:
+    def solve(self, A_input: str, b_input: str, method: str = 'auto', show_steps: bool = True) -> Matrix | None:
         """Main solver function.
 
         Parameters:
@@ -1065,7 +1080,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
             method: Solution method ('auto', 'gaussian', 'gauss_jordan',
                    'inverse', 'lu', 'cramer', 'underdetermined',
                    'overdetermined', 'singular')
-            show_steps: Whether to display solution steps
+            show_steps: Whether to display solution steps.
 
         Returns:
             Solution vector or None if no solution exists
@@ -1094,7 +1109,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
             else:
                 method = 'gauss_jordan'
 
-        # Solve according to selected method
+        # Solve, according to selected method
         if method == 'gaussian':
             return self.solve_by_gaussian_elimination(A, b, show_steps)
         if method == 'gauss_jordan':
@@ -1113,7 +1128,6 @@ class LinearSystemSolver(CommonMatrixCalculator):
             return self.solve_singular_system(A, b, show_steps)
 
         raise ValueError(f"Unknown solving method: {method}")
-
 
 # # Demo functions
 # def demo_underdetermined_systems():

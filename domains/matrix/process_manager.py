@@ -1,9 +1,10 @@
 from typing import Dict, Union
+
 from sympy import latex
 
 from domains import DetCalculator, DeterminantCalculator, EigenSolver
-from .rank import Rank
 from .SVD_solver import SVDSolver
+from .rank import Rank
 
 det_cal_1 = DeterminantCalculator()
 det_cal_2 = DetCalculator()
@@ -26,13 +27,13 @@ class ProcessManager:
         Args:
             process_type (str): Type of computation to perform.
                 Supported types: 'det_1', 'det_2', 'rank', 'eigen', 'svd'
-            expression (str): Mathematical expression representing the matrix
+            expression (str): Mathematical expression representing the matrix.
 
         Returns:
             dict: Result dictionary containing:
-                - success (bool): Whether the operation was successful
-                - process (str): LaTeX formatted computation steps
-                - U, S, V (str, optional): LaTeX formatted SVD decomposition matrices
+                - success (bool): Whether the operation was successful.
+                - process (str): LaTeX formatted computation steps.
+                - U, S, V (str, optional): LaTeX formatted SVD decomposition matrices.
         """
         res = {'success': True, 'process': ''}
         if process_type == 'det_1':

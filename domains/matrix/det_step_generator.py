@@ -1,4 +1,5 @@
 from sympy import latex
+
 from core import BaseStepGenerator
 
 
@@ -10,7 +11,7 @@ class DetStepGenerator(BaseStepGenerator):
         formatted LaTeX align environment for mathematical expressions.
 
         Returns:
-            str: A LaTeX formatted string containing all steps with explanations
+            str: A LaTeX formatted string containing all steps with explanations.
         """
         latex_str = "\\begin{align}"
 

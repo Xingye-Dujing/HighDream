@@ -1,16 +1,16 @@
 from sympy import (
-    Expr, I, Symbol, log, exp, sin, cos, tan, cot, csc, sec,
+    Basic, Expr, I, Symbol, log, exp, sin, cos, tan, cot, csc, sec,
     asin, acos, atan, acot, acsc, asec, sinh, cosh, tanh, coth,
     csch, sech, asinh, acosh, atanh, acoth, acsch, asech, sqrt,
     Add, Mul, Pow, Abs, floor, ceiling
 )
 
 
-def is_elementary_expression(expr: Expr) -> bool:
+def is_elementary_expression(expr: Basic | Expr) -> bool:
     """Check if an expression is elementary."""
 
     # Note: The expression might be S.Zero
-    # so we must explicitly check for None to determine if it's empty
+    # so we must explicitly check for None to determine if it is empty.
     if expr is None:
         return False
 
@@ -30,7 +30,7 @@ def is_elementary_expression(expr: Expr) -> bool:
         floor, ceiling  # Rounding functions
     )
 
-    # Check if the expression's class is in the elementary types
+    # Check if the expression's class is in the elementary types.
     if type(expr) in elementary_types:
         # Recursively check all arguments
         for arg in expr.args:
@@ -41,15 +41,15 @@ def is_elementary_expression(expr: Expr) -> bool:
     return False
 
 
-def can_use_weierstrass(expr: Expr, var: Symbol) -> bool:
+def can_use_weierstrass(expr: Basic | Expr, var: Symbol) -> bool:
     """Determine whether expr is a pure trigonometric rational expression of the form
     R(sin(x), cos(x), tan(x), ...), i.e., whether Weierstrass substitution can be used.
 
     Requirements:
-    - Contains only sin(x), cos(x), tan(x), cot(x), sec(x), csc(x)
-    - Does not contain bare x
+    - Contains only sin(x), cos(x), tan(x), cot(x), sec(x), csc(x).
+    - Does not contain bare x.
     - Does not contain non-trigonometric functions such as exp, log, sqrt(x), asin, etc.
-    - The exponent in power operations must be integers (to ensure it's a rational expression)
+    - The exponent in power operations must be integers (to ensure it is a rational expression)
     """
     if expr is None:
         return False
@@ -81,5 +81,5 @@ def can_use_weierstrass(expr: Expr, var: Symbol) -> bool:
             return True
         return False
 
-    # Any other types (such as exp, log, asin, sqrt, Derivative, etc.) are invalid
+    # Any other types (such as exp, log, asin, sqrt, Derivative, etc.) are invalid.
     return False

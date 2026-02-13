@@ -1,8 +1,11 @@
 from typing import List, Union
+
 from sympy import Matrix, latex, simplify, solve, symbols, sympify, zeros
-# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
+
+
+# from IPython.display import Math, display
 
 
 class LinearDependence(CommonMatrixCalculator):
@@ -17,20 +20,20 @@ class LinearDependence(CommonMatrixCalculator):
         """Parse vector input into a matrix format.
 
         Args:
-            vectors_input (str, list, Matrix): Input vectors in various formats
+            vectors_input (str, list, Matrix): Input vectors in various formats.
 
         Returns:
             Matrix: A matrix where each column represents a vector
 
         Raises:
-            ValueError: If the input cannot be parsed or vectors have inconsistent dimensions
+            ValueError: If the input cannot be parsed or vectors have inconsistent dimensions.
         """
         try:
             if isinstance(vectors_input, str):
                 # Handle string input like "[[1,2],[3,4],[5,6]]"
                 matrix = Matrix(sympify(vectors_input))
             elif isinstance(vectors_input, list):
-                # Handle list of vectors
+                # Handle the list of vectors
                 if all(isinstance(v, Matrix) for v in vectors_input):
                     # If input is a list of Matrix objects
                     if len(vectors_input) == 0:
@@ -46,7 +49,7 @@ class LinearDependence(CommonMatrixCalculator):
                         for j in range(dim):
                             matrix[j, i] = vec[j]
                 else:
-                    # If it's a list of lists of numbers or symbols
+                    # If it is a list of lists of numbers or symbols.
                     vectors = [Matrix(v) for v in vectors_input]
                     dim = vectors[0].rows
                     if any(v.rows != dim for v in vectors):
@@ -78,22 +81,22 @@ class LinearDependence(CommonMatrixCalculator):
         vector_strs = []
         for i, vec in enumerate(vectors):
             vector_strs.append(
-                f"\\boldsymbol{{{name}_{{{i+1}}}}} = {latex(vec)}")
+                f"\\boldsymbol{{{name}_{{{i + 1}}}}} = {latex(vec)}")
 
         vector_strs = rf',\;'.join(vector_strs)
         self.step_generator.add_step(f"\\text{{向量组: }}{vector_strs}")
 
-    def check_special_cases(self, vectors_input: str, show_steps: bool = True, is_clear: bool = True) -> bool:
+    def check_special_cases(self, vectors_input: str, show_steps: bool = True, is_clear: bool = True) -> bool | None:
         """Check special cases for linear dependence.
 
         Args:
-            vectors_input: Input vectors in any supported format
-            show_steps (bool): Whether to show calculation steps
-            is_clear (bool): Whether to clear previous steps
+            vectors_input: Input vectors in any supported format,
+            show_steps (bool): Whether to show calculation steps,
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
             bool or None: True if linearly dependent, False if independent,
-                         None if no special case detected
+                         None if no special case detected.
         """
         if is_clear:
             self.step_generator.clear()
@@ -122,7 +125,7 @@ class LinearDependence(CommonMatrixCalculator):
                 self.step_generator.add_step(r"\text{零向量线性相关}")
                 return True
 
-        # Check if number of vectors exceeds dimension
+        # Check if the number of vectors exceeds dimension
         if n > m:
             if show_steps:
                 self.step_generator.add_step(
@@ -157,9 +160,9 @@ class LinearDependence(CommonMatrixCalculator):
         """Method 1: Definition approach (solving homogeneous equations).
 
         Args:
-            vectors_input: Input vectors in any supported format
-            show_steps (bool): Whether to show calculation steps
-            is_clear (bool): Whether to clear previous steps
+            vectors_input: Input vectors in any supported format,
+            show_steps (bool): Whether to show calculation steps,
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
             bool: True if linearly dependent, False if independent
@@ -174,15 +177,16 @@ class LinearDependence(CommonMatrixCalculator):
             self.step_generator.add_step(r"\textbf{方法一: 定义法}")
             self.display_vectors(vectors)
             self.step_generator.add_step(
-                r"\text{原理: 判断方程 } k_1 \boldsymbol{v_1} + k_2 \boldsymbol{v_2} + \cdots + k_n \boldsymbol{v_n} = \boldsymbol{0} \text{ 是否有非零解}")
+                r"\text{原理: 判断方程 } k_1 \boldsymbol{v_1} + k_2 \boldsymbol{v_2} + "
+                r"\cdots + k_n \boldsymbol{v_n} = \boldsymbol{0} \text{ 是否有非零解}")
 
         m, n = A.rows, A.cols
 
-        # Construct homogeneous linear system
+        # Construct the homogeneous linear system
         if show_steps:
             self.add_step("构造齐次线性方程组:")
             equation = " + ".join(
-                [f"k_{{{i+1}}} \\boldsymbol{{v_{{{i+1}}}}}" for i in range(n)]) + " = \\boldsymbol{0}"
+                [f"k_{{{i + 1}}} \\boldsymbol{{v_{{{i + 1}}}}}" for i in range(n)]) + " = \\boldsymbol{0}"
             self.add_equation(equation)
 
             self.add_step("对应的系数矩阵:")
@@ -191,7 +195,7 @@ class LinearDependence(CommonMatrixCalculator):
         # Solve the system of equations
         try:
             # Use sympy to solve the equations
-            k_symbols = symbols(f'k_1:{n+1}')
+            k_symbols = symbols(f'k_1:{n + 1}')
             equations = []
 
             for i in range(m):
@@ -235,9 +239,9 @@ class LinearDependence(CommonMatrixCalculator):
         """Method 2: Row reduced echelon form approach.
 
         Args:
-            vectors_input: Input vectors in any supported format
-            show_steps (bool): Whether to show calculation steps
-            is_clear (bool): Whether to clear previous steps
+            vectors_input: Input vectors in any supported format,
+            show_steps (bool): Whether to show calculation steps,
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
             bool: True if linearly dependent, False if independent
@@ -260,14 +264,14 @@ class LinearDependence(CommonMatrixCalculator):
             self.add_step("构造向量组的矩阵:")
             self.add_matrix(A, "A")
 
-        # Calculate row reduced echelon form
+        # Calculate the row reduced echelon form
         rref_matrix, pivot_columns = A.rref()
 
         if show_steps:
             self.add_step("行简化阶梯形矩阵:")
             self.add_matrix(rref_matrix, "A_{rref}")
             self.step_generator.add_step(
-                f"\\text{{主元列位置: }} {[c+1 for c in pivot_columns]}")
+                f"\\text{{主元列位置: }} {[c + 1 for c in pivot_columns]}")
             self.step_generator.add_step(
                 f"\\text{{主元个数 (秩): }} {len(pivot_columns)}")
             self.step_generator.add_step(f"\\text{{向量个数: }} {n}")
@@ -284,14 +288,14 @@ class LinearDependence(CommonMatrixCalculator):
                 self.add_step("线性关系推导:")
                 for j in range(n):
                     if j not in pivot_columns:
-                        # This column can be expressed as a linear combination of pivot columns
-                        relation = f"\\boldsymbol{{v_{{{j+1}}}}} = "
+                        # This column can be expressed as a linear combination of pivot columns.
+                        relation = f"\\boldsymbol{{v_{{{j + 1}}}}} = "
                         terms = []
                         for i, pivot_col in enumerate(pivot_columns):
                             coeff = rref_matrix[i, j]
                             if coeff != 0:
                                 terms.append(
-                                    f"{latex(coeff)} \\boldsymbol{{v_{{{pivot_col+1}}}}}")
+                                    f"{latex(coeff)} \\boldsymbol{{v_{{{pivot_col + 1}}}}}")
                         if terms:
                             relation += " + ".join(terms)
                             self.add_equation(relation)
@@ -303,13 +307,13 @@ class LinearDependence(CommonMatrixCalculator):
             self.step_generator.add_step(r"\text{结论: 向量组线性无关}")
         return False
 
-    def by_determinant(self, vectors_input: str, show_steps: bool = True, is_clear: bool = True) -> bool:
+    def by_determinant(self, vectors_input: str, show_steps: bool = True, is_clear: bool = True) -> bool | None:
         """Method 3: Determinant approach (only applicable to square matrices).
 
         Args:
-            vectors_input: Input vectors in any supported format
-            show_steps (bool): Whether to show calculation steps
-            is_clear (bool): Whether to clear previous steps
+            vectors_input: Input vectors in any supported format,
+            show_steps (bool): Whether to show calculation steps,
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
             bool or None: True if linearly dependent, False if independent,
@@ -364,17 +368,17 @@ class LinearDependence(CommonMatrixCalculator):
                 self.step_generator.add_step(f"\\text{{计算行列式时出错: {str(e)}}}")
             return None
 
-    def by_gram_determinant(self, vectors_input: str, show_steps: bool = True, is_clear: bool = True) -> bool:
+    def by_gram_determinant(self, vectors_input: str, show_steps: bool = True, is_clear: bool = True) -> bool | None:
         """Method 4: Gram determinant approach.
 
         Args:
-            vectors_input: Input vectors in any supported format
-            show_steps (bool): Whether to show calculation steps
-            is_clear (bool): Whether to clear previous steps
+            vectors_input: Input vectors in any supported format,
+            show_steps (bool): Whether to show calculation steps,
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
             bool or None: True if linearly dependent, False if independent,
-                         None if computation fails
+                         None if computation fails.
         """
         if is_clear:
             self.step_generator.clear()
@@ -430,9 +434,9 @@ class LinearDependence(CommonMatrixCalculator):
         """Method 5: Linear combination approach.
 
         Args:
-            vectors_input: Input vectors in any supported format
-            show_steps (bool): Whether to show calculation steps
-            is_clear (bool): Whether to clear previous steps
+            vectors_input: Input vectors in any supported format,
+            show_steps (bool): Whether to show calculation steps,
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
             bool: True if linearly dependent, False if independent
@@ -458,10 +462,10 @@ class LinearDependence(CommonMatrixCalculator):
 
             if show_steps:
                 self.step_generator.add_step(
-                    f"\\text{{检查向量 }} v_{{{i+1}}} = {latex(current_vector)}")
+                    f"\\text{{检查向量 }} v_{{{i + 1}}} = {latex(current_vector)}")
 
             if len(independent_vectors) == 0:
-                # First vector - add if it's not a zero vector
+                # First vector - add if it is not a zero vector
                 if any(current_vector[j] != 0 for j in range(m)):
                     independent_vectors.append(current_vector)
                     if show_steps:
@@ -471,9 +475,9 @@ class LinearDependence(CommonMatrixCalculator):
                         self.step_generator.add_step(r"\text{零向量, 线性相关}")
                     return True
             else:
-                # Check if current vector can be linearly represented by previous independent vectors
-                # Construct system of equations
-                coeff_symbols = symbols(f'c_1:{len(independent_vectors)+1}')
+                # Check if the current vector can be linearly represented by previous independent vectors
+                # Construct system of equations.
+                coeff_symbols = symbols(f'c_1:{len(independent_vectors) + 1}')
                 equations = []
 
                 for j in range(m):
@@ -487,14 +491,14 @@ class LinearDependence(CommonMatrixCalculator):
 
                     if solutions and any(sol != {s: 0 for s in coeff_symbols} for sol in solutions):
                         # Non-trivial solution exists, indicating linear dependence
-                        relation = f"\\boldsymbol{{v_{{{i+1}}}}} = "
+                        relation = f"\\boldsymbol{{v_{{{i + 1}}}}} = "
                         terms = []
                         for sol in solutions:
                             for k, coeff in sol.items():
                                 if coeff != 0:
                                     idx = coeff_symbols.index(k)
-                                    terms.append(
-                                        f"{latex(coeff)} \\boldsymbol{{v_{{{independent_vectors.index(vectors[idx])+1}}}}}")
+                                    terms.append(f"{latex(coeff)} \\boldsymbol{{v_"
+                                                 f"{{{independent_vectors.index(vectors[idx]) + 1}}}}}")
                             break  # Take only the first solution
 
                         if terms:
@@ -525,17 +529,17 @@ class LinearDependence(CommonMatrixCalculator):
             self.step_generator.add_step(r"\text{结论: 向量组线性无关}")
         return False
 
-    def auto_check_dependence(self, vectors_input: str, show_steps: bool = True, is_clear: bool = True) -> bool:
+    def auto_check_dependence(self, vectors_input: str, show_steps: bool = True, is_clear: bool = True) -> bool | None:
         """Automatically check linear dependence of vector groups.
 
         Args:
-            vectors_input: Input vectors in any supported format
-            show_steps (bool): Whether to show calculation steps
-            is_clear (bool): Whether to clear previous steps
+            vectors_input: Input vectors in any supported format,
+            show_steps (bool): Whether to show calculation steps,
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
             bool or None: True if linearly dependent, False if independent,
-                         None if unable to determine
+                         None if unable to determine.
         """
         if is_clear:
             self.step_generator.clear()
@@ -609,7 +613,6 @@ class LinearDependence(CommonMatrixCalculator):
 
         return None
 
-
 # # Demo functions
 # def demo_basic_vectors():
 #     """Demonstrate linear dependence checking for basic vector groups."""
@@ -649,7 +652,7 @@ class LinearDependence(CommonMatrixCalculator):
 #     # Special case examples
 #     zero_vector = '[[0,0]]'           # Zero vector
 #     single_vector = '[[1,2]]'         # Single non-zero vector
-#     excess_vectors = '[[1,0],[0,1],[1,1]]'  # More vectors than dimension
+#     excess_vectors = '[[1,0],[0,1],[1,1]]'  # More vectors than dimension.
 
 #     checker.step_generator.add_step(r"\textbf{特殊情况演示}")
 

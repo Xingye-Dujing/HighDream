@@ -3,6 +3,7 @@ For Vercel deployment.
 """
 
 from flask import Flask
+
 from config import TEMPLATE_FOLDER, STATIC_FOLDER
 from routes import main, api
 

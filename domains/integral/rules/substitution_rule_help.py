@@ -15,7 +15,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
     """Attempt standard u-substitution for integrals of the form f(g(x)) g'(x) dx.
 
     Matches expressions where:
-      - A unary function f(g(x)) is present (e.g., sin(x^2), log(cos(x)), exp(tan(x)))
+      - A unary function f(g(x)) is present (e.g., sin(x^2), log(cos(x)), exp(tan(x))).
       - The derivative g'(x) appears as a factor (up to a constant multiple)
 
     Returns the integrated result and explanation if successful.
@@ -51,7 +51,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
             check_list = [original_term]
             # Introducing sqrt_term is to handle implicit f(x)^2 cases like x/(x**4+1), x**x*(log(x)+1)/(x**(2*x)+1)
             sqrt_term = sqrt(original_term)
-            # Use a temporary variable with positive real assumptions to aid radical simplification
+            # Use a temporary variable with positive real assumptions to aid radical simplification.
             _t = Dummy('t', real=True, positive=True)
             sqrt_term = simplify(sqrt_term.subs(var, _t)).subs(_t, var).replace(
                 Abs, lambda arg: arg)
@@ -64,7 +64,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
                 if gp.equals(0):  # g'(x) = 0
                     continue
 
-                initial_ratio = simplify(expr/gp)
+                initial_ratio = simplify(expr / gp)
                 # Special case: g'(x) dx, let u = g(x), g'(x) dx = 1 du
                 if initial_ratio.is_constant():
                     # Substitute u = g(x)
@@ -77,10 +77,10 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
                     return Integral(initial_ratio, u), explanation
 
                 try:
-                    # Compute the "remaining part" = expr / factor
+                    # Compute the “remaining part” = expr / factor
                     outer_part = expr / factor  # The rest of the integrand
 
-                    # Check if outer_part = k * g'(x) for some constant k
+                    # Check if outer_part = k * g'(x) for some constant k.
                     ratio = simplify(outer_part / gp)
                     if not ratio.is_constant():
                         continue
@@ -89,7 +89,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
                     u = step_gene.get_available_sym(var)
 
                     # Construct f(u)
-                    f_u = simplify((initial_ratio/ratio).subs(term, u))
+                    f_u = simplify((initial_ratio / ratio).subs(term, u))
 
                     if f_u.has(var):
                         continue
@@ -120,17 +120,17 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
 def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
     """
     Apply trigonometric substitution for integrals containing:
-      - sqrt(a^2 − x^2)  to  x = a sin(theta)
-      - sqrt(a^2 + x^2)  to  x = a tan(theta)
-      - sqrt(x^2 − a^2)  to  x = a sec(theta)
+      - sqrt(a^2 − x^2) to x = a sin(theta)
+      - sqrt(a^2 + x^2) to x = a tan(theta)
+      - sqrt(x^2 − a^2) to x = a sec(theta)
 
     Uses pattern matching with Wild symbols to extract constant 'a'.
 
     Returns the integrated result and explanation if successful.
     """
 
-    # Note: cancel() is necessary to help simplify
-    # Simplify to the lowest terms to prevent matching issues with the result
+    # Note: cancel() is necessary to help simplify.
+    # Simplify to the lowest terms to prevent matching issues with the result.
     # (e.g., sqrt(x**2-8)/(x**2-8) to 1/sqrt(x**2-8))
     expr = cancel(expr)
 
@@ -143,7 +143,7 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
     # Assume a > 0 and theta is real to help SymPy's simplify:
     # These assumptions are necessary for Integral to work correctly !!!
     a = Wild('a', exclude=[var], properties=[
-             lambda x: x.is_positive])
+        lambda x: x.is_positive])
     # Theta is real and positive to help simplify
     theta = Dummy('theta', real=True, positive=True)
 
@@ -153,7 +153,7 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
         if not matches:
             return None
 
-        # Take the first match (sufficient for teaching context)
+        # Take the first match (enough for teaching context)
         matched_sqrt = list(matches)[0]
         # Extract 'a' by solving matched_sqrt == pattern
         sol = matched_sqrt.match(pattern)
@@ -166,7 +166,7 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
 
         try:
             # Note: inverse=True is necessary to handle cases like asin(sin(x)) == x
-            new_expr = simplify(expr.subs(var, x_sub)*dx_dtheta, inverse=True).replace(
+            new_expr = simplify(expr.subs(var, x_sub) * dx_dtheta, inverse=True).replace(
                 Abs, lambda arg: arg)
             int_theta = simplify(integrate(new_expr, theta))
             if not is_elementary_expression(int_theta):
@@ -176,22 +176,20 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
 
             # Cannot use isinstance and .has(log) to check
             if len(int_theta.args) == 2:
-                if pattern in ((a+var**2)**minus_sqrt_pow, (var**2-a)**minus_sqrt_pow):
-                    result = log(Abs(sqrt(pattern.args[0]).subs(a, a_val)+var))
-                elif pattern == (a+var**2)**sqrt_pow:
-                    result = a_val * \
-                        log(Abs(sqrt(pattern.args[0]).subs(
-                            a, a_val)+var))/2+var*sqrt(pattern.args[0]).subs(
-                            a, a_val)/2
-                elif pattern.equals((var**2-a)**sqrt_pow):
-                    result = -a_val * \
-                        log(Abs(sqrt(pattern.args[0]).subs(
-                            a, a_val)+var))/2+var*sqrt(pattern.args[0]).subs(
-                            a, a_val)/2
+                if pattern in ((a + var ** 2) ** minus_sqrt_pow, (var ** 2 - a) ** minus_sqrt_pow):
+                    res = log(Abs(sqrt(pattern.args[0]).subs(a, a_val) + var))
+                elif pattern == (a + var ** 2) ** sqrt_pow:
+                    res = a_val * \
+                          log(Abs(sqrt(pattern.args[0]).subs(
+                              a, a_val) + var)) / 2 + var * sqrt(pattern.args[0]).subs(a, a_val) / 2
+                elif pattern.equals((var ** 2 - a) ** sqrt_pow):
+                    res = -a_val * \
+                          log(Abs(sqrt(pattern.args[0]).subs(
+                              a, a_val) + var)) / 2 + var * sqrt(pattern.args[0]).subs(a, a_val) / 2
                 else:
-                    result = simplify(int_theta.subs(theta, new_subs))
+                    res = simplify(int_theta.subs(theta, new_subs))
             else:
-                result = simplify(int_theta.subs(theta, new_subs))
+                res = simplify(int_theta.subs(theta, new_subs))
 
             # Generate explanation
             form_str = latex(matched_sqrt)
@@ -199,50 +197,50 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
                 f"三角代换：被积式含 ${form_str}$, 令 ${latex(var)} = {latex(x_sub)}$,"
                 f"则 $d{latex(var)} = \\left({latex(dx_dtheta)}\\right)\\,d\\theta$, 积分化为 "
                 f"$\\int {latex(new_expr)}\\,d\\theta = {latex(int_theta)}$, "
-                f"回代 $\\theta = {latex(new_subs)}$ 得结果：${latex(result)} + C$."
+                f"回代 $\\theta = {latex(new_subs)}$ 得结果：${latex(res)} + C$."
             )
-            return result, explanation
+            return res, explanation
 
         except Exception as e:
             print(f"Error in try_trig_substitution: {e}")
             return None
 
     # Case 1: sqrt(a^2 − x^2) to x = a sin(theta)
-    pattern1 = (a - var**2)**minus_sqrt_pow
+    pattern1 = (a - var ** 2) ** minus_sqrt_pow
     sub1 = sqrt(a) * sin(theta)
     back1 = asin(var / a)
     result = _apply_trig_sub(pattern1, sub1, back1)
     if result:
         return result
 
-    pattern1_1 = (a - var**2)**sqrt_pow
+    pattern1_1 = (a - var ** 2) ** sqrt_pow
     result = _apply_trig_sub(pattern1_1, sub1, back1)
     if result:
         return result
 
     # Case 2: sqrt(a^2 + x^2) to x = a tan(theta)
-    pattern2 = (a + var**2)**minus_sqrt_pow
+    pattern2 = (a + var ** 2) ** minus_sqrt_pow
     sub2 = sqrt(a) * tan(theta)
     back2 = atan(var / a)
     result = _apply_trig_sub(pattern2, sub2, back2)
     if result:
         return result
 
-    pattern2_1 = (a + var**2)**sqrt_pow
+    pattern2_1 = (a + var ** 2) ** sqrt_pow
     result = _apply_trig_sub(pattern2_1, sub2, back2)
     if result:
         return result
 
-    # Case 3: sqrt(x^2 − a^2) to x = a secθ=(theta)
-    pattern3 = (var**2 - a)**minus_sqrt_pow
+    # Case 3: sqrt(x^2 − a^2) to x = a sec(theta)
+    pattern3 = (var ** 2 - a) ** minus_sqrt_pow
     sub3 = sqrt(a) * sec(theta)
-    # Alternative: asec(var/a), but acos(a/x) is more common in textbooks
+    # Alternative: asec(var/a), but acos(a/x) is more common in textbooks.
     back3 = acos(a / var)
     result = _apply_trig_sub(pattern3, sub3, back3)
     if result:
         return result
 
-    pattern3_1 = (var**2 - a)**sqrt_pow
+    pattern3_1 = (var ** 2 - a) ** sqrt_pow
     result = _apply_trig_sub(pattern3_1, sub3, back3)
     if result:
         return result
@@ -251,9 +249,9 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
 
 
 def try_undetermined_coeffs_for_radicals(expr: Expr, var: Symbol) -> RuleFunctionReturn:
-    """Attempt to solve integrals of the form (P(x))/(sqrt(ax^2+bx+c)) dx using undetermined coefficients method.
+    """Attempt to solve integrals of the form (P(x))/(sqrt(ax^2+bx+c)) dx using undetermined coefficients' method.
 
-    For integrals of the form  (P(x))/(sqrt(ax^2+bx+c)) dx where P(x) is a polynomial,
+    For integrals of the form (P(x))/(sqrt(ax^2+bx+c)) dx where P(x) is a polynomial,
     we assume the antiderivative has the form Q(x)*sqrt(ax^2+bx+c) + K ((1/sqrt(ax^2+bx+c)) dx)
     where Q(x) is a polynomial of degree deg(P)-1, and K is a constant.
     """
@@ -282,18 +280,17 @@ def try_undetermined_coeffs_for_radicals(expr: Expr, var: Symbol) -> RuleFunctio
     # Generate polynomial Q(x) of degree (num_degree - 1)
     # Q(x) = C0 + C1*x + C2*x**2 + ... + C_{m}*x**m where m = num_degree - 1
     m = num_degree - 1
-    coeffs = symbols(f'C0:{m+1}')  # C0, C1, ..., Cm
-    Q = sum(coeffs[i] * var**i for i in range(m+1))
+    coeffs = symbols(f'C0:{m + 1}')  # C0, C1, ..., Cm
+    Q = sum(coeffs[i] * var ** i for i in range(m + 1))
 
     # Constant K for the integral term
     K = Symbol('K')
 
     # Assumed antiderivative: Q(x)*sqrt(radicand) + K * ∫(1/sqrt(radicand)) dx
-    assumed_antiderivative = Q * \
-        sqrt(radicand) + K * Integral(1/sqrt(radicand), var)
+    assumed_antiderivative = Q * sqrt(radicand) + K * Integral(1 / sqrt(radicand), var)
 
     # Differentiate assumed antiderivative
-    diff_assumed = diff(assumed_antiderivative, var).expand().simplify()
+    diff_assumed = simplify(diff(assumed_antiderivative, var).expand())
 
     # Clear denominator by multiplying by sqrt(radicand)
     lhs_multiplied = (diff_assumed * sqrt(radicand)).expand()
@@ -317,13 +314,13 @@ def try_undetermined_coeffs_for_radicals(expr: Expr, var: Symbol) -> RuleFunctio
     if not solutions or len(solutions) == 0:
         return None
 
-    # Use first solution
+    # Use the first solution
     sol = solutions[0]
-    Q_solved = Q.subs(sol)
-    K_val = sol[K]
+    Q_solved = Q.subs(sol)  # type: ignore
+    K_val = sol[K]  # type: ignore
 
     # Construct final result
-    integral_sqrt_inv = Integral(1/sqrt(radicand), var)
+    integral_sqrt_inv = Integral(1 / sqrt(radicand), var)
     result = Q_solved * sqrt(radicand) + K_val * integral_sqrt_inv
 
     # Generate coefficient display string
@@ -334,7 +331,7 @@ def try_undetermined_coeffs_for_radicals(expr: Expr, var: Symbol) -> RuleFunctio
 
     coeff_values.append(f"K = {latex(K_val)}")
 
-    if not coeff_values:  # Handle case where all coefficients are zero
+    if not coeff_values:  # Handle the case where all coefficients are zero
         coeff_display = "所有系数均为零"
     else:
         coeff_display = rf",\;".join(coeff_values)
@@ -367,13 +364,14 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
     if isinstance(expr, log) and isinstance(expr.args[0], Add):
         return None
 
-    # Collect all power expressions that are proper fractional powers of x
+    # Collect all power expressions that are proper fractional powers of x.
     candidates = [atom for atom in expr.atoms(Pow) if isinstance(
         atom.exp, Rational) and -1 < atom.exp < 1 and atom.base.has(var)]
 
     # Sort by depth (simplest first) – optional but improves success rate
     candidates.sort(key=lambda r: r.count_ops())
 
+    x_of_u, u = None, None
     for rad in candidates:
         base, _exp = rad.base, rad.exp  # rad = base**exp
         q = _exp.q  # denominator
@@ -381,10 +379,10 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
 
         # We set u = rad = base**(p/q), then base = u**(q/p)
         # To proceed, we need to express x in terms of u.
-        # Solve base = u**(q/p) for x
+        # Solve base = u**(q/p) for x.
         try:
             u = step_gene.get_available_sym(var)
-            equation = Eq(base, u**(Rational(q, p)))
+            equation = Eq(base, u ** (Rational(q, p)))
             sol = solve(equation, var)
             if not sol:
                 continue
@@ -394,7 +392,7 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
             if x_of_u.has(-1) and -x_of_u in sol:
                 x_of_u = -x_of_u
         except Exception:
-            continue
+            pass
 
         try:
             dx_du = diff(x_of_u, u)
@@ -405,7 +403,7 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
             if new_expr.has(var) or new_expr.has(rad):
                 continue
             new_expr = simplify(new_expr * dx_du)
-            # Use a temporary variable with positive real assumptions to aid radical simplification
+            # Use a temporary variable with positive real assumptions to aid radical simplification.
             _t = Symbol('t', real=True, positive=True)
             new_expr = simplify(new_expr.subs(u, _t)).subs(_t, u).replace(
                 Abs, lambda arg: arg)

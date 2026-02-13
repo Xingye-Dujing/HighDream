@@ -10,6 +10,7 @@ and handles data processing, error handling, and result formatting.
 # import uuid
 # form config import TREES_DIR
 from typing import Any, Dict, Tuple
+
 from sympy import Symbol, preorder_traversal, latex, sympify
 
 from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
@@ -56,7 +57,7 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
 
     Args:
         operation_type (str): Type of mathematical operation to perform
-        data (Dict[str, Any]): Input parameters for the computation
+        data (Dict[str, Any]): Input parameters for the computation.
 
     Returns:
         Tuple[bool, Any]: A tuple containing:
@@ -91,10 +92,10 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
         variable = data.get('variable', 'x')
 
         if operation_type == 'diff':
-            return True, _calculators['diff']().compute_latex(expression, Symbol(variable))
+            return True, _calculators['diff']().compute_latex(expression, Symbol(variable))  # type: ignore
 
         if operation_type == 'integral':
-            return True, _calculators['integral']().compute_latex(expression, Symbol(variable))
+            return True, _calculators['integral']().compute_latex(expression, Symbol(variable))  # type: ignore
 
         if operation_type == 'limit':
             point = sympify(data.get('point', '0'))
@@ -183,7 +184,7 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
         if operation_type == 'linear-solver':
             parts = expression.split('\n')
             if len(parts) < 2:
-                return False, "First line should be matrix A, second line vector b"
+                return False, "The first line should be matrix A, second line vector b."
             A, b = parts[0], parts[1]
             solver = _calculators['linear_solver']()
             solver.solve(A, b)

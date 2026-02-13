@@ -1,12 +1,13 @@
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
+
 from sympy import (
-    Expr, Interval, Intersection, Limit, Pow, S, Symbol,
+    Basic, Expr, Interval, Intersection, Limit, Pow, S, Symbol,
     acos, asin, limit, log, oo, simplify, solveset, zoo
 )
 from sympy.core.relational import Relational
 
 
-def detect_feasible_directions(expr: Expr, var: Symbol, point: Expr) -> Dict[str, bool]:
+def detect_feasible_directions(expr: Basic | Expr, var: Symbol, point: Expr) -> Dict[str, bool]:
     """Determine whether left/right limits are potentially computable based on domain constraints.
 
     This function analyzes the expression's subcomponents (logarithms, even roots, inverse trigonometric
@@ -17,8 +18,8 @@ def detect_feasible_directions(expr: Expr, var: Symbol, point: Expr) -> Dict[str
     near the point from that side.
 
     Args:
-        expr (Expr): The symbolic expression to analyze.
-        var (Symbol): The variable with respect to which the limit is taken.
+        expr (Expr): The symbolic expression to analyze,
+        var (Symbol): The variable about which the limit is taken,
         point (Expr): The limit point (e.g., 0, oo).
 
     Returns:
@@ -38,12 +39,12 @@ def detect_feasible_directions(expr: Expr, var: Symbol, point: Expr) -> Dict[str
     if point in (oo, -oo):
         return {'left': True, 'right': True}
 
-    # Early exit: if point is not real, directional limits are ill-defined in real calculus
+    # Early exit: if point is unreal, directional limits are ill-defined in real calculus
     if not point.is_real:
         return {'left': False, 'right': False}
 
     # Collect domain constraints as relational expressions (e.g., f(var) > 0)
-    constraints: List[Relational] = []
+    constraints: List[bool] = []
 
     # 1. Logarithms: log(u) requires u > 0
     for log_expr in expr.atoms(log):
@@ -59,8 +60,8 @@ def detect_feasible_directions(expr: Expr, var: Symbol, point: Expr) -> Dict[str
     # 3. Inverse sine/cosine: asin(u), acos(u) require -1 <= u <= 1
     for inv_trig in expr.atoms(asin, acos):
         arg = inv_trig.args[0]
-        constraints.append(arg >= -1)
-        constraints.append(arg <= 1)
+        constraints.append(arg >= -1)  # type: ignore
+        constraints.append(arg <= 1)  # type: ignore
 
     # If no domain-restricting subexpressions, all directions are feasible
     if not constraints:
@@ -85,7 +86,7 @@ def detect_feasible_directions(expr: Expr, var: Symbol, point: Expr) -> Dict[str
             # Cannot solve symbolically to assume constraint can be satisfied nearby
             continue
 
-        # If solution set is empty globally, mark both directions as infeasible
+        # If the solution set is empty globally, mark both directions as infeasible.
         if solution_set.is_empty:
             feasible['left'] = feasible['right'] = False
             break
@@ -98,7 +99,7 @@ def detect_feasible_directions(expr: Expr, var: Symbol, point: Expr) -> Dict[str
             # Fallback: assume feasible if intersection fails
             continue
 
-        # A direction is infeasible only if the intersection is provably empty
+        # A direction is infeasible only if the intersection is provably empty.
         if hasattr(left_intersect, 'is_empty') and left_intersect.is_empty:
             feasible['left'] = False
         if hasattr(right_intersect, 'is_empty') and right_intersect.is_empty:
@@ -111,10 +112,10 @@ def detect_feasible_directions(expr: Expr, var: Symbol, point: Expr) -> Dict[str
     return feasible
 
 
-def get_limit_args(context: Dict[str, Union[Symbol, Expr, str]]) -> Tuple[Symbol, Expr, str]:
+def get_limit_args(context: Dict[str, Symbol | Expr | str]) -> Tuple[Symbol, Expr, str]:
     """Extract limit parameters from the evaluation context.
 
-    Retrieves the limit variable, point, and direction from a context dictionary.
+    Retrieves the limit variable, point and direction from a context dictionary.
     This utility ensures consistent access to limit metadata across matchers and solvers.
     """
     var, point = context['variable'], context['point']
@@ -138,7 +139,7 @@ def check_limit_exists(expr: Expr, var: Symbol, point: Expr, direction: str) -> 
 
 
 def check_limit_exists_oo(lim_val: Expr) -> bool:
-    """Determine whether a limit value is considered to exis" in extended real analysis.
+    """Determine whether a limit value is considered to exist" in extended real analysis.
 
     In the context of real-variable calculus, a limit is often said to exist if it
     evaluates to a finite real number or diverges to positive/negative infinity.
@@ -187,7 +188,7 @@ def is_constant(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
     depend on free symbols and is not infinite (oo, -oo, zoo) or indeterminate (NaN).
 
     This function returns True if the limit exists and is a finite, symbol-free number.
-    Expressions like sin(pi/2) (which evaluates to 1) are accepted; expressions like x,
+    Expressions like sin(pi/2) (that evaluate to 1) are accepted; expressions like x,
     a+1 (with free symbol a), or oo are not.
     """
 
@@ -198,7 +199,7 @@ def is_constant(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
         return False
 
 
-def check_function_tends_to_zero(f: Expr, var: Symbol, point: Expr, direction: str) -> bool:
+def check_function_tends_to_zero(f: [Basic | Expr], var: Symbol, point: Expr, direction: str) -> bool:
     """Check whether a function tends to zero in a given directional limit.
 
     Attempts to compute the one-sided or two-sided limit of f as var approaches point
@@ -211,25 +212,25 @@ def check_function_tends_to_zero(f: Expr, var: Symbol, point: Expr, direction: s
         return False
 
 
-def is_indeterminate_form(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
+def is_indeterminate_form(expr: Expr, var: Symbol, point: [Expr | int], direction: str) -> bool:
     """Determine whether an expression exhibits an indeterminate form at a limit point.
 
     This function analyzes the structure and limit behavior of expr as var to point
     from the given direction to detect classical indeterminate forms:
 
-    - 0/0, oo/oo
-    - 0*oo
-    - oo-oo
-    - 1^oo, 0^0, oo^0
+    - 0/0, oo/oo.
+    - 0*oo.
+    - oo-oo.
+    - 1^oo, 0^0, oo^0.
 
     Note that this is a heuristic structural check, not a definitive mathematical test.
     It evaluates subexpression limits to classify the form. If any sub-limit fails to evaluate,
     the function conservatively assumes an indeterminate form may be present.
 
     Args:
-        expr (Expr): The symbolic expression to analyze.
-        var (Symbol): The variable approaching the limit point.
-        point (Expr): The point being approached (e.g., 0, oo).
+        expr (Expr): The symbolic expression to analyze,
+        var (Symbol): The variable approaching the limit point,
+        point (Expr): The point being approached (e.g., 0, oo),
         direction (str): Direction of approach ('+' or '-').
 
     Returns:
@@ -238,27 +239,27 @@ def is_indeterminate_form(expr: Expr, var: Symbol, point: Expr, direction: str) 
 
     Examples:
         >>> x = symbols('x')
-        >>> is_indeterminate_form(sin(x)/x, x, 0, '+')      # 0/0
+        >>> is_indeterminate_form(sin(x)/x, x, 0, '+') # 0/0
         True
-        >>> is_indeterminate_form(x*log(x), x, 0, '+')     # 0*(-oo)
+        >>> is_indeterminate_form(x*log(x), x, 0, '+') # 0*(-oo)
         True
-        >>> is_indeterminate_form(exp(x)/x, x, oo, '+')      # oo/oo
+        >>> is_indeterminate_form(exp(x)/x, x, oo, '+') # oo/oo
         True
-        >>> is_indeterminate_form(x+1, x, 0, '+')          # regular
+        >>> is_indeterminate_form(x+1, x, 0, '+') # regular
         False
     """
     try:
         # Helper to safely compute sub-limits
-        def _limit(e: Expr) -> Expr:
-            return simplify(limit(e, var, point, dir=direction))
+        def _limit(e: Expr, v: Symbol, p: [Expr | int], d: str) -> Expr:
+            return simplify(limit(e, v, p, dir=d))
 
-        # Case 1: a/b to check 0/0 or oo/oo
+        # Case 1: a/b to check 0/0 or oo/oo.
         if expr.is_Mul:
             numer, denom = expr.as_numer_denom()
             if denom != 1:  # Actually a division
                 try:
-                    L_num = _limit(numer)
-                    L_den = _limit(denom)
+                    L_num = _limit(numer, var, point, direction)
+                    L_den = _limit(denom, var, point, direction)
                 except Exception:
                     return True  # Conservative: assume indeterminate
 
@@ -276,7 +277,7 @@ def is_indeterminate_form(expr: Expr, var: Symbol, point: Expr, direction: str) 
             has_inf = False
             for f in factors:
                 try:
-                    L_f = _limit(f)
+                    L_f = _limit(f, var, point, direction)
                 except Exception:
                     return True
                 if L_f == S.Zero:
@@ -293,7 +294,7 @@ def is_indeterminate_form(expr: Expr, var: Symbol, point: Expr, direction: str) 
             has_neg_inf = False
             for t in terms:
                 try:
-                    L_t = _limit(t)
+                    L_t = _limit(t, var, point, direction)
                 except Exception:
                     return True
                 if L_t == oo:
@@ -307,8 +308,8 @@ def is_indeterminate_form(expr: Expr, var: Symbol, point: Expr, direction: str) 
         if expr.is_Pow:
             base, exp = expr.base, expr.exp
             try:
-                L_base = _limit(base)
-                L_exp = _limit(exp)
+                L_base = _limit(base, var, point, direction)
+                L_exp = _limit(exp, var, point, direction)
             except Exception:
                 return True
 
@@ -325,11 +326,12 @@ def is_indeterminate_form(expr: Expr, var: Symbol, point: Expr, direction: str) 
         return False
 
     except Exception:
-        # Top-level fallback: if anything goes wrong, assume indeterminate
+        # The top-level fallback: if anything goes wrong, assume indeterminate
         return True
 
 
-def check_combination_indeterminate(part1: Expr, part2: Expr, var: Symbol, point: Expr, direction: str, operation: str) -> bool:
+def check_combination_indeterminate(part1: Expr, part2: Expr, var: Symbol, point: Expr | int, direction: str,
+                                    operation: str) -> bool:
     """Check whether combining two subexpressions yields an indeterminate form.
 
     This function evaluates the limits of part1 and part2 as var to point from the
@@ -339,13 +341,13 @@ def check_combination_indeterminate(part1: Expr, part2: Expr, var: Symbol, point
     - For operation='add': detects oo-oo (i.e., oo+(-oo) or -oo+oo).
 
     Args:
-        part1 (Expr): First subexpression.
-        part2 (Expr): Second subexpression.
-        var (Symbol): Limit variable.
-        point (Expr): Point being approached (e.g., 0, oo).
-        direction (str): Direction of approach; typically '+' or '-'.
+        part1 (Expr): First subexpression,
+        part2 (Expr): Second subexpression,
+        var (Symbol): Limit variable,
+        point (Expr): Point being approached (e.g., 0, oo),
+        direction (str): Direction of approach; typically '+' or '-',
         operation (str): Binary operation to simulate. Must be either:
-            - 'mul' for multiplication,
+            - 'mul' for multiplication.
             - 'add' for addition.
 
     Returns:
@@ -363,11 +365,11 @@ def check_combination_indeterminate(part1: Expr, part2: Expr, var: Symbol, point
 
     Examples:
         >>> x = symbols('x')
-        >>> check_combination_indeterminate(x, 1/x, x, 0, '+', 'mul')   # 0*oo
+        >>> check_combination_indeterminate(x, 1/x, x, 0, '+', 'mul') # 0*oo
         True
-        >>> check_combination_indeterminate(1/x, -1/x, x, 0, '+', 'add')  # oo+(-oo)
+        >>> check_combination_indeterminate(1/x, -1/x, x, 0, '+', 'add') # oo+(-oo)
         True
-        >>> check_combination_indeterminate(x, x, x, 0, '+', 'mul')       # 0*0
+        >>> check_combination_indeterminate(x, x, x, 0, '+', 'mul') # 0*0
         False
     """
     if operation not in ('mul', 'add'):

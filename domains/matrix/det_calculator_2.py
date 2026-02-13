@@ -1,23 +1,19 @@
-from typing import Deque, Dict, List, Tuple
 from collections import deque
+from typing import Deque, Dict, List, Tuple
+
 from sympy import Determinant, Expr, Matrix, Symbol, latex, simplify, sympify
 
 from core import BaseCalculator
-from utils import Context, MatcherList, Operation, RuleDict
 from domains.matrix import DetStepGenerator, MATCHER_LIST, RULE_DICT
+from utils import Context, Operation
 
 
 class DetCalculator(BaseCalculator):
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(Determinant, RULE_DICT, MATCHER_LIST)
         self.step_generator = DetStepGenerator()
 
-    def init_key_property(self) -> None:
-        self.operation: Operation = Determinant
-        self.rule_dict: RuleDict = RULE_DICT
-        self.matcher_list: MatcherList = MATCHER_LIST
-
-    def _get_cached_result(self, expr: Expr, operation: Operation, **context: Context) -> Operation:
+    def _get_cached_operation(self, expr: Matrix, operation: Operation, **context: Context) -> Operation:
         """Return a cached result if available, otherwise compute and cache the result."""
         # Solve the problem: unhashable type: 'MutableDenseMatrix'
         key = (str(expr), str(context))
@@ -40,15 +36,14 @@ class DetCalculator(BaseCalculator):
         else:
             context['variable'] = Symbol("x")
 
-        initial_operation = self._get_cached_result(expr, operation, **context)
+        initial_operation = self._get_cached_operation(expr, operation, **context)
         self.step_generator.add_step(initial_operation)
 
         # BFS using a queue.
-        queue: Deque[Expr] = deque([expr])
+        queue: Deque[Basic | Matrix] = deque([expr])
         # Solve the problem: unhashable type: 'MutableDenseMatrix'
         expr_key = str(expr)
-        expr_to_operation: Dict[Expr, Operation] = {
-            expr_key: initial_operation}
+        expr_to_operation: Dict[str, Operation] = {expr_key: initial_operation}
 
         while queue:
             direct_compute = False
@@ -104,13 +99,13 @@ class DetCalculator(BaseCalculator):
                 self.step_generator.steps[-1] = simplified_expr
                 final_expr = simplified_expr
 
-            self._final_postprocess(final_expr)
+            self.final_postprocess(final_expr)
 
     def _sympify(self, matrix_expr: str) -> Matrix:
         """Convert the input expression to a SymPy matrix."""
         return Matrix(sympify(matrix_expr))
 
-    def _perform_operation(self, matrix: Matrix, _operation: Operation, **_context: Context) -> Operation:
+    def _perform_operation(self, matrix: Expr | Matrix, _operation: Operation, **_context: Context) -> Operation:
         return Determinant(matrix)
 
     def compute_list(self, matrix_expr: str) -> Tuple[List[Expr], List[str]]:

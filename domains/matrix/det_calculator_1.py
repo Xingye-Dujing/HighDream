@@ -1,4 +1,5 @@
 from typing import List, Tuple
+
 from sympy import Expr, Matrix, latex, simplify, sympify
 
 from domains.matrix import RefStepGenerator
@@ -8,11 +9,11 @@ class DeterminantCalculator:
     """A class for calculating matrix determinants using various methods with step-by-step solutions.
 
     This calculator provides multiple approaches to compute determinants including:
-    - Laplace expansion
-    - Sarrus rule (for 3x3 matrices)
-    - LU decomposition
-    - Gaussian elimination
-    - Property-based simplification
+    - Laplace expansion.
+    - Sarrus rule (for 3*3 matrices).
+    - LU decomposition.
+    - Gaussian elimination.
+    - Property-based simplification.
     """
 
     def __init__(self) -> None:
@@ -23,11 +24,12 @@ class DeterminantCalculator:
         """Reset the step generator to start fresh."""
         self.step_generator.reset()
 
-    def _parse_matrix_input(self, matrix_input: str) -> Matrix:
+    @staticmethod
+    def _parse_matrix_input(matrix_input: str) -> Matrix:
         """Parse the input string into a SymPy Matrix."""
         try:
             M = Matrix(sympify(matrix_input))
-            if M.shape[0] != M.shape[1]:  # Matrix must be square
+            if M.shape[0] != M.shape[1]:  # The Matrix must be square
                 raise ValueError("矩阵必须为方阵")
             return M
         except Exception as e:
@@ -40,11 +42,12 @@ class DeterminantCalculator:
         self.step_generator.add_step(title, "")
         self.step_generator.add_step("", "")
 
-    def _best_expand_axis(self, M: Matrix) -> Tuple[str, int]:
-        """Find the best axis (row/column) to expand along based on number of non-zero elements.
+    @staticmethod
+    def _best_expand_axis(M: Matrix) -> Tuple[str, int]:
+        """Find the best axis (row/column) to expand along based on the number of non-zero elements.
 
         Returns:
-            Tuple: A tuple containing ("row"/"col", index) of the best expansion axis
+            Tuple: A tuple containing ("row"/"col", index) of the best expansion axis.
         """
         n = M.shape[0]
         min_nonzeros = n + 1
@@ -67,7 +70,7 @@ class DeterminantCalculator:
         Returns:
             The calculated determinant value
         """
-        # Handle direct cases for 1x1 and 2x2 matrices
+        # Handle direct cases for 1*1 and 2*2 matrices
         n = A.shape[0]
         original_n = n
         if n == 1:
@@ -79,34 +82,13 @@ class DeterminantCalculator:
             self.step_generator.add_step(res, rf"$2×2\,行列式$")
             return res
 
-        # Format a term (coeff, obj) into latex (obj can be Matrix or scalar)
-        def term_to_latex(term):
-            coeff, obj = term
-            # Ignore terms with zero coefficient
-            if coeff == 0:
-                return None
-            if isinstance(obj, Matrix):
-                # obj is a submatrix: display coeff * det(obj)
-                if coeff == 1:
-                    return f"{latex(obj)}"
-                if coeff == -1:
-                    return f"-{latex(obj)}"
-                return f"{latex(coeff)} \\cdot {latex(obj)}"
-
-            # obj is a scalar
-            if coeff == 1:
-                return latex(obj)
-            if coeff == -1:
-                return f"-{latex(obj)}"
-            return f"{latex(sympify(coeff * obj))}"
-
         # Construct expression latex (join terms with + and replace '+-' with '-')
         def expr_to_latex(terms):
             parts = []
             for t in terms:
-                s = term_to_latex(t)
-                if s:
-                    parts.append(s)
+                s_ = term_to_latex(t)
+                if s_:
+                    parts.append(s_)
             if not parts:
                 return "0"
             expr = "+".join(parts)
@@ -118,7 +100,7 @@ class DeterminantCalculator:
         # Term is (coeff, obj), representing coeff * det(obj)
         active_terms = [(1, A)]
 
-        # Main loop: find first term to expand and replace it, record before/after expressions
+        # Main loop: find first term to expand and replace it, record before/after expressions.
         while True:
             idx_to_expand = None
             # Find first term that needs expansion
@@ -133,7 +115,7 @@ class DeterminantCalculator:
 
             coeff, M = active_terms[idx_to_expand]
             axis, ind = self._best_expand_axis(M)
-            expand_desc = rf"按第\,{ind+1}\,{'行' if axis == 'row' else '列'}展开"
+            expand_desc = rf"按第\,{ind + 1}\,{'行' if axis == 'row' else '列'}展开"
 
             n = M.shape[0]
             new_terms = []
@@ -153,11 +135,11 @@ class DeterminantCalculator:
 
                 new_coeff = simplify(coeff * s * a)
 
-                # If minor is 1x1 or 2x2, calculate directly to replace with scalar term
+                # If a minor is 1*1 or 2*2, calculate directly to replace with the scalar term.
                 if minor.shape[0] == 1:
                     scalar = simplify(minor[0, 0])
                     new_terms.append((new_coeff, scalar))
-                # For 3x3 matrices, still show minor expansion
+                # For 3*3 matrices, still show minor expansion
                 elif minor.shape[0] == 2 and original_n != 3:
                     det2 = simplify(
                         minor[0, 0] * minor[1, 1] - minor[0, 1] * minor[1, 0])
@@ -166,8 +148,7 @@ class DeterminantCalculator:
                     new_terms.append((new_coeff, minor))
 
             # Replace the idx_to_expand term in active_terms with new_terms
-            active_terms = active_terms[:idx_to_expand] + \
-                new_terms + active_terms[idx_to_expand + 1:]
+            active_terms = active_terms[:idx_to_expand] + new_terms + active_terms[idx_to_expand + 1:]
             new_expr = expr_to_latex(active_terms)
 
             # Record this step's equality chain
@@ -175,14 +156,14 @@ class DeterminantCalculator:
                 rf"$\;\Rightarrow\;{new_expr}$", expand_desc)
             self.step_generator.add_step("", "")
 
-        final_sum = simplify(sum(simplify(c * o) for c, o in active_terms))
+        final_sum = simplify(sum(simplify(c * o) for c, o in active_terms))  # type: ignore
         self.step_generator.add_step(
             rf'$\;\Rightarrow\;{latex(final_sum)}$', "最终结果")
 
         return final_sum
 
     # Sarrus rule (3x3)
-    def _method_sarrus(self, A: Matrix) -> Expr:
+    def _method_sarrus(self, A: Matrix) -> Expr | None:
         """Calculate determinant using Sarrus rule for 3x3 matrices.
 
         Returns:
@@ -197,16 +178,20 @@ class DeterminantCalculator:
         neg = simplify(c * e * g + a * f * h + b * d * i)
         res = simplify(pos - neg)
         self.step_generator.add_step(
-            pos, rf"$主和\,=\,{latex(a)} \times {latex(e)} \times {latex(i)}+{latex(b)} \times {latex(f)} \times {latex(g)}+{latex(c)} \times {latex(d)} \times {latex(h)}$")
+            pos,
+            rf"$主和\,=\,{latex(a)} \times {latex(e)} \times {latex(i)}+{latex(b)} \times {latex(f)}"
+            rf"\times {latex(g)}+{latex(c)} \times {latex(d)} \times {latex(h)}$")
         self.step_generator.add_step("", "")
         self.step_generator.add_step(
-            neg, rf"$副和\,=\,{latex(c)} \times {latex(e)} \times {latex(g)}+{latex(a)} \times {latex(f)} \times {latex(h)}+{latex(b)} \times {latex(d)} \times {latex(i)}$")
+            neg,
+            rf"$副和\,=\,{latex(c)} \times {latex(e)} \times {latex(g)}+{latex(a)} \times {latex(f)}"
+            rf"\times {latex(h)}+{latex(b)} \times {latex(d)} \times {latex(i)}$")
         self.step_generator.add_step("", "")
         self.step_generator.add_step(
             res, rf"$结果\,=\,主和 -\,副和\,=\,{latex(res)}$")
         return res
 
-    def _method_lu(self, A: Matrix) -> Expr:
+    def _method_lu(self, A: Matrix) -> Expr | None:
         """Calculate determinant using LU decomposition method.
 
         Returns:
@@ -222,7 +207,7 @@ class DeterminantCalculator:
         P = Matrix.eye(A.rows)
         for (i, j) in perm:
             P.row_swap(i, j)
-        # Calculate number of permutations (row swaps)
+        # Calculate the number of permutations (row swaps)
         swap_count = len(perm)
         # Each row swap flips the determinant sign
         det_P = (-1) ** swap_count
@@ -242,7 +227,8 @@ class DeterminantCalculator:
             self.step_generator.add_step("", "")
             self.step_generator.add_step(
                 det_val,
-                rf"$|A|=|P| \cdot |L| \cdot |U|={det_P} \times {latex(L.det())} \times {latex(U.det())}={latex(det_val)}$"
+                rf"$|A|=|P| \cdot |L| \cdot |U|={det_P} \times {latex(L.det())}"
+                rf"\times {latex(U.det())}={latex(det_val)}$"
             )
         else:
             # No row swaps
@@ -258,13 +244,13 @@ class DeterminantCalculator:
         return det_val
 
     # Properties method (quick detection of proportional rows/triangular etc.)
-    def _method_properties(self, A: Matrix) -> Expr:
+    def _method_properties(self, A: Matrix) -> Expr | int | None:
         """Check for special matrix properties that simplify determinant calculation.
 
         This method checks for:
-        - Zero rows/columns
-        - Identical or proportional rows/columns
-        - Diagonal/upper/lower triangular matrices
+        - Zero rows/columns.
+        - Identical or proportional rows/columns.
+        - Diagonal/upper/lower triangular matrices.
 
         Returns:
             Determinant value if special property found, otherwise None
@@ -275,13 +261,13 @@ class DeterminantCalculator:
         for i in range(n):
             if all(simplify(A[i, j]) == 0 for j in range(m)):
                 self.step_generator.add_step(
-                    0, rf"$第\,{i+1}\,行全为\,0$")
+                    0, rf"$第\,{i + 1}\,行全为\,0$")
                 return 0
         # Zero column
         for j in range(m):
             if all(simplify(A[i, j]) == 0 for i in range(n)):
                 self.step_generator.add_step(
-                    0, rf"$第\,{j+1}\,列全为\,0$")
+                    0, rf"$第\,{j + 1}\,列全为\,0$")
                 return 0
 
         # Identical or proportional rows
@@ -289,7 +275,7 @@ class DeterminantCalculator:
             for j in range(i + 1, n):
                 if all(simplify(A[i, k] - A[j, k]) == 0 for k in range(A.cols)):
                     self.step_generator.add_step(
-                        0, rf"$第\,{i+1}\,行\,=\,第\,{j+1}\,行$")
+                        0, rf"$第\,{i + 1}\,行\,=\,第\,{j + 1}\,行$")
                     return 0
                 # Proportional (avoid division by zero)
                 try:
@@ -304,7 +290,7 @@ class DeterminantCalculator:
                         ratios.append(simplify(A[j, k] / A[i, k]))
                     if valid and ratios and all(r == ratios[0] for r in ratios):
                         self.step_generator.add_step(
-                            0, rf"$第\,{j+1}\,行\,=\,({latex(ratios[0])}) \\cdot 第\,{i+1}\,行$")
+                            0, rf"$第\,{j + 1}\,行\,=\,({latex(ratios[0])}) \\cdot 第\,{i + 1}\,行$")
                         return 0
                 except Exception:
                     pass
@@ -314,7 +300,7 @@ class DeterminantCalculator:
             for j in range(i + 1, m):
                 if all(simplify(A[k, i] - A[k, j]) == 0 for k in range(A.rows)):
                     self.step_generator.add_step(
-                        0, rf"$第\,{i+1}\,列\,=\,第\,{j+1}\,列$")
+                        0, rf"$第\,{i + 1}\,列\,=\,第\,{j + 1}\,列$")
                     return 0
                 # Proportional (avoid division by zero)
                 try:
@@ -329,7 +315,7 @@ class DeterminantCalculator:
                         ratios.append(simplify(A[k, j] / A[k, i]))
                     if valid and ratios and all(r == ratios[0] for r in ratios):
                         self.step_generator.add_step(
-                            0, rf"$第\,{j+1}\,列\,=\,({latex(ratios[0])}) \\cdot 第\,{i+1}\,列$")
+                            0, rf"$第\,{j + 1}\,列\,=\,({latex(ratios[0])}) \\cdot 第\,{i + 1}\,列$")
                         return 0
                 except Exception:
                     pass
@@ -369,7 +355,7 @@ class DeterminantCalculator:
                         M.row_swap(pivot_row, swap_row)
                         self.step_generator.add_step("", "")
                         self.step_generator.add_step(
-                            M.copy(), rf"$交换第\,{pivot_row+1}\,行和\,{swap_row+1}\,行(正负号取反一次)$")
+                            M.copy(), rf"$交换第\,{pivot_row + 1}\,行和\,{swap_row + 1}\,行(正负号取反一次)$")
                         sign *= -1
                         found = True
                         pivot_elem = M[pivot_row, pivot_row]
@@ -378,37 +364,40 @@ class DeterminantCalculator:
                     # No pivot available for this column, continue to next column
                     self.step_generator.add_step("", "")
                     self.step_generator.add_step(
-                        M.copy(), rf"$第\,{pivot_row+1}\,列无可用主元, 跳过(此时已可得出行列式的值为\,0)$")
+                        M.copy(), rf"$第\,{pivot_row + 1}\,列无可用主元, 跳过(此时已可得出行列式的值为\,0)$")
                     continue
 
             # Assuming all symbolic expressions (denominators) are non-zero, continue elimination
             for r in range(pivot_row + 1, rows):
                 if simplify(M[r, pivot_row]) == 0:
                     continue
-                factor = simplify(M[r, pivot_row] / pivot_elem)
+                factor_ = simplify(M[r, pivot_row] / pivot_elem)
                 # R_r <- R_r - factor * R_pivot
-                M.row_op(r, lambda v, j, pr=pivot_row,
-                         factor=factor: simplify(v - factor * M[pr, j]))
+                M.row_op(r, lambda v, j, pr=pivot_row, factor=factor_: simplify(v - factor * M[pr, j]))
                 self.step_generator.add_step("", "")
 
-                if factor == 1:
+                if factor_ == 1:
                     self.step_generator.add_step(
-                        M.copy(), f"$R_{{{r+1}}} - R_{{{pivot_row+1}}} \\to R_{{{r+1}}}$")
-                elif factor == -1:
+                        M.copy(), f"$R_{{{r + 1}}} - R_{{{pivot_row + 1}}} \\to R_{{{r + 1}}}$")
+                elif factor_ == -1:
                     self.step_generator.add_step(
-                        M.copy(), f"$R_{{{r+1}}} + R_{{{pivot_row+1}}} \\to R_{{{r+1}}}$")
-                elif factor < 0:
+                        M.copy(), f"$R_{{{r + 1}}} + R_{{{pivot_row + 1}}} \\to R_{{{r + 1}}}$")
+                elif factor_ < 0:
                     self.step_generator.add_step(
-                        M.copy(), f"$R_{{{r+1}}} + \\left({latex(-factor)}\\right) \\cdot R_{{{pivot_row+1}}} \\to R_{{{r+1}}}$")
+                        M.copy(),
+                        f"$R_{{{r + 1}}} + \\left({latex(-factor_)}\\right) \\cdot R_{{{pivot_row + 1}}}"
+                        rf"\\to R_{{{r + 1}}}$")
                 else:
                     self.step_generator.add_step(
-                        M.copy(), f"$R_{{{r+1}}} - \\left({latex(factor)}\\right) \\cdot R_{{{pivot_row+1}}} \\to R_{{{r+1}}}$")
+                        M.copy(),
+                        f"$R_{{{r + 1}}} - \\left({latex(factor_)}\\right) \\cdot R_{{{pivot_row + 1}}}"
+                        rf"\\to R_{{{r + 1}}}$")
 
         # Elimination complete, calculate diagonal product multiplied by sign
         diag_prod = 1
         for i in range(rows):
             diag_prod *= M[i, i]
-        det_val = simplify(sign * diag_prod)
+        det_val = simplify(sign * diag_prod)  # type: ignore
         self.step_generator.add_step("", "")
         self.step_generator.add_step(
             det_val, rf"$已化为上三角矩阵:\;|A|\,=\,{'' if sign == 1 else '-'}对角线元素乘积$")
@@ -432,7 +421,7 @@ class DeterminantCalculator:
             self.step_generator.add_step(f"$\\Rightarrow 无特殊结构$", "")
         method_count += 1
 
-        # Laplace expansion method (if matrix isn't too large)
+        # Laplace's expansion method (if matrix isn't too large)
         n = A.shape[0]
         if n <= 6:
             self.step_generator.add_step("", "")
@@ -474,7 +463,7 @@ class DeterminantCalculator:
         return steps, explanations
 
     def compute_latex(self, matrix_input: str) -> str:
-        """Compute determinant and return result in LaTeX format.
+        """Compute the determinant and return result in LaTeX format.
 
         Returns:
             str: LaTeX formatted solution steps

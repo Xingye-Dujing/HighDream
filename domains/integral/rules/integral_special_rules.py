@@ -5,20 +5,19 @@ from sympy import (
 )
 from sympy.simplify.fu import fu
 
+from domains.integral.rules.f_x_mul_exp_g_x_rule_help import handle_fx_mul_exp_gx, special_add_split_exp_term
+from domains.integral.rules.parts_rule_help import select_parts_u_dv
+from domains.integral.rules.substitution_rule_help import (
+    try_radical_substitution,
+    try_standard_substitution,
+    try_trig_substitution,
+    try_undetermined_coeffs_for_radicals
+)
 from utils import (
     MatcherFunctionReturn, RuleContext, RuleFunctionReturn,
     can_use_weierstrass, is_elementary_expression
 )
 from utils.latex_formatter import wrap_latex
-from domains.integral import (
-    select_parts_u_dv,
-    try_radical_substitution,
-    try_standard_substitution,
-    try_trig_substitution,
-    try_undetermined_coeffs_for_radicals,
-    special_add_split_exp_term,
-    handle_fx_mul_exp_gx
-)
 
 sqrt_pow = Rational(1, 2)
 minus_sqrt_pow = -Rational(1, 2)
@@ -60,19 +59,17 @@ def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
                 other_factors = [f for f in factors if f != factor]
                 remaining = Mul(*other_factors) if other_factors else 1
 
-                ratio = simplify(remaining/f_prime)
+                ratio = simplify(remaining / f_prime)
                 denominator = f_x
 
                 if ratio.is_constant():
                     find = True
-                    var_latex, f_x_latex = latex(var), latex(f_x)
                     break
 
     if not find:
         return None
 
-    var_latex, den_latex, f_x_latex = latex(
-        var), latex(denominator), latex(f_x)
+    var_latex, den_latex, f_x_latex = latex(var), latex(denominator), latex(f_x)
 
     if ratio.equals(1):
         result = log(Abs(f_x))
@@ -104,14 +101,14 @@ def parts_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply integration by parts: u dv = u v − v du.
 
     Uses the ILAET heuristic to select u from a product of two factors:
-      I — Inverse trig     (e.g., asin(x))
-      L — Logarithmic      (e.g., log(x))
-      A — Algebraic        (e.g., x, x**2)
-      E — Exponential      (e.g., exp(x))
-      T — Trigonometric    (e.g., sin(x))
+      I — Inverse trig (e.g., asin(x))
+      L — Logarithmic (e.g., log(x))
+      A — Algebraic (e.g., x, x**2)
+      E — Exponential (e.g., exp(x))
+      T — Trigonometric (e.g., sin(x))
 
     Works with both products (multi-factor) and single-factor expressions.
-    Handle single-factor expressions by setting dv = 1
+    Handle single-factor expressions by setting dv = 1.
     """
     var = context['variable']
 
@@ -185,8 +182,8 @@ def f_x_mul_exp_g_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn
       - exp(cos(x))*(1-x*sin(x)) dx
       - exp(cos(x))*(1-x*sin(x))+x dx
     """
-    # First try to split the expression into two parts: exp term and another term
-    # Otherwise, anther term will Interfering with the recognition of the f(x)^exp(g(x)) structure
+    # First, try to split the expression into two parts: exp term and another term
+    # Otherwise, another term will Interfere with the recognition of the f(x)^exp(g(x)) structure
     split_exp_term = special_add_split_exp_term(expr, context)
     if split_exp_term:
         return split_exp_term
@@ -195,7 +192,7 @@ def f_x_mul_exp_g_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn
     expr = together(powsimp(expr))
     for arg in expr.args:
         if isinstance(arg, exp):
-            another_term = simplify(expr/arg)
+            another_term = simplify(expr / arg)
             return handle_fx_mul_exp_gx(expr, arg, another_term, context)
     return None
 
@@ -203,13 +200,13 @@ def f_x_mul_exp_g_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn
 def quotient_diff_form_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Handle f(x)/g(x)^2 case by recognition of quotient differential forms.
 
-    eg. x*sin(x)/(x+sin(x))^2"""
+    E.g., x*sin(x)/(x+sin(x))^2"""
 
     var = context['variable']
     step_gene = context['step_generator']
     # Note: fu() can handle standard form simplification of trigonometric functions
     # eg. (cos(x)+1)*tan(x/2)**2 to 1-cos(x)
-    # So we can use simplify(fu(expr)) to simplify trigonometric functions to a simpler form
+    # So we can use simplify(fu(expr)) to simplify trigonometric functions in a simpler form.
     int_result = simplify(fu(integrate(expr, var)))
     if not isinstance(int_result, Mul):
         return None
@@ -220,15 +217,15 @@ def quotient_diff_form_rule(expr: Expr, context: RuleContext) -> RuleFunctionRet
     if int_num.is_constant() or int_den.is_constant():
         return None
     # If the number of operations in the numerator is greater than 3, it is not a simple form
-    # We should try other methods first
+    # We should try other methods first.
     if int_num.count_ops() > 3:
         return None
 
     int_num_diff = diff(int_num, var)
     int_den_diff = diff(int_den, var)
-    need_num = int_num_diff*int_den-int_num*int_den_diff
-    need_expr = simplify(need_num/int_den**2)
-    if simplify(need_expr/expr).has(var):
+    need_num = int_num_diff * int_den - int_num * int_den_diff
+    need_expr = simplify(need_num / int_den ** 2)
+    if simplify(need_expr / expr).has(var):
         return None
 
     var_latex = latex(var)
@@ -236,19 +233,27 @@ def quotient_diff_form_rule(expr: Expr, context: RuleContext) -> RuleFunctionRet
     step_gene.add_step(
         'None', f'$\\int {latex(expr)}\\,\\mathrm{{d}} {var_latex}$')
     step_gene.add_step(
-        'None', f'$= \\int \\frac{{{latex(int_num_diff)}}}{{{latex(int_den)}}}\\,\\mathrm{{d}}{var_latex} - \\int \\frac{{{latex(int_num*int_den_diff)}}}{{{latex(int_den**2)}}}\\,\\mathrm{{d}}{var_latex}$')
+        'None',
+        f'$= \\int \\frac{{{latex(int_num_diff)}}}{{{latex(int_den)}}}\\,\\mathrm{{d}}{var_latex} - '
+        f'\\int \\frac{{{latex(int_num * int_den_diff)}}}{{{latex(int_den ** 2)}}}\\,\\mathrm{{d}}{var_latex}$')
     step_gene.add_step(
-        'None', f'$= \\int \\frac{{{latex(int_num_diff)}}}{{{latex(int_den)}}}\\,\\mathrm{{d}}{var_latex} + \\int {latex(int_num)}\\,\\mathrm{{d}} \\left({latex(1/int_den)}\\right)$')
+        'None',
+        f'$= \\int \\frac{{{latex(int_num_diff)}}}{{{latex(int_den)}}}\\,\\mathrm{{d}}{var_latex} + '
+        f'\\int {latex(int_num)}\\,\\mathrm{{d}} \\left({latex(1 / int_den)}\\right)$')
     step_gene.add_step(
-        'None', f'$= \\int \\frac{{{latex(int_num_diff)}}}{{{latex(int_den)}}}\\,\\mathrm{{d}}{var_latex} + {latex(int_result)} - \\int \\frac{{{latex(int_num_diff)}}}{{{latex(int_den)}}}\\,\\mathrm{{d}}{var_latex}$')
+        'None',
+        f'$= \\int \\frac{{{latex(int_num_diff)}}}{{{latex(int_den)}}}\\,\\mathrm{{d}}{var_latex} + '
+        f'{latex(int_result)} - \\int \\frac{{{latex(int_num_diff)}}}{{{latex(int_den)}}}\\,\\mathrm{{d}}{var_latex}$')
     step_gene.add_step(
         'None', f'$= {latex(int_result)} + C$')
     step_gene.add_step('None', '')
 
     return int_result, (
         f'变换表达式凑商的微分形式:'
-        f'$\\int {latex(expr)}\\,d{var_latex} = \\int \\frac{{{latex(need_num)}}}{{{latex(int_den**2)}}}\\,d{var_latex} ='
-        f"\\int \\frac{{f'({var})g({var})-g'({var})f({var})}}{{g({var})^2}}\\,d{var_latex} = \\frac{{f({var})}}{{g({var})}},\\,"
+        f'$\\int {latex(expr)}\\,d{var_latex} = '
+        f'\\int \\frac{{{latex(need_num)}}}{{{latex(int_den ** 2)}}}\\,d{var_latex} ='
+        f"\\int \\frac{{f'({var})g({var})-g'({var})f({var})}}{{g({var})^2}}\\,d{var_latex} = "
+        f"\\frac{{f({var})}}{{g({var})}},\\,"
         rf'此处\, f({var}) = {latex(int_num)},\,g({var}) = {latex(int_den)}$'
     )
 
@@ -274,18 +279,18 @@ def weierstrass_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunct
 
     # Get substitution variable
     t = step_gene.get_available_sym(var)
-    step_gene.subs_dict[t] = tan(var/2)
+    step_gene.subs_dict[t] = tan(var / 2)
 
-    dx_dt = 2 / (1 + t**2)
+    dx_dt = 2 / (1 + t ** 2)
 
     # Perform the substitution on the expression
     substituted_expr = expr.subs([
-        (sin(var), 2*t / (1 + t**2)),
-        (cos(var), (1 - t**2) / (1 + t**2)),
-        (tan(var), 2*t / (1 - t**2)),
-        (cot(var), (1 - t**2) / (2*t)),
-        (sec(var), (1 + t**2) / (1 - t**2)),
-        (csc(var), (1 + t**2) / (2*t))
+        (sin(var), 2 * t / (1 + t ** 2)),
+        (cos(var), (1 - t ** 2) / (1 + t ** 2)),
+        (tan(var), 2 * t / (1 - t ** 2)),
+        (cot(var), (1 - t ** 2) / (2 * t)),
+        (sec(var), (1 + t ** 2) / (1 - t ** 2)),
+        (csc(var), (1 + t ** 2) / (2 * t))
     ])
 
     substituted_expr *= dx_dt
@@ -328,18 +333,18 @@ def quadratic_sqrt_reciprocal_rule(expr: Expr, context: RuleContext) -> RuleFunc
         return None
 
     step_gene = context['step_generator']
-    t = var+b/(2*a)
-    k = 4*a*c-b**2
+    t = var + b / (2 * a)
+    k = 4 * a * c - b ** 2
     if k.equals(0):
-        return (t*Integral(1/t, var))/abs(t), f"完全平方开根"
+        return (t * Integral(1 / t, var)) / abs(t), f"完全平方开根"
 
     u = step_gene.get_available_sym(var)
     step_gene.subs_dict[u] = t
-    return Integral(simplify(1/sqrt(a*u**2+k/(4*a))), u), f"二元一次函数配方并令\\;${u.name} = {latex(t)}$"
+    return Integral(simplify(1 / sqrt(a * u ** 2 + k / (4 * a))), u), f"二元一次函数配方并令\\;${u.name} = {latex(t)}$"
 
 
 def logarithmic_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    """Heuristic matcher for f'(x)/f(x) integration pattern.
+    """The heuristic matcher for f'(x)/f(x) integration pattern.
 
     Returns 'logarithmic' if the expression matches the pattern where the
     numerator is the derivative of the denominator.
@@ -352,12 +357,12 @@ def parts_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
 
 
 def substitution_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    """Heuristic matcher for u-substitution in integration.
+    """The Heuristic matcher for u-substitution in integration.
 
     Returns 'substitution' if the expression exhibits one of:
       1. Standard pattern: f(g(x)) * g'(x) (up to constant multiple)
       2. Trigonometric substitution forms: sqrt(a^2−x^2), sqrt(a^2+x^2), sqrt(x^2−a^2)
-      3. Nested radicals: (ax + b)^{p/q} with q > 1
+      3. Nested radicals: (ax + b)^{p/q} with q > 1.
     """
     return 'substitution'
 

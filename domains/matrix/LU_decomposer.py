@@ -1,9 +1,12 @@
 from typing import Tuple
+
 from sympy import Matrix, Symbol, eye, latex, zeros
-# from sympy import symbols
-# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
+
+
+# from sympy import symbols
+# from IPython.display import Math, display
 
 
 class LUDecomposition(CommonMatrixCalculator):
@@ -14,19 +17,20 @@ class LUDecomposition(CommonMatrixCalculator):
     decomposition with partial pivoting.
     """
 
-    def is_square(self, matrix: Matrix) -> bool:
+    @staticmethod
+    def is_square(matrix: Matrix) -> bool:
         """Check if the matrix is square."""
         return matrix.rows == matrix.cols
 
-    def lu_decomposition_gaussian(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix]:
+    def lu_decomposition_gaussian(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix] | None:
         """Perform LU decomposition using Gaussian elimination approach.
 
-        This method performs LU decomposition by applying Gaussian elimination process
-        to obtain U while recording elimination coefficients to construct L.
+        This method performs LU decomposition by applying the Gaussian elimination process
+        to get U while recording elimination coefficients to build L.
 
         Args:
             matrix_input: Matrix input (string representation or sympy.Matrix)
-            show_steps (bool): Whether to record and show calculation steps
+            show_steps (bool): Whether to record and show calculation steps.
 
         Returns:
             tuple: (L, U) matrices, or None if decomposition fails
@@ -59,31 +63,32 @@ class LUDecomposition(CommonMatrixCalculator):
             self.add_matrix(U, "U_0")
 
         # Gaussian elimination process
-        for k in range(n-1):  # Pivot column
+        for k in range(n - 1):  # Pivot column
             if show_steps:
-                self.step_generator.add_step(f"\\text{{第 {k+1} 步消元:}}")
+                self.step_generator.add_step(f"\\text{{第 {k + 1} 步消元:}}")
 
             # Check if pivot element is zero
             if U[k, k] == 0:
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\textbf{{警告: 主元 }} u_{{{k+1}{k+1}}} \\textbf{{ = 0, 可能需要行交换或进行 PLU 分解}}")
+                        f"\\textbf{{警告: 主元 }} u_{{{k + 1}{k + 1}}} \\textbf{{ = 0, 可能需要行交换或进行 PLU 分解}}")
                 return None
 
-            for i in range(k+1, n):  # Row to eliminate
+            for i in range(k + 1, n):  # Row to eliminate
                 # Calculate elimination coefficient
                 factor = U[i, k] / U[k, k]
                 L[i, k] = factor
 
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{计算消元系数: }} l_{{{i+1}{k+1}}} = \\frac{{u_{{{i+1}{k+1}}}^{{({k})}}}}{{u_{{{k+1}{k+1}}}^{{({k})}}}} = " +
-                        f"\\frac{{{latex(U[i,k])}}}{{{latex(U[k,k])}}} = {latex(factor)}"
+                        f"\\text{{计算消元系数: }} l_{{{i + 1}{k + 1}}} = "
+                        f"\\frac{{u_{{{i + 1}{k + 1}}}^{{({k})}}}}{{u_{{{k + 1}{k + 1}}}^{{({k})}}}} = " +
+                        f"\\frac{{{latex(U[i, k])}}}{{{latex(U[k, k])}}} = {latex(factor)}"
                     )
 
                 # Perform row operation - show calculation process for each element
                 if show_steps:
-                    self.step_generator.add_step(f"\\text{{更新第 {i+1} 行:}}")
+                    self.step_generator.add_step(f"\\text{{更新第 {i + 1} 行:}}")
 
                 for j in range(k, n):
                     old_value = U[i, j]
@@ -91,16 +96,17 @@ class LUDecomposition(CommonMatrixCalculator):
                     U[i, j] = new_value
 
                     if show_steps:
-                        # Show detailed calculation process for each element
+                        # Show the detailed calculation process for each element
                         self.step_generator.add_step(
-                            f"u_{{{i+1}{j+1}}}^{{({k+1})}} = u_{{{i+1}{j+1}}}^{{({k})}} - l_{{{i+1}{k+1}}} \\cdot u_{{{k+1}{j+1}}}^{{({k})}} = " +
-                            f"{latex(old_value)} - {latex(factor)} \\cdot {latex(U[k,j])} = {latex(new_value)}"
+                            f"u_{{{i + 1}{j + 1}}}^{{({k + 1})}} = u_{{{i + 1}{j + 1}}}^{{({k})}} - "
+                            f"l_{{{i + 1}{k + 1}}} \\cdot u_{{{k + 1}{j + 1}}}^{{({k})}} = " +
+                            f"{latex(old_value)} - {latex(factor)} \\cdot {latex(U[k, j])} = {latex(new_value)}"
                         )
 
             if show_steps:
-                self.add_step(f"第 {k+1} 步消元后:")
-                self.add_matrix(L, f"L_{{{k+1}}}")
-                self.add_matrix(U, f"U_{{{k+1}}}")
+                self.add_step(f"第 {k + 1} 步消元后:")
+                self.add_matrix(L, f"L_{{{k + 1}}}")
+                self.add_matrix(U, f"U_{{{k + 1}}}")
 
         # Final verification of decomposition result
         if show_steps:
@@ -121,14 +127,14 @@ class LUDecomposition(CommonMatrixCalculator):
 
         return L, U
 
-    def lu_decomposition_doolittle(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix]:
+    def lu_decomposition_doolittle(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix] | None:
         """Perform LU decomposition using Doolittle direct decomposition method.
 
         This method directly calculates elements of L and U using matrix multiplication rules.
 
         Args:
             matrix_input: Matrix input (string representation or sympy.Matrix)
-            show_steps (bool): Whether to record and show calculation steps
+            show_steps (bool): Whether to record and show calculation steps.
 
         Returns:
             tuple: (L, U) matrices, or None if decomposition fails
@@ -151,7 +157,10 @@ class LUDecomposition(CommonMatrixCalculator):
             self.add_matrix(A, "A")
             self.step_generator.add_step(f"\\text{{矩阵维度: }} {n} \\times {n}")
             self.step_generator.add_step(
-                r"\text{假设: } L = \begin{bmatrix} 1 & 0 & \cdots & 0 \\ l_{21} & 1 & \cdots & 0 \\ \vdots & \vdots & \ddots & \vdots \\ l_{n1} & l_{n2} & \cdots & 1 \end{bmatrix}, \quad U = \begin{bmatrix} u_{11} & u_{12} & \cdots & u_{1n} \\ 0 & u_{22} & \cdots & u_{2n} \\ \vdots & \vdots & \ddots & \vdots \\ 0 & 0 & \cdots & u_{nn} \end{bmatrix}")
+                r"\text{假设: } L = \begin{bmatrix} 1 & 0 & \cdots & 0 \\ l_{21} & 1 & \cdots & 0 "
+                r"\\ \vdots & \vdots & \ddots & \vdots \\ l_{n1} & l_{n2} & \cdots & 1 \end{bmatrix}, "
+                r"\quad U = \begin{bmatrix} u_{11} & u_{12} & \cdots & u_{1n} \\ 0 & u_{22} & \cdots & u_{2n} "
+                r"\\ \vdots & \vdots & \ddots & \vdots \\ 0 & 0 & \cdots & u_{nn} \end{bmatrix}")
 
         # Initialize L and U matrices
         L = eye(n)
@@ -165,11 +174,11 @@ class LUDecomposition(CommonMatrixCalculator):
             for i in range(n):
                 for j in range(n):
                     if i > j:  # Lower triangular part of L (below diagonal)
-                        L_symbolic[i, j] = Symbol(f'l_{{{i+1}{j+1}}}')
+                        L_symbolic[i, j] = Symbol(f'l_{{{i + 1}{j + 1}}}')
                     elif i < j:  # Upper triangular part of U (above diagonal)
-                        U_symbolic[i, j] = Symbol(f'u_{{{i+1}{j+1}}}')
+                        U_symbolic[i, j] = Symbol(f'u_{{{i + 1}{j + 1}}}')
                     elif i == j:  # Diagonal elements
-                        U_symbolic[i, j] = Symbol(f'u_{{{i+1}{i+1}}}')
+                        U_symbolic[i, j] = Symbol(f'u_{{{i + 1}{i + 1}}}')
 
             self.add_step("初始化 L 和 U:")
             self.add_matrix(L_symbolic, "L_0")
@@ -177,12 +186,12 @@ class LUDecomposition(CommonMatrixCalculator):
 
         # Doolittle algorithm
         for i in range(n):
-            if show_steps and i < n-1:
+            if show_steps and i < n - 1:
                 self.step_generator.add_step(
-                    f"\\text{{第 {i+1} 步: 计算 L 的第 {i+1} 列和 U 的第 {i+1} 行}}")
+                    f"\\text{{第 {i + 1} 步: 计算 L 的第 {i + 1} 列和 U 的第 {i + 1} 行}}")
             elif show_steps:
                 self.step_generator.add_step(
-                    f"\\text{{第 {i+1} 步: 计算 U 的第 {i+1} 行}}")
+                    f"\\text{{第 {i + 1} 步: 计算 U 的第 {i + 1} 行}}")
 
             # Calculate row i of U
             for j in range(i, n):
@@ -192,7 +201,7 @@ class LUDecomposition(CommonMatrixCalculator):
                     product = L[i, k] * U[k, j]
                     sum_val += product
                     sum_terms.append(
-                        f"l_{{{i+1}{k+1}}} \\cdot u_{{{k+1}{j+1}}}")
+                        f"l_{{{i + 1}{k + 1}}} \\cdot u_{{{k + 1}{j + 1}}}")
 
                 U[i, j] = A[i, j] - sum_val
 
@@ -200,28 +209,28 @@ class LUDecomposition(CommonMatrixCalculator):
                     if sum_terms:
                         sum_expr = " + ".join(sum_terms)
                         self.step_generator.add_step(
-                            f"u_{{{i+1}{j+1}}} = a_{{{i+1}{j+1}}} - ({sum_expr}) = " +
-                            f"{latex(A[i,j])} - ({latex(sum_val)}) = {latex(U[i,j])}"
+                            f"u_{{{i + 1}{j + 1}}} = a_{{{i + 1}{j + 1}}} - ({sum_expr}) = " +
+                            f"{latex(A[i, j])} - ({latex(sum_val)}) = {latex(U[i, j])}"
                         )
                     else:
                         self.step_generator.add_step(
-                            f"u_{{{i+1}{j+1}}} = a_{{{i+1}{j+1}}} = {latex(A[i,j])}")
+                            f"u_{{{i + 1}{j + 1}}} = a_{{{i + 1}{j + 1}}} = {latex(A[i, j])}")
 
-            if U[i, i] == 0 and i < n-1:
+            if U[i, i] == 0 and i < n - 1:
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\textbf{{警告: }} u_{{{i+1}{i+1}}} \\textbf{{= 0, 可能需要行交换或进行 PLU 分解}}")
+                        f"\\textbf{{警告: }} u_{{{i + 1}{i + 1}}} \\textbf{{= 0, 可能需要行交换或进行 PLU 分解}}")
                 return None
 
             # Calculate column i of L (starting from row i+1)
-            for j in range(i+1, n):
+            for j in range(i + 1, n):
                 sum_val = 0
                 sum_terms = []
                 for k in range(i):
                     product = L[j, k] * U[k, i]
                     sum_val += product
                     sum_terms.append(
-                        f"l_{{{j+1}{k+1}}} \\cdot u_{{{k+1}{i+1}}}")
+                        f"l_{{{j + 1}{k + 1}}} \\cdot u_{{{k + 1}{i + 1}}}")
 
                 L[j, i] = (A[j, i] - sum_val) / U[i, i]
 
@@ -229,16 +238,17 @@ class LUDecomposition(CommonMatrixCalculator):
                     if sum_terms:
                         sum_expr = " + ".join(sum_terms)
                         self.step_generator.add_step(
-                            f"l_{{{j+1}{i+1}}} = \\frac{{a_{{{j+1}{i+1}}} - ({sum_expr})}}{{u_{{{i+1}{i+1}}}}} = " +
-                            f"\\frac{{{latex(A[j,i])} - ({latex(sum_val)})}}{{{latex(U[i,i])}}} = {latex(L[j,i])}"
+                            f"l_{{{j + 1}{i + 1}}} = \\frac{{a_{{{j + 1}{i + 1}}} - "
+                            f"({sum_expr})}}{{u_{{{i + 1}{i + 1}}}}} = " +
+                            f"\\frac{{{latex(A[j, i])} - ({latex(sum_val)})}}{{{latex(U[i, i])}}} = {latex(L[j, i])}"
                         )
                     else:
                         self.step_generator.add_step(
-                            f"l_{{{j+1}{i+1}}} = \\frac{{a_{{{j+1}{i+1}}}}}{{u_{{{i+1}{i+1}}}}} = " +
-                            f"\\frac{{{latex(A[j,i])}}}{{{latex(U[i,i])}}} = {latex(L[j,i])}"
+                            f"l_{{{j + 1}{i + 1}}} = \\frac{{a_{{{j + 1}{i + 1}}}}}{{u_{{{i + 1}{i + 1}}}}} = " +
+                            f"\\frac{{{latex(A[j, i])}}}{{{latex(U[i, i])}}} = {latex(L[j, i])}"
                         )
 
-            if show_steps and i < n-1:
+            if show_steps and i < n - 1:
                 # Create display matrices for current step - based entirely on actual calculated values
                 L_display = eye(n)
                 U_display = zeros(n)
@@ -250,17 +260,17 @@ class LUDecomposition(CommonMatrixCalculator):
                             L_display[r, c] = L[r, c]
                         else:  # Uncalculated parts of L
                             if r > c:
-                                L_display[r, c] = Symbol(f'l_{{{r+1}{c+1}}}')
+                                L_display[r, c] = Symbol(f'l_{{{r + 1}{c + 1}}}')
 
                         if c <= i or r <= i:  # Calculated parts of U
                             U_display[r, c] = U[r, c]
                         else:  # Uncalculated parts of U
                             if r <= c:
-                                U_display[r, c] = Symbol(f'u_{{{r+1}{c+1}}}')
+                                U_display[r, c] = Symbol(f'u_{{{r + 1}{c + 1}}}')
 
-                self.add_step(f"第 {i+1} 步后的 L 和 U:")
-                self.add_matrix(L_display, f"L_{{{i+1}}}")
-                self.add_matrix(U_display, f"U_{{{i+1}}}")
+                self.add_step(f"第 {i + 1} 步后的 L 和 U:")
+                self.add_matrix(L_display, f"L_{{{i + 1}}}")
+                self.add_matrix(U_display, f"U_{{{i + 1}}}")
 
         # Verify decomposition result
         if show_steps:
@@ -280,14 +290,14 @@ class LUDecomposition(CommonMatrixCalculator):
 
         return L, U
 
-    def lu_decomposition_crout(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix]:
+    def lu_decomposition_crout(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix] | None:
         """Perform LU decomposition using Crout decomposition method.
 
         In this method, diagonal elements of L are 1, and diagonal elements of U need to be calculated.
 
         Args:
             matrix_input: Matrix input (string representation or sympy.Matrix)
-            show_steps (bool): Whether to record and show calculation steps
+            show_steps (bool): Whether to record and show calculation steps.
 
         Returns:
             tuple: (L, U) matrices, or None if decomposition fails
@@ -310,7 +320,11 @@ class LUDecomposition(CommonMatrixCalculator):
             self.add_matrix(A, "A")
             self.step_generator.add_step(f"\\text{{矩阵维度: }} {n} \\times {n}")
             self.step_generator.add_step(
-                r"\text{假设: } L = \begin{bmatrix} l_{11} & 0 & \cdots & 0 \\ l_{21} & l_{22} & \cdots & 0 \\ \vdots & \vdots & \ddots & \vdots \\ l_{n1} & l_{n2} & \cdots & l_{nn} \end{bmatrix}, \quad U = \begin{bmatrix} 1 & u_{12} & \cdots & u_{1n} \\ 0 & 1 & \cdots & u_{2n} \\ \vdots & \vdots & \ddots & \vdots \\ 0 & 0 & \cdots & 1 \end{bmatrix}")
+                r"\text{假设: } L = \begin{bmatrix} l_{11} & 0 & \cdots & 0 "
+                r"\\ l_{21} & l_{22} & \cdots & 0 \\ \vdots & \vdots & \ddots & \vdots "
+                r"\\ l_{n1} & l_{n2} & \cdots & l_{nn} \end{bmatrix}, \quad U = \begin{bmatrix} 1 "
+                r"& u_{12} & \cdots & u_{1n} \\ 0 & 1 & \cdots & u_{2n} \\ \vdots & \vdots & \ddots & \vdots "
+                r"\\ 0 & 0 & \cdots & 1 \end{bmatrix}")
 
         # Initialize L and U matrices
         L = zeros(n)
@@ -325,9 +339,9 @@ class LUDecomposition(CommonMatrixCalculator):
                 for j in range(n):
                     # Lower triangular part of L (including diagonal)
                     if i >= j:
-                        L_symbolic[i, j] = Symbol(f'l_{{{i+1}{j+1}}}')
+                        L_symbolic[i, j] = Symbol(f'l_{{{i + 1}{j + 1}}}')
                     elif i < j:  # Upper triangular part of U (above diagonal)
-                        U_symbolic[i, j] = Symbol(f'u_{{{i+1}{j+1}}}')
+                        U_symbolic[i, j] = Symbol(f'u_{{{i + 1}{j + 1}}}')
 
             self.add_step("初始化 L 和 U:")
             self.add_matrix(L_symbolic, "L_0")
@@ -335,12 +349,12 @@ class LUDecomposition(CommonMatrixCalculator):
 
         # Crout algorithm
         for i in range(n):
-            if show_steps and i < n-1:
+            if show_steps and i < n - 1:
                 self.step_generator.add_step(
-                    f"\\text{{第 {i+1} 步: 计算 L 的第 {i+1} 列和 U 的第 {i+1} 行}}")
+                    f"\\text{{第 {i + 1} 步: 计算 L 的第 {i + 1} 列和 U 的第 {i + 1} 行}}")
             else:
                 self.step_generator.add_step(
-                    f"\\text{{第 {i+1} 步: 计算 L 的第 {i+1} 列}}")
+                    f"\\text{{第 {i + 1} 步: 计算 L 的第 {i + 1} 列}}")
 
             # Calculate column i of L
             for j in range(i, n):
@@ -350,7 +364,7 @@ class LUDecomposition(CommonMatrixCalculator):
                     product = L[j, k] * U[k, i]
                     sum_val += product
                     sum_terms.append(
-                        f"l_{{{j+1}{k+1}}} \\cdot u_{{{k+1}{i+1}}}")
+                        f"l_{{{j + 1}{k + 1}}} \\cdot u_{{{k + 1}{i + 1}}}")
 
                 L[j, i] = A[j, i] - sum_val
 
@@ -358,28 +372,28 @@ class LUDecomposition(CommonMatrixCalculator):
                     if sum_terms:
                         sum_expr = " + ".join(sum_terms)
                         self.step_generator.add_step(
-                            f"l_{{{j+1}{i+1}}} = a_{{{j+1}{i+1}}} - ({sum_expr}) = " +
-                            f"{latex(A[j,i])} - ({latex(sum_val)}) = {latex(L[j,i])}"
+                            f"l_{{{j + 1}{i + 1}}} = a_{{{j + 1}{i + 1}}} - ({sum_expr}) = " +
+                            f"{latex(A[j, i])} - ({latex(sum_val)}) = {latex(L[j, i])}"
                         )
                     else:
                         self.step_generator.add_step(
-                            f"l_{{{j+1}{i+1}}} = a_{{{j+1}{i+1}}} = {latex(A[j,i])}")
+                            f"l_{{{j + 1}{i + 1}}} = a_{{{j + 1}{i + 1}}} = {latex(A[j, i])}")
 
             if L[i, i] == 0:
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\textbf{{警告: }} l_{{{i+1}{i+1}}} \\textbf{{= 0, 可能需要行交换或进行 PLU 分解}}")
+                        f"\\textbf{{警告: }} l_{{{i + 1}{i + 1}}} \\textbf{{= 0, 可能需要行交换或进行 PLU 分解}}")
                 return None
 
             # Calculate row i of U (starting from column i+1)
-            for j in range(i+1, n):
+            for j in range(i + 1, n):
                 sum_val = 0
                 sum_terms = []
                 for k in range(i):
                     product = L[i, k] * U[k, j]
                     sum_val += product
                     sum_terms.append(
-                        f"l_{{{i+1}{k+1}}} \\cdot u_{{{k+1}{j+1}}}")
+                        f"l_{{{i + 1}{k + 1}}} \\cdot u_{{{k + 1}{j + 1}}}")
 
                 U[i, j] = (A[i, j] - sum_val) / L[i, i]
 
@@ -387,28 +401,29 @@ class LUDecomposition(CommonMatrixCalculator):
                     if sum_terms:
                         sum_expr = " + ".join(sum_terms)
                         self.step_generator.add_step(
-                            f"u_{{{i+1}{j+1}}} = \\frac{{a_{{{i+1}{j+1}}} - ({sum_expr})}}{{l_{{{i+1}{i+1}}}}} = " +
-                            f"\\frac{{{latex(A[i,j])} - ({latex(sum_val)})}}{{{latex(L[i,i])}}} = {latex(U[i,j])}"
+                            f"u_{{{i + 1}{j + 1}}} = \\frac{{a_{{{i + 1}{j + 1}}} - "
+                            f"({sum_expr})}}{{l_{{{i + 1}{i + 1}}}}} = " +
+                            f"\\frac{{{latex(A[i, j])} - ({latex(sum_val)})}}{{{latex(L[i, i])}}} = {latex(U[i, j])}"
                         )
                     else:
                         self.step_generator.add_step(
-                            f"u_{{{i+1}{j+1}}} = \\frac{{a_{{{i+1}{j+1}}}}}{{l_{{{i+1}{i+1}}}}} = " +
-                            f"\\frac{{{latex(A[i,j])}}}{{{latex(L[i,i])}}} = {latex(U[i,j])}"
+                            f"u_{{{i + 1}{j + 1}}} = \\frac{{a_{{{i + 1}{j + 1}}}}}{{l_{{{i + 1}{i + 1}}}}} = " +
+                            f"\\frac{{{latex(A[i, j])}}}{{{latex(L[i, i])}}} = {latex(U[i, j])}"
                         )
 
-            if show_steps and i < n-1:
+            if show_steps and i < n - 1:
                 # Create display matrices for current step - fix: ensure calculated values are shown as numbers
                 L_display = zeros(n)
                 U_display = eye(n)  # U diagonal is always 1
 
-                # Fill L matrix: show numbers for calculated parts, show symbols for uncalculated parts
+                # Fill L matrix: show numbers for calculated parts, show symbols for uncalculated parts.
                 for r in range(n):
                     for c in range(n):
                         if r >= c:  # Lower triangular part of L
                             if c <= i:  # Calculated columns (column 0 to i)
                                 L_display[r, c] = L[r, c]  # Show number
                             else:  # Uncalculated columns
-                                L_display[r, c] = Symbol(f'l_{{{r+1}{c+1}}}')
+                                L_display[r, c] = Symbol(f'l_{{{r + 1}{c + 1}}}')
 
                         # U matrix: show numbers for calculated parts, show symbols for uncalculated parts
                         # Upper triangular part of U (excluding diagonal)
@@ -417,11 +432,11 @@ class LUDecomposition(CommonMatrixCalculator):
                             if r <= i and c <= n:
                                 U_display[r, c] = U[r, c]  # Show number
                             else:  # Uncalculated rows
-                                U_display[r, c] = Symbol(f'u_{{{r+1}{c+1}}}')
+                                U_display[r, c] = Symbol(f'u_{{{r + 1}{c + 1}}}')
 
-                self.add_step(f"第 {i+1} 步后的 L 和 U:")
-                self.add_matrix(L_display, f"L_{{{i+1}}}")
-                self.add_matrix(U_display, f"U_{{{i+1}}}")
+                self.add_step(f"第 {i + 1} 步后的 L 和 U:")
+                self.add_matrix(L_display, f"L_{{{i + 1}}}")
+                self.add_matrix(U_display, f"U_{{{i + 1}}}")
 
         # Verify decomposition result
         if show_steps:
@@ -441,17 +456,17 @@ class LUDecomposition(CommonMatrixCalculator):
 
         return L, U
 
-    def plu_decomposition(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix, Matrix]:
+    def plu_decomposition(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix, Matrix] | None:
         """Perform PLU decomposition with partial pivoting.
 
         Returns P, L, U such that PA = LU where P is the permutation matrix.
 
         Args:
             matrix_input: Matrix input (string representation or sympy.Matrix)
-            show_steps (bool): Whether to record and show calculation steps
+            show_steps (bool): Whether to record and show calculation steps.
 
         Returns:
-            tuple: (P, L, U) matrices, or None if decomposition fails
+            tuple: (P, L, U) matrices, or None if decomposition fails.
 
         Raises:
             ValueError: If input matrix is not square
@@ -486,15 +501,15 @@ class LUDecomposition(CommonMatrixCalculator):
         pivot_history = []
 
         # Gaussian elimination process (with partial pivoting)
-        for k in range(n-1):
+        for k in range(n - 1):
             if show_steps:
-                self.step_generator.add_step(f"\\text{{第 {k+1} 步消元:}}")
+                self.step_generator.add_step(f"\\text{{第 {k + 1} 步消元:}}")
 
             # Find pivot
             pivot_row = k
             max_val = abs(U[k, k])
 
-            for i in range(k+1, n):
+            for i in range(k + 1, n):
                 if abs(U[i, k]) > max_val:
                     max_val = abs(U[i, k])
                     pivot_row = i
@@ -503,7 +518,8 @@ class LUDecomposition(CommonMatrixCalculator):
             if pivot_row != k:
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{行交换: 将第 {k+1} 行与第 {pivot_row+1} 行交换, 因为 }} |{latex(U[pivot_row, k])}| > |{latex(U[k, k])}|"
+                        f"\\text{{行交换: 将第 {k + 1} 行与第 {pivot_row + 1} 行交换, 因为 }} "
+                        f"|{latex(U[pivot_row, k])}| > |{latex(U[k, k])}|"
                     )
 
                 # Exchange rows in U
@@ -520,9 +536,9 @@ class LUDecomposition(CommonMatrixCalculator):
 
                 if show_steps:
                     self.add_step(f"行交换后:")
-                    self.add_matrix(P, f"P_{{{k+1}}}")
-                    self.add_matrix(L, f"L_{{{k+1}}}")
-                    self.add_matrix(U, f"U_{{{k+1}}}")
+                    self.add_matrix(P, f"P_{{{k + 1}}}")
+                    self.add_matrix(L, f"L_{{{k + 1}}}")
+                    self.add_matrix(U, f"U_{{{k + 1}}}")
 
             # Check if pivot is zero
             if U[k, k] == 0:
@@ -532,36 +548,38 @@ class LUDecomposition(CommonMatrixCalculator):
                 return None
 
             # Elimination process
-            for i in range(k+1, n):
+            for i in range(k + 1, n):
                 # Calculate elimination coefficient
                 factor = U[i, k] / U[k, k]
                 L[i, k] = factor
 
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{计算消元系数: }} l_{{{i+1}{k+1}}} = \\frac{{u_{{{i+1}{k+1}}}}}{{u_{{{k+1}{k+1}}}}} = " +
-                        f"\\frac{{{latex(U[i,k])}}}{{{latex(U[k,k])}}} = {latex(factor)}"
+                        f"\\text{{计算消元系数: }} l_{{{i + 1}{k + 1}}} = "
+                        f"\\frac{{u_{{{i + 1}{k + 1}}}}}{{u_{{{k + 1}{k + 1}}}}} = " +
+                        f"\\frac{{{latex(U[i, k])}}}{{{latex(U[k, k])}}} = {latex(factor)}"
                     )
 
                 # Update row i of U
                 if show_steps:
-                    self.step_generator.add_step(f"\\text{{更新第 {i+1} 行:}}")
+                    self.step_generator.add_step(f"\\text{{更新第 {i + 1} 行:}}")
 
                 for j in range(k, n):
                     old_value = U[i, j]
                     new_value = U[i, j] - factor * U[k, j]
                     U[i, j] = new_value
 
-                    if show_steps and j == k:  # Only show detailed calculation for first element
+                    if show_steps and j == k:  # Only show detailed calculation for the first element.
                         self.step_generator.add_step(
-                            f"u_{{{i+1}{j+1}}} = u_{{{i+1}{j+1}}} - l_{{{i+1}{k+1}}} \\cdot u_{{{k+1}{j+1}}} = " +
-                            f"{latex(old_value)} - {latex(factor)} \\cdot {latex(U[k,j])} = {latex(new_value)}"
+                            f"u_{{{i + 1}{j + 1}}} = u_{{{i + 1}{j + 1}}} - "
+                            f"l_{{{i + 1}{k + 1}}} \\cdot u_{{{k + 1}{j + 1}}} = " +
+                            f"{latex(old_value)} - {latex(factor)} \\cdot {latex(U[k, j])} = {latex(new_value)}"
                         )
 
             if show_steps:
-                self.add_step(f"第 {k+1} 步消元后:")
-                self.add_matrix(L, f"L_{{{k+1}}}")
-                self.add_matrix(U, f"U_{{{k+1}}}")
+                self.add_step(f"第 {k + 1} 步消元后:")
+                self.add_matrix(L, f"L_{{{k + 1}}}")
+                self.add_matrix(U, f"U_{{{k + 1}}}")
 
         # Final result
         if show_steps:
@@ -587,7 +605,7 @@ class LUDecomposition(CommonMatrixCalculator):
                 self.add_step("行交换历史:")
                 for i, (old_row, new_row) in enumerate(pivot_history):
                     self.step_generator.add_step(
-                        f"\\text{{步骤 {i+1}: 行 {old_row+1}}} \\leftrightarrow 行 \\text{{{new_row+1}}}")
+                        f"\\text{{步骤 {i + 1}: 行 {old_row + 1}}} \\leftrightarrow 行 \\text{{{new_row + 1}}}")
 
         return P, L, U
 
@@ -596,10 +614,10 @@ class LUDecomposition(CommonMatrixCalculator):
 
         Args:
             matrix_input: Matrix input (string representation or sympy.Matrix)
-            show_steps (bool): Whether to record and show calculation steps
+            show_steps (bool): Whether to record and show calculation steps.
 
         Returns:
-            bool: True if matrix satisfies LU decomposition conditions, False otherwise
+            bool: True if matrix satisfies LU decomposition conditions, False otherwise.
         """
         if show_steps:
             self.step_generator.clear()
@@ -613,7 +631,7 @@ class LUDecomposition(CommonMatrixCalculator):
         n = A.rows
         conditions_met = True
 
-        # Check if matrix is square
+        # Check if the matrix is square
         if not self.is_square(A):
             if show_steps:
                 self.step_generator.add_step(r"\text{矩阵不是方阵, 无法进行LU分解}")
@@ -623,7 +641,7 @@ class LUDecomposition(CommonMatrixCalculator):
             self.step_generator.add_step(r"\text{矩阵是方阵}")
 
         # Check if leading principal minors are all non-zero
-        for k in range(1, n+1):
+        for k in range(1, n + 1):
             submatrix = A[:k, :k]
             det = submatrix.det()
 
@@ -651,14 +669,14 @@ class LUDecomposition(CommonMatrixCalculator):
 
         return conditions_met
 
-    def auto_lu_decomposition(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix, Matrix]:
+    def auto_lu_decomposition(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix] | None:
         """Automatically select LU or PLU decomposition.
 
         Automatically determines whether row exchanges are needed based on matrix conditions.
 
         Args:
             matrix_input: Matrix input (string representation or sympy.Matrix)
-            show_steps (bool): Whether to record and show calculation steps
+            show_steps (bool): Whether to record and show calculation steps.
 
         Returns:
             tuple: Decomposition result matrices
@@ -683,7 +701,6 @@ class LUDecomposition(CommonMatrixCalculator):
         if show_steps:
             self.step_generator.add_step(r"\text{矩阵不满足 LU 分解条件，使用 PLU 分解}")
         return self.plu_decomposition(matrix_input, show_steps)
-
 
 # def demo():
 #     """Demonstrate LU decomposition"""

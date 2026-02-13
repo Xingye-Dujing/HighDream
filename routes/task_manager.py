@@ -1,10 +1,11 @@
-import uuid
-import time
 import threading
+import time
+import uuid
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Optional
-from datetime import datetime
+
 from config import (
     MAX_WORKERS, SINGLE_TASK_EXECUTE_TIMEOUT_SECONDS, TASK_CLEAR_AFTER_CREAT_SECONDS
 )
@@ -47,7 +48,6 @@ class Task:
 
 
 class TaskManager:
-
     _instance = None
     _lock = threading.Lock()
 
@@ -71,7 +71,7 @@ class TaskManager:
             self._start_cleanup_thread()
 
     def create_task(self, operation_type: str, data: Dict[str, Any]) -> str:
-        """Create new task and return task ID"""
+        """Create the new task and return task ID"""
         task_id = str(uuid.uuid4())
         task = Task(task_id, operation_type, data)
 
@@ -94,7 +94,7 @@ class TaskManager:
             return None
 
     def _execute_task(self, task: Task):
-        """Execute task (runs in background thread)"""
+        """Execute the task (runs in background thread)"""
         # Acquire semaphore to ensure we don't exceed max workers
         with self._semaphore:
             try:

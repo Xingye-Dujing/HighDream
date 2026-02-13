@@ -1,9 +1,12 @@
 from typing import List, Tuple
+
 from sympy import Expr, I, Matrix, Symbol, eye, latex, simplify, solve, sqrt, symbols, zeros
-# from sympy sin, cos
-# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
+
+
+# from sympy sin, cos
+# from IPython.display import Math, display
 
 
 class SVDSolver(CommonMatrixCalculator):
@@ -17,29 +20,14 @@ class SVDSolver(CommonMatrixCalculator):
     def compute_eigenpairs(self, matrix: Matrix) -> List[Tuple[Expr, Matrix]]:
         """Compute eigenvalues and eigenvectors of a real symmetric matrix.
 
-        Returns sorted eigenpairs (eigenvalue, eigenvector) list.
+        Returns sorted eigenpairs (eigenvalue, eigenvector) list."""
 
-        Parameters
-        ----------
-        matrix : sympy.Matrix
-            The input matrix (must be square and symmetric)
-
-        Returns
-        -------
-        list
-            List of tuples (eigenvalue, normalized eigenvector)
-
-        Raises
-        ------
-        ValueError
-            If matrix is not square or not symmetric
-        """
         try:
             # For real symmetric matrices, use more stable method
             if matrix.rows != matrix.cols:
-                raise ValueError("Matrix must be square")
+                raise ValueError("The Matrix must be square")
 
-            # Check if matrix is symmetric
+            # Check if the matrix is symmetric
             if simplify(matrix - matrix.T) != zeros(matrix.rows, matrix.cols):
                 raise ValueError("Matrix must be symmetric")
 
@@ -69,26 +57,18 @@ class SVDSolver(CommonMatrixCalculator):
             except TypeError:
                 # Cannot compare if contains symbolic expressions
                 self.step_generator.add_step(
-                    r"\textbf{Warning: Cannot accurately sort eigenvalues with symbols, assuming earlier ones are larger}")
+                    r"\textbf{Warning: Cannot accurately sort eigenvalues "
+                    r"with symbols, assuming earlier ones are larger}")
 
             return eigenpairs
 
         except Exception as e:
             raise ValueError(f"Eigenvalue computation error: {str(e)}") from e
 
-    def gram_schmidt(self, vectors: List[Matrix]) -> List[Matrix]:
-        """Perform Gram-Schmidt orthogonalization process.
+    @staticmethod
+    def gram_schmidt(vectors: List[Matrix]) -> List[Matrix]:
+        """Perform the Gram-Schmidt orthogonalization process."""
 
-        Parameters
-        ----------
-        vectors : list
-            List of vectors to orthogonalize
-
-        Returns
-        -------
-        list
-            List of orthonormalized vectors
-        """
         ortho_vectors = []
         for v in vectors:
             w = v.copy()
@@ -103,21 +83,10 @@ class SVDSolver(CommonMatrixCalculator):
                 ortho_vectors.append(w / w.norm())
         return ortho_vectors
 
-    def complete_orthogonal_basis(self, existing_vectors: List[Matrix], target_dim: int) -> List[Matrix]:
-        """Complete an orthogonal basis to reach target dimension.
+    @staticmethod
+    def complete_orthogonal_basis(existing_vectors: List[Matrix], target_dim: int) -> List[Matrix]:
+        """Complete an orthogonal basis to reach target dimension."""
 
-        Parameters
-        ----------
-        existing_vectors : list
-            List of existing orthogonal vectors
-        target_dim : int
-            Target dimension for the completed basis
-
-        Returns
-        -------
-        list
-            List of orthogonal vectors spanning the full space
-        """
         current_dim = len(existing_vectors)
         if current_dim >= target_dim:
             return existing_vectors
@@ -127,7 +96,7 @@ class SVDSolver(CommonMatrixCalculator):
         for i in range(target_dim):
             standard_basis[i][i] = 1
 
-        # Use improved Gram-Schmidt process
+        # Use the improved Gram-Schmidt process
         ortho_vectors = existing_vectors.copy()
 
         for basis_vec in standard_basis:
@@ -147,25 +116,12 @@ class SVDSolver(CommonMatrixCalculator):
 
         return ortho_vectors
 
-    def compute_svd(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix, Matrix]:
+    def compute_svd(self, matrix_input: str, show_steps: bool = True) \
+            -> Tuple[Matrix | None, Matrix | None, Matrix | None]:
         """Compute the Singular Value Decomposition of a matrix.
 
-        Computes the decomposition A = U * Sigma * V^T where U and V are
-        orthogonal matrices and Sigma is a diagonal matrix of singular values.
+        Computes the decomposition A = U * Sigma * V^T where U and V are"""
 
-        Parameters
-        ----------
-        matrix_input : str or sympy.Matrix
-            Input matrix as string representation or sympy Matrix
-        show_steps : bool, optional
-            Whether to show detailed computation steps (default is True)
-
-        Returns
-        -------
-        tuple
-            Tuple of (U, Sigma, V) matrices representing the SVD decomposition,
-            or (None, None, None) if computation fails
-        """
         self.step_generator.clear()
 
         A = self.parse_matrix_input(matrix_input)
@@ -205,7 +161,7 @@ class SVDSolver(CommonMatrixCalculator):
 
                 for i, (eig, vec) in enumerate(eigenpairs):
                     self.step_generator.add_step(
-                        rf"\text{{特征值 }} {latex(eig)}: \; \boldsymbol{{v}}_{{{i+1}}} = {latex(vec)}")
+                        rf"\text{{特征值 }} {latex(eig)}: \; \boldsymbol{{v}}_{{{i + 1}}} = {latex(vec)}")
 
         except Exception as e:
             if show_steps:
@@ -235,7 +191,7 @@ class SVDSolver(CommonMatrixCalculator):
 
         # Singular values are already sorted in descending order
         if show_steps:
-            sorted_sigmas = rf',\;'.join([f'\\sigma_{{{i+1}}} = {latex(sigma)}'
+            sorted_sigmas = rf',\;'.join([f'\\sigma_{{{i + 1}}} = {latex(sigma)}'
                                           for i, sigma in enumerate(singular_values)])
             self.step_generator.add_step(
                 f"\\text{{排序后的奇异值: }} {sorted_sigmas}")
@@ -291,15 +247,15 @@ class SVDSolver(CommonMatrixCalculator):
         for i, sigma in enumerate(singular_values):
             if i < min(m, n) and sigma != 0:
                 v_i = V[:, i]
-                u_i = (1/sigma) * A * v_i
+                u_i = (1 / sigma) * A * v_i
                 for j in range(m):
                     U[j, i] = u_i[j]
                 computed_u_vectors.append(u_i)
             elif sigma == 0 and show_steps:
                 self.step_generator.add_step(
-                    f"\\text{{跳过零奇异值 }} \\sigma_{{{i+1}}}")
+                    f"\\text{{跳过零奇异值 }} \\sigma_{{{i + 1}}}")
 
-        # If U columns are insufficient, complete orthogonal basis
+        # If U columns are not enough, complete orthogonal basis
         if len(computed_u_vectors) < m:
             if show_steps:
                 self.step_generator.add_step(r"\text{补充 U 的正交基}")
@@ -367,7 +323,7 @@ class SVDSolver(CommonMatrixCalculator):
 
         self.step_generator.add_step(r"\textbf{奇异值:}")
         for i, sigma in enumerate(singular_values):
-            self.step_generator.add_step(f"\\sigma_{{{i+1}}} = {latex(sigma)}")
+            self.step_generator.add_step(f"\\sigma_{{{i + 1}}} = {latex(sigma)}")
 
         self.step_generator.add_step(r"\textbf{验证:}")
         self.add_equation(r"A = U \Sigma V^T")
@@ -378,20 +334,8 @@ class SVDSolver(CommonMatrixCalculator):
             self.step_generator.add_step(r"\textbf{分解有误}")
 
     def compute_singular_values_only(self, matrix_input: str, show_steps: bool = True) -> List[Expr]:
-        """Compute only the singular values without full SVD.
+        """Compute only the singular values without full SVD."""
 
-        Parameters
-        ----------
-        matrix_input : str or sympy.Matrix
-            Input matrix as string representation or sympy Matrix
-        show_steps : bool, optional
-            Whether to show detailed computation steps (default is True)
-
-        Returns
-        -------
-        list
-            List of singular values
-        """
         self.step_generator.clear()
 
         A = self.parse_matrix_input(matrix_input)
@@ -428,12 +372,11 @@ class SVDSolver(CommonMatrixCalculator):
                 singular_values.append(sigma)
         if show_steps:
             self.add_step("计算奇异值")
-            sigma_list = rf',\;'.join([f'\\sigma_{{{i+1}}} = {latex(sigma)}'
+            sigma_list = rf',\;'.join([f'\\sigma_{{{i + 1}}} = {latex(sigma)}'
                                        for i, sigma in enumerate(singular_values)])
             self.step_generator.add_step(f"\\text{{奇异值: }} {sigma_list}")
 
         return singular_values
-
 
 # def demo_svd_basic():
 #     """Demonstrate basic SVD computation."""

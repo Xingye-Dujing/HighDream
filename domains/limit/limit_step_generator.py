@@ -1,4 +1,5 @@
 from sympy import latex
+
 from core import BaseStepGenerator
 
 
@@ -28,7 +29,8 @@ class LimitStepGenerator(BaseStepGenerator):
         body = r"\newline".join(lines)
         return rf"\begin{{align}}{body}\end{{align}}"
 
-    def _get_step_type(self, explanation: str) -> str:
+    @staticmethod
+    def _get_step_type(explanation: str) -> str:
         """Determine the step type based on keywords in the explanation."""
         if "计算左极限" in explanation:
             return "left_limit_start"

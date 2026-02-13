@@ -1,4 +1,5 @@
 from typing import List, Union
+
 from sympy import Expr, Matrix, latex, simplify
 
 from core import BaseStepGenerator
@@ -12,7 +13,7 @@ class RefStepGenerator(BaseStepGenerator):
 
         Args:
             steps (list): List of computational steps, can contain Matrix objects or strings
-            explanations (list): Corresponding list of explanatory text for each step
+            explanations (list): Corresponding list of the explanatory text for each step.
 
         Returns:
             str: LaTeX formatted string with aligned equations and explanations
@@ -45,7 +46,8 @@ class RefStepGenerator(BaseStepGenerator):
         latex_str += "\\end{align}"
         return latex_str
 
-    def _matrix_to_latex(self, matrix: Matrix) -> str:
+    @staticmethod
+    def _matrix_to_latex(matrix: Matrix) -> str:
         """Convert a matrix to its LaTeX representation with simplified elements.
 
         Args:

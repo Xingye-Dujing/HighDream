@@ -38,7 +38,7 @@ def apply_swap_rule(matrix: Matrix, pivot_row: int, other_row: int) -> tuple[Mat
 def apply_scale_rule(matrix: Matrix, pivot_row: int, col: int) -> tuple[Matrix, str]:
     """Scale the pivot row so that the pivot element becomes 1.
 
-    If the pivot is already 1 or 0, no operation is performed (returns original matrix
+    If the pivot is already 1 or 0, no operation is performed (returns the original matrix
     and empty string).
     """
     val = matrix[pivot_row, col]

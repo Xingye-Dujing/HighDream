@@ -1,4 +1,6 @@
+from abc import ABC
 from typing import Tuple
+
 # from IPython.display import Math, display
 from sympy import Expr, latex, pprint
 
@@ -6,7 +8,7 @@ from utils import Context, Operation, RuleContext
 from .base_calculator import BaseCalculator
 
 
-class SelectRuleCalculator(BaseCalculator):
+class SelectRuleCalculator(BaseCalculator, ABC):
     """A calculator that allows manual selection of rules for expression transformation."""
 
     def _apply_rule(self, expr: Expr, operation: Operation, **context: Context) -> Tuple[Expr, str]:
@@ -20,9 +22,9 @@ class SelectRuleCalculator(BaseCalculator):
         pprint(operation(expr), use_unicode=True)
         print("以下规则可应用：")
         for i, rule in enumerate(applicable_rules_list):
-            print(f"{i+1}. {rule.__name__}")
+            print(f"{i + 1}. {rule.__name__}")
         index = input("请输入规则编号：")
-        rule = applicable_rules_list[int(index)-1]
+        rule = applicable_rules_list[int(index) - 1]
         result = rule(expr, rule_context)
 
         if result:

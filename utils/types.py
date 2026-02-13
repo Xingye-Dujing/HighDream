@@ -1,10 +1,11 @@
-from typing import Dict, List, Optional, Protocol, Tuple, Union
+from typing import Dict, List, Optional, Protocol, Tuple
+
 from sympy import Derivative, Determinant, Expr, Integral, Limit, Symbol
 
 # The operation to be performed.
-Operation = Union[Derivative, Determinant, Integral, Limit]
+Operation = Derivative | Determinant | Integral | Limit
 # The evaluation context providing additional information.
-Context = Union[Symbol, Expr, str]
+Context = Symbol | Expr | str
 RuleContext = Dict[str, Context]
 RuleFunctionReturn = Optional[Tuple[Expr, str]]
 MatcherFunctionReturn = Optional[str]

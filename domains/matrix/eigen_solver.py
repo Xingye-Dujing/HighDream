@@ -1,9 +1,12 @@
-from typing import Dict, List, Tuple
 from collections import Counter
+from typing import Dict, List, Tuple
+
 from sympy import Expr, I, Matrix, eye, factor, latex, simplify, solve, symbols, sympify, zeros
-# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
+
+
+# from IPython.display import Math, display
 
 
 class EigenSolver(CommonMatrixCalculator):
@@ -13,18 +16,9 @@ class EigenSolver(CommonMatrixCalculator):
     using characteristic polynomial method and displays detailed solution steps.
     """
 
-    def format_lambda_I(self, eigenvalue: Expr) -> str:
-        """Add parentheses for complex or symbolic eigenvalues.
-
-        Parameters
-        ----------
-        eigenvalue (Expr) : The eigenvalue to format
-
-        Returns
-        -------
-        str
-            Formatted string representation with appropriate parentheses
-        """
+    @staticmethod
+    def format_lambda_I(eigenvalue: Expr) -> str:
+        """Add parentheses for complex or symbolic eigenvalues."""
         has_complex = eigenvalue.has(I)
 
         is_symbolic = (isinstance(eigenvalue, sympify(
@@ -43,17 +37,11 @@ class EigenSolver(CommonMatrixCalculator):
             return f"\\left({latex(eigenvalue)}\\right)I"
         return f"{latex(eigenvalue)}I"
 
-    def analyze_matrix_structure(self, matrix: Matrix, show_steps: str = True) -> List[str]:
+    def analyze_matrix_structure(self, matrix: Matrix, show_steps: bool = True) -> List[str]:
         """Analyze special structures of the matrix.
 
         Identifies matrix types such as diagonal, triangular, symmetric, etc.,
-        which can simplify eigenvalue computation.
-
-        Returns
-        -------
-        list
-            List of identified matrix types
-        """
+        which can simplify eigenvalue computation."""
         n = matrix.rows
         special_types = []
 
@@ -84,7 +72,7 @@ class EigenSolver(CommonMatrixCalculator):
         # Check for lower triangular matrix
         is_lower_triangular = True
         for i in range(n):
-            for j in range(i+1, n):
+            for j in range(i + 1, n):
                 if matrix[i, j] != 0:
                     is_lower_triangular = False
                     break
@@ -96,7 +84,7 @@ class EigenSolver(CommonMatrixCalculator):
         # Check for symmetric matrix
         is_symmetric = True
         for i in range(n):
-            for j in range(i+1, n):
+            for j in range(i + 1, n):
                 if matrix[i, j] != matrix[j, i]:
                     is_symmetric = False
                     break
@@ -145,7 +133,7 @@ class EigenSolver(CommonMatrixCalculator):
             # Check if there exists k such that A^k = 0
             is_nilpotent = False
             current_power = matrix
-            for _ in range(1, n+1):
+            for _ in range(1, n + 1):
                 if simplify(current_power) == zeros(n, n):
                     is_nilpotent = True
                     break
@@ -206,14 +194,9 @@ class EigenSolver(CommonMatrixCalculator):
             for prop in properties[matrix_type]:
                 self.step_generator.add_step(prop)
 
-    def characteristic_polynomial_method(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Tuple[List, Matrix]:
-        """Solve eigenvalues and eigenvectors using characteristic polynomial method.
-
-        Returns
-        -------
-        tuple
-            Tuple containing eigenvalues and eigenvectors
-        """
+    def characteristic_polynomial_method(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) \
+            -> Tuple[List | None, Matrix | None]:
+        """Solve eigenvalues and eigenvectors using characteristic polynomial method."""
         if is_clear:
             self.step_generator.clear()
 
@@ -290,7 +273,7 @@ class EigenSolver(CommonMatrixCalculator):
 
         if show_steps:
             part = rf',\;'.join(
-                [f'\\lambda_{{{i+1}}} = {latex(eig)}' for i, eig in enumerate(eigenvalues)])
+                [f'\\lambda_{{{i + 1}}} = {latex(eig)}' for i, eig in enumerate(eigenvalues)])
             self.step_generator.add_step(f"\\text{{特征值: }} {part}")
 
             # Show algebraic multiplicity
@@ -331,7 +314,7 @@ class EigenSolver(CommonMatrixCalculator):
 
                     for i, vec in enumerate(nullspace):
                         self.step_generator.add_step(
-                            f"\\boldsymbol{{v}}_{{{i+1}}} = {latex(vec)}")
+                            f"\\boldsymbol{{v}}_{{{i + 1}}} = {latex(vec)}")
                 else:
                     self.step_generator.add_step(r"\text{未找到非零特征向量}")
 
@@ -342,9 +325,10 @@ class EigenSolver(CommonMatrixCalculator):
             self.display_eigen_summary(
                 eigenvalues, eigenvectors, eigenvalue_counts, geometric_multiplicities)
 
-        return eigenvalues, eigenvectors
+        return eigenvalues, eigenvectors  # type: ignore
 
-    def display_eigen_summary(self, eigenvalues: List, eigenvectors: Dict, eigenvalue_counts: Counter, geometric_multiplicities: Dict) -> None:
+    def display_eigen_summary(self, eigenvalues: List, eigenvectors: Dict, eigenvalue_counts: Counter,
+                              geometric_multiplicities: Dict) -> None:
         """Display summary of eigenvalues and eigenvectors.
 
         Parameters
@@ -356,7 +340,7 @@ class EigenSolver(CommonMatrixCalculator):
         eigenvalue_counts : Counter
             Counter of eigenvalue multiplicities
         geometric_multiplicities : dict
-            Dictionary of geometric multiplicities for each eigenvalue
+            Dictionary of geometric multiplicities for each eigenvalue.
         """
         self.add_step("特征分析总结")
 
@@ -366,7 +350,8 @@ class EigenSolver(CommonMatrixCalculator):
             algebraic = eigenvalue_counts[eigenvalue]
             geometric = geometric_multiplicities.get(eigenvalue, 0)
             self.step_generator.add_step(
-                f"\\lambda_{{{i+1}}} = {latex(eigenvalue)}, \\text{{代数重数: }} {algebraic}, \\text{{几何重数: }} {geometric}")
+                f"\\lambda_{{{i + 1}}} = {latex(eigenvalue)}, \\text{{代数重数: }} {algebraic}, "
+                f"\\text{{几何重数: }} {geometric}")
 
             # Check if diagonalizable
             if algebraic != geometric:
@@ -387,16 +372,11 @@ class EigenSolver(CommonMatrixCalculator):
                     f"\\text{{对于 }} \\lambda = {latex(eigenvalue)}:")
                 for j, vec in enumerate(vecs):
                     self.step_generator.add_step(
-                        f"\\boldsymbol{{v}}_{{{j+1}}} = {latex(vec)}")
+                        f"\\boldsymbol{{v}}_{{{j + 1}}} = {latex(vec)}")
 
-    def auto_eigen_solver(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Tuple[List, Dict]:
-        """Automatically solve eigenvalues and eigenvectors of a matrix.
-
-        Returns
-        -------
-        tuple
-            Tuple containing eigenvalues and eigenvectors, or (None, None) if failed
-        """
+    def auto_eigen_solver(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) \
+            -> Tuple[List | None, Dict | None]:
+        """Automatically solve eigenvalues and eigenvectors of a matrix."""
         if is_clear:
             self.step_generator.clear()
 
@@ -418,7 +398,6 @@ class EigenSolver(CommonMatrixCalculator):
             if show_steps:
                 self.step_generator.add_step(f"\\text{{求解失败: {str(e)}}}")
             return None, None
-
 
 # def demo_diagonal_and_triangular():
 #     """Demonstrate diagonal and triangular matrices."""

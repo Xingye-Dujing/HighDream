@@ -32,7 +32,7 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
 
 def mul_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
-    """Apply the product rule: (uv)' = u'v + uv' and its general form"""
+    """Apply the product rule: (uv)' = u'v + uv' and its general form."""
     var: Symbol = context['variable']
     var_latex, expr_latex = wrap_latex(var, expr)
     terms = expr.args
@@ -64,9 +64,10 @@ def mul_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         lhs = f"\\frac{{d}}{{d{var_latex}}} {{{expr_latex}}}"
         rhs = f"{v_latex} \\cdot {du_latex} + {u_latex} \\cdot {dv_latex}"
         explanation = f"应用乘积法则: ${lhs} = {rhs}$"
+        return new_expr, explanation
 
     # N-term case
-    # Build each term of the sum: derivative of i-th factor times others
+    # Build each term of the sum: derivative of i-th factor times others.
     sum_terms_expr = []
     sum_terms_latex = []
     for i in range(n):
@@ -168,13 +169,13 @@ def mul_div_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
         return None
 
     _, den = expr.as_numer_denom()
-    # If denominator is 1, it's a pure product
+    # If the denominator is 1, it is a pure product
     return 'mul' if den == 1 or den.is_constant else 'div'
 
 
 def chain_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
-   # Match composite functions f(g(x)) where g(x) is not the variable itself.
+    # Match composite functions f(g(x)) where g(x) is not the variable itself.
     if expr.args and len(expr.args) == 1:
         arg = expr.args[0]
         if arg.has(var) and arg != var:

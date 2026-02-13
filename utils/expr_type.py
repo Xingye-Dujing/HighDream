@@ -10,11 +10,11 @@ Functions:
     is_trig: Check if expression contains trigonometric functions
     is_inv_trig: Check if expression is an inverse trigonometric function
     is_exp: Check if expression is exponential
-    has_radical: Check if expression contains radicals
+    has_radical: Check if expression contains radicals.
 """
 
 from sympy import (
-    Expr, Pow, Symbol, asin, acos, atan,
+    Basic, Expr, Pow, Symbol, asin, acos, atan,
     cos, cot, csc, exp, log, sec, sin, tan
 )
 
@@ -26,7 +26,7 @@ def is_log(f: Expr) -> bool:
         f (Expr): A SymPy expression to check
 
     Returns:
-        bool: True if the expression is a logarithmic function, False otherwise
+        bool: True if the expression is a logarithmic function, False otherwise.
 
     Example:
         >>> from sympy import log, symbols
@@ -40,14 +40,14 @@ def is_log(f: Expr) -> bool:
 
 
 def is_poly(f: Expr, var: Symbol) -> bool:
-    """Determine if the given expression is a polynomial with respect to a variable.
+    """Determine if the given expression is a polynomial about a variable.
 
     Args:
         f (Expr): A SymPy expression to check
-        var (Symbol): The variable to check polynomial status against
+        var (Symbol): The variable to check polynomial status against.
 
     Returns:
-        bool: True if the expression is a polynomial in the given variable, False otherwise
+        bool: True if the expression is a polynomial in the given variable, False otherwise.
 
     Example:
         >>> from sympy import symbols
@@ -69,7 +69,7 @@ def is_trig(f: Expr) -> bool:
         f (Expr): A SymPy expression to check
 
     Returns:
-        bool: True if the expression contains trigonometric functions, False otherwise
+        bool: True if the expression contains trigonometric functions, False otherwise.
 
     Example:
         >>> from sympy import sin, cos, symbols
@@ -85,13 +85,13 @@ def is_trig(f: Expr) -> bool:
 def is_inv_trig(f: Expr) -> bool:
     """Determine if the given expression is an inverse trigonometric function.
 
-    Specifically checks for asin, acos, or atan functions.
+    Specifically, checks for asin, acos, or atan functions.
 
     Args:
         f (Expr): A SymPy expression to check
 
     Returns:
-        bool: True if the expression is an inverse trigonometric function, False otherwise
+        bool: True if the expression is an inverse trigonometric function, False otherwise.
 
     Example:
         >>> from sympy import asin, symbols
@@ -105,18 +105,18 @@ def is_inv_trig(f: Expr) -> bool:
 
 
 def is_exp(f: Expr, var: Symbol) -> bool:
-    """Determine if the given expression is exponential with respect to a variable.
+    """Determine if the given expression is exponential about a variable.
 
-    An expression is considered exponential if it's either:
+    An expression is considered exponential if it is either:
     1. The exp() function
-    2. A power where base is numeric and exponent contains the variable
+    2. A power where base is numeric and exponent contains the variable.
 
     Args:
         f (Expr): A SymPy expression to check
-        var (Symbol): The variable to check exponential status against
+        var (Symbol): The variable to check exponential status against.
 
     Returns:
-        bool: True if the expression is exponential in the given variable, False otherwise
+        bool: True if the expression is exponential in the given variable, False otherwise.
 
     Example:
         >>> from sympy import exp, symbols
@@ -131,7 +131,7 @@ def is_exp(f: Expr, var: Symbol) -> bool:
     return isinstance(f, exp) or (isinstance(f, Pow) and f.base.is_number and f.exp.has(var))
 
 
-def has_radical(f: Expr, var: Symbol) -> bool:
+def has_radical(f: Basic | Expr, var: Symbol) -> bool:
     """Determine if the given expression contains radicals (fractional powers) involving a variable.
 
     A radical is identified as a power expression with a rational exponent less than 1
@@ -139,10 +139,10 @@ def has_radical(f: Expr, var: Symbol) -> bool:
 
     Args:
         f (Expr): A SymPy expression to check
-        var (Symbol): The variable to check for in radicals
+        var (Symbol): The variable to check for in radicals.
 
     Returns:
-        bool: True if the expression contains radicals with the given variable, False otherwise
+        bool: True if the expression contains radicals with the given variable, False otherwise.
 
     Example:
         >>> from sympy import sqrt, symbols

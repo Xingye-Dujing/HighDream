@@ -1,21 +1,25 @@
 from itertools import combinations
-from sympy import eye, latex, simplify, zeros
-# from IPython.display import Math, display
+
+from sympy import Matrix, eye, latex, simplify, zeros
 
 from core import CommonMatrixCalculator
+
+
+# from IPython.display import Math, display
 
 
 class Rank(CommonMatrixCalculator):
     """Class for computing matrix rank using various methods."""
 
-    def rank_by_row_echelon(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True, is_clear: bool = True) -> int:
-        """Method 1: Compute rank using row echelon form.
+    def rank_by_row_echelon(self, matrix_input: str | Matrix, show_steps: bool = True, simplify_result: bool = True,
+                            is_clear: bool = True) -> int:
+        """Method 1: Compute rank using the row echelon form.
 
         Parameters:
             matrix_input: Matrix input data
             show_steps (bool): Whether to show computation steps
             simplify_result (bool): Whether to simplify the result
-            is_clear (bool): Whether to clear previous steps
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
             int: The rank of the matrix
@@ -44,7 +48,7 @@ class Rank(CommonMatrixCalculator):
         while pivot_row < m and pivot_col < n:
             if show_steps:
                 self.step_generator.add_step(
-                    f"\\text{{处理第 {pivot_row+1} 行, 处理第 {pivot_col+1} 列:}}")
+                    f"\\text{{处理第 {pivot_row + 1} 行, 处理第 {pivot_col + 1} 列:}}")
 
             # Find pivot element
             pivot_found = False
@@ -54,7 +58,7 @@ class Rank(CommonMatrixCalculator):
                     if r != pivot_row:
                         if show_steps:
                             self.step_generator.add_step(
-                                f"\\text{{行交换: }} R_{pivot_row+1} \\leftrightarrow R_{r+1}")
+                                f"\\text{{行交换: }} R_{pivot_row + 1} \\leftrightarrow R_{r + 1}")
                         current_matrix.row_swap(pivot_row, r)
                         if show_steps:
                             self.add_matrix(current_matrix, "A")
@@ -67,9 +71,8 @@ class Rank(CommonMatrixCalculator):
                 # Normalize pivot row (optional, for easier calculation)
                 if pivot != 1 and show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{归一化: }} R_{pivot_row+1} \\times {latex(1/pivot)}")
-                    current_matrix[pivot_row,
-                                   :] = current_matrix[pivot_row, :] / pivot
+                        f"\\text{{归一化: }} R_{pivot_row + 1} \\times {latex(1 / pivot)}")
+                    current_matrix[pivot_row, :] = current_matrix[pivot_row, :] / pivot
                     if show_steps:
                         self.add_matrix(current_matrix, "A")
 
@@ -79,9 +82,8 @@ class Rank(CommonMatrixCalculator):
                         factor = current_matrix[r, pivot_col]
                         if show_steps:
                             self.step_generator.add_step(
-                                f"\\text{{消元: }} R_{r+1} - {latex(factor)} \\times R_{pivot_row+1}")
-                        current_matrix[r, :] = current_matrix[r,
-                                                              :] - factor * current_matrix[pivot_row, :]
+                                f"\\text{{消元: }} R_{r + 1} - {latex(factor)} \\times R_{pivot_row + 1}")
+                        current_matrix[r, :] = current_matrix[r, :] - factor * current_matrix[pivot_row, :]
                         if show_steps:
                             self.add_matrix(current_matrix, "A")
 
@@ -89,7 +91,7 @@ class Rank(CommonMatrixCalculator):
 
             else:
                 self.step_generator.add_step(
-                    f"\\text{{第 {pivot_col+1} 列没有主元}}")
+                    f"\\text{{第 {pivot_col + 1} 列没有主元}}")
 
             pivot_col += 1
 
@@ -113,7 +115,7 @@ class Rank(CommonMatrixCalculator):
             self.step_generator.add_step(
                 f"\\text{{矩阵的秩: }} \\operatorname{{rank}}(A) = {rank}")
 
-            # Explanation of result
+            # Explanation of the result
             if rank == min(m, n):
                 self.step_generator.add_step(r"\text{说明: 这是满秩矩阵}")
             elif rank == 0:
@@ -130,7 +132,7 @@ class Rank(CommonMatrixCalculator):
         Parameters:
             matrix_input: Matrix input data
             show_steps (bool): Whether to show computation steps
-            is_clear (bool): Whether to clear previous steps
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
             int: The rank of the matrix
@@ -154,7 +156,7 @@ class Rank(CommonMatrixCalculator):
             self.step_generator.add_step(
                 f"\\text{{最大可能秩: }} \\min({m}, {n}) = {max_possible_rank}")
 
-        # Check minors starting from maximum possible order
+        # Check minors starting from the maximum possible order
         for k in range(max_possible_rank, 0, -1):
             if show_steps:
                 self.step_generator.add_step(f"\\text{{检查 {k} 阶子式}}")
@@ -180,11 +182,11 @@ class Rank(CommonMatrixCalculator):
                     det = submatrix.det()
                     simplified_det = simplify(det)
 
-                    # Show details of first few minors
+                    # Show details of the first few minors
                     if show_steps:
                         # Display row and column indices (starting from 1)
-                        row_str = ','.join(str(r+1) for r in rows)
-                        col_str = ','.join(str(c+1) for c in cols)
+                        row_str = ','.join(str(r + 1) for r in rows)
+                        col_str = ','.join(str(c + 1) for c in cols)
 
                         # Display minor matrix
                         self.step_generator.add_step(
@@ -197,7 +199,7 @@ class Rank(CommonMatrixCalculator):
                                 row_elements.append(
                                     latex(simplify(submatrix[i, j])))
                             submatrix_latex += " & ".join(row_elements)
-                            if i < k-1:
+                            if i < k - 1:
                                 submatrix_latex += r" \\ "
                         submatrix_latex += r"\end{bmatrix}"
 
@@ -211,7 +213,7 @@ class Rank(CommonMatrixCalculator):
                         self.step_generator.add_step(
                             f"\\det = {det_latex} {det_status}")
 
-                    # If a non-zero minor is found, record it and break all loops
+                    # If a non-zero minor is found, record it and break all loops.
                     if simplified_det != 0:
                         nonzero_minor_example = (
                             rows, cols, simplified_det, submatrix)
@@ -229,8 +231,8 @@ class Rank(CommonMatrixCalculator):
                 rank = k
                 if show_steps and nonzero_minor_example:
                     rows, cols, det_value, submatrix = nonzero_minor_example
-                    row_str = ','.join(str(r+1) for r in rows)
-                    col_str = ','.join(str(c+1) for c in cols)
+                    row_str = ','.join(str(r + 1) for r in rows)
+                    col_str = ','.join(str(c + 1) for c in cols)
 
                     self.step_generator.add_step(f"\\textbf{{找到非零 {k} 阶子式:}}")
                     self.step_generator.add_step(
@@ -244,7 +246,7 @@ class Rank(CommonMatrixCalculator):
                             row_elements.append(
                                 latex(simplify(submatrix[i, j])))
                         submatrix_latex += " & ".join(row_elements)
-                        if i < k-1:
+                        if i < k - 1:
                             submatrix_latex += r" \\ "
                     submatrix_latex += r"\end{bmatrix}"
 
@@ -283,16 +285,16 @@ class Rank(CommonMatrixCalculator):
 
         return rank
 
-    def rank_by_eigenvalues(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> int:
+    def rank_by_eigenvalues(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> int | None:
         """Method 3: Compute rank using eigenvalues (for square matrices only).
 
         Parameters:
             matrix_input: Matrix input data
             show_steps (bool): Whether to show computation steps
-            is_clear (bool): Whether to clear previous steps
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
-            int or None: The rank of the matrix, or None if not applicable
+            int or None: The rank of the matrix, or None if not applicable.
         """
         if is_clear:
             self.step_generator.clear()
@@ -315,7 +317,7 @@ class Rank(CommonMatrixCalculator):
             if show_steps:
                 self.add_equation(r"\text{原理: 对于方阵, 秩 = 非零特征值个数}")
                 self.step_generator.add_step(rf"\text{{特征值: }}" + rf",\,".join(
-                    [f"\\lambda_{{{i+1}}} = {latex(val)}" for i, val in enumerate(eigenvalues)]))
+                    [f"\\lambda_{{{i + 1}}} = {latex(val)}" for i, val in enumerate(eigenvalues)]))
 
             # Count number of non-zero eigenvalues
             nonzero_eigenvalues = sum(
@@ -343,12 +345,12 @@ class Rank(CommonMatrixCalculator):
             return self.rank_by_row_echelon(A, show_steps=False)
 
     def rank_by_row_reduction(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> int:
-        """Method 4: Compute rank using reduced row echelon form.
+        """Method 4: Compute rank using the reduced row echelon form.
 
         Parameters:
             matrix_input: Matrix input data
             show_steps (bool): Whether to show computation steps
-            is_clear (bool): Whether to clear previous steps
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
             int: The rank of the matrix
@@ -363,7 +365,7 @@ class Rank(CommonMatrixCalculator):
             self.add_matrix(A, "A")
             self.add_equation(r"\text{原理: 行简化阶梯形的主元列数就是矩阵的秩}")
 
-        # Compute reduced row echelon form
+        # Compute the reduced row echelon form
         rref_matrix, pivot_columns = A.rref()
 
         if show_steps:
@@ -374,26 +376,26 @@ class Rank(CommonMatrixCalculator):
 
         if show_steps:
             self.step_generator.add_step(
-                f"\\text{{主元列位置: }} {[c+1 for c in pivot_columns]}")
+                f"\\text{{主元列位置: }} {[c + 1 for c in pivot_columns]}")
             self.step_generator.add_step(f"\\text{{主元个数: }} {rank}")
             self.step_generator.add_step(
                 f"\\text{{矩阵的秩: }} \\operatorname{{rank}}(A) = {rank}")
 
-            # Explain significance of pivots
+            # Explain the significance of pivots
             if rank > 0:
                 self.step_generator.add_step(r"\text{说明: 主元列对应的列向量构成列空间的一组基}")
 
         return rank
 
-    def check_special_cases(self, matrix_input: str, show_steps: bool = True) -> int:
+    def check_special_cases(self, matrix_input: str, show_steps: bool = True) -> int | None:
         """Check special cases for matrix rank.
 
         Parameters:
             matrix_input: Matrix input data
-            show_steps (bool): Whether to show computation steps
+            show_steps (bool): Whether to show computation steps.
 
         Returns:
-            int or None: The rank if a special case is detected, otherwise None
+            int or None: The rank if a special case is detected, otherwise None.
         """
         A = self.parse_matrix_input(matrix_input)
         m, n = A.rows, A.cols
@@ -449,16 +451,16 @@ class Rank(CommonMatrixCalculator):
 
         return None
 
-    def auto_matrix_rank(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True) -> int:
+    def auto_matrix_rank(self, matrix_input: str, show_steps: bool = True, simplify_result: bool = True) -> int | None:
         """Automatically select method to compute matrix rank.
 
         Parameters:
             matrix_input: Matrix input data
             show_steps (bool): Whether to show computation steps
-            simplify_result (bool): Whether to simplify the result
+            simplify_result (bool): Whether to simplify the result.
 
         Returns:
-            int or None: The computed rank, or None if failed
+            int or None: The computed rank, or None if failed.
         """
         self.step_generator.clear()
 
@@ -512,7 +514,7 @@ class Rank(CommonMatrixCalculator):
             if show_steps:
                 self.step_generator.add_step(f"\\text{{行简化阶梯形法失败: {str(e)}}}")
 
-        # Check consistency of results
+        # Check the consistency of results
         if show_steps and len(results) > 1:
             self.add_step("方法一致性检查")
             methods = list(results.keys())
@@ -530,7 +532,7 @@ class Rank(CommonMatrixCalculator):
             else:
                 self.step_generator.add_step(r"\textbf{警告: 不同方法结果不一致}")
 
-        # Return most reliable result (row echelon form preferred)
+        # Return the most reliable result (row echelon form preferred)
         if "row_echelon" in results:
             return results["row_echelon"]
         if "rref" in results:
@@ -539,7 +541,6 @@ class Rank(CommonMatrixCalculator):
             return next(iter(results.values()))
 
         return None
-
 
 # # Demo functions
 # def demo_basic_rank():

@@ -1,142 +1,142 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>MatrixStepGenerator - 矩阵步骤生成器文档</title>
-    <link rel="stylesheet" href="/static/help.css" />
-  </head>
-  <body>
-    <div id="help-container">
-      <ul class="header">
+    <link rel="stylesheet" href="/static/help.css"/>
+</head>
+<body>
+<div id="help-container">
+    <ul class="header">
         <li>
-          <a href="/">HighDream Notebook</a>
+            <a href="/">HighDream Notebook</a>
         </li>
         <li>
-          <a href="/help">帮助文档</a>
+            <a href="/help">帮助文档</a>
         </li>
-      </ul>
+    </ul>
 
-      <h1>
+    <h1>
         <strong>MatrixStepGenerator</strong> (core/matrix_step_generator.py)
-      </h1>
+    </h1>
 
-      <p>
+    <p>
         专门为矩阵运算设计的步骤生成器，负责收集和管理矩阵计算的各个步骤，并将它们格式化为美观的
         LaTeX 对齐环境输出。它特别适用于需要显示多行矩阵运算的教学场景。
-      </p>
+    </p>
 
-      <h2 id="class-overview">一.&nbsp;&nbsp;类概述</h2>
-      <p>MatrixStepGenerator 专注于矩阵计算步骤的管理和展示：</p>
-      <ul>
+    <h2 id="class-overview">一.&nbsp;&nbsp;类概述</h2>
+    <p>MatrixStepGenerator 专注于矩阵计算步骤的管理和展示：</p>
+    <ul>
         <li><strong>步骤收集</strong>：按顺序存储矩阵计算的各个步骤</li>
         <li><strong>LaTeX 格式化</strong>：自动将步骤格式化为对齐环境</li>
         <li><strong>状态管理</strong>：支持清空步骤以进行多次计算</li>
         <li><strong>矩阵优化</strong>：特别适合显示矩阵和多行数学表达式</li>
-      </ul>
+    </ul>
 
-      <p>它与其它类的关系如下：</p>
-      <img src="/static/images/system_architecture_2.svg" />
+    <p>它与其它类的关系如下：</p>
+    <img src="/static/images/system_architecture_2.svg"/>
 
-      <h2 id="design-principles">二.&nbsp;&nbsp;设计原则</h2>
-      <ul>
+    <h2 id="design-principles">二.&nbsp;&nbsp;设计原则</h2>
+    <ul>
         <li>
-          <strong>专注性</strong>：专门为矩阵运算优化，不同于通用的步骤生成器
+            <strong>专注性</strong>：专门为矩阵运算优化，不同于通用的步骤生成器
         </li>
         <li><strong>简洁性</strong>：接口简单直观，易于理解和使用</li>
         <li><strong>灵活性</strong>：支持任意 LaTeX 内容的步骤添加</li>
         <li><strong>专业性</strong>：生成的 LaTeX 输出符合数学排版标准</li>
-      </ul>
+    </ul>
 
-      <h2 id="attributes">三.&nbsp;&nbsp;属性</h2>
-      <table class="parameter-table">
+    <h2 id="attributes">三.&nbsp;&nbsp;属性</h2>
+    <table class="parameter-table">
         <thead>
-          <tr>
+        <tr>
             <th>属性名</th>
             <th>类型</th>
             <th>描述</th>
             <th>访问级别</th>
-          </tr>
+        </tr>
         </thead>
         <tbody>
-          <tr>
+        <tr>
             <td>steps</td>
             <td>List[str]</td>
             <td>存储所有计算步骤的列表，每个步骤都是 LaTeX 格式的字符串</td>
             <td>公共</td>
-          </tr>
+        </tr>
         </tbody>
-      </table>
+    </table>
 
-      <div class="warning">
+    <div class="warning">
         <p>
-          <strong>设计说明:</strong> steps 列表直接存储 LaTeX 字符串，这使得
-          MatrixStepGenerator
-          特别适合处理复杂的矩阵表达式和多行数学公式，因为开发者可以完全控制每个步骤的
-          LaTeX 格式。
+            <strong>设计说明:</strong> steps 列表直接存储 LaTeX 字符串，这使得
+            MatrixStepGenerator
+            特别适合处理复杂的矩阵表达式和多行数学公式，因为开发者可以完全控制每个步骤的
+            LaTeX 格式。
         </p>
-      </div>
+    </div>
 
-      <h2 id="methods">四.&nbsp;&nbsp;方法</h2>
+    <h2 id="methods">四.&nbsp;&nbsp;方法</h2>
 
-      <h3>1.&nbsp;&nbsp;初始化与状态管理</h3>
+    <h3>1.&nbsp;&nbsp;初始化与状态管理</h3>
 
-      <div class="method-signature">__init__(self) -> None</div>
-      <p>初始化矩阵步骤生成器实例，创建空的步骤列表。</p>
-      <p><strong>执行效果:</strong> 创建空的 self.steps 列表</p>
+    <div class="method-signature">__init__(self) -> None</div>
+    <p>初始化矩阵步骤生成器实例，创建空的步骤列表。</p>
+    <p><strong>执行效果:</strong> 创建空的 self.steps 列表</p>
 
-      <div class="method-signature">clear(self) -> None</div>
-      <p>清除所有存储的计算步骤，重置生成器状态。</p>
-      <p><strong>使用场景:</strong></p>
-      <ul>
+    <div class="method-signature">clear(self) -> None</div>
+    <p>清除所有存储的计算步骤，重置生成器状态。</p>
+    <p><strong>使用场景:</strong></p>
+    <ul>
         <li>在开始新的计算任务前调用</li>
         <li>防止多次计算的结果相互混合</li>
         <li>内存管理，避免步骤无限累积</li>
-      </ul>
+    </ul>
 
-      <h3>2.&nbsp;&nbsp;步骤管理方法</h3>
+    <h3>2.&nbsp;&nbsp;步骤管理方法</h3>
 
-      <div class="method-signature">add_step(self, step: str) -> None</div>
-      <p>向步骤集合中添加单个计算步骤。</p>
-      <p><strong>参数:</strong></p>
-      <table class="parameter-table">
+    <div class="method-signature">add_step(self, step: str) -> None</div>
+    <p>向步骤集合中添加单个计算步骤。</p>
+    <p><strong>参数:</strong></p>
+    <table class="parameter-table">
         <thead>
-          <tr>
+        <tr>
             <th>参数名</th>
             <th>类型</th>
             <th>描述</th>
             <th>默认值</th>
-          </tr>
+        </tr>
         </thead>
         <tbody>
-          <tr>
+        <tr>
             <td>step</td>
             <td>str</td>
             <td>表示一个计算步骤的 LaTeX 格式化字符串</td>
             <td><em>必需</em></td>
-          </tr>
+        </tr>
         </tbody>
-      </table>
-      <p><strong>注意事项:</strong></p>
-      <ul>
+    </table>
+    <p><strong>注意事项:</strong></p>
+    <ul>
         <li>步骤字符串应该包含完整的 LaTeX 数学内容</li>
         <li>不需要包含对齐符号 &，系统会自动添加</li>
         <li>文本需使用 \text{} 包裹</li>
-      </ul>
+    </ul>
 
-      <h3>3.&nbsp;&nbsp;输出方法</h3>
+    <h3>3.&nbsp;&nbsp;输出方法</h3>
 
-      <div class="method-signature">get_steps_latex(self) -> str</div>
-      <p>生成包含所有计算步骤的 LaTeX align 环境。</p>
-      <p><strong>返回值:</strong> str - 包含所有步骤的 LaTeX 格式化字符串</p>
-      <p><strong>输出格式:</strong></p>
-      <ul>
+    <div class="method-signature">get_steps_latex(self) -> str</div>
+    <p>生成包含所有计算步骤的 LaTeX align 环境。</p>
+    <p><strong>返回值:</strong> str - 包含所有步骤的 LaTeX 格式化字符串</p>
+    <p><strong>输出格式:</strong></p>
+    <ul>
         <li>使用 align 环境进行数学对齐</li>
         <li>每个步骤以 & 开头，确保正确对齐</li>
         <li>
-          步骤之间空一行分隔（两个双反斜杠，一个用于换行，一个用于空一行）
+            步骤之间空一行分隔（两个双反斜杠，一个用于换行，一个用于空一行）
         </li>
-      </ul>
-    </div>
-  </body>
+    </ul>
+</div>
+</body>
 </html>

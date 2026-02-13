@@ -4,7 +4,7 @@ from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 
 
 def laplace_expansion_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctionReturn:
-    """Laplace expansion rule for determinant evaluation.
+    """Laplace's expansion rule for determinant evaluation.
 
     Performs cofactor expansion along the row or column that maximizes a heuristic
     score based on the number of zero entries (which eliminate terms) and the
@@ -12,7 +12,7 @@ def laplace_expansion_rule(matrix: Matrix, _context: RuleContext) -> RuleFunctio
     than complex expressions (e.g., sums, products, powers), encouraging expansion
     along sparse and simple lines.
 
-    For matrices of size <= 2x2, the determinant is computed directly.
+    For matrices of size <= 2*2, the determinant is computed directly.
     """
     n = matrix.rows
 

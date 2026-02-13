@@ -1,18 +1,21 @@
 from typing import Tuple
+
 from sympy import Matrix, latex, zeros
-# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
 
 
+# from IPython.display import Math, display
+
+
 class VectorProjectionSolver(CommonMatrixCalculator):
 
-    def check_subspace_type(self, subspace_basis: str, show_steps: bool = True) -> str:
+    def check_subspace_type(self, subspace_basis: str | Matrix, show_steps: bool = True) -> str:
         """Check the type of subspace
 
         Parameters:
             subspace_basis: Basis vectors of the subspace
-            show_steps: Whether to show calculation steps
+            show_steps: Whether to show calculation steps.
 
         Returns:
             "zero": Zero subspace
@@ -29,7 +32,7 @@ class VectorProjectionSolver(CommonMatrixCalculator):
         A = self.parse_matrix_input(subspace_basis)
         m, n = A.rows, A.cols
 
-        # Check if it's a zero matrix
+        # Check if it is a zero matrix
         if A.norm() == 0:
             if show_steps:
                 self.step_generator.add_step(r"\text{子空间类型: 零子空间}")
@@ -41,7 +44,7 @@ class VectorProjectionSolver(CommonMatrixCalculator):
         if show_steps:
             self.step_generator.add_step(f"\\mathrm{{rank}}(A) = {rank_A}")
 
-        # Determine subspace type
+        # Determine the subspace type
         if rank_A < n:
             if show_steps:
                 self.step_generator.add_step(r"\text{警告: 基向量线性相关}")
@@ -72,15 +75,15 @@ class VectorProjectionSolver(CommonMatrixCalculator):
 
         return subspace_type
 
-    def gram_schmidt_orthogonalization(self, A: str, show_steps: bool = True) -> Tuple[Matrix, Matrix]:
+    def gram_schmidt_orthogonalization(self, A: str | Matrix, show_steps: bool = True) -> Tuple[Matrix, Matrix]:
         """Gram-Schmidt orthogonalization process
 
         Parameters:
             A: Matrix containing basis vectors as columns
-            show_steps: Whether to show calculation steps
+            show_steps: Whether to show calculation steps.
 
         Returns:
-            Q: Orthogonal matrix
+            Q: The orthogonal matrix
             R: Upper triangular matrix
         """
         if show_steps:
@@ -98,8 +101,8 @@ class VectorProjectionSolver(CommonMatrixCalculator):
 
         for i in range(n):
             if show_steps:
-                self.step_generator.add_step(f"\\text{{处理第 {i+1} 个向量}}")
-                self.add_vector(vectors[i], f"\\boldsymbol{{a_{i+1}}}")
+                self.step_generator.add_step(f"\\text{{处理第 {i + 1} 个向量}}")
+                self.add_vector(vectors[i], f"\\boldsymbol{{a_{i + 1}}}")
 
             # Start orthogonalization
             v = vectors[i].copy()
@@ -113,15 +116,16 @@ class VectorProjectionSolver(CommonMatrixCalculator):
 
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{投影系数: }} r_{{{j+1}{i+1}}} = \\boldsymbol{{a_{i+1}}} \\cdot \\boldsymbol{{q_{j+1}}} = {latex(r_ji)}"
+                        f"\\text{{投影系数: }} r_{{{j + 1}{i + 1}}} = "
+                        f"\\boldsymbol{{a_{i + 1}}} \\cdot \\boldsymbol{{q_{j + 1}}} = {latex(r_ji)}"
                     )
                     self.step_generator.add_step(
-                        f"\\text{{投影向量: }} {latex(r_ji)} \\cdot \\boldsymbol{{q_{j+1}}}"
+                        f"\\text{{投影向量: }} {latex(r_ji)} \\cdot \\boldsymbol{{q_{j + 1}}}"
                     )
                     self.step_generator.add_step(
-                        f"\\text{{减去在 }} \\boldsymbol{{q_{j+1}}} \\text{{ 上的投影}}"
+                        f"\\text{{减去在 }} \\boldsymbol{{q_{j + 1}}} \\text{{ 上的投影}}"
                     )
-                    desc += f"- r_{{{j+1}{i+1}}} \\boldsymbol{{q_{j+1}}}"
+                    desc += f"- r_{{{j + 1}{i + 1}}} \\boldsymbol{{q_{j + 1}}}"
 
                 # Subtract projection
                 v = v - r_ji * Q.col(j)
@@ -129,11 +133,11 @@ class VectorProjectionSolver(CommonMatrixCalculator):
                 if show_steps:
                     if v == zeros(m, 1):
                         self.step_generator.add_step(
-                            f"\\boldsymbol{{v_{i+1}}}^{{({j+1})}} = {latex(v)} = \\boldsymbol{{0}}"
+                            f"\\boldsymbol{{v_{i + 1}}}^{{({j + 1})}} = {latex(v)} = \\boldsymbol{{0}}"
                         )
                     else:
                         self.step_generator.add_step(
-                            f"\\boldsymbol{{v_{i+1}}}^{{({j+1})}} = {latex(v)}"
+                            f"\\boldsymbol{{v_{i + 1}}}^{{({j + 1})}} = {latex(v)}"
                         )
 
             # Calculate norm
@@ -147,18 +151,21 @@ class VectorProjectionSolver(CommonMatrixCalculator):
                 if show_steps:
                     if i == 0:
                         self.step_generator.add_step(
-                            f"\\boldsymbol{{v_{i+1}}} = \\boldsymbol{{a_{i+1}}} {desc}"
+                            f"\\boldsymbol{{v_{i + 1}}} = \\boldsymbol{{a_{i + 1}}} {desc}"
                         )
                     else:
                         self.step_generator.add_step(
-                            f"\\boldsymbol{{v_{i+1}}} = \\boldsymbol{{a_{i+1}}} {desc} = \\boldsymbol{{v_{i+1}}}^{{({i})}}"
+                            f"\\boldsymbol{{v_{i + 1}}} = \\boldsymbol{{a_{i + 1}}} {desc} = "
+                            f"\\boldsymbol{{v_{i + 1}}}^{{({i})}}"
                         )
                     self.step_generator.add_step(
-                        f"\\text{{范数: }} \\|\\boldsymbol{{v_{i+1}}}\\| = {latex(norm_v)}"
+                        f"\\text{{范数: }} \\|\\boldsymbol{{v_{i + 1}}}\\| = {latex(norm_v)}"
                     )
                     self.step_generator.add_step("\\text{{单位向量: }}")
                     self.add_vector(
-                        q_i, f"\\boldsymbol{{q_{i+1}}} = \\frac{{\\boldsymbol{{v_{i+1}}}}}{{ \\|\\boldsymbol{{v_{i+1}}}\\|}}"
+                        q_i,
+                        f"\\boldsymbol{{q_{i + 1}}} = "
+                        f"\\frac{{\\boldsymbol{{v_{i + 1}}}}}{{ \\|\\boldsymbol{{v_{i + 1}}}\\|}}"
                     )
 
                 # Store orthogonal vector
@@ -168,7 +175,7 @@ class VectorProjectionSolver(CommonMatrixCalculator):
                 # Zero vector, linearly dependent
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{第 {i+1} 个向量与前面某个向量线性相关, 跳过}}")
+                        f"\\text{{第 {i + 1} 个向量与前面某个向量线性相关, 跳过}}")
                 R[i, i] = 0
 
         if show_steps:
@@ -184,7 +191,7 @@ class VectorProjectionSolver(CommonMatrixCalculator):
         Parameters:
             vector: Vector to be projected
             line_direction: Direction vector of the line
-            show_steps: Whether to show calculation steps
+            show_steps: Whether to show calculation steps.
 
         Returns:
             projection: Projection of vector onto the line
@@ -222,22 +229,25 @@ class VectorProjectionSolver(CommonMatrixCalculator):
                 else:
                     part += f"+ v_{{{i}}}u_{{{i}}}"
             self.step_generator.add_step(
-                f"\\text{{投影系数: }} c = \\boldsymbol{{v}} \\cdot \\boldsymbol{{\\hat{{u}}}} = {part} = {latex(projection_coeff)}"
+                f"\\text{{投影系数: }} c = \\boldsymbol{{v}} \\cdot "
+                f"\\boldsymbol{{\\hat{{u}}}} = {part} = {latex(projection_coeff)}"
             )
             self.step_generator.add_step(
-                f"\\text{{投影向量: }} \\boldsymbol{{p}} = c \\cdot \\boldsymbol{{\\hat{{u}}}} = {latex(projection_coeff)} \\cdot {latex(u_unit)}"
+                f"\\text{{投影向量: }} \\boldsymbol{{p}} = c \\cdot "
+                f"\\boldsymbol{{\\hat{{u}}}} = {latex(projection_coeff)} \\cdot {latex(u_unit)}"
             )
             self.add_vector(projection, "\\boldsymbol{p}")
 
         return projection
 
-    def project_onto_subspace(self, vector: str, subspace_basis: str, show_steps: bool = True) -> Matrix:
+    def project_onto_subspace(self, vector: str | Matrix, subspace_basis: str | Matrix,
+                              show_steps: bool = True) -> Matrix | None:
         """Project onto a subspace (using least squares method)
 
         Parameters:
             vector: Vector to be projected
             subspace_basis: Basis vectors of the subspace
-            show_steps: Whether to show calculation steps
+            show_steps: Whether to show calculation steps.
 
         Returns:
             projection: Projection of vector onto the subspace
@@ -269,7 +279,7 @@ class VectorProjectionSolver(CommonMatrixCalculator):
             # Use Gram-Schmidt orthogonalization
             Q, _ = self.gram_schmidt_orthogonalization(A, show_steps)
 
-            # Project onto orthogonal basis
+            # Project onto the orthogonal basis
             projection = Q * (Q.T * b)
 
             if show_steps:
@@ -301,13 +311,13 @@ class VectorProjectionSolver(CommonMatrixCalculator):
                 self.step_generator.add_step(f"\\text{{求解失败: {str(e)}}}")
             return None
 
-    def auto_project_vector(self, vector_input: str, subspace_input: str, show_steps: bool = True) -> Matrix:
+    def auto_project_vector(self, vector_input: str, subspace_input: str, show_steps: bool = True) -> Matrix | None:
         """Automatically project vector onto subspace
 
         Parameters:
             vector_input: Vector to be projected
             subspace_input: Basis vectors of the subspace
-            show_steps: Whether to show calculation steps
+            show_steps: Whether to show calculation steps.
 
         Returns:
             projection: Projection of vector onto the subspace
@@ -330,7 +340,7 @@ class VectorProjectionSolver(CommonMatrixCalculator):
                 self.step_generator.add_step(r"\text{错误: 向量和子空间基的维度不匹配}")
             return None
 
-        # Analyze subspace type
+        # Analyze the subspace type
         subspace_type = self.check_subspace_type(subspace_basis, show_steps)
 
         # Choose projection method based on subspace type
@@ -351,11 +361,11 @@ class VectorProjectionSolver(CommonMatrixCalculator):
                 self.step_generator.add_step(
                     r"\text{处理退化子空间, 使用 Gram-Schmidt 正交化}")
 
-            # Use Gram-Schmidt to get orthogonal basis
+            # Use Gram-Schmidt to get the orthogonal basis
             Q, _ = self.gram_schmidt_orthogonalization(
                 subspace_basis, show_steps)
 
-            # Project onto orthogonal basis
+            # Project onto the orthogonal basis
             projection_coeffs = Q.T * vector
             projection = Q * projection_coeffs
 
@@ -390,13 +400,12 @@ class VectorProjectionSolver(CommonMatrixCalculator):
         Parameters:
             vector_input: Vector to be projected
             subspace_input: Basis vectors of the subspace
-            show_steps: Whether to show calculation steps
+            show_steps: Whether to show calculation steps.
 
         Returns:
             projection: Projection of vector onto the subspace
         """
         return self.project_onto_subspace(vector_input, subspace_input, show_steps)
-
 
 # # Demo functions
 # def demo_line_projection():

@@ -3,12 +3,20 @@ from sympy import (
     exp, latex, limit, log, nan, oo, simplify, sin, sqrt, zoo
 )
 
-from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
-from domains.limit import (
-    check_add_split, check_combination_indeterminate, check_div_split,
-    check_function_tends_to_zero, check_limit_exists, check_mul_split,
-    get_limit_args, is_constant, is_indeterminate_form, is_infinite, is_zero,
+from domains.limit.limit_help_func import (
+    check_combination_indeterminate,
+    check_function_tends_to_zero,
+    check_limit_exists,
+    get_limit_args,
+    is_constant,
+    is_indeterminate_form,
+    is_infinite,
+    is_zero,
 )
+from domains.limit.rules.check_split import (
+    check_add_split, check_div_split, check_mul_split
+)
+from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 
 
 def direct_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
@@ -18,9 +26,9 @@ def direct_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionRe
     result = Limit(expr, var, point, dir=direction)
     # Determine whether to skip showing the intermediate substitution step
     skip_intermediate = (
-        expr == var
-        or expr.is_number
-        or result.is_infinite
+            expr == var
+            or expr.is_number
+            or result.is_infinite
     )
     lhs, rhs = latex(result), latex(result.doit())
 
@@ -53,7 +61,7 @@ def mul_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     factors = expr.as_ordered_factors()
 
     # Two for loops to apply the two strategies successively.
-    # Strategy 1: Extract standard limit forms
+    # Strategy 1: Extract standard limit forms.
     for i, factor in enumerate(factors):
         new_factor = None
         num, den = factor.as_numer_denom()
@@ -62,7 +70,7 @@ def mul_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         if isinstance(num, sin) and num.has(var) and check_function_tends_to_zero(num, var, point, direction):
             new_factor = factor.args[0]  # f(x)
         elif isinstance(den, sin) and den.has(var) and check_function_tends_to_zero(den, var, point, direction):
-            new_factor = 1/factor.args[0].args[0]  # 1/f(x)
+            new_factor = 1 / factor.args[0].args[0]  # 1/f(x)
 
         # Case: ln(1+f(x))/f(x) or f(x)/ln(1 + f(x)), where f(x) to 0
         elif isinstance(num, log):
@@ -70,7 +78,7 @@ def mul_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
                 new_factor = num.args[0] - 1  # f(x)
         elif isinstance(den, log):
             if factor.has(var) and check_function_tends_to_zero(factor, var, point, direction):
-                new_factor = 1/(den.args[0] - 1)  # 1/(f(x))
+                new_factor = 1 / (den.args[0] - 1)  # 1/(f(x))
 
         # Case: (exp(f(x))-1)/f(x) or f(x)/(exp(f(x))-1), where f(x) to 0
         elif isinstance(num, Add) and len(num.args) == 2:
@@ -78,7 +86,8 @@ def mul_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
             if other != -1:
                 continue
             f = num.args[1].args[0]
-            if not f.has(var) and check_function_tends_to_zero(f, var, point, direction) and not isinstance(num.args[1], exp):
+            if (not f.has(var) and check_function_tends_to_zero(f, var, point, direction)
+                    and not isinstance(num.args[1], exp)):
                 continue
             new_factor = f
         elif isinstance(den, Add) and len(den.args) == 2:
@@ -86,9 +95,10 @@ def mul_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
             if other != -1:
                 continue
             f = den.args[1].args[0]
-            if not f.has(var) and check_function_tends_to_zero(f, var, point, direction) or not isinstance(den.args[1], exp):
+            if (not f.has(var) and check_function_tends_to_zero(f, var, point, direction)
+                    or not isinstance(den.args[1], exp)):
                 continue
-            new_factor = 1/f
+            new_factor = 1 / f  # type: ignore
 
         # Case: (1+f(x))**h(x) with f(x) to 0 and f(x)*h(x) to constant
         elif isinstance(factor, Pow):
@@ -96,16 +106,16 @@ def mul_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
             inv_f = base - 1
             if check_function_tends_to_zero(inv_f, var, point, direction):
                 ratio = simplify(inv_f * _exp)
-                if not ratio.has(var):  # limit of f*h exists and is constant
+                if not ratio.has(var):  # the limit of f*h exists and is constant
                     new_factor = 1  # entire factor is a standard exponential limit
 
         # Apply transformation if a standard form was matched
         if new_factor is not None:
-            rest_factors = factors[:i] + [new_factor] + factors[i+1:]
+            rest_factors = factors[:i] + [new_factor] + factors[i + 1:]
             rest_part = Mul(*rest_factors)
 
-            new_expr = Limit(factor / new_factor, var, point, dir=direction) * \
-                Limit(rest_part, var, point, dir=direction)
+            new_expr = (Limit(factor / new_factor, var, point, dir=direction)
+                        * Limit(rest_part, var, point, dir=direction))
 
             rule_text = f"{latex(expr_limit)} = {latex(new_expr)}"
             return new_expr, f"应用重要极限的乘法拆分规则: ${rule_text}$"
@@ -113,18 +123,17 @@ def mul_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     # Strategy 2: General multiplicative splitting
     for i, factor in enumerate(factors):
         first_part = factor
-        rest_factors = factors[:i] + factors[i+1:]
+        rest_factors = factors[:i] + factors[i + 1:]
         if not rest_factors:
             continue
         rest_part = Mul(*rest_factors)
 
-        # Only split if both sub-limits exist and their combination is determinate
+        # Only split if both sub-limits exist, and their combination is determinate.
         if (check_limit_exists(first_part, var, point, direction) and
-            check_limit_exists(rest_part, var, point, direction) and
+                check_limit_exists(rest_part, var, point, direction) and
                 not check_combination_indeterminate(first_part, rest_part, var, point, direction, 'mul')):
-
             new_expr = Limit(first_part, var, point, dir=direction) * \
-                Limit(rest_part, var, point, dir=direction)
+                       Limit(rest_part, var, point, dir=direction)
 
             return new_expr, f"应用乘法拆分规则: ${latex(expr_limit)} = {latex(new_expr)}$"
 
@@ -136,30 +145,29 @@ def add_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     This rule attempts to split the expression into two parts such that:
 
-    - The limit of each part exists individually, and
-    - Their combination does not result in an indeterminate form (e.g., oo − oo).
+    The limit of each part exists individually,
+    and their combination does not result in an indeterminate form (e.g., oo − oo).
 
     The function iteratively considers prefixes of the ordered terms
-    (from one term up to all but the last) as the first part, and the
+    (from one term up to all, but the last) as the first part, and the
     remainder as the second part.
     """
     var, point, direction = get_limit_args(context)
     terms = expr.as_ordered_terms()
     n = len(terms)
 
-    # Try all non-trivial prefix splits: [term_0], [term_0 + term_1], ..., up to all but last
+    # Try all non-trivial prefix splits: [term_0], [term_0 + term_1], ..., up to all but last.
     for i in range(n):
-        first_part = Add(*terms[:i+1])
-        rest_terms = terms[i+1:] if i+1 < n else []
+        first_part = Add(*terms[:i + 1])
+        rest_terms = terms[i + 1:] if i + 1 < n else []
         rest_part = Add(*rest_terms) if rest_terms else S.Zero
 
-        # Only split if both sub-limits exist and their sum is determinate
+        # Only split if both sub-limits exist, and their sum is determinate.
         if (check_limit_exists(first_part, var, point, direction) and
-            check_limit_exists(rest_part, var, point, direction) and
+                check_limit_exists(rest_part, var, point, direction) and
                 not check_combination_indeterminate(first_part, rest_part, var, point, direction, 'add')):
-
             new_expr = Limit(first_part, var, point, dir=direction) + \
-                Limit(rest_part, var, point, dir=direction)
+                       Limit(rest_part, var, point, dir=direction)
             expr_limit = Limit(expr, var, point, dir=direction)
 
             return new_expr, f"应用加法拆分规则: ${latex(expr_limit)} = {latex(new_expr)}$"
@@ -275,7 +283,7 @@ def conjugate_rationalize_rule(expr: Expr, context: RuleContext) -> RuleFunction
       - Each term is a square root (possibly with a coefficient of +-1),
       - The denominator is non-zero near the limit point.
 
-    It multiplies numerator and denominator by the conjugate to eliminate radicals.
+    It is the multiplies numerator and denominator by the conjugate to eliminate radicals.
     """
     var, point, direction = get_limit_args(context)
     expr_limit = Limit(expr, var, point, dir=direction)
@@ -284,10 +292,10 @@ def conjugate_rationalize_rule(expr: Expr, context: RuleContext) -> RuleFunction
     # Construct conjugate: flip the sign between the two terms
     # Original: a + b  to conjugate = a - b
     # Original: a - b  to conjugate = a + b
-    # Since num = term1 + term2 (SymPy always stores as Add), we use a - b as conjugate
+    # Since num = term1 + term2 (SymPy always stores as Add), we use a - b as conjugate.
     a, b = num.args
     conj = a - b
-    new_num = simplify(a**2 - b**2)
+    new_num = simplify(a ** 2 - b ** 2)  # type:ignore
     new_den = simplify(den * conj)
     new_expr = simplify(new_num / new_den)
     new_limit = Limit(new_expr, var, point, dir=direction)
@@ -317,7 +325,7 @@ def direct_substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunc
         # Perform naive substitution of the limit point
         substituted_value = expr.subs(var, point)
 
-        # Complex infinity (zoo) is acceptable — e.g., 1/x as x yo 0
+        # Complex infinity (zoo) is acceptable — e.g., 1/x as x yo 0.
         if substituted_value.has(zoo):
             return 'direct_substitution'
 
@@ -335,7 +343,7 @@ def direct_substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunc
             if is_indeterminate_form(factor, var, point, direction):
                 return None
 
-        # Final fallback: compute the actual limit to verify existence
+        # The final fallback: compute the actual limit to verify existence
         lim_val = simplify(limit(expr, var, point, dir=direction))
         if lim_val.is_finite or lim_val in (oo, -oo):
             return 'direct_substitution'

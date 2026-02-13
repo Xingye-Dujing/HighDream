@@ -1,4 +1,5 @@
 from typing import Tuple
+
 from sympy import Expr, Mul, Symbol, simplify
 
 from utils import (
@@ -7,7 +8,7 @@ from utils import (
 
 # ILAET rule for choosing 'u' in integration by parts:
 # Lower number = higher priority for choosing 'u'
-# Priority: Inverse Trig > Logarithmic > Algebraic > Exponential > Trigonometric
+# Priority: Inverse Trig > Logarithmic > Algebraic > Exponential > Trigonometric.
 ILAET_PRIORITY = {
     'inverse_trig': 0,
     'log': 1,
@@ -45,7 +46,7 @@ def _classify_factor(factor: Expr, var: Symbol) -> int:
     if is_trig(factor):
         return ILAET_PRIORITY['trig']
 
-    # Default: unknown function, treat as lowest priority
+    # Default: unknown function, treat as the lowest priority
     return 5
 
 

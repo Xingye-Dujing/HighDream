@@ -1,4 +1,5 @@
 from typing import List, Tuple, Union
+
 from sympy import Eq, Expr, Matrix, Ne, latex, simplify, sympify
 from sympy.core.relational import Relational
 
@@ -8,21 +9,21 @@ from domains.matrix import (
 )
 
 
-class RefCalculator():
+class RefCalculator:
     """A calculator for computing Row Echelon Form (REF) or Reduced Row Echelon Form (RREF)
     of matrices with symbolic entries, handling branching cases when denominators may be zero.
 
     This class systematically handles the computation of REF/RREF forms by:
     1. Tracking potential zero denominators during elimination
-    2. Creating branches for different cases (denominator = 0 vs ≠ 0)
+    2. Creating branches for different cases (denominator = 0 vs != 0)
     3. Processing each branch under its specific conditions
-    4. Merging equivalent results from different branches
+    4. Merging equivalent results from different branches.
     """
 
     def __init__(self) -> None:
         """Initialize the REF calculator with default components."""
         self.step_generator = RefStepGenerator()
-        self.target_form: str = None
+        self.target_form: str | None = None
         # Global record of expressions that might be zero (denominator candidates)
         self.denominators = set()
         self.branch_manager = BranchManager()
@@ -32,7 +33,8 @@ class RefCalculator():
         self.step_generator.reset()
         self.denominators.clear()
 
-    def _parse_matrix_input(self, matrix_input: str) -> Matrix:
+    @staticmethod
+    def _parse_matrix_input(matrix_input: str) -> Matrix:
         """Parse string input into a SymPy Matrix.
 
         Args:
@@ -42,7 +44,7 @@ class RefCalculator():
             Matrix: Parsed SymPy Matrix object
 
         Raises:
-            ValueError: If the matrix cannot be parsed from the input string
+            ValueError: If the matrix cannot be parsed from the input string.
         """
         try:
             return Matrix(sympify(matrix_input))
@@ -56,7 +58,7 @@ class RefCalculator():
 
         Args:
             expr: The expression to apply substitutions to
-            conditions: List of condition objects, potentially containing Eq instances
+            conditions: List of condition objects, potentially containing Eq instances.
 
         Returns:
             The expression after applying substitutions and simplification
@@ -81,10 +83,10 @@ class RefCalculator():
 
         Args:
             expr: Expression to evaluate
-            conditions: List of conditions that may affect the expression value
+            conditions: List of conditions that may affect the expression value.
 
         Returns:
-            bool: True if expression is definitely zero under conditions, False otherwise
+            bool: True if expression is definitely zero under conditions, False otherwise.
         """
         expr_sub = RefCalculator._apply_equalities_to_expr(expr, conditions)
         try:
@@ -99,10 +101,10 @@ class RefCalculator():
 
         Args:
             expr: Expression to evaluate
-            conditions: List of conditions that may affect the expression value
+            conditions: List of conditions that may affect the expression value.
 
         Returns:
-            bool: True if expression is definitely non-zero under conditions, False otherwise
+            bool: True if expression is definitely non-zero under conditions, False otherwise.
         """
         expr_sub = RefCalculator._apply_equalities_to_expr(expr, conditions)
         try:
@@ -124,14 +126,15 @@ class RefCalculator():
 
     # Process a single branch within its conditions
     def _process_branch(self, branch: BranchNode, target_form: str) -> BranchNode:
-        """Process a matrix under branch conditions to attempt completion to target form.
+        """Process a matrix under branch conditions to attempt completion to focus on form.
 
-        If a denominator requiring case analysis is encountered, the branch.finished flag
+        If a denominator requiring case analysis is encountered, the branch.
+        The finished flag
         will be set to False and returned for outer-level splitting processing.
 
         Args:
-            branch (BranchNode): The branch node containing matrix, conditions and steps
-            target_form (str): Target form, either 'ref' or 'rref'
+            branch (BranchNode): The branch node containing matrix, conditions and steps.
+            target_form (str): Target form, either 'ref' or 'rref'.
 
         Returns:
             BranchNode: The processed branch node, possibly unfinished
@@ -144,7 +147,7 @@ class RefCalculator():
             for col in range(cols):
                 if pivot_row >= rows:
                     break
-                # Search for a suitable pivot row: prefer definitely non-zero, then possibly non-zero
+                # Search for a suitable pivot row: prefer definitely non-zero, then possibly non-zero.
                 swap_r = None
                 possible_r = None
                 for r in range(pivot_row, rows):
@@ -153,7 +156,7 @@ class RefCalculator():
                     if self._is_nonzero_under(elem, branch.conditions):
                         swap_r = r
                         break
-                    # Uncertain whether zero or non-zero -> possibly non-zero (take first such row)
+                    # Uncertain whether zero or non-zero -> possibly non-zero (take first such rows)
                     if not self._is_zero_under(elem, branch.conditions) and possible_r is None:
                         possible_r = r
                 if swap_r is None:
@@ -168,8 +171,8 @@ class RefCalculator():
                     matrix, expl = apply_swap_rule(
                         matrix, pivot_row, swap_r)
                     branch.add_step(matrix.copy(), expl)
-                # If pivot element contains symbols and current conditions are insufficient
-                # to determine it's non-zero, record it as a denominator for case analysis
+                # If the pivot element contains symbols and current conditions are not enough
+                # to determine it is non-zero, record it as a denominator for case analysis.
                 if swap_r == possible_r:
                     pivot_elem = matrix[pivot_row, col]
                     self.denominators.add(pivot_elem)
@@ -184,7 +187,7 @@ class RefCalculator():
                     branch.matrix = matrix.copy()
                     branch.add_step(matrix.copy(), expl)
 
-                # Eliminate other rows depending on target_form
+                # Eliminate other rows depending on target_form.
                 if target_form == 'rref':
                     for r in range(rows):
                         if r == pivot_row or matrix[r, col] == 0:
@@ -213,16 +216,17 @@ class RefCalculator():
             matrix.copy(), rf"$最终\;{target_form.upper()}\;形式(在分支条件下)$")
         return branch
 
-    def _split_branch_on_denominator(self, branch: BranchNode, denom_expr: Expr) -> List[BranchNode]:
+    @staticmethod
+    def _split_branch_on_denominator(branch: BranchNode, denom_expr: Expr) -> List[BranchNode]:
         """Split a branch into two based on a denominator expression:
           - denom != 0 branch (continue directly)
-          - denom == 0 branch (substitute denom=0 in matrix, then continue)
+          - denom == 0 branch (substitute denom=0 in the matrix, then continue)
 
         Only returns satisfiable branches.
 
         Args:
             branch (BranchNode): The branch to split
-            denom_expr: The denominator expression to split on
+            denom_expr: The denominator expression to split on.
 
         Returns:
             list: New branch nodes generated from splitting
@@ -259,8 +263,8 @@ class RefCalculator():
 
     def _compute_branches(self, original_matrix: Matrix, target_form: str) -> List[BranchNode]:
         """Expand branches using BFS (queue-based):
-          1. Process the front branch in queue using _process_branch
-          2. If branch is unfinished, split based on self.denominators (prioritizing earliest appearing)
+          1. Process the front branch in the queue using _process_branch
+          2. If branch is unfinished, split based on self.denominators (prioritizing the earliest appearing)
           3. Collect all finished leaves and merge equivalent results using BranchManager.merge_leaves
 
         Args:
@@ -275,7 +279,7 @@ class RefCalculator():
         queue = [root]
         finished_leaves = []
 
-        # Clear denominators (ensure fresh collection from start)
+        # Clear denominators (ensure the fresh collection from start)
         self.denominators = set()
 
         while queue:
@@ -332,7 +336,7 @@ class RefCalculator():
             # Line break
             self.step_generator.add_step("", "")
             self.step_generator.add_step(
-                f"\\quad\\quad 分支 {i+1}", f"条件：${cond_latex}$")
+                f"\\quad\\quad 分支 {i + 1}", f"条件：${cond_latex}$")
             for mat_or_str, expl in leaf.steps:
                 # Line break
                 self.step_generator.add_step("", "")
@@ -350,7 +354,7 @@ class RefCalculator():
             )
             for i, leaf in enumerate(leaves):
                 cond_latex = BranchManager.conditions_to_latex(leaf.conditions)
-                # Get final matrix from last step of branch
+                # Get the final matrix from the last step of branch
                 if isinstance(leaf.steps[-1][0], str):
                     final_matrix = leaf.steps[-2][0]
                 else:
@@ -359,7 +363,7 @@ class RefCalculator():
                 self.step_generator.add_step("", "")
                 self.step_generator.add_step(
                     final_matrix,
-                    f"分支 {i+1}: 条件 ${cond_latex}$"
+                    f"分支 {i + 1}: 条件 ${cond_latex}$"
                 )
 
         steps, explanations = self.step_generator.get_steps()

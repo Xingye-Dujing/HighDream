@@ -11,11 +11,13 @@ Routes:
     /matrix_analyze - Analyze matrix properties
     /matrix_cal     - Perform matrix calculations
     /get_process    - Retrieve process information
-    /static/trees   - Serve static tree diagram files
+    /static/trees   - Serve static tree diagram files.
 """
 
 import traceback
+
 import sympy as sp
+from flask import Blueprint, request, jsonify, send_from_directory
 from sympy import (
     # Basic classes
     Symbol, symbols, sympify, Expr, Integer, Rational, Float, Piecewise,
@@ -58,9 +60,9 @@ from sympy import (
     N, nsimplify,
 )
 from sympy.simplify.fu import fu
-from flask import Blueprint, request, jsonify, send_from_directory
-from domains import MatrixAnalyzer, MatrixCalculator, ProcessManager
+
 from config import TREES_DIR
+from domains import MatrixAnalyzer, MatrixCalculator, ProcessManager
 from utils.latex_formatter import str_to_latex
 from .task_manager import task_manager
 
@@ -74,15 +76,15 @@ def parse_input():
 
     Expected JSON input:
         expression (str): The mathematical expression to parse
-        operation_type (str): Type of operation for context
+        operation_type (str): Type of operation for context.
 
     Returns:
         JSON response with either:
             success (bool): True if parsing succeeded
-            result (str): LaTeX formatted output
+            result (str): LaTeX formatted output.
         or:
             success (bool): False if parsing failed
-            error (str): Error message describing the issue
+            error (str): Error message describing the issue.
 
     Example:
         POST /parse
@@ -108,17 +110,17 @@ def compute():
 
     Expected JSON input:
         operation_type (str): Type of operation to perform
-        ... other fields depending on operation type
+        ... other fields depending on the operation type.
 
     Returns:
         JSON response with:
             success (bool): Always True for task creation
-            task_id (str): Task ID for polling results
+            task_id (str): Task ID for the polling result.
     """
     data = request.json or {}
     op_type = data.get('operation_type', '')
 
-    # Create asynchronous task
+    # Create the asynchronous task
     task_id = task_manager.create_task(op_type, data)
 
     return jsonify({
@@ -132,7 +134,7 @@ def get_task_status():
     """Get the status and result of an async task.
 
     Expected JSON input:
-        task_id (str): The task ID to query
+        task_id (str): The task ID to query.
 
     Returns:
         JSON response with task status and results:
@@ -143,7 +145,7 @@ def get_task_status():
             error (str, optional): Error message if failed
             created_at (str): Task creation timestamp
             started_at (str, optional): Task start timestamp
-            completed_at (str, optional): Task completion timestamp
+            completed_at (str, optional): Task completion timestamp.
     """
     data = request.json or {}
     task_id = data.get('task_id', '')
@@ -183,11 +185,11 @@ def matrix_cal():
     Expected JSON input:
         expression (str): Initial matrix expression
         operations (str): Newline-separated list of operations to perform
-        record_all_steps (str): "True" to record all calculation steps
+        record_all_steps (str): "True" to record all calculation steps.
 
     Returns:
         JSON response with:
-            steps (list): List of LaTeX-formatted calculation steps
+            steps (list): List of LaTeX-formatted calculation steps.
     """
     data = request.json or {}
     expr = data.get('expression', '')
@@ -205,7 +207,7 @@ def get_process():
 
     Expected JSON input:
         type (str): Type of process to retrieve
-        expression (str): Expression related to the process
+        expression (str): Expression related to the process.
 
     Returns:
         JSON response containing process information from ProcessManager
@@ -242,7 +244,7 @@ def render_latex():
             latex (str): LaTeX formatted expression
         or:
             success (bool): False if conversion failed
-            error (str): Error message describing the issue
+            error (str): Error message describing the issue.
     """
     data = request.json or {}
     expression = data.get('expression', '')
@@ -257,7 +259,7 @@ def render_latex():
 
 @api.route('/sympy_calculate', methods=['POST'])
 def sympy_calculate():
-    """Perform SymPy calculations based on operation type.
+    """Perform SymPy calculations based on the operation type.
 
     Expected JSON input:
         expression (str): The mathematical expression to calculate
@@ -267,10 +269,10 @@ def sympy_calculate():
     Returns:
         JSON response with either:
             success (bool): True if calculation succeeded
-            result (str): Result of the SymPy calculation
+            the result (str): Result of the SymPy calculation
         or:
             success (bool): False if calculation failed
-            error (str): Error message describing the issue
+            error (str): Error message describing the issue.
     """
     data = request.json or {}
     expression = simplify(data.get('expression', ''))
@@ -314,7 +316,7 @@ def sympy_simplify():
             result (str): Simplified result of the expression
         or:
             success (bool): False if simplification failed
-            error (str): Error message describing the issue
+            error (str): Error message describing the issue.
     """
     data = request.json or {}
     expression = data.get('expression', '')
@@ -345,7 +347,7 @@ def sympy_execute():
             latex (str): LaTeX formatted result (if applicable)
         or:
             success (bool): False if execution failed
-            error (str): Error message describing the issue
+            error (str): Error message describing the issue.
     """
     data = request.json or {}
     code = data.get('code', '')
@@ -492,13 +494,13 @@ def sympy_execute():
         exec_locals = {}
         exec(code, exec_globals, exec_locals)
 
-        # Get last expression as result
+        # Get last expression as the result
         result = None
         for key, value in exec_locals.items():
             if not key.startswith('_'):
                 result = value
 
-        # If no result, try to extract the last expression from code
+        # If no result, try to extract the last expression from code.
         if result is None:
             # Try to parse the last expression in the code
             lines = code.strip().split('\n')

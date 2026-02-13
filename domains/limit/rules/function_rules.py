@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Type
 
 from sympy import (
     Expr, Limit, Pow, S, acos, asin, atan, cos, cosh, cot, csc, exp,
@@ -6,12 +6,14 @@ from sympy import (
 )
 from sympy.functions.elementary.trigonometric import InverseTrigonometricFunction, TrigonometricFunction
 
-from utils import MatcherFunctionReturn, RuleContext, RuleFunction, RuleFunctionReturn
-from domains.limit import get_limit_args
+from domains.limit.limit_help_func import get_limit_args
+from utils import MatcherFunction, MatcherFunctionReturn, RuleContext, RuleFunction, RuleFunctionReturn
 
 
-def _create_rule(func: Union[exp, log, InverseTrigonometricFunction, TrigonometricFunction], func_name: str) -> RuleFunction:
-    """Special create rule function."""
+def _create_rule(func: Type[exp | log | InverseTrigonometricFunction | TrigonometricFunction],
+                 func_name: str) -> RuleFunction:
+    """Specially create rule function."""
+
     def rule_function(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
         var, point, direction = get_limit_args(context)
 
@@ -24,8 +26,10 @@ def _create_rule(func: Union[exp, log, InverseTrigonometricFunction, Trigonometr
     return rule_function
 
 
-def _create_matcher(func: Union[exp, log, InverseTrigonometricFunction, TrigonometricFunction]) -> MatcherFunctionReturn:
+def _create_matcher(
+        func: Type[exp | log | InverseTrigonometricFunction | TrigonometricFunction]) -> MatcherFunction:
     """Special create matcher function."""
+
     def matcher_function(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
         # Don't restrict to var == context['variable']
         if isinstance(expr, func):

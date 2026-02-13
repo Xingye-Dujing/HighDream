@@ -1,9 +1,11 @@
 from typing import List, Tuple, Union
+
 from sympy import Eq, Matrix, Symbol, latex, sympify, zeros
-# from sympy import Rational, symbols
-# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
+
+# from sympy import Rational, symbols
+# from IPython.display import Math, display
 
 EquationList = List[Eq]
 SymbolList = List[Symbol]
@@ -12,15 +14,16 @@ SymbolList = List[Symbol]
 class LinearSystemConverter(CommonMatrixCalculator):
 
     @staticmethod
-    def str_to_Eq(expressions: List[str], get_unknowns: bool = False) -> Union[EquationList, Tuple[EquationList, SymbolList]]:
+    def str_to_Eq(expressions: str | List[str], get_unknowns: bool = False) \
+            -> Union[EquationList, Tuple[EquationList, SymbolList]]:
         """Convert string expressions to SymPy equations.
 
         Args:
             expressions: List of string expressions representing equations
-            get_unknowns: Boolean flag to indicate whether to extract unknowns from the last line
+            get_unknowns: Boolean flag to indicate whether to extract unknowns from the last line.
 
         Returns:
-            List of SymPy equations or tuple of equations and unknowns
+            List of SymPy equations or tuple of equations and unknowns.
         """
         unknowns_str = ''
         expressions = expressions.split('\n')
@@ -32,16 +35,18 @@ class LinearSystemConverter(CommonMatrixCalculator):
         eq_list = []
         for i, expr in enumerate(expressions):
             if '=' not in expr:
-                raise ValueError(f"Equation format error in line {i+1}")
+                raise ValueError(f"Equation format error in line {i + 1}")
             left, right = expr.split('=')
             eq = Eq(sympify(left), sympify(right))
             eq_list.append(eq)
         if get_unknowns:
             unkowns = [sympify(sym) for sym in unknowns_str.split(' ')]
-            return eq_list, unkowns
+            return eq_list, unkowns  # type: ignore
         return eq_list
 
-    def equations_to_matrix(self, equations: EquationList, unknowns: SymbolList = None, parameters: SymbolList = None) -> Tuple[Matrix, Matrix, Matrix, SymbolList]:
+    @staticmethod
+    def equations_to_matrix(equations: EquationList, unknowns: SymbolList = None,
+                            parameters: SymbolList = None) -> Tuple[Matrix, Matrix, Matrix, SymbolList]:
         """Convert linear system of equations to matrix form Ax = b.
         Supports parameters in both A and b matrices.
 
@@ -49,11 +54,11 @@ class LinearSystemConverter(CommonMatrixCalculator):
             equations: List of equations
             unknowns: List of unknown variables
             parameters: List of parameters (optional). If not specified,
-                       all symbols that are not unknowns are treated as parameters
+                       all symbols that are not unknowns are treated as parameters.
 
         Returns:
             Tuple containing coefficient matrix A, unknown vector x,
-            constant vector b, and parameter list
+            constant vector b, and parameter list.
         """
         # Process input equations
         processed_eqs = []
@@ -93,7 +98,7 @@ class LinearSystemConverter(CommonMatrixCalculator):
                 # Subtract this term from equation
                 eq = eq - coeff * unknown
 
-            # Remaining part (with parameters and constants) goes to b with sign change
+            # The Remaining part (with parameters and constants) goes to b with sign change.
             b[i, 0] = -eq
 
         # Create unknown vector
@@ -101,9 +106,10 @@ class LinearSystemConverter(CommonMatrixCalculator):
 
         return A, x, b, parameters
 
-    def matrix_to_equations(self, A: Matrix, x: Matrix, b: Matrix) -> EquationList:
+    @staticmethod
+    def matrix_to_equations(A: Matrix, x: Matrix, b: Matrix) -> EquationList:
         """
-        Convert matrix form Ax = b back to system of linear equations.
+        Convert matrix form Ax = b back to the system of linear equations.
         Supports parameters in A and b.
 
         Args:
@@ -127,19 +133,20 @@ class LinearSystemConverter(CommonMatrixCalculator):
 
         return equations
 
-    def show_equations_to_matrix(self, equations: str, unknowns: SymbolList = None, parameters: List = None, show_steps: bool = True) -> Tuple[Matrix, Matrix, Matrix, SymbolList]:
+    def show_equations_to_matrix(self, equations: str, unknowns: SymbolList = None, parameters: List = None,
+                                 show_steps: bool = True) -> Tuple[Matrix, Matrix, Matrix, SymbolList]:
         """
-        Display the conversion process from equations to matrix form, supports parameters.
+        Display the conversion process from equations to the matrix form, supports parameters.
 
         Args:
-            equations: str of system of equations
+            equations: str of the system of equations
             unknowns: List of unknown variables
             parameters: List of parameters
-            show_steps: Flag to show step-by-step process
+            show_steps: Flag to show the step-by-step process.
 
         Returns:
             Tuple containing coefficient matrix A, unknown vector x,
-            constant vector b, and parameter list
+            constant vector b, and parameter list.
         """
         if isinstance(equations, str):
             equations = self.str_to_Eq(equations)
@@ -152,7 +159,7 @@ class LinearSystemConverter(CommonMatrixCalculator):
             equations, unknowns, parameters)
 
         if show_steps:
-            # Display original system of equations
+            # Display the original system of equations
             self.add_step("原始线性方程组")
             eq_latex = r"\begin{cases}"
             for eq in equations:
@@ -163,7 +170,7 @@ class LinearSystemConverter(CommonMatrixCalculator):
             eq_latex += r"\end{cases}"
             self.step_generator.add_step(eq_latex)
 
-            # Display unknowns and parameters information
+            # Display unknowns and parameter's information
             if unknowns:
                 u_str = ''
                 for u in unknowns:
@@ -177,7 +184,7 @@ class LinearSystemConverter(CommonMatrixCalculator):
                 self.step_generator.add_step(
                     r"\text{参数: }" + p_str)
 
-            # Display matrix form
+            # Display the matrix form
             self.add_step("矩阵形式")
             self.step_generator.add_step(rf"A = {latex(A)}")
             self.step_generator.add_step(rf"\boldsymbol{{x}} = {latex(x)}")
@@ -197,7 +204,7 @@ class LinearSystemConverter(CommonMatrixCalculator):
             A: Coefficient matrix
             x: Unknown vector
             b: Constant vector
-            show_steps: Flag to show step-by-step process
+            show_steps: Flag to show the step-by-step process.
 
         Returns:
             List of equations
@@ -209,14 +216,14 @@ class LinearSystemConverter(CommonMatrixCalculator):
         equations = self.matrix_to_equations(A, x, b)
 
         if show_steps:
-            # Display matrix form
+            # Display the matrix form
             self.add_step("矩阵形式")
             self.step_generator.add_step(rf"A = {latex(A)}")
             self.step_generator.add_step(rf"\boldsymbol{{x}} = {latex(x)}")
             self.step_generator.add_step(rf"\boldsymbol{{b}} = {latex(b)}")
             self.step_generator.add_step(f"{latex(A)} {latex(x)} = {latex(b)}")
 
-            # Display converted system of equations
+            # Display the converted system of equations
             self.add_step("对应的线性方程组")
             eq_latex = r"\begin{cases}"
             for eq in equations:
@@ -225,7 +232,6 @@ class LinearSystemConverter(CommonMatrixCalculator):
             self.step_generator.add_step(eq_latex)
 
         return equations
-
 
 # def demo():
 #     converter = LinearSystemConverter()
@@ -268,7 +274,7 @@ class LinearSystemConverter(CommonMatrixCalculator):
 #         equations3, unknowns=[x, y, z])
 #     display(Math(converter.get_steps_latex()))
 
-#     # Example 4: Convert matrix form back to equations (with parameters)
+#     # Example 4: Convert the matrix form back to equations (with parameters)
 
 #     converter.step_generator.add_step(rf"\textbf{{示例4: 矩阵形式转回方程组(带参数)}}")
 #     converter.show_matrix_to_equations(A3, x3, b3)

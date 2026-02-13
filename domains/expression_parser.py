@@ -1,9 +1,12 @@
 from typing import Dict, List, Tuple, Callable, Set, Optional
+
 from sympy import (
     Expr, preorder_traversal, srepr, sympify, expand, factor,
     expand_trig, logcombine, expand_log, apart, cancel, radsimp, tan, sin, cos,
     powsimp, trigsimp
 )
+
+
 # from sympy import latex
 # from matplotlib import pyplot as plt
 # from matplotlib import rcParams
@@ -23,13 +26,12 @@ class ExpressionParser:
         """Initialize the ExpressionParser with maximum derivation depth and optional sorting strategy.
 
         Args:
-            max_depth: Maximum depth of derivation tree (default: 3)
+            max_depth: Maximum depth of the derivation tree (default: 3)
             sort_strategy: Optional function to sort derived expressions by a custom criterion
         """
         self.max_depth = max_depth
         self.sort_strategy = sort_strategy
-        self.transform_rules: List[Tuple[str,
-                                         Callable[[Expr], List[Expr]]]] = []
+        self.transform_rules: List[Tuple[str, Callable[[Expr], List[Expr]]]] = []
         self._initialize_rules()
 
     @staticmethod
@@ -40,10 +42,10 @@ class ExpressionParser:
             expr: The expression to transform
             func: The transformation function to apply
             *args: Positional arguments for the function
-            **kwargs: Keyword arguments for the function
+            **kwargs: Keyword arguments for the function.
 
         Returns:
-            List containing the transformed expression if successful, otherwise empty list
+            List containing the transformed expression if successful, otherwise empty list.
         """
         try:
             result = func(expr, *args, **kwargs)
@@ -78,12 +80,12 @@ class ExpressionParser:
             expression: String representation of the mathematical expression
 
         Returns:
-            List of tuples containing derived expressions and their derivation steps
+            List of tuples containing derived expressions, and their derivation steps.
         """
         expr = sympify(expression)
 
-        def canonical_key(expr: Expr) -> str:
-            return srepr(expr)
+        def canonical_key(e: Basic | Expr) -> str:
+            return srepr(e)
 
         seen: Set[str] = {canonical_key(expr)}
         derivations: List[Tuple[Expr, str]] = []
@@ -119,15 +121,15 @@ class ExpressionParser:
         """
         expr = sympify(expression)
 
-        def canonical_key(expr: Expr) -> str:
-            return srepr(expr)
+        def canonical_key(e: Basic | Expr) -> str:
+            return srepr(e)
 
         seen: Set[str] = {canonical_key(expr)}
         node_id = 0
 
-        def make_node(expr, reason):
+        def make_node(e, reason):
             nonlocal node_id
-            node = {"id": node_id, "expr": expr,
+            node = {"id": node_id, "expr": e,
                     "reason": reason, "children": []}
             node_id += 1
             return node
@@ -171,8 +173,8 @@ class ExpressionParser:
     #     depth = _tree_depth(tree)
 
     #     # Dynamically adjust canvas size
-    #     width = num_nodes * 1.5    # Width adjusted by number of nodes
-    #     height = depth * 1.5       # Height adjusted by tree depth
+    #     width = num_nodes * 1.5 # Width adjusted by number of nodes
+    #     height = depth * 1.5 # Height adjusted by tree depth
 
     #     _, ax = plt.subplots(figsize=(width, height))
     #     ax.axis('off')
@@ -212,18 +214,18 @@ class ExpressionParser:
     #                 bbox={"boxstyle": "round,pad=0.5", "fc": "lightblue", "ec": "black"})
 
     #     if save_path:
-    #         plt.savefig(save_path, bbox_inches="tight")  # Save to file
+    #         plt.savefig(save_path, bbox_inches="tight") # Save to file
     #         print(f"可视化树已保存到：{save_path}")
 
-    def _find_node_by_id(self, node: Dict, node_id: int) -> Dict:
+    def _find_node_by_id(self, node: Dict, node_id: int) -> Dict | None:
         """Find a node in the tree by its ID.
 
         Args:
             node: The root node to start searching from
-            node_id: The ID of the node to find
+            node_id: The ID of the node to find.
 
         Returns:
-            The node with the matching ID or None if not found
+            The node with the matching ID or None if not found.
         """
         if node["id"] == node_id:
             return node
@@ -233,12 +235,13 @@ class ExpressionParser:
                 return res
         return None
 
-    def _apply_rule_to_subexpressions(self, rule: Callable[[Expr], List[Expr]], expr: Expr) -> List[Expr]:
+    @staticmethod
+    def _apply_rule_to_subexpressions(rule: Callable[[Expr], List[Expr]], expr: Expr) -> List[Expr]:
         """Apply a transformation rule to all subexpressions of an expression.
 
         Args:
             rule: The transformation rule function to apply
-            expr: The expression to which the rule will be applied
+            expr: The expression to which the rule will be applied.
 
         Returns:
             List of all valid transformed expressions
@@ -263,7 +266,7 @@ class ExpressionParser:
                 if sub == expr:
                     continue
                 try:
-                    for t in rule(sub):
+                    for t in rule(sub):  # type:ignore
                         try:
                             new_expr = expr.xreplace({sub: t})
                         except Exception:
@@ -278,22 +281,27 @@ class ExpressionParser:
 
     # Transformation rules
     def _polynomial_expand_transform(
-        self, expr: Expr) -> List[Expr]: return self._try_transform(expr, expand)
+            self, expr: Expr) -> List[Expr]:
+        return self._try_transform(expr, expand)
 
     def _factor_transform(self, expr: Expr) -> List[Expr]:
         return self._try_transform(expr, factor)
 
     def _product_or_trig_expand_transform(
-        self, expr: Expr) -> List[Expr]: return self._try_transform(expr, expand_trig)
+            self, expr: Expr) -> List[Expr]:
+        return self._try_transform(expr, expand_trig)
 
     def _expand_trig_transform(
-        self, expr: Expr) -> List[Expr]: return self._try_transform(expr, expand_trig)
+            self, expr: Expr) -> List[Expr]:
+        return self._try_transform(expr, expand_trig)
 
     def _combine_logarithms_transform(
-        self, expr: Expr) -> List[Expr]: return self._try_transform(expr, logcombine, force=True)
+            self, expr: Expr) -> List[Expr]:
+        return self._try_transform(expr, logcombine, force=True)
 
     def _expand_logarithmic_transform(
-        self, expr: Expr) -> List[Expr]: return self._try_transform(expr, expand_log, force=True)
+            self, expr: Expr) -> List[Expr]:
+        return self._try_transform(expr, expand_log, force=True)
 
     def _apart_transform(self, expr: Expr) -> List[Expr]:
         return self._try_transform(expr, apart)
@@ -302,7 +310,8 @@ class ExpressionParser:
         return self._try_transform(expr, cancel)
 
     def _radsimp_transform(
-        self, expr: Expr) -> List[Expr]: return self._try_transform(expr, radsimp)
+            self, expr: Expr) -> List[Expr]:
+        return self._try_transform(expr, radsimp)
 
     def _powsimp_transform(self, expr: Expr) -> List[Expr]:
         return self._try_transform(expr, powsimp, force=True)
@@ -310,14 +319,15 @@ class ExpressionParser:
     def _reciprocal_trig_transform(self, expr: Expr) -> List[Expr]:
         return self._try_transform(expr, trigsimp, reciprocal=True)
 
-    def _tan_to_sin_cos_transform(self, expr: Expr) -> List[Expr]:
+    @staticmethod
+    def _tan_to_sin_cos_transform(expr: Expr) -> List[Expr]:
         """Transform tangent functions into sine over cosine ratios.
 
         Args:
             expr: The expression potentially containing tangent functions
 
         Returns:
-            List containing the transformed expression or empty list if no transformation occurred
+            List containing the transformed expression or empty list if no transformation occurred.
         """
         try:
             replaced = expr.replace(lambda e: getattr(e, "func", None) == tan,

@@ -1,9 +1,8 @@
-
 from sympy import (
-    Add, Expr,  Mul, Pow, S, Symbol, exp, limit, log, oo, simplify, sin
+    Add, Expr, Mul, Pow, S, Symbol, exp, limit, log, oo, simplify, sin
 )
 
-from domains.limit import (
+from domains.limit.limit_help_func import (
     check_combination_indeterminate, check_function_tends_to_zero,
     check_limit_exists, check_limit_exists_oo,
 )
@@ -25,13 +24,14 @@ def check_mul_split(expr: Expr, var: Symbol, point: Expr, direction: str) -> boo
         return False
     factors = expr.as_ordered_factors()
 
-    # A for loop to detect.
+    # A for-loop to detect.
     for i, factor in enumerate(factors):
         # Strategy 1: Detect standard limit forms
         num, den = factor.as_numer_denom()
         # Detect sin(f(x)), f(x) to 0
         for part in (num, den):
-            if isinstance(part, sin) and part.has(var) and check_function_tends_to_zero(part.args[0], var, point, direction):
+            if (isinstance(part, sin) and part.has(var)
+                    and check_function_tends_to_zero(part.args[0], var, point, direction)):
                 return True
 
         # Detect ln(1+f(x)), f(x) to 0
@@ -64,14 +64,14 @@ def check_mul_split(expr: Expr, var: Symbol, point: Expr, direction: str) -> boo
 
         # Strategy 2: General multiplicative splitting
         first_part = factor
-        rest_factors = factors[:i] + factors[i+1:]
+        rest_factors = factors[:i] + factors[i + 1:]
         if not rest_factors:
             continue
         rest_part = Mul(*rest_factors)
 
-        # Only split if both sub-limits exist and their combination is determinate
+        # Only split if both sub-limits exist, and their combination is determinate.
         if (check_limit_exists(first_part, var, point, direction) and
-            check_limit_exists(rest_part, var, point, direction) and
+                check_limit_exists(rest_part, var, point, direction) and
                 not check_combination_indeterminate(first_part, rest_part, var, point, direction, 'mul')):
             return True
 
@@ -83,7 +83,7 @@ def check_add_split(expr: Expr, var: Symbol, point: Expr, direction: str) -> boo
       - The limit of each part exists (finite or infinite),
       - Their sum does not yield an indeterminate form (e.g., oo-oo).
 
-    The function iteratively isolates each term and checks whether both the term
+    The function iteratively isolates each term and checks whether both the terms,
     and the remainder of the sum admit well-defined limits whose combination is
     determinate under addition.
     """
@@ -93,12 +93,12 @@ def check_add_split(expr: Expr, var: Symbol, point: Expr, direction: str) -> boo
     for i, term in enumerate(terms):
         # Detect the situation of extracting the i-th term
         first_part = term
-        rest_terms = terms[:i] + terms[i+1:]
+        rest_terms = terms[:i] + terms[i + 1:]
         rest_part = Add(*rest_terms) if rest_terms else S.Zero
 
-        # Only split if both sub-limits exist and their combination is determinate
+        # Only split if both sub-limits exist, and their combination is determinate.
         if (check_limit_exists(first_part, var, point, direction) and
-            check_limit_exists(rest_part, var, point, direction) and
+                check_limit_exists(rest_part, var, point, direction) and
                 not check_combination_indeterminate(first_part, rest_part, var, point, direction, 'add')):
             return True
     return False
@@ -138,7 +138,7 @@ def check_div_split(expr: Expr, var: Symbol, point: Expr, direction: str) -> boo
 
     # Reject classical indeterminate forms.
     if (num_limit == 0 and den_limit == 0) or \
-       (num_limit in (oo, -oo) and den_limit in (oo, -oo)):
+            (num_limit in (oo, -oo) and den_limit in (oo, -oo)):
         return False
 
     return True

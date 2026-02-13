@@ -1,7 +1,7 @@
 """Main routes module for the HighDream application.
 
 This module defines the primary blueprint and routes for the web application,
-including the home page, matrix panel, analysis, and lab features.
+including the home page, matrix panel, analysis and lab features.
 """
 
 from flask import Blueprint, render_template, request
@@ -101,8 +101,8 @@ def matrix_panel():
 def matrix_analysis():
     """Handle matrix analysis requests with support for both GET and POST methods.
 
-    For POST requests, retrieves expression data from form data.
-    For GET requests, retrieves expression data from query parameters.
+    For POST requests, retrieve expression data from form data.
+    For GET requests, retrieve expression data from query parameters.
 
     Returns:
         str: Rendered HTML template for matrix analysis with expression context.
@@ -116,11 +116,11 @@ def matrix_analysis():
 def matrix_lab():
     """Handle matrix laboratory requests with support for both GET and POST methods.
 
-    For POST requests, retrieves expression data from form data.
-    For GET requests, retrieves expression data from query parameters.
+    For POST requests, retrieve expression data from form data.
+    For GET requests, retrieve expression data from query parameters.
 
     Returns:
-        str: Rendered HTML template for matrix lab with expression context.
+        str: Rendered HTML template for the matrix lab with expression context.
     """
     expr = request.form.get(
         'expression') if request.method == 'POST' else request.args.get('expression')

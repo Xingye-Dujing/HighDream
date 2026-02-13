@@ -1,18 +1,21 @@
 from typing import List
+
 from sympy import Matrix, latex, sympify
-# from sympy import symbols
-# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
+
+
+# from sympy import symbols
+# from IPython.display import Math, display
 
 
 class LinearTransform(CommonMatrixCalculator):
     """A class for handling linear transformations and their matrix representations.
 
     This class provides methods to:
-    - Find matrix representation of linear transformations in given bases
-    - Change basis of linear transformation matrices
-    - Handle symbolic computations with parameters
+    - Find matrix representation of linear transformations in given bases.
+    - Change basis of linear transformation matrices.
+    - Handle symbolic computations with parameters.
     """
 
     def parse_basis_input(self, basis_matrix: Matrix, name: str = "B", vector_names: List[str] = None) -> None:
@@ -21,7 +24,7 @@ class LinearTransform(CommonMatrixCalculator):
         Args:
             basis_matrix: The matrix representing the basis vectors
             name (str): Name of the basis (default: "B")
-            vector_names (list): Names for individual basis vectors (optional)
+            vector_names (list): Names for individual basis vectors (optional).
 
         Raises:
             ValueError: If the basis input cannot be parsed
@@ -30,7 +33,7 @@ class LinearTransform(CommonMatrixCalculator):
             self.add_step(f"{name}组成的矩阵")
             if vector_names is None:
                 vector_names = [
-                    f"\\boldsymbol{{b}}_{{{i+1}}}" for i in range(basis_matrix.rows)]
+                    f"\\boldsymbol{{b}}_{{{i + 1}}}" for i in range(basis_matrix.rows)]
 
             for i in range(basis_matrix.rows):
                 vector_latex = latex(basis_matrix.col(i))
@@ -43,7 +46,8 @@ class LinearTransform(CommonMatrixCalculator):
         except Exception as e:
             raise ValueError(f"无法解析基输入: {basis_matrix}") from e
 
-    def parse_input(self, transformation_input: str) -> Matrix:
+    @staticmethod
+    def parse_input(transformation_input: str) -> Matrix:
         """Parse linear transformation input.
 
         Args:
@@ -61,18 +65,19 @@ class LinearTransform(CommonMatrixCalculator):
             raise ValueError(
                 f"无法解析线性变换输入: {transformation_input}") from e
 
-    def find_linear_transform_matrix(self, transformation_input: str, basis_input: str, show_steps: bool = True) -> Matrix:
+    def find_linear_transform_matrix(self, transformation_input: str, basis_input: str,
+                                     show_steps: bool = True) -> Matrix | None:
         """Find the matrix representation of a linear transformation in a given basis.
 
-        For a linear transformation T and basis B, finds matrix A such that T(B) = B*A.
+        For a linear transformation T and basis B, find matrix A such as T(B) = B*A.
 
         Args:
-            transformation_input: The linear transformation (in standard basis)
+            transformation_input: The linear transformation (in the standard basis)
             basis_input: The basis vectors as a matrix
             show_steps (bool): Whether to show computation steps (default: True)
 
         Returns:
-            Matrix: The transformation matrix in the given basis, or None if computation fails
+            Matrix: The transformation matrix on the given basis, or None if computation fails.
         """
         if show_steps:
             self.step_generator.clear()
@@ -99,9 +104,9 @@ class LinearTransform(CommonMatrixCalculator):
             if i == 0:
                 self.add_step("应用线性变换到基向量")
             self.add_vector(
-                basis_vector, f"\\boldsymbol{{b}}_{{{i+1}}}")
+                basis_vector, f"\\boldsymbol{{b}}_{{{i + 1}}}")
             self.add_vector(transformed_vector,
-                            f"T(\\boldsymbol{{b}}_{{{i+1}}})")
+                            f"T(\\boldsymbol{{b}}_{{{i + 1}}})")
             transformed_basis_vectors.append(transformed_vector)
 
         # Build matrix of transformed basis vectors
@@ -130,7 +135,8 @@ class LinearTransform(CommonMatrixCalculator):
             self.step_generator.add_step(f"\\text{{计算失败: {str(e)}}}")
             return None
 
-    def change_transform_basis(self, transform_matrix: str, from_basis_input: str, to_basis_input: str, show_steps: bool = True) -> Matrix:
+    def change_transform_basis(self, transform_matrix: str, from_basis_input: str, to_basis_input: str,
+                               show_steps: bool = True) -> Matrix | None:
         """Change the basis of a linear transformation matrix.
 
         Given a transformation matrix A in basis B, computes A' in basis C using
@@ -143,7 +149,7 @@ class LinearTransform(CommonMatrixCalculator):
             show_steps (bool): Whether to show computation steps (default: True)
 
         Returns:
-            Matrix: The transformation matrix in the new basis, or None if computation fails
+            Matrix: The transformation matrix on the new basis, or None if computation fails.
         """
         if show_steps:
             self.step_generator.clear()
@@ -159,7 +165,7 @@ class LinearTransform(CommonMatrixCalculator):
         to_basis = self.parse_input(to_basis_input)
         self.parse_basis_input(from_basis, "原基")
         self.parse_basis_input(to_basis, "新基", [
-            f"\\boldsymbol{{c}}_{{{i+1}}}" for i in range(to_basis.rows)])
+            f"\\boldsymbol{{c}}_{{{i + 1}}}" for i in range(to_basis.rows)])
 
         # Calculate basis change matrix
         self.add_step("计算基变换矩阵")
@@ -175,7 +181,7 @@ class LinearTransform(CommonMatrixCalculator):
             P = from_basis_inv * to_basis
             self.add_matrix(P, "P")
 
-            # Calculate linear transformation matrix in new basis
+            # Calculate linear transformation matrix in the new basis
             self.add_step("计算新基下的线性变换矩阵")
             self.step_generator.add_step(
                 r"\text{新基下的线性变换矩阵为: } A' = P^{-1} A P")
@@ -193,11 +199,11 @@ class LinearTransform(CommonMatrixCalculator):
             return None
 
     def compute(self, expression: str, operation: str) -> str:
-        """Process computational requests based on expression and operation type.
+        """Process computational requests based on the expression and operation type.
 
         Args:
             expression (str): Input expressions separated by newlines
-            operation (str): Type of operation to perform
+            operation (str): Type of operation to perform.
 
         Returns:
             str: LaTeX formatted computation steps
@@ -219,7 +225,6 @@ class LinearTransform(CommonMatrixCalculator):
                 raise ValueError('需要三个矩阵')
 
         return self.get_steps_latex()
-
 
 # def demo_linear_transform():
 #     """Demonstrate solving linear transformation matrices."""

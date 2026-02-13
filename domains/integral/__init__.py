@@ -1,13 +1,4 @@
 from utils import MatcherList, RuleDict
-
-from .rules.parts_rule_help import select_parts_u_dv
-from .rules.substitution_rule_help import (
-    try_radical_substitution,
-    try_standard_substitution,
-    try_trig_substitution,
-    try_undetermined_coeffs_for_radicals
-)
-from .rules.f_x_mul_exp_g_x_rule_help import handle_fx_mul_exp_gx, special_add_split_exp_term
 from .rules.integral_basic_rules import (
     add_matcher, add_rule, mul_const_matcher, mul_const_rule
 )
@@ -44,6 +35,7 @@ __all__ = [
     'try_radical_substitution',
     'try_standard_substitution',
     'try_trig_substitution',
+    'try_undetermined_coeffs_for_radicals',
     'handle_fx_mul_exp_gx',
     'special_add_split_exp_term'
 ]
@@ -90,6 +82,6 @@ MATCHER_LIST: MatcherList = [
     inverse_tangent_linear_matcher, add_matcher, mul_const_matcher, pow_matcher, exp_matcher,
     log_matcher, sin_matcher, cos_matcher, tan_matcher, sin_power_matcher, cos_power_matcher,
     tan_power_matcher, sec_matcher, csc_matcher, cot_matcher, exp_matcher, log_matcher,
-    sinh_matcher,  cosh_matcher, tanh_matcher, csch_matcher, sech_matcher, coth_matcher,
+    sinh_matcher, cosh_matcher, tanh_matcher, csch_matcher, sech_matcher, coth_matcher,
     inverse_trig_matcher, weierstrass_substitution_matcher, parts_matcher
 ]

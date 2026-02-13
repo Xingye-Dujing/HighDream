@@ -1,8 +1,11 @@
 from typing import Dict, Tuple
+
 from sympy import Matrix, Symbol, eye, latex, simplify, zeros
-# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
+
+
+# from IPython.display import Math, display
 
 
 class OrthogonalProcessor(CommonMatrixCalculator):
@@ -13,12 +16,12 @@ class OrthogonalProcessor(CommonMatrixCalculator):
     performing Gram-Schmidt orthonormalization, and QR decomposition.
     """
 
-    def check_special_cases_orthogonal_set(self, vectors_input: str, show_steps: bool = True) -> str:
+    def check_special_cases_orthogonal_set(self, vectors_input: str, show_steps: bool = True) -> str | None:
         """Check special cases for orthogonal sets.
 
         Args:
             vectors_input: Input vectors to check
-            show_steps (bool): Whether to show calculation steps
+            show_steps (bool): Whether to show calculation steps.
 
         Returns:
             str: Result identifier for special cases
@@ -32,7 +35,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         zero_vectors = []
         for i in range(A.cols):
             if all(A[j, i] == 0 for j in range(A.rows)):
-                zero_vectors.append(i+1)
+                zero_vectors.append(i + 1)
 
         if zero_vectors:
             if show_steps:
@@ -41,7 +44,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                 self.step_generator.add_step(r"\text{包含零向量的向量集不可能是正交集或规范正交集}")
             return "has_zero"
 
-        # Check for single vector case
+        # Check for the single vector case
         if A.cols == 1:
             if show_steps:
                 self.step_generator.add_step(r"\text{单个向量}")
@@ -63,10 +66,10 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         Args:
             vectors_input: Input vectors to check
             show_steps (bool): Whether to show calculation steps
-            is_clear (bool): Whether to clear previous steps
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
-            bool: True if the vectors form an orthogonal set, False otherwise
+            bool: True if the vectors form an orthogonal set, False otherwise.
         """
         if is_clear:
             self.step_generator.clear()
@@ -96,20 +99,20 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         all_orthogonal = True
 
         for i in range(n):
-            for j in range(i+1, n):
+            for j in range(i + 1, n):
                 dot_product = vectors[i].dot(vectors[j])
                 simplified_dot = simplify(dot_product)
 
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\boldsymbol{{v_{{{i+1}}}}} \\cdot \\boldsymbol{{v_{{{j+1}}}}} = {latex(simplified_dot)}"
+                        f"\\boldsymbol{{v_{{{i + 1}}}}} \\cdot \\boldsymbol{{v_{{{j + 1}}}}} = {latex(simplified_dot)}"
                     )
 
                 if simplified_dot != 0:
                     all_orthogonal = False
                     if show_steps:
                         self.step_generator.add_step(
-                            f"\\text{{向量 {i+1} 和向量 {j+1} 不正交}}"
+                            f"\\text{{向量 {i + 1} 和向量 {j + 1} 不正交}}"
                         )
 
         if all_orthogonal:
@@ -123,18 +126,18 @@ class OrthogonalProcessor(CommonMatrixCalculator):
             self.step_generator.add_step(r"\text{结论: 向量集不是正交集}")
         return False
 
-    def is_orthonormal_set(self, vectors_input: str, show_steps: bool = True, is_clear: bool = True) -> bool:
+    def is_orthonormal_set(self, vectors_input: str | Matrix, show_steps: bool = True, is_clear: bool = True) -> bool:
         """Determine whether a set of vectors forms an orthonormal set.
 
-        An orthonormal set is an orthogonal set where each vector has unit norm.
+        An orthonormal set is an orthogonal set where each vector has the unit norm.
 
         Args:
             vectors_input: Input vectors to check
             show_steps (bool): Whether to show calculation steps
-            is_clear (bool): Whether to clear previous steps
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
-            bool: True if the vectors form an orthonormal set, False otherwise
+            bool: True if the vectors form an orthonormal set, False otherwise.
         """
         if is_clear:
             self.step_generator.clear()
@@ -158,7 +161,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         if special_result == "orthogonal_single":
             return False
 
-        # First check if it's orthogonal
+        # First check if it is orthogonal
         if not self.is_orthogonal_set(vectors_input, False, False):
             if show_steps:
                 self.step_generator.add_step(r"\text{向量集不正交，因此不是规范正交集}")
@@ -176,14 +179,15 @@ class OrthogonalProcessor(CommonMatrixCalculator):
 
             if show_steps:
                 self.step_generator.add_step(
-                    f"\\|\\boldsymbol{{v_{{{i+1}}}}}\\|^2 = \\boldsymbol{{v_{{{i+1}}}}} \\cdot \\boldsymbol{{v_{{{i+1}}}}} = {latex(simplified_norm_sq)}"
+                    f"\\|\\boldsymbol{{v_{{{i + 1}}}}}\\|^2 = \\boldsymbol{{v_{{{i + 1}}}}} "
+                    f"\\cdot \\boldsymbol{{v_{{{i + 1}}}}} = {latex(simplified_norm_sq)}"
                 )
 
             if simplified_norm_sq != 1:
                 all_unit_norm = False
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{向量 {i+1} 的范数不为 1}}"
+                        f"\\text{{向量 {i + 1} 的范数不为 1}}"
                     )
 
         if all_unit_norm:
@@ -197,7 +201,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
             self.step_generator.add_step(r"\text{结论: 向量集是正交集但不是规范正交集}")
         return False
 
-    def is_orthogonal_matrix(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> bool:
+    def is_orthogonal_matrix(self, matrix_input: str | Matrix, show_steps: bool = True, is_clear: bool = True) -> bool:
         """Determine whether a matrix is orthogonal.
 
         A matrix is orthogonal if its transpose equals its inverse (A^T * A = I).
@@ -205,7 +209,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         Args:
             matrix_input: Input matrix to check
             show_steps (bool): Whether to show calculation steps
-            is_clear (bool): Whether to clear previous steps
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
             bool: True if the matrix is orthogonal, False otherwise
@@ -224,7 +228,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
 
         m, n = A.rows, A.cols
 
-        # Check if it's a square matrix
+        # Check if it is a square matrix
         if m != n:
             if show_steps:
                 self.step_generator.add_step(r"\text{不是方阵，因此不是正交矩阵}")
@@ -253,7 +257,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                     is_orthogonal = False
                     if show_steps:
                         self.step_generator.add_step(
-                            f"\\text{{位置 ({i+1},{j+1}): 得到 ${latex(element)}$, 期望 {latex(expected)}}}"
+                            f"\\text{{位置 ({i + 1},{j + 1}): 得到 ${latex(element)}$, 期望 {latex(expected)}}}"
                         )
 
         if is_orthogonal:
@@ -267,8 +271,9 @@ class OrthogonalProcessor(CommonMatrixCalculator):
             self.step_generator.add_step(r"\text{结论: 矩阵不是正交矩阵}")
         return False
 
-    def gram_schmidt_orthonormalization(self, vectors_input: str, show_steps: bool = True, is_clear: bool = True) -> Tuple[Matrix, Matrix]:
-        """Perform Gram-Schmidt orthonormalization process to construct an orthonormal basis.
+    def gram_schmidt_orthonormalization(self, vectors_input: str | Matrix,
+                                        show_steps: bool = True, is_clear: bool = True) -> Tuple[Matrix, Matrix]:
+        """Perform the Gram-Schmidt orthonormalization process to build an orthonormal basis.
 
         The Gram-Schmidt process takes a set of linearly independent vectors and produces
         an orthogonal set that spans the same subspace, then normalizes them to unit vectors.
@@ -276,10 +281,10 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         Args:
             vectors_input: Input vectors to orthogonalize
             show_steps (bool): Whether to show calculation steps
-            is_clear (bool): Whether to clear previous steps
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
-            tuple: (Q, R) where Q contains orthonormal vectors and R is the upper triangular matrix
+            tuple: (Q, R) where Q contains orthonormal vectors and R is the upper triangular matrix.
         """
         if is_clear:
             self.step_generator.clear()
@@ -306,12 +311,12 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         for i in range(n):
             if show_steps:
                 self.step_generator.add_step(
-                    f"\\text{{步骤 {i+1}: 处理向量 }} \\boldsymbol{{a_{i+1}}}")
+                    f"\\text{{步骤 {i + 1}: 处理向量 }} \\boldsymbol{{a_{i + 1}}}")
                 if i == 0:
                     self.add_vector(
                         vectors[i], f"v_{1} = a_{1}")
                 else:
-                    self.add_vector(vectors[i], f"a_{i+1}")
+                    self.add_vector(vectors[i], f"a_{i + 1}")
 
             # Start orthogonalization
             v = vectors[i].copy()
@@ -327,22 +332,24 @@ class OrthogonalProcessor(CommonMatrixCalculator):
 
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{在 }}\\boldsymbol{{q_{j+1}}}\\text{{ 上的投影系数: }} r_{{{j+1}{i+1}}} = \\boldsymbol{{a_{i+1}}} \\cdot \\boldsymbol{{q_{j+1}}} = {latex(r_ji)}"
+                        f"\\text{{在 }}\\boldsymbol{{q_{j + 1}}}\\text{{ 上的投影系数: }} r_{{{j + 1}{i + 1}}}"
+                        f" = \\boldsymbol{{a_{i + 1}}} \\cdot \\boldsymbol{{q_{j + 1}}} = {latex(r_ji)}"
                     )
                     self.step_generator.add_step(
-                        f"\\text{{投影分量: }} {latex(r_ji)} \\cdot \\boldsymbol{{q_{j+1}}} = {latex(r_ji * orthogonal_vectors[j])}"
+                        f"\\text{{投影分量: }} {latex(r_ji)} \\cdot \\boldsymbol{{q_{j + 1}}} "
+                        f"= {latex(r_ji * orthogonal_vectors[j])}"
                     )
 
                 # Subtract projection
                 v = v - r_ji * orthogonal_vectors[j]
                 projection_terms.append(
-                    f"{latex(r_ji)}\\boldsymbol{{q_{j+1}}}")
+                    f"{latex(r_ji)}\\boldsymbol{{q_{j + 1}}}")
 
             if show_steps and i > 0:
                 projection_str = " - ".join(projection_terms)
                 self.step_generator.add_step(
-                    f"\\boldsymbol{{v_{i+1}}} = \\boldsymbol{{a_{i+1}}} - ({projection_str})")
-                self.add_vector(v, f"v_{i+1}")
+                    f"\\boldsymbol{{v_{i + 1}}} = \\boldsymbol{{a_{i + 1}}} - ({projection_str})")
+                self.add_vector(v, f"v_{i + 1}")
 
             # Calculate norm
             norm_v = v.norm()
@@ -350,9 +357,9 @@ class OrthogonalProcessor(CommonMatrixCalculator):
 
             if show_steps:
                 self.step_generator.add_step(
-                    f"\\text{{正交向量的范数: }} \\|\\boldsymbol{{v_{i+1}}}\\| = {latex(norm_v)}")
+                    f"\\text{{正交向量的范数: }} \\|\\boldsymbol{{v_{i + 1}}}\\| = {latex(norm_v)}")
 
-            # If norm contains symbols, assume it's positive (non-zero)
+            # If the norm contains symbols, assume it is positive (non-zero)
             if norm_v.has(Symbol) or norm_v > 0:
                 # Normalize
                 q_i = v / norm_v
@@ -365,12 +372,14 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                 if show_steps:
                     self.step_generator.add_step(r"\text{单位化: }")
                     self.step_generator.add_step(
-                        f"\\boldsymbol{{q_{i+1}}} = \\frac{{\\boldsymbol{{v_{i+1}}}}}{{ \\|\\boldsymbol{{v_{i+1}}}\\| }} = \\frac{{ {latex(v)} }}{{ {latex(norm_v)} }}")
-                    self.add_vector(q_i, f"q_{i+1}")
+                        f"\\boldsymbol{{q_{i + 1}}} = "
+                        f"\\frac{{\\boldsymbol{{v_{i + 1}}}}}{{ \\|\\boldsymbol{{v_{i + 1}}}\\| }} = "
+                        f"\\frac{{ {latex(v)} }}{{ {latex(norm_v)} }}")
+                    self.add_vector(q_i, f"q_{i + 1}")
             else:
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{警告: 第 {i+1} 个向量与前面向量线性相关，无法添加到规范正交基}}")
+                        f"\\text{{警告: 第 {i + 1} 个向量与前面向量线性相关，无法添加到规范正交基}}")
                 # For linearly dependent cases, add a zero vector
                 orthogonal_vectors.append(zeros(m, 1))
 
@@ -391,7 +400,8 @@ class OrthogonalProcessor(CommonMatrixCalculator):
 
         return Q, R
 
-    def qr_decomposition(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Tuple[Matrix, Matrix]:
+    def qr_decomposition(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) \
+            -> Tuple[Matrix, Matrix]:
         """Perform QR decomposition of a matrix.
 
         QR decomposition expresses a matrix A as the product of an orthogonal matrix Q
@@ -400,7 +410,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         Args:
             matrix_input: Input matrix to decompose
             show_steps (bool): Whether to show calculation steps
-            is_clear (bool): Whether to clear previous steps
+            is_clear (bool): Whether to clear previous steps.
 
         Returns:
             tuple: (Q, R) matrices from the QR decomposition
@@ -485,7 +495,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
 
         Args:
             input_data: Input vectors or matrix to analyze
-            show_steps (bool): Whether to show calculation steps
+            show_steps (bool): Whether to show calculation steps.
 
         Returns:
             dict: Dictionary containing analysis results
@@ -504,9 +514,9 @@ class OrthogonalProcessor(CommonMatrixCalculator):
         if show_steps:
             self.add_matrix(A, "A")
 
-        results = {}
+        results: Dict[str, bool | List[Matrix]] = {}
 
-        # Analyze orthogonal properties of vector set
+        # Analyze orthogonal properties of the vector set.
         if show_steps:
             self.add_step("向量集正交性分析")
 
@@ -539,7 +549,6 @@ class OrthogonalProcessor(CommonMatrixCalculator):
 
         return results
 
-
 # # Demo functions
 # def demo_orthogonal_sets():
 #     """Demonstrate orthogonal set checking."""
@@ -552,7 +561,7 @@ class OrthogonalProcessor(CommonMatrixCalculator):
 #     orthogonal_not_normal = '[[2,0],[0,3]]'  # Orthogonal but not normalized
 #     not_orthogonal = '[[1,1,2],[1,0,1],[3,1,2]]'  # Not orthogonal
 #     single_vector = '[[1,0]]'  # Single vector
-#     zero_vector = '[[0,0],[1,0]]'  # Contains zero vector
+#     zero_vector = '[[0,0],[1,0]]'  # Contains zero vector.
 
 #     test_cases = [
 #         ("规范正交集", orthogonal_set),

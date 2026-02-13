@@ -2,6 +2,7 @@ from abc import ABC
 from typing import List, Tuple
 
 from sympy import Expr, Symbol, latex
+
 # from sympy import Dummy
 
 
@@ -19,7 +20,7 @@ class BaseStepGenerator(ABC):
         self.steps: List[Expr] = []
         self._explanations: List[str] = []
         # The keys are post-substitution variables and values are pre-substitution expressions.
-        # key: new symbol, value: original symbol
+        # key: new symbol, value: the original symbol.
         self.subs_dict: dict = {}
         # copy() to avoid modifying the original list
         self.available_sym_chars = available_sym_chars.copy()
@@ -44,7 +45,7 @@ class BaseStepGenerator(ABC):
         self.available_sym_chars.remove(new_sym_char)
         return Symbol(new_sym_char)
 
-    def add_step(self, expr: Expr, explanation: str = "") -> None:
+    def add_step(self, expr: [Expr | None], explanation: str = "") -> None:
         """Append a new evaluation step with an optional explanatory message."""
         self.steps.append(expr)
         self._explanations.append(explanation)

@@ -1,8 +1,10 @@
 from typing import Dict, List, Tuple
+
 from sympy import I, Matrix, diag, eye, factor, latex, simplify, symbols
-# from IPython.display import Math, display
 
 from core import CommonMatrixCalculator
+
+# from IPython.display import Math, display
 
 Result = Tuple[Matrix, Matrix, Matrix]
 
@@ -14,11 +16,13 @@ class Diagonalization(CommonMatrixCalculator):
     compute eigenvectors, and perform various types of matrix diagonalization.
     """
 
-    def is_square(self, matrix: Matrix) -> bool:
+    @staticmethod
+    def is_square(matrix: Matrix) -> bool:
         """Check if the matrix is square."""
         return matrix.rows == matrix.cols
 
-    def check_diagonalizable_conditions(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> Tuple[bool, Dict, List]:
+    def check_diagonalizable_conditions(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) \
+            -> Tuple[bool, Dict, List]:
         """
         Check if a matrix satisfies diagonalization conditions.
 
@@ -26,9 +30,9 @@ class Diagonalization(CommonMatrixCalculator):
         -------
         tuple
             A tuple containing:
-            - bool: Whether the matrix is diagonalizable
-            - dict: Eigenvalues with their multiplicities
-            - list: Conditions for each eigenvalue
+            - bool: Whether the matrix is diagonalizable.
+            - dict: Eigenvalues with their multiplicities.
+            - list: Conditions for each eigenvalue.
 
         Raises
         ------
@@ -174,15 +178,16 @@ class Diagonalization(CommonMatrixCalculator):
 
                 if show_steps:
                     self.step_generator.add_step(
-                        f"\\text{{特征向量 {i+1}: }} \\boldsymbol{{v}}_{{{i+1}}} = {latex(eigenvector)}"
+                        f"\\text{{特征向量 {i + 1}: }} \\boldsymbol{{v}}_{{{i + 1}}} = {latex(eigenvector)}"
                     )
                     self.step_generator.add_step(
-                        f"\\text{{单位特征向量: }} \\hat{{\\boldsymbol{{v}}}}_{{{i+1}}} = {latex(eigenvector_norm)}"
+                        f"\\text{{单位特征向量: }} \\hat{{\\boldsymbol{{v}}}}_{{{i + 1}}} = {latex(eigenvector_norm)}"
                     )
 
         return eigenvectors_dict
 
-    def diagonalize_matrix(self, matrix_input: str, show_steps: bool = True, normalize: bool = True, is_clear: bool = True) -> Result:
+    def diagonalize_matrix(self, matrix_input: str, show_steps: bool = True, normalize: bool = True,
+                           is_clear: bool = True) -> Result:
         """Diagonalize a matrix.
 
         Returns
@@ -441,7 +446,6 @@ class Diagonalization(CommonMatrixCalculator):
             return self.diagonalize_matrix(matrix_input, show_steps, is_clear=False)
 
         raise ValueError("矩阵不可对角化")
-
 
 # # Demo functions
 # def demo_diagonalization():

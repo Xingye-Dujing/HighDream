@@ -1,225 +1,225 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>HighDream Word</title>
-    <link rel="stylesheet" href="../static/fontawesome/css/all.min.css" />
-    <link rel="stylesheet" href="/static/style.css" />
-    <link rel="stylesheet" href="/static/word_editor.css" />
+    <link rel="stylesheet" href="../static/fontawesome/css/all.min.css"/>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/word_editor.css"/>
     <script
-      id="MathJax-script"
-      async
-      src="../static/mathjax/es5/tex-chtml-full.js"
+            id="MathJax-script"
+            async
+            src="../static/mathjax/es5/tex-chtml-full.js"
     ></script>
     <script src="/static/word_editor.js"></script>
-  </head>
+</head>
 
-  <body>
-    <div id="math-background">
-      <div class="math-bg-element" style="top: 10%; left: 5%">∫</div>
-      <div class="math-bg-element" style="top: 20%; right: 8%">∑</div>
-      <div class="math-bg-element" style="top: 40%; left: 7%">∂</div>
-      <div class="math-bg-element" style="top: 60%; right: 10%">π</div>
-      <div class="math-bg-element" style="top: 80%; left: 12%">∞</div>
-      <div class="math-bg-element" style="bottom: 15%; right: 5%">∇</div>
-    </div>
+<body>
+<div id="math-background">
+    <div class="math-bg-element" style="top: 10%; left: 5%">∫</div>
+    <div class="math-bg-element" style="top: 20%; right: 8%">∑</div>
+    <div class="math-bg-element" style="top: 40%; left: 7%">∂</div>
+    <div class="math-bg-element" style="top: 60%; right: 10%">π</div>
+    <div class="math-bg-element" style="top: 80%; left: 12%">∞</div>
+    <div class="math-bg-element" style="bottom: 15%; right: 5%">∇</div>
+</div>
 
-    <div id="header">
-      <h1><i></i>HighDream Word</h1>
-      <div id="header-controls">
+<div id="header">
+    <h1><i></i>HighDream Word</h1>
+    <div id="header-controls">
         <a href="/">
-          <button class="header-btn" id="homeBtn" title="首页">
-            <i class="fas fa-circle"></i>
-          </button>
+            <button class="header-btn" id="homeBtn" title="首页">
+                <i class="fas fa-circle"></i>
+            </button>
         </a>
 
         <button class="header-btn" id="formulaEditorBtn" title="公式编辑器">
-          <i class="fas fa-keyboard"></i>
+            <i class="fas fa-keyboard"></i>
         </button>
         <button class="header-btn" id="saveJsonBtn" title="保存为 JSON">
-          <i class="fas fa-file-code"></i>
+            <i class="fas fa-file-code"></i>
         </button>
         <button class="header-btn" id="loadBtn" title="加载文档">
-          <i class="fas fa-folder-open"></i>
+            <i class="fas fa-folder-open"></i>
         </button>
         <button class="header-btn" id="toggleThemeBtn" title="切换主题">
-          <i class="fas fa-moon"></i>
+            <i class="fas fa-moon"></i>
         </button>
-      </div>
     </div>
+</div>
 
-    <div id="toolbar">
-      <div class="toolbar-section">
+<div id="toolbar">
+    <div class="toolbar-section">
         <button class="toolbar-button" id="addTextBtn" title="添加富文本段落">
-          <i class="fas fa-font"></i><span>富文本</span>
+            <i class="fas fa-font"></i><span>富文本</span>
         </button>
         <button class="toolbar-button" id="addSymPyBtn" title="添加 SymPy 代码">
-          <i class="fas fa-code"></i><span>SymPy</span>
+            <i class="fas fa-code"></i><span>SymPy</span>
         </button>
         <button class="toolbar-button" id="addLatexBtn" title="添加 LaTeX 公式">
-          <i class="fas fa-compress-alt"></i><span>LaTeX</span>
+            <i class="fas fa-compress-alt"></i><span>LaTeX</span>
         </button>
-      </div>
+    </div>
 
-      <div class="toolbar-separator"></div>
+    <div class="toolbar-separator"></div>
 
-      <div class="toolbar-section">
+    <div class="toolbar-section">
         <button class="toolbar-button" id="boldBtn" title="粗体">
-          <i class="fas fa-bold"></i>
+            <i class="fas fa-bold"></i>
         </button>
         <button class="toolbar-button" id="italicBtn" title="斜体">
-          <i class="fas fa-italic"></i>
+            <i class="fas fa-italic"></i>
         </button>
-      </div>
+    </div>
 
-      <div class="toolbar-separator"></div>
+    <div class="toolbar-separator"></div>
 
-      <div class="toolbar-section">
+    <div class="toolbar-section">
         <button class="toolbar-button" id="integralBtn" title="积分">
-          <span>\int</span>
+            <span>\int</span>
         </button>
         <button class="toolbar-button" id="sumBtn" title="求和">
-          <span>\sum</span>
+            <span>\sum</span>
         </button>
         <button class="toolbar-button" id="limitBtn" title="极限">
-          <span>\lim</span>
+            <span>\lim</span>
         </button>
         <button class="toolbar-button" id="diffBtn" title="求导">
-          <span>d/dx</span>
+            <span>d/dx</span>
         </button>
-      </div>
+    </div>
 
-      <div class="toolbar-separator"></div>
+    <div class="toolbar-separator"></div>
 
-      <div class="toolbar-section">
+    <div class="toolbar-section">
         <button class="toolbar-button" id="sympyDiffBtn" title="SymPy 求导模板">
-          <span>diff()</span>
+            <span>diff()</span>
         </button>
         <button
-          class="toolbar-button"
-          id="sympyIntegralBtn"
-          title="SymPy 积分模板"
+                class="toolbar-button"
+                id="sympyIntegralBtn"
+                title="SymPy 积分模板"
         >
-          <span>integrate()</span>
+            <span>integrate()</span>
         </button>
         <button
-          class="toolbar-button"
-          id="sympyLimitBtn"
-          title="SymPy 极限模板"
+                class="toolbar-button"
+                id="sympyLimitBtn"
+                title="SymPy 极限模板"
         >
-          <span>limit()</span>
+            <span>limit()</span>
         </button>
         <button
-          class="toolbar-button"
-          id="sympySimplifyBtn"
-          title="SymPy 简化模板"
+                class="toolbar-button"
+                id="sympySimplifyBtn"
+                title="SymPy 简化模板"
         >
-          <span>simplify()</span>
+            <span>simplify()</span>
         </button>
-      </div>
+    </div>
 
-      <div class="toolbar-separator"></div>
+    <div class="toolbar-separator"></div>
 
-      <div class="toolbar-section">
+    <div class="toolbar-section">
         <button class="toolbar-button" id="fracBtn" title="分数">
-          <span>\frac</span>
+            <span>\frac</span>
         </button>
         <button class="toolbar-button" id="sqrtBtn" title="平方根">
-          <span>\sqrt</span>
+            <span>\sqrt</span>
         </button>
         <button class="toolbar-button" id="powerBtn" title="幂">
-          <span>^{}</span>
+            <span>^{}</span>
         </button>
         <button class="toolbar-button" id="matrixBtn" title="矩阵">
-          <span>[]</span>
+            <span>[]</span>
         </button>
-      </div>
+    </div>
 
-      <div class="toolbar-separator"></div>
+    <div class="toolbar-separator"></div>
 
-      <div class="toolbar-section">
+    <div class="toolbar-section">
         <button
-          class="toolbar-button"
-          id="runAllBtn"
-          title="运行所有 SymPy 代码"
+                class="toolbar-button"
+                id="runAllBtn"
+                title="运行所有 SymPy 代码"
         >
-          <i class="fas fa-play"></i><span>运行全部</span>
+            <i class="fas fa-play"></i><span>运行全部</span>
         </button>
 
         <button class="toolbar-button" id="moveUpBtn" title="上移当前段落">
-          <i class="fas fa-arrow-up"></i><span>上移</span>
+            <i class="fas fa-arrow-up"></i><span>上移</span>
         </button>
 
         <button class="toolbar-button" id="moveDownBtn" title="下移当前段落">
-          <i class="fas fa-arrow-down"></i><span>下移</span>
+            <i class="fas fa-arrow-down"></i><span>下移</span>
         </button>
 
         <button class="toolbar-button" id="deleteBtn" title="删除当前段落">
-          <i class="fas fa-trash"></i><span>删除</span>
+            <i class="fas fa-trash"></i><span>删除</span>
         </button>
 
         <button
-          class="toolbar-button"
-          id="toggleMinimalBtn"
-          title="切换最简模式"
+                class="toolbar-button"
+                id="toggleMinimalBtn"
+                title="切换最简模式"
         >
-          <i class="fas fa-eye-slash"></i><span>切换最简模式</span>
+            <i class="fas fa-eye-slash"></i><span>切换最简模式</span>
         </button>
-      </div>
     </div>
+</div>
 
-    <div id="document-container">
-      <div id="document">
+<div id="document-container">
+    <div id="document">
         <div id="a4-page" class="a4-page">
-          <div id="content-area">
-            <!-- Paragraphs will be dynamically generated here -->
-          </div>
+            <div id="content-area">
+                <!-- Paragraphs will be dynamically generated here -->
+            </div>
         </div>
-      </div>
     </div>
+</div>
 
-    <div class="notification" id="notification">
-      <div class="notification-content">
+<div class="notification" id="notification">
+    <div class="notification-content">
         <i class="fas fa-check-circle"></i>
         <span id="notification-text"></span>
-      </div>
     </div>
+</div>
 
-    <input type="file" id="fileInput" accept=".json" style="display: none" />
+<input type="file" id="fileInput" accept=".json" style="display: none"/>
 
-    <!-- Floating Formula Editor Panel -->
-    <div
-      id="formulaEditorPanel"
-      class="formula-editor-panel"
-      style="display: none"
-    >
-      <div class="formula-editor-header">
+<!-- Floating Formula Editor Panel -->
+<div
+        id="formulaEditorPanel"
+        class="formula-editor-panel"
+        style="display: none"
+>
+    <div class="formula-editor-header">
         <span>公式编辑器</span>
         <button class="formula-editor-close-btn" id="closeFormulaEditorBtn">
-          <i class="fas fa-times"></i>
+            <i class="fas fa-times"></i>
         </button>
-      </div>
-      <div class="formula-editor-body">
+    </div>
+    <div class="formula-editor-body">
         <div class="formula-categories">
-          <button class="formula-category-btn active" data-category="operators">
-            运算符
-          </button>
-          <button class="formula-category-btn" data-category="relations">
-            关系
-          </button>
-          <button class="formula-category-btn" data-category="greek">
-            希腊字母
-          </button>
-          <button class="formula-category-btn" data-category="functions">
-            函数
-          </button>
-          <button class="formula-category-btn" data-category="matrix">
-            矩阵
-          </button>
+            <button class="formula-category-btn active" data-category="operators">
+                运算符
+            </button>
+            <button class="formula-category-btn" data-category="relations">
+                关系
+            </button>
+            <button class="formula-category-btn" data-category="greek">
+                希腊字母
+            </button>
+            <button class="formula-category-btn" data-category="functions">
+                函数
+            </button>
+            <button class="formula-category-btn" data-category="matrix">
+                矩阵
+            </button>
         </div>
         <div id="formulaSymbolGrid" class="formula-symbol-grid"></div>
-      </div>
     </div>
-  </body>
+</div>
+</body>
 </html>

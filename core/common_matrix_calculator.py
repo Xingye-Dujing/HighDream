@@ -1,7 +1,8 @@
 from abc import ABC
+
 from sympy import Matrix, latex, simplify, sympify
 
-from core import MatrixStepGenerator
+from core.matrix_step_generator import MatrixStepGenerator
 
 
 class CommonMatrixCalculator(ABC):
@@ -19,7 +20,7 @@ class CommonMatrixCalculator(ABC):
         """Add a step title to the calculation process."""
         self.step_generator.add_step(f"\\text{{{title}}}")
 
-    def add_matrix(self, matrix: Matrix, name: str = "A") -> None:
+    def add_matrix(self, matrix: str | Matrix, name: str = "A") -> None:
         """Add a matrix to the calculation steps display."""
         self.step_generator.add_step(f"{name} = {latex(matrix)}")
 
@@ -39,7 +40,8 @@ class CommonMatrixCalculator(ABC):
         """Get the complete calculation steps in LaTeX format."""
         return self.step_generator.get_steps_latex()
 
-    def parse_matrix_input(self, matrix_input: str) -> Matrix:
+    @staticmethod
+    def parse_matrix_input(matrix_input: str | Matrix) -> Matrix:
         """Parse matrix input string into a SymPy Matrix."""
         try:
             return Matrix(sympify(matrix_input))
@@ -47,7 +49,7 @@ class CommonMatrixCalculator(ABC):
             raise ValueError(
                 f"Unable to parse matrix input: {matrix_input}, Error: {str(e)}") from e
 
-    def parse_vector_input(self, vector_input: str) -> Matrix:
+    def parse_vector_input(self, vector_input: str | Matrix) -> Matrix:
         """Parse vector input string into a SymPy Matrix (column vector)."""
         try:
             # Handle column vector format, e.g. '[[1],[2],[3]]'
@@ -65,6 +67,7 @@ class CommonMatrixCalculator(ABC):
             raise ValueError(
                 f"Unable to parse vector input: {vector_input}, Error: {str(e)}") from e
 
-    def simplify_matrix(self, matrix: Matrix) -> Matrix:
+    @staticmethod
+    def simplify_matrix(matrix: Matrix) -> Matrix:
         """Simplify each element in a matrix."""
         return matrix.applyfunc(lambda x: simplify(x) if x != 0 else 0)

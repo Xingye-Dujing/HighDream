@@ -1,5 +1,8 @@
-from typing import List, Tuple, Union
+from typing import List, Tuple
+
 from sympy import Matrix, latex, sympify
+
+
 # from IPython.display import Math, display
 
 
@@ -10,11 +13,12 @@ class MatrixCalculator:
         self.latex_results = []
         self.record_all_steps = True
 
-    def parse_matrix_expression(self, matrix_str: str) -> Matrix:
+    @staticmethod
+    def parse_matrix_expression(matrix_str: str) -> Matrix:
         """Parse a matrix expression string into a sympy Matrix.
 
         Args:
-            matrix_str (str): Matrix expression in format like '[[1,2],[3,4]]'
+            matrix_str (str): Matrix expression in format like '[[1,2], [3,4]]'
 
         Returns:
             Matrix: A sympy Matrix object
@@ -32,11 +36,11 @@ class MatrixCalculator:
 
         Args:
             matrix (Matrix): The input matrix to operate on
-            operation (str): Operation command string
+            operation (str): Operation command string.
 
         Returns:
-            tuple: (result, description) where result is the operation result
-                   and description explains what was done
+            tuple: (result, description) where the result is the operation result
+                   and description explains what was done.
 
         Raises:
             ValueError: If operation is invalid or missing required parameters
@@ -127,7 +131,7 @@ class MatrixCalculator:
                 src, dest, coeff = int(op_parts[1]), int(
                     op_parts[2]), sympify(op_parts[3])
                 result = matrix.copy()
-                result.row_op(dest, lambda v, i: v + coeff * matrix[src, i])
+                result.row_op(dest, lambda v, i_: v + coeff * matrix[src, i_])
                 description = f"将 {coeff} 乘以行 {src} 加到行 {dest}"
                 return result, description
 
@@ -137,7 +141,7 @@ class MatrixCalculator:
                 src, dest, coeff = int(op_parts[1]), int(
                     op_parts[2]), sympify(op_parts[3])
                 result = matrix.copy()
-                result.col_op(dest, lambda v, i: v + coeff * matrix[i, src])
+                result.col_op(dest, lambda v, i_: v + coeff * matrix[i_, src])
                 description = f"将 {coeff} 乘以列 {src} 加到列 {dest}"
                 return result, description
 
@@ -199,7 +203,7 @@ class MatrixCalculator:
                 if len(op_parts) < 5:
                     raise ValueError("提取子矩阵需要指定起始行、结束行、起始列、结束列")
                 r1, r2, c1, c2 = map(int, op_parts[1:5])
-                result = matrix[r1:r2+1, c1:c2+1]
+                result = matrix[r1:r2 + 1, c1:c2 + 1]
                 description = f"提取子矩阵 $[{r1}:{r2},{c1}:{c2}]$"
                 return result, description
 
@@ -208,16 +212,17 @@ class MatrixCalculator:
         except Exception as e:
             raise ValueError(f"操作 '{operation}' 执行失败: {e}") from e
 
-    def calculate(self, matrix_expr: str, operations: List[str], record_all_steps: bool = False) -> Union[str, List[str]]:
+    def calculate(self, matrix_expr: str, operations: List[str], record_all_steps: bool = False) \
+            -> str | List[str]:
         """Main calculation function that applies a series of operations to a matrix.
 
         Args:
             matrix_expr (str): Initial matrix expression string
             operations (List[str]): List of operation commands to apply
-            record_all_steps (bool): Whether to record all intermediate steps
+            record_all_steps (bool): Whether to record all intermediate steps.
 
         Returns:
-            Union[str, List[str]]: Either final result LaTeX or list of all steps LaTeX
+            Union[str, List[str]]: Either final result LaTeX or list of all steps LaTeX.
         """
         # Reset history records
         self.matrix_history = []
@@ -254,11 +259,11 @@ class MatrixCalculator:
         except Exception as e:
             return f"计算错误: {e}"
 
-    def get_steps_latex(self) -> List[str]:
+    def get_steps_latex(self) -> str:
         """Generate LaTeX formatted steps for display.
 
         Returns:
-            List[str]: LaTeX formatted string containing all steps or just the final result
+            List[str]: LaTeX formatted string containing all steps or just the final result.
         """
         if not self.record_all_steps:
             latex_str = "\\begin{align}"
@@ -277,7 +282,6 @@ class MatrixCalculator:
             latex_str += r"\\\\"
         latex_str += "\\end{align}"
         return latex_str
-
 
 # def demo():
 #     calculator = MatrixCalculator()

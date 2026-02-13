@@ -1,5 +1,6 @@
-from typing import List, Optional, Tuple
 from dataclasses import dataclass, field
+from typing import List, Optional, Tuple
+
 from sympy import And, Eq, Expr, Matrix, Ne, Or, latex, simplify, simplify_logic, satisfiable
 from sympy.core.relational import Relational
 
@@ -13,14 +14,14 @@ class BranchNode:
         matrix: Current state of the matrix in this branch.
         steps: List of transformation steps (matrix, explanation) taken so far.
         finished: Whether this branch has been fully processed.
-        reason: If branch is infeasible, records the reason.
+        reason: If a branch is infeasible, record the reason.
     """
     conditions: List[Relational] = field(default_factory=list)
     matrix: Matrix = None
     steps: List[Tuple[Matrix, str]] = field(
         default_factory=list)
     finished: bool = False
-    reason: Optional[str] = None  # If branch is infeasible, record the reason
+    reason: Optional[str] = None  # If a branch is infeasible, record the reason
 
     def add_condition(self, cond: Relational) -> None:
         """Add a single condition to the branch.
@@ -31,14 +32,14 @@ class BranchNode:
         self.conditions.append(cond)
 
     def extend_conditions(self, conds: List[Relational]) -> None:
-        """Extend the conditions list with multiple conditions.
+        """Extend the conditions' list with multiple conditions.
 
         Args:
             conds: List of relational conditions to add.
         """
         self.conditions.extend(conds)
 
-    def add_step(self, matrix: Matrix, explanation: str) -> None:
+    def add_step(self, matrix: str | Matrix, explanation: str) -> None:
         """Record a transformation step in the branch.
 
         Args:
@@ -105,6 +106,7 @@ class BranchManager:
         Returns:
             List of merged branch nodes with finished=True.
         """
+
         # Canonicalize matrix by simplifying all elements and converting to string
         def canonical_matrix_key(matrix):
             try:
@@ -133,7 +135,7 @@ class BranchManager:
             if simplified_ors is False:
                 # Discard unsatisfiable group
                 continue
-            # Use first branch as base, merge steps and add merge explanation
+            # Use the first branch as base, merge steps, and add merge explanation.
             base = group[0]
             merged_node = BranchNode(
                 conditions=[simplified_ors] if not isinstance(

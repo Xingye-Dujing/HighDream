@@ -1,225 +1,225 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>BaseStepGenerator - 步骤生成器文档</title>
-    <link rel="stylesheet" href="/static/help.css" />
-  </head>
-  <body>
-    <div id="help-container">
-      <ul class="header">
+    <link rel="stylesheet" href="/static/help.css"/>
+</head>
+<body>
+<div id="help-container">
+    <ul class="header">
         <li>
-          <a href="/">HighDream Notebook</a>
+            <a href="/">HighDream Notebook</a>
         </li>
         <li>
-          <a href="/help">帮助文档</a>
+            <a href="/help">帮助文档</a>
         </li>
-      </ul>
+    </ul>
 
-      <h1><strong>BaseStepGenerator</strong> (core/base_step_generator.py)</h1>
+    <h1><strong>BaseStepGenerator</strong> (core/base_step_generator.py)</h1>
 
-      <p>
+    <p>
         步骤生成器的抽象基类，负责记录、管理和格式化符号计算的逐步求解过程。它为数学表达式的分步计算提供了统一的输出框架。
-      </p>
+    </p>
 
-      <div class="warning">
+    <div class="warning">
         <p>
-          <strong>注意:</strong>&nbsp;&nbsp;
-          出现的所有图中，箭头的方向无实际意义，上面的文字所指可能是前对后，也可能是后对前
+            <strong>注意:</strong>&nbsp;&nbsp;
+            出现的所有图中，箭头的方向无实际意义，上面的文字所指可能是前对后，也可能是后对前
         </p>
-      </div>
+    </div>
 
-      <h2 id="class-overview">一.&nbsp;&nbsp;类概述</h2>
-      <p>BaseStepGenerator 是一个轻量级的步骤管理组件，主要功能包括：</p>
-      <ul>
+    <h2 id="class-overview">一.&nbsp;&nbsp;类概述</h2>
+    <p>BaseStepGenerator 是一个轻量级的步骤管理组件，主要功能包括：</p>
+    <ul>
         <li><strong>步骤记录</strong>：顺序存储计算过程中的每个表达式状态</li>
         <li><strong>解释管理</strong>：为每个步骤提供可选的文字说明</li>
         <li><strong>格式输出</strong>：支持多种输出格式（列表、LaTeX）</li>
         <li><strong>状态管理</strong>：支持重置以进行多次计算</li>
-      </ul>
+    </ul>
 
-      <p>它与其它类的关系如下：</p>
-      <img
-        src="/static/images/base_step_generator.svg"
-        alt="BaseStepGenerator"
-      />
+    <p>它与其它类的关系如下：</p>
+    <img
+            src="/static/images/base_step_generator.svg"
+            alt="BaseStepGenerator"
+    />
 
-      <h2 id="design-principles">二.&nbsp;&nbsp;设计原则</h2>
-      <ul>
+    <h2 id="design-principles">二.&nbsp;&nbsp;设计原则</h2>
+    <ul>
         <li><strong>简单性</strong>：保持接口简洁，易于理解和使用</li>
         <li><strong>灵活性</strong>：支持无解释步骤和有解释步骤的混合使用</li>
         <li><strong>可扩展性</strong>：作为抽象基类，允许子类定制输出格式</li>
         <li><strong>独立性</strong>：与具体计算逻辑解耦，专注于步骤管理</li>
-      </ul>
+    </ul>
 
-      <h2 id="attributes">三.&nbsp;&nbsp;属性</h2>
-      <table class="parameter-table">
+    <h2 id="attributes">三.&nbsp;&nbsp;属性</h2>
+    <table class="parameter-table">
         <thead>
-          <tr>
+        <tr>
             <th>属性名</th>
             <th>类型</th>
             <th>描述</th>
             <th>访问级别</th>
-          </tr>
+        </tr>
         </thead>
         <tbody>
-          <tr>
+        <tr>
             <td>steps</td>
             <td>List[Expr]</td>
             <td>存储计算过程中每个步骤的 SymPy 表达式</td>
             <td>公共</td>
-          </tr>
-          <tr>
+        </tr>
+        <tr>
             <td>_explanations</td>
             <td>List[str]</td>
             <td>存储每个步骤对应的解释说明文本</td>
             <td>受保护</td>
-          </tr>
+        </tr>
         </tbody>
-      </table>
+    </table>
 
-      <div class="warning">
+    <div class="warning">
         <p>
-          <strong>注意:</strong> steps 和 _explanations
-          列表始终保持相同长度，每个步骤的表达式和解释通过索引对应。
+            <strong>注意:</strong> steps 和 _explanations
+            列表始终保持相同长度，每个步骤的表达式和解释通过索引对应。
         </p>
-      </div>
+    </div>
 
-      <h2 id="methods">四.&nbsp;&nbsp;方法</h2>
+    <h2 id="methods">四.&nbsp;&nbsp;方法</h2>
 
-      <h3>1.&nbsp;&nbsp;初始化与状态管理</h3>
+    <h3>1.&nbsp;&nbsp;初始化与状态管理</h3>
 
-      <div class="method-signature">__init__(self) -> None</div>
-      <p>初始化步骤生成器实例，创建空的步骤列表和解释列表。</p>
-      <p><strong>执行效果:</strong></p>
-      <ul>
+    <div class="method-signature">__init__(self) -> None</div>
+    <p>初始化步骤生成器实例，创建空的步骤列表和解释列表。</p>
+    <p><strong>执行效果:</strong></p>
+    <ul>
         <li>创建空的 <code>self.steps</code> 列表</li>
         <li>创建空的 <code>self._explanations</code> 列表</li>
-      </ul>
+    </ul>
 
-      <div class="method-signature">reset(self) -> None</div>
-      <p>
+    <div class="method-signature">reset(self) -> None</div>
+    <p>
         重置步骤生成器的内部状态，清除所有记录的步骤和解释，准备进行新的计算。
-      </p>
-      <p><strong>使用场景:</strong></p>
-      <ul>
+    </p>
+    <p><strong>使用场景:</strong></p>
+    <ul>
         <li>在开始新的计算任务前调用</li>
         <li>防止多次计算的结果相互干扰</li>
-      </ul>
+    </ul>
 
-      <h3>2.&nbsp;&nbsp;步骤记录方法</h3>
+    <h3>2.&nbsp;&nbsp;步骤记录方法</h3>
 
-      <div class="method-signature">
+    <div class="method-signature">
         add_step(self, expr: Expr, explanation: str = "") -> None
-      </div>
-      <p>添加一个新的计算步骤及其可选的解释说明。</p>
-      <p><strong>参数:</strong></p>
-      <table class="parameter-table">
+    </div>
+    <p>添加一个新的计算步骤及其可选的解释说明。</p>
+    <p><strong>参数:</strong></p>
+    <table class="parameter-table">
         <thead>
-          <tr>
+        <tr>
             <th>参数名</th>
             <th>类型</th>
             <th>描述</th>
             <th>默认值</th>
-          </tr>
+        </tr>
         </thead>
         <tbody>
-          <tr>
+        <tr>
             <td>expr</td>
             <td>Expr</td>
             <td>当前步骤的 SymPy 表达式</td>
             <td><em>必需</em></td>
-          </tr>
-          <tr>
+        </tr>
+        <tr>
             <td>explanation</td>
             <td>str</td>
             <td>对当前步骤的文字说明（可选）</td>
             <td>空字符串</td>
-          </tr>
+        </tr>
         </tbody>
-      </table>
-      <p><strong>执行效果:</strong></p>
-      <ul>
+    </table>
+    <p><strong>执行效果:</strong></p>
+    <ul>
         <li>将 <code>expr</code> 添加到 <code>self.steps</code> 列表末尾</li>
         <li>
-          将 <code>explanation</code> 添加到
-          <code>self._explanations</code> 列表末尾
+            将 <code>explanation</code> 添加到
+            <code>self._explanations</code> 列表末尾
         </li>
-      </ul>
+    </ul>
 
-      <h3>3.&nbsp;&nbsp;数据获取方法</h3>
+    <h3>3.&nbsp;&nbsp;数据获取方法</h3>
 
-      <div class="method-signature">
+    <div class="method-signature">
         get_steps(self) -> Tuple[List[Expr], List[str]]
-      </div>
-      <p>获取所有记录的步骤和对应的解释说明。</p>
-      <p><strong>返回值:</strong></p>
-      <table class="parameter-table">
+    </div>
+    <p>获取所有记录的步骤和对应的解释说明。</p>
+    <p><strong>返回值:</strong></p>
+    <table class="parameter-table">
         <thead>
-          <tr>
+        <tr>
             <th>位置</th>
             <th>类型</th>
             <th>描述</th>
-          </tr>
+        </tr>
         </thead>
         <tbody>
-          <tr>
+        <tr>
             <td>0</td>
             <td>List[Expr]</td>
             <td>所有步骤的 SymPy 表达式列表</td>
-          </tr>
-          <tr>
+        </tr>
+        <tr>
             <td>1</td>
             <td>List[str]</td>
             <td>所有步骤的解释说明字符串列表</td>
-          </tr>
+        </tr>
         </tbody>
-      </table>
-      <p><strong>适用场景:</strong> 需要程序化处理计算步骤的场景</p>
+    </table>
+    <p><strong>适用场景:</strong> 需要程序化处理计算步骤的场景</p>
 
-      <h3>4.&nbsp;&nbsp;格式输出方法</h3>
+    <h3>4.&nbsp;&nbsp;格式输出方法</h3>
 
-      <div class="method-signature">to_latex(self) -> str</div>
-      <p>将所有步骤格式化为 LaTeX 对齐环境字符串。</p>
-      <p><strong>返回值:</strong> 完整的 LaTeX 代码字符串</p>
-      <p><strong>输出格式(连等式形式):</strong></p>
-      <ul>
+    <div class="method-signature">to_latex(self) -> str</div>
+    <p>将所有步骤格式化为 LaTeX 对齐环境字符串。</p>
+    <p><strong>返回值:</strong> 完整的 LaTeX 代码字符串</p>
+    <p><strong>输出格式(连等式形式):</strong></p>
+    <ul>
         <li>使用 <code>align</code> 环境进行数学对齐</li>
         <li>第一行以 <code>&</code> 开头，后续行以 <code>&=</code> 开头</li>
         <li>每个步骤之间用 <code>\newline</code> 分隔</li>
         <li>如果有解释说明，使用 <code>\quad \text{...}</code> 格式添加</li>
-      </ul>
+    </ul>
 
-      <div class="warning">
+    <div class="warning">
         <p>
-          <strong>搭配 Jupyter notebook:</strong> 可使用
-          display(Math(latex_str)) 渲染返回的 LaTeX
+            <strong>搭配 Jupyter notebook:</strong> 可使用
+            display(Math(latex_str)) 渲染返回的 LaTeX
         </p>
-      </div>
+    </div>
 
-      <h2 id="usage-examples">五.&nbsp;&nbsp;使用示例</h2>
+    <h2 id="usage-examples">五.&nbsp;&nbsp;使用示例</h2>
 
-      <h3>基本用法</h3>
+    <h3>基本用法</h3>
 
-      <p>BaseStepGenerator 被 BaseCalculator 及其子类用作步骤记录组件</p>
+    <p>BaseStepGenerator 被 BaseCalculator 及其子类用作步骤记录组件</p>
 
-      <h3>自定义步骤生成器</h3>
-      <p>
+    <h3>自定义步骤生成器</h3>
+    <p>
         如果需要不同的输出格式，可以创建 BaseStepGenerator 的子类。比如
         LimitStepGenerator、DetStepGenerator 和 RefStepGenerator 类。
-      </p>
+    </p>
 
-      <p><strong>最佳实践:</strong></p>
-      <ul>
+    <p><strong>最佳实践:</strong></p>
+    <ul>
         <li>在每次计算前调用 <code>reset()</code> 方法确保状态清洁</li>
         <li>为关键步骤提供有意义的解释说明，增强可读性</li>
         <li>
-          根据使用场景选择合适的输出格式（程序处理用
-          <code>get_steps()</code>，展示用 <code>to_latex()</code>）
+            根据使用场景选择合适的输出格式（程序处理用
+            <code>get_steps()</code>，展示用 <code>to_latex()</code>）
         </li>
         <li>考虑创建自定义子类来满足特定的格式化需求</li>
-      </ul>
-    </div>
-  </body>
+    </ul>
+</div>
+</body>
 </html>
