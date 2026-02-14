@@ -366,6 +366,7 @@ a {
 .var-input,
 .expression-controls,
 .limit-controls,
+.integral-controls,
 .controls {
   font-size: 12px;
   color: var(--jp-ui-font-color1);

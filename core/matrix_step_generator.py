@@ -5,8 +5,7 @@ class MatrixStepGenerator:
     """Generate and manage step-by-step mathematical operations in LaTeX format.
 
     This class provides functionality to collect individual calculation steps
-    and output them as a formatted LaTeX align environment.
-    """
+    and output them as a formatted LaTeX align environment."""
 
     def __init__(self) -> None:
         """Initialize an empty list to store calculation steps."""
@@ -20,8 +19,8 @@ class MatrixStepGenerator:
         """Add a single calculation step to the collection.
 
         Args:
-            step (str): A LaTeX-formatted string representing one calculation step.
-        """
+            step (str): A LaTeX-formatted string representing one calculation step."""
+
         self.steps.append(step)
 
     def get_steps_latex(self) -> str:
@@ -29,8 +28,8 @@ class MatrixStepGenerator:
 
         Returns:
             str: A LaTeX-formatted string with all steps in an align environment,
-                 with each step on a new line.
-        """
+                 with each step on a new line."""
+
         latex_str = "\\begin{align}"
         for step in self.steps:
             step_str = f"& {step}"

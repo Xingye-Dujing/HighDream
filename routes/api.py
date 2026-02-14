@@ -123,10 +123,7 @@ def compute():
     # Create the asynchronous task
     task_id = task_manager.create_task(op_type, data)
 
-    return jsonify({
-        'success': True,
-        'task_id': task_id
-    })
+    return jsonify({'success': True, 'task_id': task_id})
 
 
 @api.route('/task_status', methods=['POST'])
@@ -145,8 +142,8 @@ def get_task_status():
             error (str, optional): Error message if failed
             created_at (str): Task creation timestamp
             started_at (str, optional): Task start timestamp
-            completed_at (str, optional): Task completion timestamp.
-    """
+            completed_at (str, optional): Task completion timestamp."""
+
     data = request.json or {}
     task_id = data.get('task_id', '')
 

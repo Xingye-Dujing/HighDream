@@ -124,5 +124,23 @@
     "content": "-atan(sqrt(x^2+1)/x)",
     "operationType": "diff",
     "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(sqrt(1+x^2)+sqrt(1-x^2))/sqrt(1-x^4)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "sqrt((1-x^2)/(1-x^4))",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "(sqrt(3+x)+sqrt(1-x))/sqrt(2-x)",
+    "operationType": "integral",
+    "variable": "x"
   }
 ]

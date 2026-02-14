@@ -1,5 +1,5 @@
 from sympy import (
-    Add, Expr, Eq, Integral, Mul, Pow, atan, degree, div, fraction,
+    Add, Expr, Eq, Integral, Mul, Pow, degree, div, fraction,
     integrate, powsimp, latex, radsimp, solve, simplify, symbols, sqrt
 )
 
@@ -8,13 +8,16 @@ from utils.latex_formatter import wrap_latex
 
 
 def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr | None, str | None, bool | None]:
-    """Handle polynomial expressions for integration"""
-    # If expr is a rational fraction, performing partial fraction decomposition.
-    expr_copy = num / den
-    expr_apart = expr_copy.apart()
+    """Handle the rational fraction by performing partial fraction decomposition"""
 
-    # If the rational fraction is reducible
-    if expr_apart != expr_copy and isinstance(expr_apart, Add):
+    expr_copy = num / den
+    expr_apart = expr_copy.apart(extension=[sqrt(2), sqrt(3), sqrt(5), ])
+
+    # expr_apart != expr_copy: The rational fraction is reducible
+    # isinstance(expr_apart, Add): Prevent cases like 2/(2*x^2+2) -> 2/(2*(x^2+1))
+    # isinstance(den, Add) and isinstance(expr_apart, Pow): Allow cases like 1/(x^4+2*x^2+1) -> 1/(x^2+1)^2.
+    if (expr_apart != expr_copy
+            and (isinstance(expr_apart, Add) or isinstance(den, Add) and isinstance(expr_apart, Pow))):
         return expr_apart, "(有理分式)化为真分式或部分分式分解", False
 
     # If the rational fraction is not reducible:
@@ -28,12 +31,8 @@ def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr | None, str | Non
     if degree(den).equals(2):
         # The simplest irreducible quadratic poly, no decomposition required
         if num.is_constant():
-            result = integrate(expr_copy, var)
-            if result.has(atan):
-                return result, \
-                    rf"(分母为二次多项式且分子为常数)分母配方/提公因子凑 $ \frac{{1}}{{b}} \frac{{1}}{{u^2+1}} $ 法", True
-            # If square roots are needed during decomposition, another algorithm should be used.
-            return expr_copy.apart(full=True).doit(), "(有理分式)化为真分式或部分分式分解", False
+            return integrate(expr_copy, var), \
+                rf"(分母为二次多项式且分子为常数)分母配方/提公因子凑 $ \frac{{1}}{{b}} \frac{{1}}{{u^2+1}} $ 法", True
 
         den_diff = den.diff()
         alpha, beta = symbols('alpha beta')
@@ -74,19 +73,23 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
                 return None
             # If expr is a rational fraction, performing partial fraction decomposition.
             result, prefix, is_direct_return = handle_poly(num, den, var)
-            # 1. Have already been reduced to the simplest form
-            if not result:
-                return None
-            # 2. The simplest irreducible quadratic poly, directly return result
-            if is_direct_return:
-                return result, prefix
-            # 3. If there is only one term after decomposition
-            if not isinstance(result, Add):
-                new_expr = Integral(result, var)
-                return new_expr, f"{prefix}: $\\int {expr_latex}\\,d {var_latex} = {latex(new_expr)}$"
-            # 4. The rational fraction is reducible
-            used = True
-            expr_copy = result
+            # 0. result == None: Have already been reduced to the simplest form.
+            # At this point, we still need to attempt the next two split methods.
+            # So we can't return None directly if result == None.
+            if result:
+                # 1. The simplest irreducible quadratic poly, directly return result
+                if is_direct_return:
+                    return result, prefix
+                # 2. If there is only one term after decomposition
+                if not isinstance(result, Add):
+                    new_expr = Integral(result, var)
+                    return new_expr, f"{prefix}: $\\int {expr_latex}\\,d {var_latex} = {latex(new_expr)}$"
+                # 3. The rational fraction is reducible
+                used = True
+                expr_copy = result
+            else:
+                prefix = "应用加法展开规则"
+                result = expr
 
         if not used and den != 1:
             den_diff = den.diff()
@@ -102,9 +105,9 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
                     result = Integral(part1, var) + Integral(part2, var)
                     return result, (f"$构造等式(分子 = \\alpha \\cdot 分母导数 + \\beta \\cdot 分母)进行裂项: "
                                     f"\\int {expr_latex}\\,d {var_latex} = {latex(result)}$")
-            except Exception as e:
-                print(f"Error in add_rule: {e}")
-                # pass
+            except Exception:
+                # print(f"Error in add_rule: {e}")
+                pass
 
         # Handle the expressions containing non-polynomial elements such as log
         if not used:
@@ -179,5 +182,9 @@ def add_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     return None
 
 
-def mul_const_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    return 'mul_const'
+def mul_const_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    # SymPy's constant extraction may break structures suitable
+    # for weierstrass substitution, making subsequent solving impossible.
+    # Case like sin(x)*cos(x)/(sin(x)+cos(x)).
+    if not can_use_weierstrass(expr, context['variable']):
+        return 'mul_const'

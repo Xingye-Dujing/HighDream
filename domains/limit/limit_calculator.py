@@ -47,7 +47,7 @@ def create_limit_calculator(base_class):
                     return False
             return True
 
-        def _final_postprocess(self, final_expr: Expr) -> None:
+        def final_postprocess(self, final_expr: Expr) -> None:
             if final_expr.has(AccumBounds):
                 self.step_generator.add_step(S.NaN, "函数在极限点附近振荡, 极限不存在")
 

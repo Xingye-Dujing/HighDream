@@ -43,15 +43,12 @@ class BaseCalculator(ABC):
         required_attrs = ['operation', 'rule_dict', 'matcher_list']
         missing_attrs = [attr for attr in required_attrs if getattr(self, attr) is None]
         if missing_attrs:
-            raise ValueError(
-                f"Attributes {missing_attrs} must be initialized in init_key_property()."
-            )
+            raise ValueError(f"Attributes {missing_attrs} must be initialized in init_key_property().")
 
     def reset_process(self) -> None:
         """Reset internal state to prepare for a new calculation.
+        Clears the set of processed expressions and resets the step generator."""
 
-        Clears the set of processed expressions and resets the step generator.
-        """
         self.processed = set()
         self.step_generator.reset()
         self.sudden_end = [False, None]
@@ -63,8 +60,8 @@ class BaseCalculator(ABC):
 
     def _perform_operation(self, expr: Expr, operation: Operation, **context: Context) -> Operation:
         """Perform the specified operation on the expression.
-
         Only fit Derivative, Integral."""
+
         var = self._context_split(**context)
         return operation(expr, var)
 
@@ -72,23 +69,21 @@ class BaseCalculator(ABC):
         """Return a cached operation if available, otherwise compute and cache the operation."""
         key = (expr, str(context))
         if key not in self.cache:
-            self.cache[key] = self._perform_operation(
-                expr, operation, **context)
+            self.cache[key] = self._perform_operation(expr, operation, **context)
         return self.cache[key]
 
     @staticmethod
     def _step_expr_postprocess(step_expr: Expr) -> Expr:
         """Postprocess a step expression before adding it to the step generator.
+        E.g., IntegralCalculator: Add constant of integration"""
 
-        E.g., IntegralCalculator: Add constant of integration
-        """
         return step_expr
 
     @lru_cache(maxsize=128)
     def _cached_simplify(self, expr: Expr) -> Expr:
         """Return a simplified version of the expression, using caching to avoid redundant computation.
+        Note: Force log simplification."""
 
-        Note: Force log simplification"""
         if self.is_radsimp:
             return expand_log(radsimp(expr), force=True)
         return expand_log(expr, force=True)
@@ -130,22 +125,17 @@ class BaseCalculator(ABC):
                            expr_to_operation: Dict[str | Expr, Operation], direct_compute: bool, **context: Context) \
             -> Tuple[Expr, str, Dict[Expr, Operation]]:
 
+        current_operation = self._get_cached_operation(current_expr, operation, **context)
         if direct_compute:
-            current_operation = self._get_cached_operation(
-                current_expr, operation, **context)
             new_expr = current_operation.doit()
             if not is_elementary_expression(new_expr):
                 self.sudden_end = [True, current_operation]
             explanation = f"${latex(current_operation)}$ 之前已计算过，不再显示中间过程"
         else:
-            new_expr, explanation = self._apply_rule(
-                current_expr, operation, **context)
+            new_expr, explanation = self._apply_rule(current_expr, operation, **context)
         # Replace all occurrences of operation(current, var) with new_expr
-        current_operation = self._get_cached_operation(
-            current_expr, operation, **context)
         for key in list(expr_to_operation.keys()):
-            expr_to_operation[key] = expr_to_operation[key].subs(
-                current_operation, new_expr)
+            expr_to_operation[key] = expr_to_operation[key].subs(current_operation, new_expr)
         return new_expr, explanation, expr_to_operation
 
     def _back_subs(self, final_expr: Expr) -> Expr:
@@ -155,8 +145,8 @@ class BaseCalculator(ABC):
         Since substitutions were added in order, back substitution requires reverse iteration.
 
         Args:
-            final_expr: The final expression to perform back substitution on.
-        """
+            final_expr: The final expression to perform back substitution on."""
+
         subs_dict = self.step_generator.subs_dict
         if not subs_dict:
             return final_expr
@@ -173,8 +163,8 @@ class BaseCalculator(ABC):
         """Apply domain-aware simplification by assuming all free symbols are positive real numbers.
 
         This step helps reduce expressions like sqrt(x^2) to x, log(x^2)/2 to log(x), etc.,
-        which SymPy avoids under generic assumptions to preserve mathematical correctness.
-        """
+        which SymPy avoids under generic assumptions to preserve mathematical correctness."""
+
         if not final_expr.free_symbols:
             return
 
@@ -201,12 +191,8 @@ class BaseCalculator(ABC):
         # Extract the unique variable from the expression for calculating.
         symbol_list = list(expr.free_symbols)
         if len(symbol_list) > 1:
-            raise ValueError(
-                "仅允许出现一个字母变量.")
-        if symbol_list:
-            context['variable'] = symbol_list[0]
-        else:
-            context['variable'] = Symbol("x")
+            raise ValueError("仅允许出现一个字母变量.")
+        context['variable'] = symbol_list[0] if symbol_list else Symbol("x")
 
         initial_operation = self._get_cached_operation(expr, operation, **context)
         self.step_generator.add_step(initial_operation)
@@ -214,14 +200,12 @@ class BaseCalculator(ABC):
         simple_expr = self._cached_simplify(expr)
         if simple_expr != expr:
             expr = simple_expr
-            initial_operation = self._get_cached_operation(
-                expr, operation, **context)
+            initial_operation = self._get_cached_operation(expr, operation, **context)
             self.step_generator.add_step(initial_operation, "简化表达式")
 
         # BFS using a queue.
         queue: Deque[Expr] = deque([expr])
-        expr_to_operation: Dict[Expr, Operation] = {
-            expr: initial_operation}
+        expr_to_operation: Dict[Expr, Operation] = {expr: initial_operation}
 
         while queue:
             direct_compute = False
@@ -238,8 +222,7 @@ class BaseCalculator(ABC):
             if symbol_list:
                 context['variable'] = symbol_list[0]
             elif self.step_generator.subs_dict:
-                context['variable'] = list(
-                    self.step_generator.subs_dict.keys())[-1]
+                context['variable'] = list(self.step_generator.subs_dict.keys())[-1]
             else:
                 context['variable'] = Symbol("x")
 
@@ -258,9 +241,7 @@ class BaseCalculator(ABC):
 
             if new_expr != current_operation:
                 # Extract sub-expressions to continue processing.
-                sub_exprs: List[Expr] = [new_expr] if isinstance(new_expr, operation) \
-                    else new_expr.atoms(operation)
-                for s in sub_exprs:
+                for s in list(new_expr.atoms(operation)):
                     sub_expr: Expr = s.args[0]  # type: ignore
                     expr_to_operation[sub_expr] = s
                     queue.append(sub_expr)
@@ -282,8 +263,8 @@ class BaseCalculator(ABC):
 
         Args:
             expr: A string representation of the symbolic expression to evaluate.
-            **context: The evaluation context.
-        """
+            **context: The evaluation context."""
+
         self._do_compute(expr, self.operation, **context)
 
     @abstractmethod
@@ -297,8 +278,8 @@ class BaseCalculator(ABC):
         Returns:
             Tuple:
             - A list of symbolic expressions representing each evaluation step.
-            - A list of strings describing each step.
-        """
+            - A list of strings describing each step."""
+
         self._compute(expr, **context)
         return self.step_generator.get_steps()
 
@@ -312,7 +293,7 @@ class BaseCalculator(ABC):
 
         Returns:
             A LaTeX string representing the step-by-step evaluation process.
-            To render it in a Jupyter notebook, use: ``display(Math(latex_string))``.
-        """
+            To render it in a Jupyter notebook, use: ``display(Math(latex_string))``."""
+
         self._compute(expr, **context)
         return self.step_generator.to_latex()

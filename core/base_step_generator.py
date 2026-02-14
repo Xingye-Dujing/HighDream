@@ -27,9 +27,8 @@ class BaseStepGenerator(ABC):
 
     def reset(self) -> None:
         """Reset internal state to prepare for a new calculation.
+        Clear all recorded steps and their corresponding explanations."""
 
-        Clear all recorded steps and their corresponding explanations.
-        """
         self.steps = []
         self._explanations = []
         self.subs_dict = {}
@@ -56,13 +55,14 @@ class BaseStepGenerator(ABC):
         Returns:
             Tuple:
             - A list of symbolic expressions representing each evaluation step.
-            - A list of strings describing each step.
-        """
+            - A list of strings describing each step."""
+
         return self.steps, self._explanations
 
     def to_latex(self) -> str:
         """Format steps as a LaTeX align environment.
            To render it in a Jupyter notebook, use: ``display(Math(latex_string))``."""
+
         if not self.steps:
             return r"\begin{align}\end{align}"
 

@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Protocol, Tuple
+from typing import Dict, List, Protocol, Tuple
 
 from sympy import Derivative, Determinant, Expr, Integral, Limit, Symbol
 
@@ -7,8 +7,8 @@ Operation = Derivative | Determinant | Integral | Limit
 # The evaluation context providing additional information.
 Context = Symbol | Expr | str
 RuleContext = Dict[str, Context]
-RuleFunctionReturn = Optional[Tuple[Expr, str]]
-MatcherFunctionReturn = Optional[str]
+RuleFunctionReturn = Tuple[Expr, str] | None
+MatcherFunctionReturn = str | None
 
 
 class RuleFunction(Protocol):

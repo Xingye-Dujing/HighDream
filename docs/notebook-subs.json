@@ -76,5 +76,11 @@
     "content": "sin(sqrt(x))*x",
     "operationType": "integral",
     "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/(sqrt(tan(x))-1)",
+    "operationType": "integral",
+    "variable": "x"
   }
 ]

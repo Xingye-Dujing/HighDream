@@ -1,43 +1,19 @@
 [
   {
     "type": "code",
-    "content": "1/(sqrt(tan(x))-1)",
-    "operationType": "integral",
-    "variable": "x"
-  },
-  {
-    "type": "code",
-    "content": "tan(x)^3/cos(x)",
-    "operationType": "integral",
-    "variable": "x"
-  },
-  {
-    "type": "code",
-    "content": "1/(3+sin(x)^2)",
-    "operationType": "integral",
-    "variable": "x"
-  },
-  {
-    "type": "code",
-    "content": "1/(4*sin(x)^2+9*cos(x)^2)",
-    "operationType": "integral",
-    "variable": "x"
-  },
-  {
-    "type": "code",
-    "content": "(sqrt(1+x^2)+sqrt(1-x^2))/sqrt(1-x^4)",
-    "operationType": "integral",
-    "variable": "x"
-  },
-  {
-    "type": "code",
     "content": "1/(1-x^2)^(5/2)",
     "operationType": "integral",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "sin(x)*cos(x)/(sin(x)+cos(x))",
+    "content": "1/(x^2+1)^(3/2)",
+    "operationType": "integral",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "1/(cosh(x)+1)",
     "operationType": "integral",
     "variable": "x"
   }

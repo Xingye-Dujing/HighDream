@@ -1,6 +1,6 @@
 from sympy import (
-    Abs, Expr, Integer, Integral, Mul, Pow, Poly, PolynomialError, Rational,
-    diff, exp, fraction, integrate, latex, log, powsimp, simplify, together,
+    Abs, Add, Expr, Integer, Integral, Mul, Pow, Poly, PolynomialError, Rational,
+    cancel, diff, exp, fraction, integrate, latex, log, powsimp, simplify, together,
     sin, cos, tan, cot, sec, csc, sqrt
 )
 from sympy.simplify.fu import fu
@@ -18,9 +18,6 @@ from utils import (
     can_use_weierstrass, is_elementary_expression
 )
 from utils.latex_formatter import wrap_latex
-
-sqrt_pow = Rational(1, 2)
-minus_sqrt_pow = -Rational(1, 2)
 
 
 def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
@@ -340,7 +337,54 @@ def quadratic_sqrt_reciprocal_rule(expr: Expr, context: RuleContext) -> RuleFunc
 
     u = step_gene.get_available_sym(var)
     step_gene.subs_dict[u] = t
-    return Integral(simplify(1 / sqrt(a * u ** 2 + k / (4 * a))), u), f"二元一次函数配方并令\\;${u.name} = {latex(t)}$"
+    return (Integral(simplify(1 / sqrt(a * u ** 2 + k / (4 * a))), u),
+            f"二元一次函数配方并令\\;${u.name} = {latex(t)}$")
+
+
+def sqrt_div_sqrt_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Handle ((ax+b)/(cx+d))^(1/n) dx and (ax+b)^(1/n)/(cx+d)^(1/n) dx."""
+    var = context['variable']
+
+    if isinstance(expr, Mul):
+        num, den = fraction(expr)
+
+        if isinstance(den, Pow) and isinstance(num, Add):
+            integrals = []
+            # Expand into a simple form as much as possible to facilitate later rule matching.
+            for term in expr.expand().args:
+                term_num, term_den = fraction(term)
+                if isinstance(term_num, Pow) and term_num.exp.equals(term_den.exp):
+                    term_base = cancel(term_num.base / term_den.base)
+                    n, d = fraction(term_base)
+                    if n.equals(1):
+                        term = 1 / d ** term_num.exp
+                    elif n.equals(-1):
+                        term = 1 / (-d) ** term_num.exp
+                    else:
+                        term = term_base ** term_num.exp
+                integrals.append(Integral(simplify(term), var))
+            res = Add(*integrals)
+            return res, f"将\\,${latex(expr)}$\\,展开为\\,${latex(res)}$"
+
+        return None
+
+    if isinstance(expr, Pow):
+        base, expo = expr.base, expr.exp
+        num, den = fraction(base)
+        term_base = cancel(num / den)
+        if term_base == base:
+            return None
+        n, d = fraction(term_base)
+        if n.equals(1):
+            res = 1 / d ** expo
+        elif n.equals(-1):
+            res = 1 / (-d) ** expo
+        else:
+            res = term_base ** expo
+
+        return Integral(res, var), f"将\\,${latex(expr)}$\\,改写为\\,${latex(res)}$"
+
+    return None
 
 
 def logarithmic_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
@@ -390,3 +434,8 @@ def weierstrass_substitution_matcher(_expr: Expr, _context: RuleContext) -> Matc
 
 def quadratic_sqrt_reciprocal_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     return 'quadratic_sqrt_reciprocal'
+
+
+def sqrt_div_sqrt_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+    if isinstance(expr, (Mul, Pow)):
+        return 'sqrt_div_sqrt'

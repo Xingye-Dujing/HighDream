@@ -9,8 +9,7 @@ class CommonMatrixCalculator(ABC):
     """Abstract base class for matrix calculation operations.
 
     Provides common functionality for matrix calculations including step tracking,
-    matrix parsing, and simplification utilities.
-    """
+    matrix parsing, and simplification utilities."""
 
     def __init__(self) -> None:
         """Initialize the calculator with a step generator."""
@@ -32,8 +31,8 @@ class CommonMatrixCalculator(ABC):
         """Add an equation to the calculation steps display.
 
         Parameters:
-            equation (str): The LaTeX representation of the equation.
-        """
+            equation (str): The LaTeX representation of the equation."""
+
         self.step_generator.add_step(equation)
 
     def get_steps_latex(self) -> str:

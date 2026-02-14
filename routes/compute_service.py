@@ -95,13 +95,14 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
             return True, _calculators['diff']().compute_latex(expression, Symbol(variable))  # type: ignore
 
         if operation_type == 'integral':
-            return True, _calculators['integral']().compute_latex(expression, Symbol(variable))  # type: ignore
+            include_special_matchers = data.get('include_special_matchers', True) == 'True'
+            return (True, _calculators['integral'](include_special_matchers).
+                    compute_latex(expression, Symbol(variable)))  # type: ignore
 
         if operation_type == 'limit':
             point = sympify(data.get('point', '0'))
             direction = data.get('direction', '+')
-            max_lhopital = int(
-                data.get('max_lhopital_count', DEFAULT_LHOPITAL_MAX_COUNT))
+            max_lhopital = int(data.get('max_lhopital_count', DEFAULT_LHOPITAL_MAX_COUNT))
             limiter = LimitCalculator(max_lhopital=max_lhopital)
             return True, limiter.compute_latex(expression, Symbol(variable), point, direction)
 
@@ -203,8 +204,7 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
             return True, calc.get_steps_latex()
 
         if operation_type == 'expr':
-            max_depth = int(
-                data.get('max_depth', DEFAULT_PARSER_MAX_DEPTH))
+            max_depth = int(data.get('max_depth', DEFAULT_PARSER_MAX_DEPTH))
             # is_draw_tree = data.get('is_draw_tree') == 'true'
             sort_strategy = data.get('sort_strategy', 'complexity')
 
@@ -223,16 +223,14 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
             elif sort_strategy == 'complexity':
                 strategy = complexity_sort
 
-            parser = ExpressionParser(
-                max_depth=max_depth, sort_strategy=strategy)
+            parser = ExpressionParser(max_depth=max_depth, sort_strategy=strategy)
 
             # Parse returns list of (expr, reason) tuples
             results = parser.parse(expression)
             expressions_out = []
             for expr_obj, reason in results:
                 expr_latex = latex(expr_obj)
-                expressions_out.append(
-                    {'latex': expr_latex, 'reason': str(reason)})
+                expressions_out.append({'latex': expr_latex, 'reason': str(reason)})
 
             # # Generate derivation tree SVG and return accessible static path
             # tree_svg_url = None

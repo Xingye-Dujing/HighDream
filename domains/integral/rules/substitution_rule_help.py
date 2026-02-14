@@ -1,7 +1,7 @@
 from sympy import (
-    Add, Abs, Dummy, Eq, Expr, I, Integral, Pow, Rational, Symbol, Wild, acos, asin, atan,
-    cancel, diff, fraction, latex, log, integrate, preorder_traversal, sec, simplify,
-    sin, solve, sqrt, symbols, tan, together
+    Add, Abs, Dummy, Eq, Expr, I, Integral, Pow, Rational, Symbol, Wild,
+    acos, asin, atan, cancel, diff, fraction, latex, log, integrate, preorder_traversal,
+    sec, simplify, sin, solve, sqrt, symbols, tan, together
 )
 
 from core import BaseStepGenerator
@@ -142,8 +142,7 @@ def try_trig_substitution(expr: Expr, var: Symbol) -> RuleFunctionReturn:
 
     # Assume a > 0 and theta is real to help SymPy's simplify:
     # These assumptions are necessary for Integral to work correctly !!!
-    a = Wild('a', exclude=[var], properties=[
-        lambda x: x.is_positive])
+    a = Wild('a', exclude=[var], properties=[lambda x: x.is_positive])
     # Theta is real and positive to help simplify
     theta = Dummy('theta', real=True, positive=True)
 
@@ -282,6 +281,8 @@ def try_undetermined_coeffs_for_radicals(expr: Expr, var: Symbol) -> RuleFunctio
     m = num_degree - 1
     coeffs = symbols(f'C0:{m + 1}')  # C0, C1, ..., Cm
     Q = sum(coeffs[i] * var ** i for i in range(m + 1))
+    if isinstance(Q, int):
+        return None
 
     # Constant K for the integral term
     K = Symbol('K')

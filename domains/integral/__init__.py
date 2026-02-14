@@ -1,4 +1,5 @@
 from utils import MatcherList, RuleDict
+from .rules.f_x_mul_exp_g_x_rule_help import handle_fx_mul_exp_gx, special_add_split_exp_term
 from .rules.integral_basic_rules import (
     add_matcher, add_rule, mul_const_matcher, mul_const_rule
 )
@@ -25,7 +26,15 @@ from .rules.integral_special_rules import (
     f_x_mul_exp_g_x_matcher, f_x_mul_exp_g_x_rule,
     weierstrass_substitution_matcher, weierstrass_substitution_rule,
     quotient_diff_form_matcher, quotient_diff_form_rule,
-    quadratic_sqrt_reciprocal_matcher, quadratic_sqrt_reciprocal_rule
+    quadratic_sqrt_reciprocal_matcher, quadratic_sqrt_reciprocal_rule,
+    sqrt_div_sqrt_matcher, sqrt_div_sqrt_rule,
+)
+from .rules.parts_rule_help import select_parts_u_dv
+from .rules.substitution_rule_help import (
+    try_radical_substitution,
+    try_standard_substitution,
+    try_trig_substitution,
+    try_undetermined_coeffs_for_radicals
 )
 
 __all__ = [
@@ -72,16 +81,27 @@ RULE_DICT: RuleDict = {
     'substitution': substitution_rule,
     'weierstrass_substitution': weierstrass_substitution_rule,
     "quadratic_sqrt_reciprocal": quadratic_sqrt_reciprocal_rule,
+    'sqrt_div_sqrt': sqrt_div_sqrt_rule,
     'parts': parts_rule,
 }
 
 # Note: Earlier entries have higher priority.
 MATCHER_LIST: MatcherList = [
     const_matcher, var_matcher, logarithmic_matcher, quadratic_sqrt_reciprocal_matcher,
-    substitution_matcher, f_x_mul_exp_g_x_matcher, quotient_diff_form_matcher,
+    f_x_mul_exp_g_x_matcher, quotient_diff_form_matcher, sqrt_div_sqrt_matcher, substitution_matcher,
     inverse_tangent_linear_matcher, add_matcher, mul_const_matcher, pow_matcher, exp_matcher,
     log_matcher, sin_matcher, cos_matcher, tan_matcher, sin_power_matcher, cos_power_matcher,
     tan_power_matcher, sec_matcher, csc_matcher, cot_matcher, exp_matcher, log_matcher,
     sinh_matcher, cosh_matcher, tanh_matcher, csch_matcher, sech_matcher, coth_matcher,
     inverse_trig_matcher, weierstrass_substitution_matcher, parts_matcher
+]
+
+N_MATCHER_LIST: MatcherList = [
+    const_matcher, var_matcher, logarithmic_matcher, quadratic_sqrt_reciprocal_matcher,
+    sqrt_div_sqrt_matcher, substitution_matcher, inverse_tangent_linear_matcher, add_matcher,
+    mul_const_matcher, pow_matcher, exp_matcher, log_matcher, sin_matcher, cos_matcher,
+    tan_matcher, sin_power_matcher, cos_power_matcher, tan_power_matcher, sec_matcher,
+    csc_matcher, cot_matcher, exp_matcher, log_matcher, sinh_matcher, cosh_matcher, tanh_matcher,
+    csch_matcher, sech_matcher, coth_matcher, inverse_trig_matcher, weierstrass_substitution_matcher,
+    parts_matcher
 ]

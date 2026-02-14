@@ -351,6 +351,14 @@ function setupCellEvents(cell) {
         if (limitControls) limitControls.style.display = "none";
       }
 
+      // If limit is selected, show additional options
+      const integralControls = cell.querySelector(".integral-controls");
+      if (this.value === "integral") {
+        if (integralControls) integralControls.style.display = "flex";
+      } else {
+        if (integralControls) integralControls.style.display = "none";
+      }
+
       // If expr is selected, show additional options
       const expressionControls = cell.querySelector(".expression-controls");
       if (this.value === "expr") {
@@ -475,6 +483,7 @@ function createCellElement(id, type) {
   cell.className = `cell ${type}-cell`;
   cell.dataset.cellId = id;
   cell.dataset.cellType = type;
+  const radioButtonGroupName = `include-option-${id}`;
 
   if (type === "code") {
     cell.innerHTML = `
@@ -588,6 +597,18 @@ function createCellElement(id, type) {
                 <input class="point" value="0" style="width:50px;">
                 <label style="font-size:12px;">最多使用洛必达的次数</label>
                 <input class="max-lhopital-count" value="5" style="width:50px;">
+              </div>
+
+              <!-- IntegralCalculator 专有 -->
+              <div class="integral-controls" style="display: none; gap:8px; margin-left:8px; align-items:center;">
+               <label class="include-toggle">
+                <input type="radio" name="${radioButtonGroupName}" value="include" checked>
+                <span>包含特殊匹配器</span>
+               </label>
+               <label class="include-toggle">
+                <input type="radio" name="${radioButtonGroupName}" value="none">
+                <span>不包含特殊匹配器</span>
+               </label>
               </div>
 
               <!-- ExpressionParser 专有 -->
@@ -766,6 +787,18 @@ function runCell(cell) {
     payload.point = point;
     payload.direction = direction;
     payload.max_lhopital_count = max_lhopital_count;
+  }
+
+  if (operationType === "integral") {
+    const radioButtonGroupName = `include-option-${cell.dataset.cellId}`;
+    const selectedRadio = cell.querySelector(`input[name="${radioButtonGroupName}"]:checked`).value === "include";
+    if (selectedRadio) {
+      include_special_matchers = 'True'
+    }
+    else {
+      include_special_matchers = 'False'
+    }
+    payload.include_special_matchers = include_special_matchers
   }
 
   if (operationType === "ref") {
