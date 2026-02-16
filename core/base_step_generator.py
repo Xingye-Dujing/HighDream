@@ -34,7 +34,7 @@ class BaseStepGenerator(ABC):
         self.subs_dict = {}
         self.available_sym_chars = available_sym_chars.copy()
 
-    def get_available_sym(self, var: Symbol) -> Symbol:
+    def get_available_sym(self, var: Symbol, **symbol_kwargs) -> Symbol:
         if var.name in self.available_sym_chars:
             self.available_sym_chars.remove(var.name)
         if not self.available_sym_chars:
@@ -42,7 +42,7 @@ class BaseStepGenerator(ABC):
             # return Dummy(var.name)
         new_sym_char = self.available_sym_chars[0]
         self.available_sym_chars.remove(new_sym_char)
-        return Symbol(new_sym_char)
+        return Symbol(new_sym_char, **symbol_kwargs)
 
     def add_step(self, expr: [Expr | None], explanation: str = "") -> None:
         """Append a new evaluation step with an optional explanatory message."""

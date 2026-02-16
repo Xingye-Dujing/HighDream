@@ -25,8 +25,8 @@ def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     This rule handles expressions where the integrand is the derivative of a function
     divided by that same function, which results in the natural logarithm of the
-    absolute value of that function.
-    """
+    absolute value of that function."""
+
     # More general approach for f'(x)/f(x)
     numerator, denominator = fraction(expr)
 
@@ -105,8 +105,8 @@ def parts_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
       T — Trigonometric (e.g., sin(x))
 
     Works with both products (multi-factor) and single-factor expressions.
-    Handle single-factor expressions by setting dv = 1.
-    """
+    Handle single-factor expressions by setting dv = 1."""
+
     var = context['variable']
 
     # Handle single-factor expressions by setting dv = 1
@@ -141,10 +141,10 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     Tries the following strategies in order:
       1. Standard form: f(g(x)) * g'(x) to f(u) du
       2. Trigonometric substitution (e.g., sqrt(a^2−x^2), sqrt(a^2+x^2), sqrt(x^2−a^2))
-      3. Radical substitution (e.g., sqrt[n]{ax + b})
+      3. Radical substitution (e.g., (ax + b)^(1/n))
 
-    Returns a transformed integral or None if no substitution applies.
-    """
+    Returns a transformed integral or None if no substitution applies."""
+
     var = context['variable']
     step_gene = context['step_generator']
 
@@ -158,11 +158,11 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     if result:
         return result
 
-    result = try_trig_substitution(expr, var)
+    result = try_trig_substitution(expr, var, step_gene)
     if result:
         return result
 
-    # Strategy 3: Substitutions for nested radicals (e.g., (ax + b)^{1/n})
+    # Strategy 3: Substitutions for nested radicals (e.g., (ax + b)^(1/n))
     result = try_radical_substitution(expr, var, step_gene)
     if result:
         return result
@@ -177,8 +177,8 @@ def f_x_mul_exp_g_x_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn
       - (1+x-1/x)*exp(x+1/x)+x dx
       - (1+x-1/x)*exp(x+1/x)*sin(x) dx
       - exp(cos(x))*(1-x*sin(x)) dx
-      - exp(cos(x))*(1-x*sin(x))+x dx
-    """
+      - exp(cos(x))*(1-x*sin(x))+x dx"""
+
     # First, try to split the expression into two parts: exp term and another term
     # Otherwise, another term will Interfere with the recognition of the f(x)^exp(g(x)) structure
     split_exp_term = special_add_split_exp_term(expr, context)
@@ -262,8 +262,8 @@ def weierstrass_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunct
     the substitution t = tan(x/2) transforms them to rational functions in t:
     - sin(x) = 2t/(1+t^2)
     - cos(x) = (1-t^2)/(1+t^2)
-    - dx = 2dt/(1+t^2)
-    """
+    - dx = 2dt/(1+t^2)"""
+
     if not isinstance(expr, (Mul, Pow)):
         return None
 
@@ -388,11 +388,6 @@ def sqrt_div_sqrt_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
 
 def logarithmic_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    """The heuristic matcher for f'(x)/f(x) integration pattern.
-
-    Returns 'logarithmic' if the expression matches the pattern where the
-    numerator is the derivative of the denominator.
-    """
     return 'logarithmic'
 
 
@@ -401,13 +396,6 @@ def parts_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
 
 
 def substitution_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    """The Heuristic matcher for u-substitution in integration.
-
-    Returns 'substitution' if the expression exhibits one of:
-      1. Standard pattern: f(g(x)) * g'(x) (up to constant multiple)
-      2. Trigonometric substitution forms: sqrt(a^2−x^2), sqrt(a^2+x^2), sqrt(x^2−a^2)
-      3. Nested radicals: (ax + b)^{p/q} with q > 1.
-    """
     return 'substitution'
 
 

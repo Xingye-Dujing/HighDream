@@ -1,18 +1,6 @@
 [
   {
     "type": "code",
-    "content": "1/(1-x^2)^(5/2)",
-    "operationType": "integral",
-    "variable": "x"
-  },
-  {
-    "type": "code",
-    "content": "1/(x^2+1)^(3/2)",
-    "operationType": "integral",
-    "variable": "x"
-  },
-  {
-    "type": "code",
     "content": "1/(cosh(x)+1)",
     "operationType": "integral",
     "variable": "x"
