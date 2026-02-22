@@ -4,18 +4,10 @@ from sympy import (
 )
 
 from domains.limit.limit_help_func import (
-    check_combination_indeterminate,
-    check_function_tends_to_zero,
-    check_limit_exists,
-    get_limit_args,
-    is_constant,
-    is_indeterminate_form,
-    is_infinite,
-    is_zero,
+    check_combination_indeterminate, check_function_tends_to_zero, check_limit_exists,
+    get_limit_args, is_constant, is_indeterminate_form, is_infinite, is_zero,
 )
-from domains.limit.rules.check_split import (
-    check_add_split, check_div_split, check_mul_split
-)
+from domains.limit.rules.check_split import check_add_split, check_div_split, check_mul_split
 from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
 
 
@@ -24,22 +16,19 @@ def direct_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionRe
     var, point, direction = get_limit_args(context)
 
     result = Limit(expr, var, point, dir=direction)
-    # Determine whether to skip showing the intermediate substitution step
-    skip_intermediate = (
-            expr == var
-            or expr.is_number
-            or result.is_infinite
-    )
-    lhs, rhs = latex(result), latex(result.doit())
+    res = result.doit()
 
-    if skip_intermediate:
+    lhs, rhs = latex(result), latex(res)
+
+    # Determine whether to skip showing the intermediate substitution step
+    if expr == var or expr.is_number or result.is_infinite:
         full_rule = f"{lhs} = {rhs}"
     else:
         # Perform substitution without evaluation to display the intermediate form.
         expr_subbed = expr.subs(var, UnevaluatedExpr(point))
         full_rule = f"{lhs} = {latex(expr_subbed)} = {rhs}"
 
-    return result.doit(), f"直接代入: ${full_rule}$"
+    return res, f"直接代入: ${full_rule}$"
 
 
 def mul_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
@@ -53,8 +42,7 @@ def mul_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     2. General multiplicative splitting: If no standard form is found,
        split the expression into two parts whose individual limits exist
-       and whose product does not yield an indeterminate form.
-    """
+       and whose product does not yield an indeterminate form."""
 
     var, point, direction = get_limit_args(context)
     expr_limit = Limit(expr, var, point, dir=direction)
@@ -150,8 +138,8 @@ def add_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     The function iteratively considers prefixes of the ordered terms
     (from one term up to all, but the last) as the first part, and the
-    remainder as the second part.
-    """
+    remainder as the second part."""
+
     var, point, direction = get_limit_args(context)
     terms = expr.as_ordered_terms()
     n = len(terms)
@@ -198,8 +186,8 @@ def const_inf_add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     - All infinite terms share the same sign (all +oo or all −oo),
     - All remaining (non-infinite) terms have finite limits (i.e., are bounded near the limit point).
 
-    In such cases, the overall limit is determined solely by the infinite part.
-    """
+    In such cases, the overall limit is determined solely by the infinite part."""
+
     var, point, direction = get_limit_args(context)
     expr_limit = Limit(expr, var, point, dir=direction)
     result = expr_limit.doit()
@@ -217,8 +205,8 @@ def const_inf_div_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     - The numerator has a finite limit (i.e., is bounded near the limit point),
     - The denominator tends to +-oo.
 
-    In such cases, the overall limit is 0.
-    """
+    In such cases, the overall limit is 0."""
+
     var, point, direction = get_limit_args(context)
     expr_limit = Limit(expr, var, point, dir=direction)
 
@@ -234,8 +222,8 @@ def const_inf_mul_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     - All other factors tend to finite limits,
     - The product of the finite limits is non-zero.
 
-    In such cases, the overall limit is +-oo.
-    """
+    In such cases, the overall limit is +-oo."""
+
     var, point, direction = get_limit_args(context)
     expr_limit = Limit(expr, var, point, dir=direction)
     result = expr_limit.doit()
@@ -249,8 +237,8 @@ def small_o_add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     This rule applies when the expression is a finite sum (or difference)
     of terms, each of which tends to 0 as the variable approaches the limit point.
 
-    In such cases, the overall limit is 0.
-    """
+    In such cases, the overall limit is 0."""
+
     var, point, direction = get_limit_args(context)
     expr_limit = Limit(expr, var, point, dir=direction)
 
@@ -265,8 +253,8 @@ def const_zero_div_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
       - num to L != 0 (finite and non-zero),
       - den to 0 (from a specific side, so sign is determined).
 
-    The result is +-oo, with sign = sign(L) * sign(den near point).
-    """
+    The result is +-oo, with sign = sign(L) * sign(den near point)."""
+
     var, point, direction = get_limit_args(context)
     expr_limit = Limit(expr, var, point, dir=direction)
     result = expr_limit.doit()
@@ -283,8 +271,8 @@ def conjugate_rationalize_rule(expr: Expr, context: RuleContext) -> RuleFunction
       - Each term is a square root (possibly with a coefficient of +-1),
       - The denominator is non-zero near the limit point.
 
-    It is the multiplies numerator and denominator by the conjugate to eliminate radicals.
-    """
+    It is the multiplies numerator and denominator by the conjugate to eliminate radicals."""
+
     var, point, direction = get_limit_args(context)
     expr_limit = Limit(expr, var, point, dir=direction)
     num, den = expr.as_numer_denom()
@@ -318,8 +306,8 @@ def direct_substitution_matcher(expr: Expr, context: RuleContext) -> MatcherFunc
 
     - Substituting the limit point into the expression yields a well-defined value
       (finite, +-oo, or complex infinity zoo), and
-    - The resulting form is not an indeterminate form (e.g., 0/0, oo/oo, 0*oo, oo-oo, 1^oo, 0^oo, oo^0).
-    """
+    - The resulting form is not an indeterminate form (e.g., 0/0, oo/oo, 0*oo, oo-oo, 1^oo, 0^oo, oo^0)."""
+
     var, point, direction = get_limit_args(context)
     try:
         # Perform naive substitution of the limit point
@@ -359,8 +347,8 @@ def mul_split_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn
     into two non-empty subexpressions such that:
 
     - The limit of each part exists (finite or infinite), and
-    - Their combination does not result in an indeterminate form (e.g., 0*oo).
-    """
+    - Their combination does not result in an indeterminate form (e.g., 0*oo)."""
+
     var, point, direction = get_limit_args(context)
     if check_mul_split(expr, var, point, direction):
         return 'mul_split'
@@ -374,8 +362,8 @@ def add_split_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn
     into two non-empty subexpressions such that:
 
     - The limit of each part exists (finite or infinite), and
-    - Their combination does not yield an indeterminate form (e.g., oo−oo).
-    """
+    - Their combination does not yield an indeterminate form (e.g., oo−oo)."""
+
     var, point, direction = get_limit_args(context)
     if check_add_split(expr, var, point, direction):
         return 'add_split'
@@ -391,8 +379,8 @@ def div_split_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn
 
     - The limits of both numerator and denominator exist (finite or infinite),
     - The limit of the denominator is non-zero, and
-    - The resulting form is not indeterminate (e.g., 0/0 or oo/oo).
-    """
+    - The resulting form is not indeterminate (e.g., 0/0 or oo/oo)."""
+
     var, point, direction = get_limit_args(context)
     if check_div_split(expr, var, point, direction):
         return 'div_split'
@@ -406,8 +394,8 @@ def const_inf_add_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRe
     This matcher identifies sums consisting of:
       - Zero or more terms that approach a finite real limit (i.e., bounded),
       - One or more terms that diverge to either +oo or -oo,
-      - All divergent terms must share the same sign at the limit point.
-    """
+      - All divergent terms must share the same sign at the limit point."""
+
     if not isinstance(expr, Add):
         return None
     var, point, direction = get_limit_args(context)
@@ -448,8 +436,8 @@ def const_inf_mul_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRe
     This matcher excludes cases involving:
       - Oscillatory limits (e.g., AccumBounds),
       - Factors that tend to zero (to avoid indeterminate forms like 0 * oo),
-      - Expressions that are internally represented as fractions.
-    """
+      - Expressions that are internally represented as fractions."""
+
     if not isinstance(expr, Mul):
         return None
     _, den = expr.as_numer_denom()
@@ -487,8 +475,8 @@ def const_inf_div_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRe
       - The denominator diverges to +-oo.
 
     This pattern corresponds to limits that evaluate to zero due to a bounded
-    quantity being divided by an unbounded one.
-    """
+    quantity being divided by an unbounded one."""
+
     var, point, direction = get_limit_args(context)
     num, den = expr.as_numer_denom()
     if den == 1:
@@ -505,8 +493,8 @@ def const_zero_div_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionR
       - The denominator tends to zero.
 
     This pattern typically indicates a limit that diverges to +-oo,
-    depending on the signs of the numerator and denominator near the limit point.
-    """
+    depending on the signs of the numerator and denominator near the limit point."""
+
     var, point, direction = get_limit_args(context)
     num, den = expr.as_numer_denom()
     if den == 1:
@@ -525,8 +513,8 @@ def small_o_add_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRetu
 
     This pattern is used to identify o(1) behavior under addition.
     A single infinitesimal term is intentionally excluded—such cases
-    should be handled by direct substitution or simpler matchers.
-    """
+    should be handled by direct substitution or simpler matchers."""
+
     if not isinstance(expr, Add):
         return None
 
@@ -548,8 +536,8 @@ def conjugate_rationalize_matcher(expr, _context) -> MatcherFunctionReturn:
     i.e., of the form (sqrt(A)+-sqrt(B))/D, where A and B are subexpressions.
 
     This pattern is typically targeted for rationalization via multiplication by the
-    conjugate (sqrt(A)+-sqrt(B)).
-    """
+    conjugate (sqrt(A)+-sqrt(B))."""
+
     num, _ = expr.as_numer_denom()
     # Check if numerator is a sum/difference of exactly two terms.
     if isinstance(num, Add) and len(num.args) == 2:

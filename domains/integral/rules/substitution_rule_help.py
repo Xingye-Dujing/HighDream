@@ -1,8 +1,7 @@
 from sympy import (
     Add, Abs, Dummy, Eq, Expr, I, Integral, Pow, Rational, Symbol, Wild,
-    acos, asin, atan, cancel, diff, factor, fraction, latex,
-    log, preorder_traversal, sec, simplify, sin, solve, sqrt,
-    symbols, tan, together
+    acos, asin, atan, cancel, diff, fraction, latex, log, preorder_traversal,
+    sec, simplify, sin, solve, sqrt, symbols, tan, together
 )
 
 from core import BaseStepGenerator

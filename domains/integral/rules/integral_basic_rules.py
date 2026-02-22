@@ -186,5 +186,6 @@ def mul_const_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn
     # SymPy's constant extraction may break structures suitable
     # for weierstrass substitution, making subsequent solving impossible.
     # Case like sin(x)*cos(x)/(sin(x)+cos(x)).
-    if not can_use_weierstrass(expr, context['variable']):
+    # Besides, case like 3*sin(x)^2 dx should be handled as 3*(sin(x)^2 dx).
+    if not can_use_weierstrass(expr, context['variable']) or (isinstance(expr, Mul) and len(expr.args) == 2):
         return 'mul_const'
