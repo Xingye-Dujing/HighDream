@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple, Callable, Set, Optional
 
 from sympy import (
-    Expr, preorder_traversal, srepr, sympify, expand, factor,
+    Basic, Expr, preorder_traversal, srepr, sympify, expand, factor,
     expand_trig, logcombine, expand_log, apart, cancel, radsimp, tan, sin, cos,
     powsimp, trigsimp
 )

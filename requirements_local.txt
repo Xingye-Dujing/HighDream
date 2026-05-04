@@ -4,7 +4,7 @@ gevent
 
 # Optional：
 
-# IPython
-# jupyter (if you want to use main.ipynb)
+# IPython (if you want to use main.ipynb, still need jupyter)
+# jupyter (if you want to use main.ipynb, still need IPython)
 # pyinstaller (if you want to build a standalone executable)
 # matplotlib (if you want to visualize equivalent expression derivation trees)

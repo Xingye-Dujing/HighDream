@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 
 from sympy import Basic, Expr, Matrix, latex, sympify
 
@@ -31,7 +31,7 @@ def _wrap_latex(expr: Expr) -> str:
     return f"\\left({expr_latex}\\right)"
 
 
-def wrap_latex(*expr: [Basic | Expr]) -> Union[str, Tuple]:
+def wrap_latex(*expr: List[Basic | Expr]) -> Union[str, Tuple]:
     return _wrap_latex(expr[0]) if len(expr) == 1 else tuple(_wrap_latex(e) for e in expr)
 
 

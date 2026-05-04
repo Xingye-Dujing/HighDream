@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import List, Dict, Tuple
 
 from sympy import Matrix, Symbol, eye, latex, simplify, zeros
 
