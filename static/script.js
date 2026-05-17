@@ -12,7 +12,7 @@ const pollTimers = new Map();
 
 // Initialize after page loads
 document.addEventListener("DOMContentLoaded", function () {
-  applyTheme(isDarkTheme);
+  // applyTheme(isDarkTheme);
   addNewCell();
   bindEvents();
   animateMathBackground();
@@ -153,7 +153,7 @@ function bindEvents() {
   document.getElementById("deleteCellBtn").addEventListener("click", deleteActiveCell);
   document.getElementById("toggleKeyboardBtn").addEventListener("click", toggleKeyboard);
   document.getElementById("closeKeyboardBtn").addEventListener("click", toggleKeyboard);
-  document.getElementById("toggleThemeBtn").addEventListener("click", toggleTheme);
+  // document.getElementById("toggleThemeBtn").addEventListener("click", toggleTheme);
   document.getElementById("saveNotebookBtn").addEventListener("click", saveNotebook);
   document.getElementById("loadNotebookBtn").addEventListener("click", loadNotebook);
 
@@ -1033,6 +1033,10 @@ function toggleKeyboard() {
 }
 
 // Apply theme settings
+// TO BE DONE: The color settings for the dark mode still have some issues.
+// Note: remove the comments after done:
+//     "index.html" line 61
+//     "script.js" line 15 and line 156
 function applyTheme(isDark) {
   const themeBtn = document.getElementById("toggleThemeBtn");
   if (isDark) {

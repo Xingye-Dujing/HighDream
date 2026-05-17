@@ -199,7 +199,7 @@ def is_constant(expr: Expr, var: Symbol, point: Expr, direction: str) -> bool:
         return False
 
 
-def check_function_tends_to_zero(f: [Basic | Expr], var: Symbol, point: Expr, direction: str) -> bool:
+def check_function_tends_to_zero(f: List[Basic | Expr], var: Symbol, point: Expr, direction: str) -> bool:
     """Check whether a function tends to zero in a given directional limit.
 
     Attempts to compute the one-sided or two-sided limit of f as var approaches point
@@ -212,7 +212,7 @@ def check_function_tends_to_zero(f: [Basic | Expr], var: Symbol, point: Expr, di
         return False
 
 
-def is_indeterminate_form(expr: Expr, var: Symbol, point: [Expr | int], direction: str) -> bool:
+def is_indeterminate_form(expr: Expr, var: Symbol, point: List[Expr | int], direction: str) -> bool:
     """Determine whether an expression exhibits an indeterminate form at a limit point.
 
     This function analyzes the structure and limit behavior of expr as var to point
@@ -250,7 +250,7 @@ def is_indeterminate_form(expr: Expr, var: Symbol, point: [Expr | int], directio
     """
     try:
         # Helper to safely compute sub-limits
-        def _limit(e: Expr, v: Symbol, p: [Expr | int], d: str) -> Expr:
+        def _limit(e: Expr, v: Symbol, p: List[Expr | int], d: str) -> Expr:
             return simplify(limit(e, v, p, dir=d))
 
         # Case 1: a/b to check 0/0 or oo/oo.

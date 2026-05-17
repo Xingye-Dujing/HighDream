@@ -16,12 +16,12 @@ from .rule_registry import RuleRegistry
 class BaseCalculator(ABC):
     """Abstract base class for symbolic expression evaluators that support step-by-step evaluation."""
 
-    def __init__(self, operation: [Operation | None] = None, rule_dict: [RuleDict | None] = None,
-                 matcher_list: [MatcherList | None] = None) -> None:
+    def __init__(self, operation: List[Operation | None] = None, rule_dict: List[RuleDict | None] = None,
+                 matcher_list: List[MatcherList | None] = None) -> None:
         # Note: The following three attributes must be initialized in the subclass.
-        self.operation: [Operation | None] = operation
-        self.rule_dict: [RuleDict | None] = rule_dict
-        self.matcher_list: [MatcherList | None] = matcher_list
+        self.operation: List[Operation | None] = operation
+        self.rule_dict: List[RuleDict | None] = rule_dict
+        self.matcher_list: List[MatcherList | None] = matcher_list
         self._rule_registry = RuleRegistry()
         self.step_generator = BaseStepGenerator()
         self.processed: set = set()

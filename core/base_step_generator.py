@@ -44,7 +44,7 @@ class BaseStepGenerator(ABC):
         self.available_sym_chars.remove(new_sym_char)
         return Symbol(new_sym_char, **symbol_kwargs)
 
-    def add_step(self, expr: [Expr | None], explanation: str = "") -> None:
+    def add_step(self, expr: List[Expr | None], explanation: str = "") -> None:
         """Append a new evaluation step with an optional explanatory message."""
         self.steps.append(expr)
         self._explanations.append(explanation)

@@ -35,7 +35,6 @@ if __name__ == '__main__':
         server = pywsgi.WSGIServer(('127.0.0.1', 5000), create_app(), log=None)
         server.serve_forever()
 
-
     # Start server in a separate thread
     server_thread = threading.Thread(target=start_server)
     server_thread.daemon = True
@@ -52,6 +51,6 @@ if __name__ == '__main__':
     # Keep the main thread alive
     try:
         while True:
-            time.sleep(1)
+            time.sleep(5)
     except KeyboardInterrupt:
         print("\n关闭中...")

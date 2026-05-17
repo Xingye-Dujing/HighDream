@@ -82,6 +82,27 @@ class DeterminantCalculator:
             self.step_generator.add_step(res, rf"$2×2\,行列式$")
             return res
 
+        # Format a term (coeff, obj) into latex (obj can be Matrix or scalar)
+        def term_to_latex(term):
+            coeff, obj = term
+            # Ignore terms with zero coefficient
+            if coeff == 0:
+                return None
+            if isinstance(obj, Matrix):
+                # obj is a submatrix: display coeff * det(obj)
+                if coeff == 1:
+                    return f"{latex(obj)}"
+                if coeff == -1:
+                    return f"-{latex(obj)}"
+                return f"{latex(coeff)} \\cdot {latex(obj)}"
+
+            # obj is a scalar
+            if coeff == 1:
+                return latex(obj)
+            if coeff == -1:
+                return f"-{latex(obj)}"
+            return f"{latex(sympify(coeff * obj))}"
+
         # Construct expression latex (join terms with + and replace '+-' with '-')
         def expr_to_latex(terms):
             parts = []

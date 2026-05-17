@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import List, Dict
 
 from sympy import Matrix, latex, sympify
 

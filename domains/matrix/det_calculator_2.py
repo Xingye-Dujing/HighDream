@@ -1,7 +1,7 @@
 from collections import deque
 from typing import Deque, Dict, List, Tuple
 
-from sympy import Determinant, Expr, Matrix, Symbol, latex, simplify, sympify
+from sympy import Basic, Determinant, Expr, Matrix, Symbol, latex, simplify, sympify
 
 from core import BaseCalculator
 from domains.matrix import DetStepGenerator, MATCHER_LIST, RULE_DICT

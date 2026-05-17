@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Tuple
 
 from sympy import (
     Basic, Expr, Function, Limit, Mul, Pow, S, Symbol, acos, acot, asin, atan, coth,
@@ -58,7 +58,7 @@ def _get_type(a: Expr, b: Expr) -> str:
     return "no_match"
 
 
-def _limit_or_series(expr: [Basic | Expr], var: Symbol, point: Expr, direction: str) -> Expr | None:
+def _limit_or_series(expr: List[Basic | Expr], var: Symbol, point: Expr, direction: str) -> Expr | None:
     """Attempt to evaluate the limit of expr as var approaches point from the given direction.
 
     If direct limit evaluation fails (e.g., due to complexity or unsupported forms),
