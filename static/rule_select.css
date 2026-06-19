@@ -1,12 +1,35 @@
-/* Rule-select page — two-column layout */
+/* Rule-select page — flex layout with invisible draggable divider */
 
 #rule-select-layout {
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 16px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   padding: 16px 24px;
   min-height: calc(100vh - 48px);
-  align-items: start;
+  gap: 0;
+}
+
+#rule-select-left {
+  flex: 1 1 auto;
+  min-width: 260px;
+  overflow: hidden;
+}
+
+#rule-select-right {
+  flex: 1 1 auto;
+  min-width: 260px;
+  overflow: hidden;
+}
+
+/* Invisible draggable divider — no visible line, only cursor on hover */
+
+#rs-divider {
+  flex: 0 0 auto;
+  width: 6px;
+  cursor: col-resize;
+  align-self: stretch;
+  background: transparent;
+  margin: 0 2px;
 }
 
 .rs-panel {
@@ -15,9 +38,11 @@
   gap: 14px;
 }
 
-/* Cards */
+/* Cards fill their container width */
 
 .rs-card {
+  width: 100%;
+  box-sizing: border-box;
   background: var(--jp-layout-color0);
   border: var(--jp-border-width) solid var(--jp-border-color1);
   border-radius: 6px;
@@ -215,6 +240,16 @@
 
 @media (max-width: 800px) {
   #rule-select-layout {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+  #rule-select-left {
+    width: 100% !important;
+    min-width: 0;
+  }
+  #rule-select-right {
+    width: 100%;
+  }
+  #rs-divider {
+    display: none;
   }
 }

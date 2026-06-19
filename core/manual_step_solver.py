@@ -187,7 +187,7 @@ class ManualStepSolver:
             ctx['direction'] = self.direction
         return ctx
 
-    def _current_variable(self, expr: Expr) -> Symbol:
+    def _current_variable(self, _expr: Expr) -> Symbol:
         """Always use the solver's variable to ensure consistent Symbol identity
         across all Operation objects, so that subs() matching works correctly."""
         return self.variable
@@ -255,24 +255,28 @@ class ManualStepSolver:
                 names = _RULE_DISPLAY_NAMES.get(self.domain, {})
                 display = names.get(rule_key, rule_key)
 
-                # Compute preview by calling the rule with saved/restored state
-                preview_latex = None
+                # Compute preview by calling the rule with saved/restored state.
+                # If the rule returns None it can't apply — skip it entirely.
                 backup = self._backup_step_generator()
                 try:
                     preview_result = rule(self.current_expr, rule_ctx)
                     if preview_result:
                         preview_expr, _ = preview_result
                         preview_latex = latex(preview_expr)
+                        out.append({
+                            'name': rule_key,
+                            'display_name': display,
+                            'latex_preview': preview_latex,
+                        })
                 except Exception:
-                    pass
+                    # Rule raised — might still work in apply_rule, keep it.
+                    out.append({
+                        'name': rule_key,
+                        'display_name': display,
+                        'latex_preview': None,
+                    })
                 finally:
                     self._restore_step_generator(backup)
-
-                out.append({
-                    'name': rule_key,
-                    'display_name': display,
-                    'latex_preview': preview_latex,
-                })
         finally:
             if saved_lhopital is not None:
                 self.calculator._lhopital_count = saved_lhopital

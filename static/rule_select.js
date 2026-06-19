@@ -25,6 +25,9 @@ document.addEventListener('DOMContentLoaded', function () {
   const $statusPanel = document.getElementById('rs-status-panel');
   const $statusContent = document.getElementById('rs-status-content');
   const $currentLabel = document.getElementById('rs-current-expr-label');
+  const $divider = document.getElementById('rs-divider');
+  const $leftCol = document.getElementById('rule-select-left');
+  const $layout = document.getElementById('rule-select-layout');
 
   // --------------------------------------------------------------- helpers
 
@@ -260,6 +263,55 @@ document.addEventListener('DOMContentLoaded', function () {
     currentState = null;
     clearUI();
   }
+
+  // ------------------------------------------------------- divider drag
+
+  let dragState = null;
+
+  function initDividerWidth() {
+    var saved = localStorage.getItem('rs_divider_width');
+    if (saved && $leftCol) {
+      $leftCol.style.width = saved;
+      $leftCol.style.flex = '0 0 auto';
+    }
+  }
+
+  if ($divider && $leftCol && $layout) {
+    initDividerWidth();
+
+    $divider.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      dragState = {
+        startX: e.clientX,
+        startWidth: $leftCol.getBoundingClientRect().width,
+      };
+      $divider.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+  }
+
+  document.addEventListener('mousemove', function (e) {
+    if (!dragState) return;
+    var dx = e.clientX - dragState.startX;
+    var newWidth = Math.max(260, dragState.startWidth + dx);
+    var maxWidth = $layout.getBoundingClientRect().width - 380;
+    if (newWidth > maxWidth) newWidth = maxWidth;
+    $leftCol.style.width = newWidth + 'px';
+    $leftCol.style.flex = '0 0 auto';
+  });
+
+  document.addEventListener('mouseup', function () {
+    if (!dragState) return;
+    $divider.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    // Save to localStorage
+    try {
+      localStorage.setItem('rs_divider_width', $leftCol.style.width);
+    } catch (_) {}
+    dragState = null;
+  });
 
   // ----------------------------------------------------------- events
 
