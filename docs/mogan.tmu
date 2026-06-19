@@ -1,0 +1,76 @@
+<TMU|<tuple|1.1.0|2025.2.3>>
+
+<style|<tuple|generic|chinese|table-captions-above|number-europe|preview-ref|python>>
+
+<\body>
+  <\session|python|default>
+    <\output>
+      Python 3.11.6 [F:\\python_project\\HighDream\\.venv\\Scripts\\python.exe]
+
+      Python plugin for Mogan STEM.
+
+      Please see the documentation in Help -\<gtr\> Plugins -\<gtr\> Python
+    </output>
+
+    <\input>
+      \<gtr\>\<gtr\>\<gtr\>\ 
+    <|input>
+      sys.path.append(r'F:\\python_project\\HighDream')
+    </input>
+
+    <\input>
+      \<gtr\>\<gtr\>\<gtr\>\ 
+    <|input>
+      from sympy import Symbol, sin
+    </input>
+
+    <\input>
+      \<gtr\>\<gtr\>\<gtr\>\ 
+    <|input>
+      from domains import DiffCalculator
+    </input>
+
+    <\input>
+      \<gtr\>\<gtr\>\<gtr\>\ 
+    <|input>
+      x = Symbol('x')
+    </input>
+
+    <\input>
+      \<gtr\>\<gtr\>\<gtr\>\ 
+    <|input>
+      expr = sin(1/x)
+    </input>
+
+    <\input>
+      \<gtr\>\<gtr\>\<gtr\>\ 
+    <|input>
+      calculator = DiffCalculator()
+    </input>
+
+    <\unfolded-io>
+      \<gtr\>\<gtr\>\<gtr\>\ 
+    <|unfolded-io>
+      calculator.compute_latex(expr, x)
+    <|unfolded-io>
+      rule: chain_rule
+
+      rule: pow_rule
+
+      \\begin{align}&\\frac{d}{d x} \\sin{\\left(\\frac{1}{x} \\right)}\\newline&=\\cos{\\left(\\frac{1}{x} \\right)} \\frac{d}{d x} \\frac{1}{x} \\quad \\text{应用链式法则: $\\frac{d}{dx} \\sin{\\left(\\frac{1}{x} \\right)} = \\frac{d}{d\\frac{1}{x}} \\sin{\\left(\\frac{1}{x} \\right)} \\cdot \\frac{d}{dx} \\frac{1}{x}$}\\newline&=- \\frac{\\cos{\\left(\\frac{1}{x} \\right)}}{x^{2}} \\quad \\text{应用幂函数规则: $\\frac{d}{dx}\\left(\\frac{1}{x}\\right) = \\left(- \\frac{1}{x^{2}}\\right)$}\\end{align}
+    </unfolded-io>
+  </session>
+
+  \;
+
+  \;
+
+  \;
+</body>
+
+<\initial>
+  <\collection>
+    <associate|page-medium|paper>
+    <associate|page-screen-margin|false>
+  </collection>
+</initial>
