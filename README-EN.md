@@ -60,7 +60,7 @@ As mentioned above, this idea originated from my high school days `(The Dream of
 9. Matrix analysis
 
 ![Matrix analysis](./docs/img/18.png)
-![Matrix analysis](./docs/img/19.png）
+![Matrix analysis](./docs/img/19.png)
 ![Matrix analysis](./docs/img/20.png)
 
 10. Simple LaTeX editor and renderer with auto-completion
