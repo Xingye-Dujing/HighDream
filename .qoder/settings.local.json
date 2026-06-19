@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"F:/python_project/HighDream\" && \".venv/Scripts/python.exe\" -c \"import pylint; print\\(pylint.__version__\\)\" 2>&1 | head -5; echo \"---which pylint---\"; which pylint 2>/dev/null; ls \".venv/Scripts/pylint\"* 2>/dev/null)",
+      "Bash(cd \"F:/python_project/HighDream\" && \".venv/Scripts/pip.exe\" install pylint --quiet 2>&1 | tail -5 && echo \"---\" && \".venv/Scripts/pylint.exe\" --version 2>&1 | head -3)",
+      "Bash(cd \"F:/python_project/HighDream\" && \".venv/Scripts/pylint.exe\" config.py 2>&1 | tail -10; echo \"---exit---\"; echo $?)",
+      "Bash(cd \"F:/python_project/HighDream\" && echo '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"F:/python_project/HighDream/config.py\"}}' | jq -r '.tool_response.filePath // .tool_input.file_path' | { read -r f; case \"$f\" in *.py\\) \".venv/Scripts/pylint.exe\" \"$f\";; *\\) echo \"skip \\(not .py\\): $f\";; esac; } 2>&1 | tail -8; echo \"---exit: $?---\")",
+      "Bash(cd \"F:/python_project/HighDream\" && which jq; echo \"---\"; echo '{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"F:/python_project/HighDream/app.py\"}}' | jq -r '.tool_response.filePath // .tool_input.file_path')"
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(python -c \"import sys,json;d=json.loads(sys.stdin.read());print(d.get('tool_response',{}).get('filePath') or d.get('tool_input',{}).get('file_path',''))\"); case \"$f\" in *.py) \".venv/Scripts/pylint.exe\" \"$f\";; *) exit 0;; esac",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
