@@ -145,3 +145,13 @@ def word_editor():
         str: Rendered HTML template for the word editor interface.
     """
     return render_template('word_editor.html')
+
+
+@main.route('/rule_select')
+def rule_select():
+    """Render the manual rule-selection page.
+
+    Returns:
+        str: Rendered HTML template for the rule selection interface.
+    """
+    return render_template('rule_select.html')

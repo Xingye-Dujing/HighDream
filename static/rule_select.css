@@ -1,0 +1,220 @@
+/* Rule-select page — two-column layout */
+
+#rule-select-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 16px;
+  padding: 16px 24px;
+  min-height: calc(100vh - 48px);
+  align-items: start;
+}
+
+.rs-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Cards */
+
+.rs-card {
+  background: var(--jp-layout-color0);
+  border: var(--jp-border-width) solid var(--jp-border-color1);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+
+.rs-card h3 {
+  margin: 0 0 10px 0;
+  font-size: calc(1em * 1.1);
+  color: var(--jp-ui-font-color1);
+}
+
+/* Input rows */
+
+.rs-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.rs-input-row label {
+  min-width: 56px;
+  font-size: 0.9em;
+  color: var(--jp-ui-font-color1);
+}
+
+.rs-input-row input,
+.rs-input-row select {
+  flex: 1;
+  padding: 5px 8px;
+  font-family: var(--font-family);
+  font-size: 0.95em;
+  border: var(--jp-border-width) solid var(--jp-border-color1);
+  border-radius: 4px;
+  background: var(--jp-layout-color0);
+  color: var(--jp-ui-font-color0);
+}
+
+.rs-input-row input:focus,
+.rs-input-row select:focus {
+  border-color: var(--jp-brand-color1);
+  outline: none;
+}
+
+/* Buttons */
+
+.rs-btn-primary,
+.rs-btn-secondary,
+.rs-btn-warning {
+  padding: 6px 16px;
+  border: var(--jp-border-width) solid var(--jp-border-color1);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.92em;
+  font-family: var(--font-family);
+}
+
+.rs-btn-primary {
+  background: var(--jp-brand-color0);
+  color: #fff;
+  border-color: var(--jp-brand-color0);
+}
+
+.rs-btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+.rs-btn-secondary {
+  background: var(--jp-layout-color1);
+  color: var(--jp-ui-font-color0);
+}
+
+.rs-btn-secondary:hover {
+  background: var(--jp-layout-color2);
+}
+
+.rs-btn-warning {
+  background: #e65100;
+  color: #fff;
+  border-color: #e65100;
+}
+
+.rs-btn-warning:hover {
+  filter: brightness(1.1);
+}
+
+/* Error */
+
+.rs-error {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #fce4ec;
+  border: 1px solid var(--jp-error-color);
+  border-radius: 4px;
+  color: var(--jp-error-color);
+  font-size: 0.88em;
+}
+
+/* Steps list */
+
+#rs-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.rs-step {
+  padding: 8px 8px 8px 14px;
+  border-left: 3px solid transparent;
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color0);
+  transition: background 0.2s;
+}
+
+.rs-step:last-child {
+  border-bottom: none;
+}
+
+.rs-step.active {
+  border-left-color: var(--jp-brand-color1);
+  background: rgba(91, 137, 205, 0.06);
+}
+
+.rs-step .rs-step-explanation {
+  font-size: 0.84em;
+  color: var(--jp-ui-font-color1);
+  margin-bottom: 2px;
+}
+
+.rs-step .rs-step-latex {
+  min-height: 1.4em;
+}
+
+/* Rules list */
+
+#rs-rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rs-placeholder {
+  color: var(--jp-ui-font-color1);
+  font-size: 0.88em;
+  margin: 4px 0;
+}
+
+.rs-rule-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border: var(--jp-border-width) solid var(--jp-border-color1);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: var(--font-family);
+}
+
+.rs-rule-card:hover {
+  background: var(--jp-layout-color1);
+  border-color: var(--jp-brand-color1);
+}
+
+.rs-rule-card .rs-rule-name {
+  font-weight: bold;
+  font-size: 0.92em;
+  color: var(--jp-ui-font-color0);
+}
+
+.rs-rule-card .rs-rule-preview {
+  font-size: 0.85em;
+  color: var(--jp-ui-font-color1);
+  margin-left: 12px;
+  white-space: nowrap;
+}
+
+/* Status summary */
+
+#rs-status-content {
+  font-size: 0.9em;
+  color: var(--jp-ui-font-color1);
+  line-height: 1.5;
+}
+
+/* Utility */
+
+.rs-subtle {
+  font-weight: normal;
+  font-size: 0.78em;
+  color: var(--jp-ui-font-color1);
+}
+
+/* Responsive: stack on narrow screens */
+
+@media (max-width: 800px) {
+  #rule-select-layout {
+    grid-template-columns: 1fr;
+  }
+}

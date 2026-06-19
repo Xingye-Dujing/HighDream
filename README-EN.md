@@ -73,6 +73,10 @@ As mentioned above, this idea originated from my high school days `(The Dream of
 
 ![Command line](./docs/img/24.png)
 
+12. Manual rule selection page (`/rule_select`)
+
+![Manual rule selection page](./docs/img/25.png)
+
 ## Features
 
 - Step-by-step solutions: displays the complete calculation process, facilitating teaching and understanding
@@ -81,6 +85,7 @@ As mentioned above, this idea originated from my high school days `(The Dream of
 - LaTeX output: beautiful rendering of mathematical formulas
 - Extensible architecture: easy to add new calculation rules and operation types
 - Two ways to use: Python code calls in Jupyter Notebook; graphical web interface
+- Manual rule selection: via `/rule_select` page, users can manually choose which rule to apply at each derivation step for differentiation, integration, and limits
 
 ## Development Tech Stack
 
@@ -103,6 +108,7 @@ This project mainly consists of **three** architectures:
 - [**RuleRegistry**](https://high-dream.vercel.app/help/rule_registry) (`core/rule_registry.py`)
 - [**CommonMatrixCalculator**](https://high-dream.vercel.app/help/common_matrix_calculator) (`core/common_matrix_calculator.py`)
 - [**MatrixStepGenerator**](https://high-dream.vercel.app/help/matrix_step_generator) (`core/matrix_step_generator.py`)
+- [**ManualStepSolver**](core/manual_step_solver.py) — Web UI manual rule selection orchestrator (wraps Select Calculator)
 
 ## Usage
 

@@ -8,10 +8,6 @@ SymPy evaluates all powers explicitly, which causes performance issues when expo
 
 Each calculation process section should include a link area. Clicking the link area should quickly generate one or more related calculation cells, allowing users to verify results that are directly given without showing the process.
 
-3. 为 **人工选择每一步使用何种规则** 建立一个前端页面。（Pyhton 代码调用已实现）
-
-Create a frontend page for **manually selecting which rule to apply at each step**.(Python code calling has been implemented)
-
 4. 将 `script.js` 中的 HTML 标签提出到外部文件，`script.js` 进行导入而不是内嵌。这样便于网页的样式设计。
 
 Extract the HTML tags from `script.js` into external files, and have `script.js` import them instead of embedding them inline. This facilitates web page styling design.

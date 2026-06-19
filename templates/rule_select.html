@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Rule Select</title>
+    <link rel="stylesheet" href="../static/fontawesome/css/all.min.css"/>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/rule_select.css"/>
+    <script
+            id="MathJax-script"
+            async
+            src="../static/mathjax/es5/tex-chtml-full.js"
+    ></script>
+    <script src="/static/rule_select.js"></script>
+</head>
+
+<body>
+<div id="math-background">
+    <div class="math-bg-element" style="top: 10%; left: 5%">∫</div>
+    <div class="math-bg-element" style="top: 20%; right: 8%">∑</div>
+    <div class="math-bg-element" style="top: 40%; left: 7%">∂</div>
+    <div class="math-bg-element" style="top: 60%; right: 10%">π</div>
+    <div class="math-bg-element" style="top: 80%; left: 12%">∞</div>
+    <div class="math-bg-element" style="bottom: 15%; right: 5%">∇</div>
+</div>
+
+<div id="header">
+    <h1><i></i>Rule Select</h1>
+    <div id="header-controls">
+        <a href="/">
+            <button class="header-btn" id="homeBtn" title="首页">
+                <i class="fas fa-circle"></i>
+            </button>
+        </a>
+    </div>
+</div>
+
+<div id="rule-select-layout">
+    <!-- LEFT COLUMN: input + derivation -->
+    <div id="rule-select-left" class="rs-panel">
+        <!-- Input area -->
+        <div id="rs-input-panel" class="rs-card">
+            <div class="rs-input-row">
+                <label>域</label>
+                <select id="rs-domain">
+                    <option value="diff">微分 (diff)</option>
+                    <option value="integral" selected>积分 (integral)</option>
+                    <option value="limit">极限 (limit)</option>
+                </select>
+            </div>
+            <div class="rs-input-row">
+                <label>表达式</label>
+                <input id="rs-expr" type="text" value="x*ln(x)+3" placeholder="e.g. x*ln(x)+3"/>
+            </div>
+            <div class="rs-input-row">
+                <label>变量</label>
+                <input id="rs-var" type="text" value="x" placeholder="x"/>
+            </div>
+            <div class="rs-input-row rs-limits-only" style="display:none">
+                <label>极限点</label>
+                <input id="rs-point" type="text" value="0" placeholder="0"/>
+            </div>
+            <div class="rs-input-row rs-limits-only" style="display:none">
+                <label>方向</label>
+                <select id="rs-dir">
+                    <option value="+">右极限 (+)</option>
+                    <option value="-">左极限 (-)</option>
+                    <option value="+">双侧 (+-)</option>
+                </select>
+            </div>
+            <div style="margin-top: 10px">
+                <button id="rs-start-btn" class="rs-btn-primary">
+                    <i class="fas fa-play"></i> 开始
+                </button>
+                <button id="rs-reset-btn" class="rs-btn-secondary" style="display:none">
+                    <i class="fas fa-undo"></i> 重置
+                </button>
+            </div>
+            <div id="rs-error" class="rs-error" style="display:none"></div>
+        </div>
+
+        <!-- Derivation steps area -->
+        <div id="rs-steps-panel">
+            <h3>推导步骤</h3>
+            <div id="rs-steps-list"></div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: applicable rules + actions -->
+    <div id="rule-select-right" class="rs-panel">
+        <div id="rs-rules-panel" class="rs-card">
+            <h3>
+                可应用规则
+                <span id="rs-current-expr-label" class="rs-subtle"></span>
+            </h3>
+            <div id="rs-rules-list">
+                <p class="rs-placeholder">点击「开始」加载可用规则</p>
+            </div>
+            <div id="rs-actions" style="display:none; margin-top: 14px">
+                <button id="rs-fallback-btn" class="rs-btn-warning">
+                    <i class="fas fa-magic"></i> SymPy 回退
+                </button>
+                <button id="rs-finish-btn" class="rs-btn-secondary">
+                    <i class="fas fa-check"></i> 完成
+                </button>
+            </div>
+        </div>
+
+        <!-- Status summary -->
+        <div id="rs-status-panel" class="rs-card" style="display:none">
+            <h3>状态</h3>
+            <div id="rs-status-content"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

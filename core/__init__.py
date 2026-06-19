@@ -11,5 +11,6 @@ __all__ = [
     "RuleRegistry",
     "MatrixStepGenerator",
     "CommonMatrixCalculator",
+    "RuleRegistry",
     "SelectRuleCalculator",
 ]

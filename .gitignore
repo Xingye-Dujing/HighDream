@@ -13,3 +13,6 @@ __pycache__/
 
 # Ignore virtual environments
 .venv/
+
+# Ignore Qoder configuration files
+.qoder/settings.local.json
