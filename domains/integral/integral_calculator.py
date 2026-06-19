@@ -87,5 +87,4 @@ def create_integral_calculator(base_class):
 
 
 IntegralCalculator = create_integral_calculator(BaseCalculator)
-
 SelectIntegralCalculator = create_integral_calculator(SelectRuleCalculator)

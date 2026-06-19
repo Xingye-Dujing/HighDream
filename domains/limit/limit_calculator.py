@@ -207,5 +207,4 @@ def create_limit_calculator(base_class):
 
 
 LimitCalculator = create_limit_calculator(BaseCalculator)
-
 SelectLimitCalculator = create_limit_calculator(SelectRuleCalculator)

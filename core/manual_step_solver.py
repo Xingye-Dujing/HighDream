@@ -123,7 +123,13 @@ _RULE_DISPLAY_NAMES: Dict[str, Dict[str, str]] = {
 
 
 class ManualStepSolver:
-    """Orchestrates step-by-step computation with explicit rule choices."""
+    """Orchestrates step-by-step computation with explicit rule choices.
+
+    This class directly uses the corresponding Select*Calculator for rule
+    registration, caching, and operation execution. It does not re-implement
+    the core symbolic computation; instead, it manages the BFS queue and step
+    recording manually to allow user‑driven rule selection.
+    """
 
     def __init__(self, domain: str, expression: str, variable: str = 'x',
                  point: Any = 0, direction: str = '+') -> None:
@@ -187,9 +193,11 @@ class ManualStepSolver:
             ctx['direction'] = self.direction
         return ctx
 
-    def _current_variable(self, _expr: Expr) -> Symbol:
-        """Always use the solver's variable to ensure consistent Symbol identity
-        across all Operation objects, so that subs() matching works correctly."""
+    def _current_variable(self, expr: Expr) -> Symbol:
+        """Return the primary free symbol of expr, falling back to self.variable."""
+        syms = list(expr.free_symbols)
+        if syms:
+            return syms[0]
         return self.variable
 
     # --------------------------------------------------------------- public API

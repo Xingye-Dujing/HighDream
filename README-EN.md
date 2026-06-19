@@ -73,9 +73,9 @@ As mentioned above, this idea originated from my high school days `(The Dream of
 
 ![Command line](./docs/img/24.png)
 
-12. Manual rule selection page (`/rule_select`)
+12. Manual rule selection page (`/rule_select`)(running on Chrome in Windows)
 
-![Manual rule selection page](./docs/img/25.png)
+![Manual rule selection page](./docs/img/01.gif)
 
 ## Features
 
@@ -108,7 +108,7 @@ This project mainly consists of **three** architectures:
 - [**RuleRegistry**](https://high-dream.vercel.app/help/rule_registry) (`core/rule_registry.py`)
 - [**CommonMatrixCalculator**](https://high-dream.vercel.app/help/common_matrix_calculator) (`core/common_matrix_calculator.py`)
 - [**MatrixStepGenerator**](https://high-dream.vercel.app/help/matrix_step_generator) (`core/matrix_step_generator.py`)
-- [**ManualStepSolver**](core/manual_step_solver.py) — Web UI manual rule selection orchestrator (wraps Select Calculator)
+- [**ManualStepSolver**](core/manual_step_solver.py) — Web UI manual rule selection orchestrator (wraps Select*Calculator)
 
 ## Usage
 
