@@ -19,6 +19,9 @@
   var elStart, elCancel, elError;
   var elViewport, elWorld, elEdges, elNodesContainer, elLoading, elLoadingText, elStats;
   var limitFields;
+  var elInteractive, elDecisionPanel, elDecisionRuleName, elDecisionParentLatex, elDecisionPreviewLatex;
+  var elDecisionAccept, elDecisionSkip;
+  var isInteractive = false;
 
   // Tree state
   var currentTaskId = null;
@@ -68,6 +71,13 @@
     elLoading = document.getElementById('mt-loading');
     elLoadingText = document.getElementById('mt-loading-text');
     elStats = document.getElementById('mt-stats');
+    elInteractive = document.getElementById('mt-interactive');
+    elDecisionPanel = document.getElementById('mt-decision-panel');
+    elDecisionRuleName = document.getElementById('mt-decision-rule-name');
+    elDecisionParentLatex = document.getElementById('mt-decision-parent-latex');
+    elDecisionPreviewLatex = document.getElementById('mt-decision-preview-latex');
+    elDecisionAccept = document.getElementById('mt-decision-accept');
+    elDecisionSkip = document.getElementById('mt-decision-skip');
     limitFields = document.querySelectorAll('.mt-limit-only');
 
     readQueryParams();
@@ -78,6 +88,12 @@
     elCancel.addEventListener('click', cancelEnumeration);
     document.getElementById('mt-fit-btn').addEventListener('click', fitToScreen);
     document.getElementById('mt-home-btn').addEventListener('click', goToRoot);
+    elInteractive.addEventListener('change', function () {
+      elTime.disabled = elInteractive.checked;
+      elTime.style.opacity = elInteractive.checked ? '0.4' : '1';
+    });
+    elDecisionAccept.addEventListener('click', function () { respondDecision(true); });
+    elDecisionSkip.addEventListener('click', function () { respondDecision(false); });
     window.addEventListener('resize', function () {
       if (renderedTree) renderEdges();
     });
@@ -148,6 +164,7 @@
   function startEnumeration() {
     hideError();
     if (!elExpr.value.trim()) { showError('请输入表达式'); return; }
+    isInteractive = elInteractive.checked;
     var body = {
       domain: elDomain.value,
       expression: elExpr.value,
@@ -157,6 +174,7 @@
       max_depth: parseInt(elDepth.value, 10) || 8,
       max_nodes: parseInt(elNodes.value, 10) || 500,
       time_limit_seconds: parseInt(elTime.value, 10) || 30,
+      interactive: isInteractive,
     };
     setUiBusy(true);
     resetCanvas();
@@ -235,6 +253,14 @@
       console.log('[mt] tree present but no new nodes');
     }
     if (payload.tree) updateOverlay(payload.tree.stats);
+
+    // Interactive mode: show/hide the decision panel.
+    if (isInteractive && payload.tree && payload.tree.pending_decision) {
+      showDecision(payload.tree.pending_decision, payload);
+    } else if (isInteractive) {
+      hideDecision();
+    }
+
     if (status === 'completed' || status === 'failed') {
       stopPolling(); closeOverlay(); setUiBusy(false);
       if (payload.tree) {
@@ -277,11 +303,46 @@
   function openOverlay(text) { elLoadingText.textContent = text; elLoading.style.display = ''; }
   function updateOverlay(stats) {
     if (!stats) return;
-    elLoadingText.textContent =
-      '枚举中… ' + stats.node_count + ' 个节点, 深度 ' +
-      stats.max_depth_seen + ', 用时 ' + stats.elapsed_seconds.toFixed(1) + ' 秒';
+    if (isInteractive && currentTaskId !== null) {
+      elLoadingText.textContent =
+        '等待用户确认… ' + stats.node_count + ' 个节点, 深度 ' + stats.max_depth_seen;
+    } else {
+      elLoadingText.textContent =
+        '枚举中… ' + stats.node_count + ' 个节点, 深度 ' +
+        stats.max_depth_seen + ', 用时 ' + stats.elapsed_seconds.toFixed(1) + ' 秒';
+    }
   }
   function closeOverlay() { elLoading.style.display = 'none'; }
+
+  // -------------------------------------------------------- interactive decision
+
+  function showDecision(decision, payload) {
+    if (!elDecisionPanel) return;
+    elDecisionRuleName.textContent = decision.rule_display || decision.rule_name;
+    elDecisionParentLatex.innerHTML = decision.parent_latex
+      ? ('\\(' + decision.parent_latex + '\\)') : '<em>(空)</em>';
+    elDecisionPreviewLatex.innerHTML = decision.preview_latex
+      ? ('\\(' + decision.preview_latex + '\\)') : '<em>(空)</em>';
+    elDecisionPanel.style.display = '';
+    // Typeset the LaTeX in the decision panel.
+    if (mathJaxReady && window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise([elDecisionPanel]).catch(function () {});
+    }
+  }
+
+  function hideDecision() {
+    if (elDecisionPanel) elDecisionPanel.style.display = 'none';
+  }
+
+  function respondDecision(accepted) {
+    if (!currentTaskId) return;
+    hideDecision();
+    fetch('/api/method_tree_respond', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task_id: currentTaskId, accepted: accepted }),
+    }).catch(function (err) { console.warn('[mt] respondDecision error:', err); });
+  }
 
   function renderStats(stats) {
     if (!stats) { elStats.innerHTML = ''; return; }
@@ -311,6 +372,7 @@
     elNodesContainer.innerHTML = '';
     clearEdgesSvg();
     elStats.innerHTML = '';
+    hideDecision();
     panX = 0; panY = 0; scale = 1;
     applyTransform();
   }

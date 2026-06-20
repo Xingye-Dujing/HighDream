@@ -450,3 +450,141 @@
 #mt-error {
   margin: 6px 20px 0;
 }
+
+/* Interactive mode checkbox in top bar */
+.mt-checkbox-field {
+  justify-content: flex-end;
+}
+
+.mt-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--jp-ui-font-color0, #222);
+  user-select: none;
+  white-space: nowrap;
+  padding: 4px 0;
+}
+
+.mt-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--jp-brand-color0, #1976d2);
+}
+
+/* Floating decision panel — centered at the bottom of the viewport */
+.mt-decision-panel {
+  position: absolute;
+  left: 50%;
+  bottom: 30px;
+  transform: translateX(-50%);
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.97);
+  border: 2px solid var(--jp-brand-color0, #1976d2);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(30, 60, 110, 0.25);
+  padding: 16px 24px;
+  min-width: 360px;
+  max-width: 520px;
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mt-decision-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--jp-brand-color0, #1976d2);
+  text-align: center;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--jp-border-color1, #c9d6ea);
+}
+
+.mt-decision-rule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.mt-decision-value {
+  font-weight: 700;
+  color: var(--jp-ui-font-color0, #222);
+}
+
+.mt-decision-expr {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mt-decision-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--jp-ui-font-color1, #555);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mt-decision-latex {
+  font-size: 14px;
+  color: var(--jp-ui-font-color0, #222);
+  padding: 6px 10px;
+  background: var(--jp-layout-color1, #f5f5f5);
+  border-radius: 6px;
+  border: 1px solid var(--jp-border-color1, #e0e0e0);
+  overflow-x: auto;
+  min-height: 28px;
+}
+
+.mt-decision-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.mt-btn-accept,
+.mt-btn-skip {
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.15s, transform 0.1s;
+  font-family: var(--font-family, inherit);
+}
+
+.mt-btn-accept {
+  background-color: #2e7d32;
+  color: #fff;
+}
+
+.mt-btn-accept:hover {
+  background-color: #1b5e20;
+  transform: translateY(-1px);
+}
+
+.mt-btn-skip {
+  background-color: #ef6c00;
+  color: #fff;
+}
+
+.mt-btn-skip:hover {
+  background-color: #e65100;
+  transform: translateY(-1px);
+}
+
+.mt-btn-accept:active,
+.mt-btn-skip:active {
+  transform: translateY(0);
+}

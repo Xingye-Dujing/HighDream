@@ -56,12 +56,14 @@ class MethodTreeEnumerator:
         max_depth: Any = METHOD_TREE_DEFAULT_MAX_DEPTH,
         max_nodes: Any = METHOD_TREE_DEFAULT_MAX_NODES,
         time_limit_seconds: Any = METHOD_TREE_DEFAULT_TIME_SECONDS,
+        interactive: bool = False,
     ) -> None:
         self.domain = domain
         self.expression = expression
         self.variable = variable
         self.point = point
         self.direction = direction
+        self.interactive = interactive
 
         self.max_depth = _clamp(
             max_depth, METHOD_TREE_DEFAULT_MAX_DEPTH,
@@ -69,9 +71,13 @@ class MethodTreeEnumerator:
         self.max_nodes = _clamp(
             max_nodes, METHOD_TREE_DEFAULT_MAX_NODES,
             METHOD_TREE_HARD_MAX_NODES, 'max_nodes')
-        self.time_limit = _clamp(
-            time_limit_seconds, METHOD_TREE_DEFAULT_TIME_SECONDS,
-            METHOD_TREE_HARD_MAX_TIME_SECONDS, 'time_limit_seconds')
+        # Interactive mode has no time limit.
+        if interactive:
+            self.time_limit = float('inf')
+        else:
+            self.time_limit = _clamp(
+                time_limit_seconds, METHOD_TREE_DEFAULT_TIME_SECONDS,
+                METHOD_TREE_HARD_MAX_TIME_SECONDS, 'time_limit_seconds')
 
         # Incrementally-built tree.
         self._nodes: Dict[str, Dict[str, Any]] = {}
@@ -82,6 +88,11 @@ class MethodTreeEnumerator:
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._start_time = 0.0
+
+        # Interactive mode: pause-and-resume protocol.
+        self._decision_condition = threading.Condition()
+        self._pending_decision: Optional[Dict[str, Any]] = None
+        self._decision_response: Optional[bool] = None
 
         # Outcome fields (set by run()).
         self.truncated: bool = False
@@ -106,16 +117,31 @@ class MethodTreeEnumerator:
     def cancel(self) -> None:
         """Request cooperative cancellation. run() returns at the next safe point."""
         self._stop.set()
+        with self._decision_condition:
+            self._decision_response = False
+            self._decision_condition.notify()
+
+    def respond_decision(self, accepted: bool) -> bool:
+        """Respond to a pending interactive decision. Returns True if a decision was pending."""
+        with self._decision_condition:
+            if self._pending_decision is None:
+                return False
+            self._decision_response = accepted
+            self._decision_condition.notify()
+            return True
 
     def snapshot(self) -> Dict[str, Any]:
         """Return a consistent view of the tree built so far (thread-safe)."""
         with self._lock:
             nodes_copy = {k: dict(v) for k, v in self._nodes.items()}
             children_copy = {k: list(v) for k, v in self._children.items()}
+            pd = self._pending_decision
+            pending = dict(pd) if pd is not None else None
             payload = {
                 'root_id': self._root_id,
                 'nodes': nodes_copy,
                 'children': children_copy,
+                'pending_decision': pending,
             }
         payload['stats'] = self._build_stats(len(nodes_copy))
         return payload
@@ -130,7 +156,7 @@ class MethodTreeEnumerator:
         if len(self._nodes) >= self.max_nodes:
             self.truncated, self.reason = True, 'node_limit'
             return True
-        if self._elapsed() >= self.time_limit:
+        if not self.interactive and self._elapsed() >= self.time_limit:
             self.truncated, self.reason = True, 'time_limit'
             return True
         if self._stop.is_set():
@@ -306,6 +332,19 @@ class MethodTreeEnumerator:
                 except Exception:  # pylint: disable=broad-exception-caught
                     child_top_latex = child_latex
 
+                if self.interactive:
+                    accepted = self._ask_user_decision(
+                        parent_id=parent_id,
+                        parent_latex=self._current_latex(solver),
+                        rule_name=rule['name'],
+                        rule_display=rule.get('display_name', rule['name']),
+                        preview_latex=child_top_latex,
+                    )
+                    if not accepted:
+                        continue
+                    if self._should_stop():
+                        break
+
                 with self._lock:
                     child_id = self._register_node(
                         parent_id=parent_id,
@@ -323,6 +362,15 @@ class MethodTreeEnumerator:
                 if not child_done:
                     queue.append((child_id, child_rule_path, depth + 1))
 
+            # After all rules for this node were rejected (interactive mode),
+            # mark the node as done so it appears as a leaf.
+            if self.interactive and not self._should_stop():
+                with self._lock:
+                    node = self._nodes.get(parent_id)
+                    if node is not None and not node['children']:
+                        node['done'] = True
+                        node['final_latex'] = self._current_latex(solver)
+
     def _build_stats(self, node_count: int) -> Dict[str, Any]:
         return {
             'node_count': node_count,
@@ -338,3 +386,40 @@ class MethodTreeEnumerator:
         snap = self.snapshot()
         snap['stats'] = self._build_stats(len(snap['nodes']))
         return snap
+
+    def _ask_user_decision(
+        self,
+        parent_id: str,
+        parent_latex: str,
+        rule_name: str,
+        rule_display: str,
+        preview_latex: str,
+    ) -> bool:
+        """Pause BFS and wait for user approval/rejection of a rule.
+
+        Sets ``_pending_decision`` (visible via :meth:`snapshot`), then blocks
+        on the condition variable until :meth:`respond_decision` is called or
+        the enumerator is cancelled.  Returns ``True`` if the user accepted.
+        """
+        decision = {
+            'parent_id': parent_id,
+            'parent_latex': parent_latex,
+            'rule_name': rule_name,
+            'rule_display': rule_display,
+            'preview_latex': preview_latex,
+        }
+        with self._decision_condition:
+            if self._should_stop():
+                return False
+            self._pending_decision = decision
+            self._decision_response = None
+            # Wait until respond_decision or cancel sets _decision_response.
+            while self._decision_response is None:
+                if self._stop.is_set():
+                    self._pending_decision = None
+                    return False
+                self._decision_condition.wait(timeout=0.5)
+            accepted = self._decision_response
+            self._pending_decision = None
+            self._decision_response = None
+        return accepted

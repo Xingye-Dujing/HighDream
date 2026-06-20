@@ -25,7 +25,8 @@ _lock = threading.Lock()
 
 def _extract_kwargs(data: Dict[str, Any]) -> Dict[str, Any]:
     """Pull the subset of keys MethodTreeEnumerator accepts."""
-    return {
+    interactive = data.get('interactive', False)
+    kwargs = {
         'domain': data.get('domain', 'diff'),
         'expression': data.get('expression', ''),
         'variable': data.get('variable', 'x'),
@@ -33,8 +34,10 @@ def _extract_kwargs(data: Dict[str, Any]) -> Dict[str, Any]:
         'direction': data.get('direction', '+'),
         'max_depth': data.get('max_depth'),
         'max_nodes': data.get('max_nodes'),
-        'time_limit_seconds': data.get('time_limit_seconds'),
+        'time_limit_seconds': 0 if interactive else data.get('time_limit_seconds'),
+        'interactive': interactive,
     }
+    return kwargs
 
 
 def start_method_tree(data: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
@@ -79,3 +82,12 @@ def cancel_method_tree(task_id: str) -> bool:
         return False
     enumerator.cancel()
     return True
+
+
+def respond_method_tree(task_id: str, accepted: bool) -> bool:
+    """Respond to a pending interactive decision. Returns True if responded."""
+    with _lock:
+        enumerator = _running.get(task_id)
+    if enumerator is None:
+        return False
+    return enumerator.respond_decision(accepted)

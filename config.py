@@ -33,3 +33,6 @@ METHOD_TREE_HARD_MAX_TIME_SECONDS = 60
 # Task-manager side timeout for method_tree op_type (must be >= hard time cap
 # plus a small grace period so the enumerator's own wall-clock cutoff wins).
 METHOD_TREE_TASK_TIMEOUT_SECONDS = METHOD_TREE_HARD_MAX_TIME_SECONDS + 10
+# Interactive (step-by-step) mode: effectively no time limit, but bounded
+# to 2 hours so the worker thread doesn't live forever if the user walks away.
+METHOD_TREE_INTERACTIVE_TASK_TIMEOUT_SECONDS = 7200

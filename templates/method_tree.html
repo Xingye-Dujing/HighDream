@@ -95,6 +95,12 @@
         <label>时间上限 (秒)</label>
         <input id="mt-time" type="number" min="1" max="60" value="30"/>
     </div>
+    <div class="mt-field mt-checkbox-field">
+        <label class="mt-checkbox-label">
+            <input id="mt-interactive" type="checkbox"/>
+            逐步确认
+        </label>
+    </div>
     <div class="mt-field mt-buttons">
         <button id="mt-start-btn" class="rs-btn-primary">
             <i class="fas fa-play"></i> 穷举
@@ -125,6 +131,26 @@
             </defs>
         </svg>
         <div id="mt-nodes"></div>
+    </div>
+
+    <div id="mt-decision-panel" class="mt-decision-panel" style="display:none">
+        <div class="mt-decision-header">等待您的确认</div>
+        <div class="mt-decision-rule">
+            <span class="mt-decision-label">规则:</span>
+            <span id="mt-decision-rule-name" class="mt-decision-value"></span>
+        </div>
+        <div class="mt-decision-expr">
+            <div class="mt-decision-label">当前表达式:</div>
+            <div id="mt-decision-parent-latex" class="mt-decision-latex"></div>
+        </div>
+        <div class="mt-decision-expr">
+            <div class="mt-decision-label">应用后将变为:</div>
+            <div id="mt-decision-preview-latex" class="mt-decision-latex"></div>
+        </div>
+        <div class="mt-decision-buttons">
+            <button id="mt-decision-accept" class="mt-btn-accept"><i class="fas fa-check"></i> 应用</button>
+            <button id="mt-decision-skip" class="mt-btn-skip"><i class="fas fa-times"></i> 跳过</button>
+        </div>
     </div>
 
     <div id="mt-loading" style="display:none">

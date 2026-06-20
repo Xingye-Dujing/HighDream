@@ -685,11 +685,16 @@ def method_tree_start():
     if not data.get('expression'):
         return jsonify({'success': False, 'error': 'missing expression'})
 
-    # Let the method_tree task outlive the default global timeout.
-    from config import METHOD_TREE_TASK_TIMEOUT_SECONDS  # pylint: disable=import-outside-toplevel
+    interactive = data.get('interactive', False)
+    if interactive:
+        from config import METHOD_TREE_INTERACTIVE_TASK_TIMEOUT_SECONDS  # pylint: disable=import-outside-toplevel
+        timeout = METHOD_TREE_INTERACTIVE_TASK_TIMEOUT_SECONDS
+    else:
+        from config import METHOD_TREE_TASK_TIMEOUT_SECONDS  # pylint: disable=import-outside-toplevel
+        timeout = METHOD_TREE_TASK_TIMEOUT_SECONDS
     task_id = task_manager.create_task(
         'method_tree', data,
-        timeout_seconds=METHOD_TREE_TASK_TIMEOUT_SECONDS,
+        timeout_seconds=timeout,
     )
     return jsonify({'success': True, 'task_id': task_id})
 
@@ -750,3 +755,23 @@ def method_tree_cancel():
     task_id = data.get('task_id', '')
     cancelled = cancel_method_tree(task_id)
     return jsonify({'success': True, 'cancelled': cancelled})
+
+
+@api.route('/method_tree_respond', methods=['POST'])
+def method_tree_respond():
+    """Respond to a pending interactive decision in a running enumeration.
+
+    Expected JSON input:
+        task_id (str): Task ID
+        accepted (bool): True to apply the rule, False to skip
+
+    Returns:
+        JSON with success + responded (bool).
+    """
+    from routes.method_tree_service import respond_method_tree  # pylint: disable=import-outside-toplevel
+
+    data = request.json or {}
+    task_id = data.get('task_id', '')
+    accepted = data.get('accepted', False)
+    responded = respond_method_tree(task_id, bool(accepted))
+    return jsonify({'success': True, 'responded': responded})
