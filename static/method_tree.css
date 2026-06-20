@@ -117,7 +117,7 @@
 #mt-viewport {
   position: relative;
   width: 100%;
-  height: calc(100vh - 130px);
+  height: calc(100vh - 114px);
   overflow: hidden;
   background-color: var(--jp-layout-color1, #f7f7f7);
   background-image:
