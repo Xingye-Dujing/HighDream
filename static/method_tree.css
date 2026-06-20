@@ -474,6 +474,7 @@
   height: 16px;
   cursor: pointer;
   accent-color: var(--jp-brand-color0, #1976d2);
+  margin-right: -20px;
 }
 
 /* Floating decision panel — centered at the bottom of the viewport */
@@ -575,12 +576,12 @@
 }
 
 .mt-btn-skip {
-  background-color: #ef6c00;
+  background-color: #841a02;
   color: #fff;
 }
 
 .mt-btn-skip:hover {
-  background-color: #e65100;
+  background-color: #570e01;
   transform: translateY(-1px);
 }
 

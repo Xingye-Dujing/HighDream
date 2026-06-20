@@ -298,6 +298,30 @@ class MethodTreeEnumerator:
                     if node is not None and node['final_latex'] is None:
                         node['done'] = True
                         node['final_latex'] = self._current_latex(solver)
+                        # If back-substitution happened, show pre-back-subs
+                        # in this node and create a child for the back-subs.
+                        _subs = solver.calculator.step_generator.subs_dict
+                        if _subs:
+                            _steps = solver.calculator.step_generator.steps
+                            if len(_steps) >= 2:
+                                try:
+                                    _pre_latex = latex(_steps[-2])
+                                    _post_latex = latex(_steps[-1])
+                                    node['final_latex'] = _pre_latex
+                                    self._register_node(
+                                        parent_id=parent_id,
+                                        depth=node.get('depth', 0) + 1,
+                                        latex_text=_post_latex,
+                                        top_latex_text=_post_latex,
+                                        rule_applied='back_subs',
+                                        rule_display='回代换元变量',
+                                        explanation='',
+                                        done=True,
+                                        truncated=False,
+                                        final_latex=_post_latex,
+                                    )
+                                except Exception:  # pylint: disable=broad-exception-caught
+                                    pass
                 continue
 
             try:
@@ -327,6 +351,22 @@ class MethodTreeEnumerator:
                 child_done = child_solver.done
                 child_latex = self._current_latex(child_solver)
                 final = child_latex if child_done else None
+                # Check if back-substitution happened (e.g., u-substitution,
+                # trig substitution, radical substitution).
+                # When it did, steps[-1] is the back-substituted result and
+                # steps[-2] (or _current_top_operation) is the expression
+                # BEFORE back-substitution. We create a dedicated child node
+                # for the back-substitution step.
+                _subs_dict = child_solver.calculator.step_generator.subs_dict
+                _back_subs_latex = None
+                if child_done and _subs_dict:
+                    try:
+                        _pre = latex(child_solver._current_top_operation())
+                        _back_subs_latex = child_latex  # steps[-1] = post-back-subs
+                        child_latex = _pre
+                        final = _pre
+                    except Exception:  # pylint: disable=broad-exception-caught
+                        pass
                 try:
                     child_top_latex = latex(child_solver._current_top_operation())
                 except Exception:  # pylint: disable=broad-exception-caught
@@ -358,6 +398,21 @@ class MethodTreeEnumerator:
                         truncated=False,
                         final_latex=final,
                     )
+                    # If back-substitution was detected, register a dedicated
+                    # child node that shows the result in the original variable.
+                    if _back_subs_latex is not None:
+                        self._register_node(
+                            parent_id=child_id,
+                            depth=depth + 2,
+                            latex_text=_back_subs_latex,
+                            top_latex_text=_back_subs_latex,
+                            rule_applied='back_subs',
+                            rule_display='回代换元变量',
+                            explanation='',
+                            done=True,
+                            truncated=False,
+                            final_latex=_back_subs_latex,
+                        )
 
                 if not child_done:
                     queue.append((child_id, child_rule_path, depth + 1))

@@ -391,7 +391,9 @@ def logarithmic_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionRe
     return 'logarithmic'
 
 
-def parts_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
+def parts_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    if expr.is_constant() or expr == context['variable']:
+        return None
     return 'parts'
 
 
