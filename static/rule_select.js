@@ -32,6 +32,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // --------------------------------------------------------------- helpers
 
+  /** Show a non-blocking loading spinner on the rules area */
+  function showLoading() {
+    $rulesList.classList.add('rs-loading');
+    $rulesList.innerHTML = '';
+    const spinner = document.createElement('div');
+    spinner.className = 'rs-loading-spinner';
+    $rulesList.appendChild(spinner);
+  }
+
+  /** Remove the loading spinner */
+  function hideLoading() {
+    $rulesList.classList.remove('rs-loading');
+  }
+
   async function api(path, body) {
     const r = await fetch('/api' + path, {
       method: 'POST',
@@ -94,6 +108,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Applicable rules
     if (state.done) {
+      hideLoading();
       $rulesList.innerHTML = '<p class="rs-placeholder"><i class="fas fa-check-circle" style="color:#789262"></i> 推导完成</p>';
       $actions.style.display = 'none';
       renderStatus(state);
@@ -107,11 +122,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const rules = state.applicable_rules || [];
     if (rules.length === 0) {
+      hideLoading();
       $rulesList.innerHTML = '<p class="rs-placeholder">没有可应用的规则 — 试试 SymPy 回退</p>';
       $actions.style.display = 'block';
       return;
     }
 
+    hideLoading();
     let rulesHtml = '';
     for (const r of rules) {
       const previewHtml = r.latex_preview
@@ -165,6 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
     hideError();
     disableInputs(false);
     $resetBtn.style.display = 'none';
+    hideLoading();
   }
 
   async function startSession() {
@@ -172,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function () {
     busy = true;
     hideError();
     disableInputs(true);
+    showLoading();
 
     const body = {
       domain: $domain.value,
@@ -186,6 +205,7 @@ document.addEventListener('DOMContentLoaded', function () {
     try {
       const resp = await api('/manual_start', body);
       if (!resp.success) {
+        hideLoading();
         showError(resp.error || '启动失败');
         disableInputs(false);
         busy = false;
@@ -196,6 +216,7 @@ document.addEventListener('DOMContentLoaded', function () {
       $resetBtn.style.display = 'inline-block';
       render(currentState);
     } catch (e) {
+      hideLoading();
       showError('网络错误: ' + e.message);
       disableInputs(false);
     }
@@ -206,10 +227,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (busy || !sessionId) return;
     busy = true;
     hideError();
+    showLoading();
 
     try {
       const resp = await api('/manual_step', {session_id: sessionId, rule_name: ruleName});
       if (!resp.success) {
+        hideLoading();
         showError(resp.error || '应用规则失败');
         busy = false;
         return;
@@ -217,6 +240,7 @@ document.addEventListener('DOMContentLoaded', function () {
       currentState = resp.state;
       render(currentState);
     } catch (e) {
+      hideLoading();
       showError('网络错误: ' + e.message);
     }
     busy = false;
@@ -226,10 +250,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (busy || !sessionId) return;
     busy = true;
     hideError();
+    showLoading();
 
     try {
       const resp = await api('/manual_fallback', {session_id: sessionId});
       if (!resp.success) {
+        hideLoading();
         showError(resp.error || '回退失败');
         busy = false;
         return;
@@ -237,6 +263,7 @@ document.addEventListener('DOMContentLoaded', function () {
       currentState = resp.state;
       render(currentState);
     } catch (e) {
+      hideLoading();
       showError('网络错误: ' + e.message);
     }
     busy = false;
@@ -248,6 +275,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (currentState) {
       currentState.done = true;
     }
+    hideLoading();
     $rulesList.innerHTML = '<p class="rs-placeholder"><i class="fas fa-check-circle" style="color:#789262"></i> 推导完成</p>';
     $actions.style.display = 'none';
     renderStatus(currentState || {steps: [], domain: $domain.value, done: true});
