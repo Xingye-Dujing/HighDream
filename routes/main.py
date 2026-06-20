@@ -147,6 +147,17 @@ def word_editor():
     return render_template('word_editor.html')
 
 
+@main.route('/method_tree')
+def method_tree():
+    """Render the exhaustive method-tree blueprint page.
+
+    Query-string parameters (domain, expression, variable, point, direction)
+    are passed through verbatim — the client-side JS reads them and
+    pre-fills the form / auto-starts enumeration.
+    """
+    return render_template('method_tree.html')
+
+
 @main.route('/rule_select')
 def rule_select():
     """Render the manual rule-selection page.

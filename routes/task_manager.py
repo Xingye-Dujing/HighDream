@@ -70,13 +70,24 @@ class TaskManager:
             self._semaphore = threading.Semaphore(MAX_WORKERS)
             self._start_cleanup_thread()
 
-    def create_task(self, operation_type: str, data: Dict[str, Any]) -> str:
-        """Create the new task and return task ID"""
+    def create_task(self, operation_type: str, data: Dict[str, Any],
+                    timeout_seconds: Optional[float] = None) -> str:
+        """Create the new task and return task ID.
+
+        ``timeout_seconds`` overrides the default
+        ``SINGLE_TASK_EXECUTE_TIMEOUT_SECONDS`` for this single task; the
+        method-tree op_type uses this so long enumerations are not killed
+        by the global timeout.
+        """
         task_id = str(uuid.uuid4())
         task = Task(task_id, operation_type, data)
+        task.timeout_seconds = timeout_seconds
 
         with self._task_lock:
             self._tasks[task_id] = task
+
+        # Propagate the id so the worker side can register per-task state.
+        data['task_id'] = task_id
 
         # Start asynchronous processing
         thread = threading.Thread(target=self._execute_task, args=(task,))
@@ -104,9 +115,11 @@ class TaskManager:
 
                 future = self._executor.submit(
                     start_compute, task.operation_type, task.data)
+                timeout = (task.timeout_seconds
+                           if getattr(task, 'timeout_seconds', None)
+                           else SINGLE_TASK_EXECUTE_TIMEOUT_SECONDS)
                 try:
-                    success, result = future.result(
-                        timeout=SINGLE_TASK_EXECUTE_TIMEOUT_SECONDS)
+                    success, result = future.result(timeout=timeout)
                     # Update task result
                     if success:
                         task.status = TaskStatus.COMPLETED

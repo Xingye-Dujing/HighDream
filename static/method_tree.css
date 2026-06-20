@@ -1,0 +1,414 @@
+/* Method-tree page — blueprint-canvas styling */
+
+:root {
+  --bp-node-width: 240px;
+  --bp-node-header-height: 36px;
+  --bp-node-padding: 12px;
+  --bp-node-bg: var(--jp-layout-color0, #ffffff);
+  --bp-node-border: var(--jp-border-color1, #c9d6ea);
+  --bp-connection-color: #5b89cd;
+  --bp-grid-color: rgba(0, 0, 0, 0.05);
+  --bp-grid-size: 20px;
+}
+
+/* Top bar — mirrors #blueprint-toolbar */
+#mt-top-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  height: auto;
+  min-height: 48px;
+  background-color: var(--jp-layout-color0, #fff);
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--jp-toolbar-border-color, #ddd);
+  position: sticky;
+  top: 48px;
+  z-index: 99;
+  gap: 8px;
+}
+
+.mt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--jp-ui-font-color1, #333);
+}
+
+.mt-field label {
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.mt-field input,
+.mt-field select {
+  padding: 5px 9px;
+  border: 1px solid var(--jp-border-color1, #ccc);
+  border-radius: 4px;
+  background: var(--jp-layout-color0, #fff);
+  color: var(--jp-ui-font-color0, #222);
+  font-size: 13px;
+  min-width: 70px;
+  font-family: var(--font-family, inherit);
+  transition: border-color 0.2s;
+}
+
+.mt-field input:focus,
+.mt-field select:focus {
+  border-color: var(--jp-brand-color1, #3a6fb5);
+  outline: none;
+}
+
+.mt-field input[type="number"] {
+  min-width: 60px;
+  width: 80px;
+}
+
+.mt-field.mt-grow {
+  flex: 1 1 200px;
+}
+
+.mt-field.mt-grow input {
+  width: 100%;
+}
+
+/* Action buttons — blueprint toolbar style */
+.mt-field.mt-buttons {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.mt-field.mt-buttons button {
+  background: none;
+  border: 1px solid transparent;
+  font-size: 13px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--jp-ui-font-color0, #222);
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background-color 0.15s, border-color 0.15s;
+  font-family: var(--font-family, inherit);
+}
+
+.mt-field.mt-buttons button:hover {
+  background-color: var(--jp-layout-color2, #ececec);
+  border-color: var(--jp-border-color1, #ccc);
+}
+
+.mt-field.mt-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mt-field.mt-buttons button i {
+  font-size: 12px;
+}
+
+#mt-start-btn { color: var(--jp-brand-color0, #1976d2); }
+#mt-cancel-btn { color: #e65100; }
+
+/* Viewport: the fixed-size window into the infinite world */
+#mt-viewport {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 130px);
+  overflow: hidden;
+  background-color: var(--jp-layout-color1, #f7f7f7);
+  background-image:
+    linear-gradient(to right, var(--bp-grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--bp-grid-color) 1px, transparent 1px);
+  background-size: var(--bp-grid-size) var(--bp-grid-size);
+  cursor: grab;
+  touch-action: none;
+}
+
+#mt-viewport.mt-panning {
+  cursor: grabbing;
+}
+
+/* World: the pan/zoom-transformed inner container */
+#mt-world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+#mt-nodes {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ---- SVG connection paths (blueprint_canvas style) ---- */
+#mt-edges {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+}
+
+.mt-connection-path {
+  stroke: var(--bp-connection-color);
+  stroke-width: 2;
+  fill: none;
+  pointer-events: stroke;
+  cursor: pointer;
+  transition: stroke 0.15s, stroke-width 0.15s;
+}
+
+.mt-connection-path:hover {
+  stroke: var(--jp-brand-color0, #1976d2);
+  stroke-width: 3;
+}
+
+.mt-temp-connection {
+  stroke: var(--bp-connection-color);
+  stroke-width: 2;
+  stroke-dasharray: 5, 5;
+  fill: none;
+  pointer-events: none;
+}
+
+/* ---- Ports (match blueprint_canvas port style) ---- */
+.mt-port {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--jp-border-color2, #888);
+  border: 2px solid var(--jp-border-color1, #bbb);
+  cursor: pointer;
+  z-index: 3;
+  transition: background-color 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+.mt-port:hover {
+  background-color: var(--jp-brand-color1, #5b89cd);
+  border-color: var(--jp-brand-color0, #1976d2);
+  transform: translate(-50%, -50%) scale(1.3);
+}
+
+.mt-port.mt-port-connecting {
+  background-color: var(--jp-brand-color0, #1976d2);
+  border-color: var(--jp-brand-color1, #5b89cd);
+  box-shadow: 0 0 8px rgba(91, 137, 205, 0.6);
+}
+
+.mt-port.mt-port-input {
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%);
+}
+
+.mt-port.mt-port-output {
+  left: 50%;
+  top: 100%;
+  transform: translate(-50%, -50%);
+}
+
+/* Keep the transform when combining with :hover */
+.mt-port.mt-port-input:hover,
+.mt-port.mt-port-output:hover {
+  transform: translate(-50%, -50%) scale(1.3);
+}
+
+/* ---- Node cards — blueprint-card structure (header + content) ---- */
+.mt-node {
+  position: absolute;
+  width: var(--bp-node-width);
+  background-color: var(--bp-node-bg);
+  border: 1px solid var(--bp-node-border);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  pointer-events: auto;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+}
+
+.mt-node:hover {
+  box-shadow: 0 4px 14px rgba(30, 60, 110, 0.2);
+}
+
+.mt-node-header {
+  height: var(--bp-node-header-height);
+  background-color: var(--jp-layout-color2, #ececec);
+  border-bottom: 1px solid var(--bp-node-border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  user-select: none;
+}
+
+.mt-node-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--jp-ui-font-color0, #222);
+  margin-right: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mt-node-type {
+  font-size: 10px;
+  color: var(--jp-ui-font-color1, #555);
+  background-color: var(--jp-layout-color1, #f5f5f5);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.mt-node-content {
+  padding: var(--bp-node-padding);
+  overflow-x: auto;
+  line-height: 1.4;
+  color: var(--jp-ui-font-color0, #222);
+  font-size: 14px;
+}
+
+.mt-node-content .MathJax {
+  font-size: 105% !important;
+}
+
+/* State variants */
+.mt-node.mt-root {
+  border-width: 2px;
+  border-color: var(--jp-brand-color0, #3a6fb5);
+}
+
+.mt-node.mt-root > .mt-node-header {
+  background-color: var(--jp-brand-color1, #5b89cd);
+}
+
+.mt-node.mt-root > .mt-node-header .mt-node-title,
+.mt-node.mt-root > .mt-node-header .mt-node-type {
+  color: #fff;
+}
+
+.mt-node.mt-root > .mt-node-header .mt-node-type {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.mt-node.mt-done {
+  border-color: #2e7d32;
+}
+
+.mt-node.mt-done > .mt-node-header {
+  background-color: #e8f5e9;
+}
+
+.mt-node.mt-done > .mt-node-header .mt-node-type {
+  background-color: #2e7d32;
+  color: #fff;
+}
+
+.mt-node.mt-truncated {
+  border-style: dashed;
+  border-color: #ef6c00;
+}
+
+.mt-node.mt-truncated > .mt-node-header {
+  background-color: #fff3e0;
+}
+
+.mt-node.mt-truncated > .mt-node-header .mt-node-type {
+  background-color: #ef6c00;
+  color: #fff;
+}
+
+/* Footer labels (final result / truncation) */
+.mt-node-footer {
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border-top: 1px dashed var(--bp-node-border);
+  background-color: var(--jp-layout-color1, #f5f5f5);
+}
+
+.mt-node-footer.mt-final {
+  color: #2e7d32;
+  background-color: #e8f5e9;
+}
+
+.mt-node-footer.mt-trunc {
+  color: #ef6c00;
+  background-color: #fff3e0;
+}
+
+/* Loading overlay (pure CSS spinner on main thread) */
+#mt-loading {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--bp-node-border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  box-shadow: 0 4px 14px rgba(30, 60, 110, 0.18);
+  font-size: 13px;
+  color: var(--jp-ui-font-color0, #222);
+  z-index: 10;
+}
+
+.mt-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid #c9d6ea;
+  border-top-color: var(--jp-brand-color0, #3a6fb5);
+  animation: mt-spin 0.9s linear infinite;
+}
+
+@keyframes mt-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Stats badge */
+#mt-stats {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--bp-node-border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--jp-ui-font-color0, #222);
+  z-index: 9;
+  max-width: 340px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+#mt-stats:empty { display: none; }
+
+#mt-stats .mt-stat-line {
+  white-space: nowrap;
+}
+
+#mt-stats .mt-reason {
+  font-weight: 700;
+  color: var(--jp-brand-color0, #3a6fb5);
+}
+
+#mt-stats .mt-reason.mt-truncated { color: #ef6c00; }
+#mt-stats .mt-reason.mt-error { color: var(--jp-error-color, #c62828); }
+
+#mt-error {
+  margin: 6px 20px 0;
+}

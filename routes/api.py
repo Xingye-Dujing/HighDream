@@ -656,3 +656,97 @@ def manual_reset():
     session_id = data.get('session_id', '')
     _manual_sessions.pop(session_id, None)
     return jsonify({'success': True})
+
+
+# ---------------------------------------------------------------------------
+# Method-tree (exhaustive rule-enumeration) API
+# ---------------------------------------------------------------------------
+
+@api.route('/method_tree_start', methods=['POST'])
+def method_tree_start():
+    """Kick off an exhaustive rule-enumeration as an async task.
+
+    Expected JSON input:
+        domain (str): 'diff', 'integral', or 'limit'
+        expression (str): Mathematical expression to enumerate
+        variable (str, optional): Variable name (default 'x')
+        point (str, optional): Limit point (default '0')
+        direction (str, optional): Limit direction (default '+')
+        max_depth (int, optional): Max root-to-leaf depth
+        max_nodes (int, optional): Max total tree size
+        time_limit_seconds (int, optional): Wall-clock budget
+
+    Returns:
+        JSON with success + task_id for polling via /api/method_tree_status.
+    """
+    data = request.json or {}
+    if not data.get('domain'):
+        return jsonify({'success': False, 'error': 'missing domain'})
+    if not data.get('expression'):
+        return jsonify({'success': False, 'error': 'missing expression'})
+
+    # Let the method_tree task outlive the default global timeout.
+    from config import METHOD_TREE_TASK_TIMEOUT_SECONDS  # pylint: disable=import-outside-toplevel
+    task_id = task_manager.create_task(
+        'method_tree', data,
+        timeout_seconds=METHOD_TREE_TASK_TIMEOUT_SECONDS,
+    )
+    return jsonify({'success': True, 'task_id': task_id})
+
+
+@api.route('/method_tree_status', methods=['POST'])
+def method_tree_status():
+    """Poll incremental progress or the final tree for a method-tree task.
+
+    Expected JSON input:
+        task_id (str): Task ID returned by /api/method_tree_start
+
+    Returns:
+        JSON with:
+            success (bool)
+            task (dict): standard task_manager status envelope
+            tree (dict, optional): incremental snapshot while running, or
+                the full final tree on completion.
+    """
+    from routes.method_tree_service import snapshot_method_tree  # pylint: disable=import-outside-toplevel
+
+    data = request.json or {}
+    task_id = data.get('task_id', '')
+
+    task_info = task_manager.get_task_status(task_id)
+    if task_info is None:
+        return jsonify({
+            'success': False,
+            'error': f'任务不存在: {task_id}'
+        })
+
+    response = {'success': True, 'task': task_info}
+
+    # While running, stream an incremental snapshot.
+    if task_info['status'] == 'running':
+        snapshot = snapshot_method_tree(task_id)
+        if snapshot is not None:
+            response['tree'] = snapshot
+    elif task_info['status'] == 'completed':
+        # The final tree lives in task.result.
+        response['tree'] = task_info.get('result')
+
+    return jsonify(response)
+
+
+@api.route('/method_tree_cancel', methods=['POST'])
+def method_tree_cancel():
+    """Request cancellation of a running method-tree enumeration.
+
+    Expected JSON input:
+        task_id (str): Task ID to cancel
+
+    Returns:
+        JSON with success + cancelled (bool).
+    """
+    from routes.method_tree_service import cancel_method_tree  # pylint: disable=import-outside-toplevel
+
+    data = request.json or {}
+    task_id = data.get('task_id', '')
+    cancelled = cancel_method_tree(task_id)
+    return jsonify({'success': True, 'cancelled': cancelled})

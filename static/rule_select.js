@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const $point = document.getElementById('rs-point');
   const $dir = document.getElementById('rs-dir');
   const $startBtn = document.getElementById('rs-start-btn');
+  const $enumerateBtn = document.getElementById('rs-enumerate-btn');
   const $resetBtn = document.getElementById('rs-reset-btn');
   const $error = document.getElementById('rs-error');
   const $stepsList = document.getElementById('rs-steps-list');
@@ -327,6 +328,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
   $startBtn.addEventListener('click', startSession);
   $resetBtn.addEventListener('click', resetSession);
+  $enumerateBtn.addEventListener('click', function () {
+    if (!$expr.value.trim()) {
+      showError('请输入表达式');
+      return;
+    }
+    const qs = new URLSearchParams({
+      domain: $domain.value,
+      expression: $expr.value,
+      variable: $var.value || 'x',
+      point: $point.value || '0',
+      direction: $dir.value || '+',
+    }).toString();
+    window.open('/method_tree?' + qs, '_blank');
+  });
   $fallbackBtn.addEventListener('click', fallback);
   $finishBtn.addEventListener('click', finishSession);
 

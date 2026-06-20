@@ -86,8 +86,15 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
         - transform-1: Basis transformation
         - transform-2: Linear transformation
         - expr: Expression parsing and analysis
+        - method_tree: Exhaustive rule-enumeration tree (see
+          core.method_tree_enumerator)
     """
     try:
+        if operation_type == 'method_tree':
+            # Imported lazily so the rest of compute_service stays light.
+            from routes.method_tree_service import start_method_tree  # pylint: disable=import-outside-toplevel
+            return start_method_tree(data)
+
         expression = data.get('expression', '')
         variable = data.get('variable', 'x')
 

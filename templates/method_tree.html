@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Method Tree</title>
+    <link rel="stylesheet" href="../static/fontawesome/css/all.min.css"/>
+    <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/rule_select.css"/>
+    <link rel="stylesheet" href="/static/method_tree.css?v=7"/>
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [['\\(', '\\)'], ['$', '$']],
+          displayMath: [['\\[', '\\]'], ['$$', '$$']],
+          processEscapes: true,
+        },
+        options: {
+          skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+        },
+      };
+    </script>
+    <script
+            id="MathJax-script"
+            async
+            src="../static/mathjax/es5/tex-chtml-full.js"
+    ></script>
+    <script src="/static/method_tree.js?v=7"></script>
+</head>
+
+<body>
+<div id="math-background">
+    <div class="math-bg-element" style="top: 10%; left: 5%">∫</div>
+    <div class="math-bg-element" style="top: 20%; right: 8%">∑</div>
+    <div class="math-bg-element" style="top: 40%; left: 7%">∂</div>
+    <div class="math-bg-element" style="top: 60%; right: 10%">π</div>
+    <div class="math-bg-element" style="top: 80%; left: 12%">∞</div>
+    <div class="math-bg-element" style="bottom: 15%; right: 5%">∇</div>
+</div>
+
+<div id="header">
+    <h1><i></i>Method Tree</h1>
+    <div id="header-controls">
+        <a href="/">
+            <button class="header-btn" title="首页">
+                <i class="fas fa-circle"></i>
+            </button>
+        </a>
+        <a href="/rule_select">
+            <button class="header-btn" title="手动规则选择">
+                <i class="fas fa-hand-pointer"></i>
+            </button>
+        </a>
+    </div>
+</div>
+
+<div id="mt-top-bar">
+    <div class="mt-field">
+        <label>域</label>
+        <select id="mt-domain">
+            <option value="diff">微分 (diff)</option>
+            <option value="integral" selected>积分 (integral)</option>
+            <option value="limit">极限 (limit)</option>
+        </select>
+    </div>
+    <div class="mt-field mt-grow">
+        <label>表达式</label>
+        <input id="mt-expr" type="text" value="x*ln(x)+3" placeholder="e.g. x*ln(x)+3"/>
+    </div>
+    <div class="mt-field">
+        <label>变量</label>
+        <input id="mt-var" type="text" value="x"/>
+    </div>
+    <div class="mt-field mt-limit-only" style="display:none">
+        <label>极限点</label>
+        <input id="mt-point" type="text" value="0"/>
+    </div>
+    <div class="mt-field mt-limit-only" style="display:none">
+        <label>方向</label>
+        <select id="mt-dir">
+            <option value="+">右 (+)</option>
+            <option value="-">左 (-)</option>
+            <option value="+">双侧 (+-)</option>
+        </select>
+    </div>
+    <div class="mt-field">
+        <label>最大深度</label>
+        <input id="mt-depth" type="number" min="1" max="20" value="8"/>
+    </div>
+    <div class="mt-field">
+        <label>最大节点</label>
+        <input id="mt-max-nodes" type="number" min="1" max="5000" value="500"/>
+    </div>
+    <div class="mt-field">
+        <label>时间上限 (秒)</label>
+        <input id="mt-time" type="number" min="1" max="60" value="30"/>
+    </div>
+    <div class="mt-field mt-buttons">
+        <button id="mt-start-btn" class="rs-btn-primary">
+            <i class="fas fa-play"></i> 穷举
+        </button>
+        <button id="mt-cancel-btn" class="rs-btn-warning" style="display:none">
+            <i class="fas fa-stop"></i> 取消
+        </button>
+        <button id="mt-fit-btn" class="rs-btn-secondary" title="适配画布">
+            <i class="fas fa-expand"></i>
+        </button>
+        <button id="mt-home-btn" class="rs-btn-secondary" title="回到根节点">
+            <i class="fas fa-home"></i>
+        </button>
+    </div>
+</div>
+
+<div id="mt-error" class="rs-error" style="display:none"></div>
+
+<div id="mt-viewport">
+    <div id="mt-world">
+        <svg id="mt-edges">
+            <defs>
+                <marker id="mt-arrowhead"
+                        markerWidth="10" markerHeight="7"
+                        refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#5b89cd"/>
+                </marker>
+            </defs>
+        </svg>
+        <div id="mt-nodes"></div>
+    </div>
+
+    <div id="mt-loading" style="display:none">
+        <div class="mt-spinner"></div>
+        <div id="mt-loading-text">枚举中…</div>
+    </div>
+
+    <div id="mt-stats"></div>
+</div>
+</body>
+</html>
