@@ -116,9 +116,9 @@ This project mainly consists of **three** architectures:
 - Visual website:
 
   (1) Run `python app_local.py` (requires Python installation)
-  
+
   (2) Run `high-dream.exe` (download from Releases page, not yet released)
-  
+
   (3) Visit `https://high-dream.vercel.app/` (for experience only, computation speed is slow)
 
 ## Notes on Usage
@@ -131,6 +131,6 @@ This project mainly consists of **three** architectures:
 ## For More Details, See the [Help Documentation](https://high-dream.vercel.app/help)
 
 ## Special Thanks
- 
+
 1. Heavily referenced [MathDF](https://mathdf.com/int/cn/). It is a god that can provide intermediate steps. This project has made some extensions based on the types of integrals that it cannot solve (such as the `f(x)*e^g(x)` type).
-2. **AI** participated throughout the process. Sincere thanks to various free AI tools in China (such as Qianwen and DeepSeek).
+2. **AI** participated throughout the process. Sincere thanks to various free AI tools in China (such as Qianwen and DeepSeek). Postscript: Since Qoder offers 200 free Q&A sessions per day, I started using the Qoder CLI on June 19, 2026. When it has no free quota, that's when I will no longer use Qoder CLI.

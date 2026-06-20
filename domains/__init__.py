@@ -1,10 +1,13 @@
 from domains.differentiation.diff_calculator import DiffCalculator
 from domains.differentiation.diff_calculator import SelectDiffCalculator
+from domains.differentiation.diff_manual_step_solver import DiffManualStepSolver
 from domains.expression_parser import ExpressionParser
 from domains.integral.integral_calculator import IntegralCalculator
 from domains.integral.integral_calculator import SelectIntegralCalculator
+from domains.integral.integral_manual_step_solver import IntegralManualStepSolver
 from domains.limit.limit_calculator import LimitCalculator
 from domains.limit.limit_calculator import SelectLimitCalculator
+from domains.limit.limit_manual_step_solver import LimitManualStepSolver
 # Matrix
 from domains.matrix.LU_decomposer import LUDecomposition
 from domains.matrix.SVD_solver import SVDSolver
@@ -34,9 +37,12 @@ __all__ = [
     'DetCalculator',
     'DeterminantCalculator',
     'Diagonalization',
+    'DiffManualStepSolver',
     'EigenSolver',
     'Inverter',
+    'IntegralManualStepSolver',
     'LimitCalculator',
+    'LimitManualStepSolver',
     'SelectLimitCalculator',
     'LinearDependence',
     'LinearSystemConverter',
