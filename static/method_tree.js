@@ -38,6 +38,7 @@
 
   // Node dragging
   var dragState = null; // { id, offsetX, offsetY }
+  var resizeState = null; // { id, startWidth, startHeight, startClientX, startClientY }
 
   // Port connecting
   var connectingPort = null; // { id, type: 'output'|'input' }
@@ -393,12 +394,15 @@
       if (!visited) visited = new Set();
       if (visited.has(id)) return;
       visited.add(id);
-      var w = subtreeWidth[id] || CARD_WIDTH;
+      var nodeW = (userPositions[id] && userPositions[id].width) || CARD_WIDTH;
+      var nodeH = (userPositions[id] && userPositions[id].height) ||
+                  estimateHeight(nodeData[id]);
+      var w = subtreeWidth[id] || nodeW;
       var cx = left + w / 2;
       var y = depth * (HEADER_HEIGHT + BODY_MIN_HEIGHT + V_GAP) + 40;
       positions[id] = {
-        x: cx - CARD_WIDTH / 2, y: y, cx: cx,
-        height: estimateHeight(nodeData[id]), depth: depth,
+        x: cx - nodeW / 2, y: y, cx: cx,
+        width: nodeW, height: nodeH, depth: depth,
       };
       depthOf[id] = depth;
       var kids = (userChildren[id] || []).filter(function (k) { return nodeData[k]; });
@@ -492,7 +496,8 @@
     el.id = 'mt-node-' + node.id;
     el.style.left = pos.x + 'px';
     el.style.top = pos.y + 'px';
-    el.style.width = CARD_WIDTH + 'px';
+    el.style.width = (pos.width || CARD_WIDTH) + 'px';
+    if (pos.height) el.style.height = pos.height + 'px';
 
     // Input port (top-center).
     var inPort = document.createElement('div');
@@ -538,6 +543,12 @@
 
     // Drag handle: the header.
     attachDragHandler(el, header, node.id);
+
+    // Resize handle: bottom-right dot (blueprint_canvas style).
+    var resizer = document.createElement('div');
+    resizer.className = 'mt-node-resizer';
+    el.appendChild(resizer);
+    attachResizeHandler(el, resizer, node.id);
 
     elNodesContainer.appendChild(el);
   }
@@ -832,9 +843,13 @@
   // ------------------------------------------------------------ node dragging
 
   function attachDragHandler(nodeEl, headerEl, nodeId) {
+    var dragStartPos = null;
+    var didDrag = false;
+
     headerEl.addEventListener('mousedown', function (e) {
       // Only drag on the header proper, not on ports.
       if (e.target.closest('.mt-port')) return;
+      if (e.target.closest('.mt-node-resizer')) return;
       if (e.button !== 0) return;
       e.stopPropagation();
       var rect = nodeEl.getBoundingClientRect();
@@ -843,11 +858,58 @@
         offsetX: e.clientX - rect.left,
         offsetY: e.clientY - rect.top,
       };
+      dragStartPos = { x: e.clientX, y: e.clientY };
+      didDrag = false;
       e.preventDefault();
+    });
+
+    // Track whether the mouse actually moved while the button was down.
+    window.addEventListener('mousemove', function (e) {
+      if (!dragStartPos || dragState === null || dragState.id !== nodeId) return;
+      var dx = e.clientX - dragStartPos.x;
+      var dy = e.clientY - dragStartPos.y;
+      if (Math.abs(dx) + Math.abs(dy) > 4) didDrag = true;
+    });
+
+    window.addEventListener('mouseup', function () {
+      dragStartPos = null;
+    });
+  }
+
+  function attachResizeHandler(nodeEl, resizerEl, nodeId) {
+    resizerEl.addEventListener('mousedown', function (e) {
+      if (e.button !== 0) return;
+      e.stopPropagation();
+      e.preventDefault();
+      var rect = nodeEl.getBoundingClientRect();
+      resizeState = {
+        id: nodeId,
+        startWidth: rect.width / scale,
+        startHeight: rect.height / scale,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+      };
     });
   }
 
   document.addEventListener('mousemove', function (e) {
+    if (resizeState) {
+      var dx = (e.clientX - resizeState.startClientX) / scale;
+      var dy = (e.clientY - resizeState.startClientY) / scale;
+      var newW = Math.max(160, resizeState.startWidth + dx);
+      var newH = Math.max(80, resizeState.startHeight + dy);
+      var el = document.getElementById('mt-node-' + resizeState.id);
+      if (el) {
+        el.style.width = newW + 'px';
+        el.style.height = newH + 'px';
+      }
+      if (userPositions[resizeState.id]) {
+        userPositions[resizeState.id].cx = userPositions[resizeState.id].x + newW / 2;
+        userPositions[resizeState.id].height = newH;
+      }
+      renderEdges();
+      return;
+    }
     if (!dragState) return;
     var viewportRect = elViewport.getBoundingClientRect();
     // Convert client coords to world coords.
@@ -864,13 +926,15 @@
     if (userPositions[dragState.id]) {
       userPositions[dragState.id].x = newX;
       userPositions[dragState.id].y = newY;
-      userPositions[dragState.id].cx = newX + CARD_WIDTH / 2;
+      userPositions[dragState.id].cx = newX +
+        (userPositions[dragState.id].width || CARD_WIDTH) / 2;
     }
     renderEdges();
   });
 
   document.addEventListener('mouseup', function () {
     if (dragState) dragState = null;
+    if (resizeState) resizeState = null;
   });
 
   // ----------------------------------------------------------- pan / zoom
@@ -881,8 +945,14 @@
   }
 
   function setupPanZoom() {
+    // Suppress the browser context menu on the canvas so right-click can pan.
+    elViewport.addEventListener('contextmenu', function (e) {
+      e.preventDefault();
+    });
+
     elViewport.addEventListener('mousedown', function (e) {
-      if (e.button !== 0) return;
+      // Right button (2) pans; middle button (1) also pans as a fallback.
+      if (e.button !== 2 && e.button !== 1) return;
       if (e.target.closest('.mt-node')) return;
       if (connectingPort) return;
       isPanning = true;
@@ -891,8 +961,11 @@
       elViewport.classList.add('mt-panning');
       e.preventDefault();
     });
-    window.addEventListener('mouseup', function () {
-      if (isPanning) { isPanning = false; elViewport.classList.remove('mt-panning'); }
+    window.addEventListener('mouseup', function (e) {
+      if (isPanning && (e.button === 2 || e.button === 1 || e.button === undefined)) {
+        isPanning = false;
+        elViewport.classList.remove('mt-panning');
+      }
     });
     window.addEventListener('mousemove', function (e) {
       if (!isPanning) return;
