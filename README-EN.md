@@ -77,6 +77,17 @@ As mentioned above, this idea originated from my high school days `(The Dream of
 
 ![Manual rule selection page](./docs/img/01.gif)
 
+13. Blueprint-based manual rule selection / exhaustive rule enumeration (`/method_tree`)(running on Chrome in Windows)
+
+    - Right-click drag to pan the canvas
+    - Left-click drag a node to move it
+    - Drag a node edge to resize it
+    - Left-click double-click a node to disconnect its edges
+    - Step-by-step confirmation of whether each rule should be applied, with live progress display
+    - Supports fully-automatic exhaustive traversal of the whole method tree (async, cancellable)
+
+![Manual rule selection page with blueprint usage](./docs/img/02.gif)
+
 ## Features
 
 - Step-by-step solutions: displays the complete calculation process, facilitating teaching and understanding
@@ -86,6 +97,7 @@ As mentioned above, this idea originated from my high school days `(The Dream of
 - Extensible architecture: easy to add new calculation rules and operation types
 - Two ways to use: Python code calls in Jupyter Notebook; graphical web interface
 - Manual rule selection: via `/rule_select` page, users can manually choose which rule to apply at each derivation step for differentiation, integration, and limits
+- Exhaustive rule-enumeration method tree: via `/method_tree` page, all applicable rule branches at each step can be enumerated and displayed as a blueprint canvas, making the full solving space easy to inspect
 
 ## Development Tech Stack
 
@@ -95,11 +107,12 @@ As mentioned above, this idea originated from my high school days `(The Dream of
 
 ## Architecture Design
 
-This project mainly consists of **three** architectures:
+This project mainly consists of **four** architectures:
 
-1. Architecture for differentiation, integration, limits, and determinant calculations
-2. Architecture for matrix-related operations
-3. Architecture for frontend to call backend for computation
+1. Architecture for differentiation, integration, limits, and determinant calculations (`BaseCalculator` + `BaseStepGenerator` + `RuleRegistry`)
+2. Architecture for matrix-related operations (`CommonMatrixCalculator` + `MatrixStepGenerator`)
+3. Architecture for frontend to call backend for computation (Flask blueprints + `task_manager` async tasks)
+4. Architecture for manual rule selection and exhaustive rule-enumeration method tree (`BaseManualStepSolver` with its per-domain subclasses, and `MethodTreeEnumerator`)
 
 ## Core Classes
 
@@ -108,7 +121,8 @@ This project mainly consists of **three** architectures:
 - [**RuleRegistry**](https://high-dream.vercel.app/help/rule_registry) (`core/rule_registry.py`)
 - [**CommonMatrixCalculator**](https://high-dream.vercel.app/help/common_matrix_calculator) (`core/common_matrix_calculator.py`)
 - [**MatrixStepGenerator**](https://high-dream.vercel.app/help/matrix_step_generator) (`core/matrix_step_generator.py`)
-- [**ManualStepSolver**](core/manual_step_solver.py) — Web UI manual rule selection orchestrator (wraps Select*Calculator)
+- [**BaseManualStepSolver**](core/base_manual_step_solver.py) — Base orchestrator for manual rule selection, encapsulating shared selection/rollback/state-management logic across domains
+- [**MethodTreeEnumerator**](core/method_tree_enumerator.py) — Core enumerator for the exhaustive method tree, recursively expanding every applicable rule branch
 
 ## Usage
 
