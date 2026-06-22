@@ -16,3 +16,10 @@ __pycache__/
 
 # Ignore Qoder configuration files
 .qoder/settings.local.json
+
+# Help documentation: help_docs/src/*.md is the source of truth; the
+# templates/help/*.html files are generated from them by pandoc via
+# `python help_docs/build_help.py html`. Both .md and .html are tracked
+# so the Vercel deploy has the rendered pages available without needing
+# to run the build step. After editing a .md source, re-run the build
+# and commit both .md and .html together. Do NOT hand-edit the HTML.

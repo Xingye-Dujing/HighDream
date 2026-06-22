@@ -140,19 +140,23 @@ strong {
   color: black;
 }
 
-.parameter-table {
+.parameter-table,
+.parameter-table table {
   width: 100%;
   border-collapse: collapse;
   margin: 16px 0;
 }
 
 .parameter-table th,
-.parameter-table td {
+.parameter-table td,
+.parameter-table table th,
+.parameter-table table td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
 }
 
-.parameter-table th {
+.parameter-table th,
+.parameter-table table th {
   background-color: #f2f2f2;
 }
