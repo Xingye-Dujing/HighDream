@@ -29,7 +29,7 @@ METHOD_TREE_DEFAULT_MAX_NODES = 500
 METHOD_TREE_DEFAULT_TIME_SECONDS = 30
 METHOD_TREE_HARD_MAX_DEPTH = 20
 METHOD_TREE_HARD_MAX_NODES = 5000
-METHOD_TREE_HARD_MAX_TIME_SECONDS = 60
+METHOD_TREE_HARD_MAX_TIME_SECONDS = 600
 # Task-manager side timeout for method_tree op_type (must be >= hard time cap
 # plus a small grace period so the enumerator's own wall-clock cutoff wins).
 METHOD_TREE_TASK_TIMEOUT_SECONDS = METHOD_TREE_HARD_MAX_TIME_SECONDS + 10

@@ -192,7 +192,7 @@ const latexCompletions = {
   'cbrt': { type: 'command', doc: 'Cube root', docCn: '立方根', signature: '\\sqrt[3]{x}' },
   'sum': { type: 'command', doc: 'Summation', docCn: '求和', signature: '\\sum_{i=1}^{n}' },
   'prod': { type: 'command', doc: 'Product', docCn: '求积', signature: '\\prod_{i=1}^{n}' },
-  'int': { type: 'command', doc: 'Integral', docCn: '积分', signature: '\\int_{a}^{b}' },
+  'int': { type: 'command', doc: 'Integral', docCn: '不定积分', signature: '\\int f(x)\\,\\mathrm{d}x' },
   'oint': { type: 'command', doc: 'Contour integral', docCn: '环路积分', signature: '\\oint' },
   'lim': { type: 'command', doc: 'Limit', docCn: '极限', signature: '\\lim_{x \\to a}' },
   'infty': { type: 'symbol', doc: 'Infinity', docCn: '无穷大', signature: '\\infty' },

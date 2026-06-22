@@ -372,13 +372,21 @@ class MethodTreeEnumerator:
                 except Exception:  # pylint: disable=broad-exception-caught
                     child_top_latex = child_latex
 
+                try:
+                    _parent_op = solver.calculator._perform_operation(
+                        solver.current_expr, solver.calculator.operation,
+                        **solver._build_context(solver.current_expr))
+                    parent_sub_latex = latex(_parent_op)
+                except Exception:  # pylint: disable=broad-exception-caught
+                    parent_sub_latex = self._current_latex(solver)
+
                 if self.interactive:
                     accepted = self._ask_user_decision(
                         parent_id=parent_id,
-                        parent_latex=self._current_latex(solver),
+                        parent_latex=parent_sub_latex,
                         rule_name=rule['name'],
                         rule_display=rule.get('display_name', rule['name']),
-                        preview_latex=child_top_latex,
+                        preview_latex=rule.get('latex_preview') or child_latex,
                     )
                     if not accepted:
                         continue

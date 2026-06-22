@@ -1,5 +1,9 @@
 /* Rule-select page — flex layout with invisible draggable divider */
 
+mjx-container {
+  margin: 0px !important;
+}
+
 #rule-select-layout {
   display: flex;
   flex-direction: row;
