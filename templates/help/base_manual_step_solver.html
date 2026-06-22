@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>BaseManualStepSolver - 手动规则选择基础编排器文档</title>
+    <link rel="stylesheet" href="/static/help.css"/>
+</head>
+<body>
+<div id="help-container">
+    <ul class="header">
+        <li>
+            <a href="/">HighDream Notebook</a>
+        </li>
+        <li>
+            <a href="/help">帮助文档</a>
+        </li>
+    </ul>
+
+<h1
+id="basemanualstepsolver-corebase_manual_step_solver.py"><strong>BaseManualStepSolver</strong>
+(core/base_manual_step_solver.py)</h1>
+<p>Web 界面手动规则选择的基础编排器。它把一个领域相关的
+<code>Select*Calculator</code>
+包在身后，对外暴露一个<strong>非阻塞</strong>的
+API：前端可以每一步都挑一条规则来应用，也可以在某一步回退到 SymPy
+兜底。领域特定的子类（微分 / 积分 / 极限）放在 <code>domains/</code>
+目录下，只覆盖配置项（使用的
+Calculator、规则中文名、领域相关钩子），不重新实现核心符号计算。</p>
+<div class="warning">
+<p><strong>注意:</strong> 该类不直接实例化。生产代码通过
+<code>DiffManualStepSolver</code> /
+<code>IntegralManualStepSolver</code> /
+<code>LimitManualStepSolver</code> 间接使用。</p>
+</div>
+<div class="warning">
+<p><strong>注意:</strong>
+出现的所有图中，箭头的方向无实际意义，上面文字所指可能是前对后，也可能是后对前</p>
+</div>
+<h2 id="一.-类概述">一. 类概述</h2>
+<p><code>BaseManualStepSolver</code> 把规则驱动计算拆解成「前端挑规则 →
+后端应用规则 → 前端看下一步」的循环，主要组件：</p>
+<ul>
+<li><strong>Select*Calculator</strong>：负责规则注册、表达式缓存、实际操作对象构造（Derivative
+/ Integral /
+Limit）。本类<strong>不</strong>重新实现核心符号计算，只是驱动它。</li>
+<li><strong>BFS 队列
+<code>pending</code></strong>：存储等待处理的子表达式；每一步用户选定规则后，把结果产生的新子表达式追加回队列。</li>
+<li><strong>步骤记录 <code>steps</code> /
+<code>explanations</code></strong>：记录到当前为止的推导链，与
+Calculator 内置的 <code>step_generator</code> 保持同步。</li>
+<li><strong>顶层表达式字典
+<code>expr_to_operation</code></strong>：把最外层表达式中的子表达式替换为最新计算结果，用于实时生成「全局视图」的
+LaTeX。</li>
+</ul>
+<p>它与其它类的关系如下：</p>
+<div class="method-signature">routes/api.py  ──►  BaseManualStepSolver  ──►  Select*Calculator
+                           │                         │
+                           │                         ▼
+                           │                  RuleRegistry
+                           ▼
+                    BaseStepGenerator</div>
+<h2 id="二.-设计原则">二. 设计原则</h2>
+<ul>
+<li><strong>领域解耦</strong>：核心算法（BFS、规则预览、提交步骤、兜底回退）放在基类；领域相关的「用哪个
+Calculator」「规则中文名」「上下文是否需要
+point/direction」交给子类。</li>
+<li><strong>幂等预览</strong>：<code>applicable_rules()</code>
+在列举适用规则时，会为每条规则生成 LaTeX 预览，但不会污染
+<code>steps</code>——内部用「快照 + 还原」把 <code>step_generator</code>
+和求解器状态恢复到预览前的样子。</li>
+<li><strong>非阻塞 API</strong>：每个公开方法都返回一份 JSON 友好的
+<code>state()</code>，前端轮询或 WebSocket 都能用。</li>
+<li><strong>失败友好</strong>：规则抛异常、规则被限流（例如 l’Hôpital
+次数超限）、规则对当前表达式不匹配——都不会让求解器进入非法状态，错误信息写到
+<code>self.error</code> 里，由前端展示。</li>
+</ul>
+<h2 id="三.-属性">三. 属性</h2>
+<div class="parameter-table">
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>属性名</th>
+<th>类型</th>
+<th>描述</th>
+<th>访问级别</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>calculator</td>
+<td>Select*Calculator</td>
+<td>被包装的领域计算器，负责规则注册、缓存与操作对象构造</td>
+<td>公共</td>
+</tr>
+<tr>
+<td>variable</td>
+<td>Symbol</td>
+<td>主变量符号</td>
+<td>公共</td>
+</tr>
+<tr>
+<td>point</td>
+<td>Expr</td>
+<td>极限趋近点（仅 limit 领域使用，其余领域为默认值 0）</td>
+<td>公共</td>
+</tr>
+<tr>
+<td>direction</td>
+<td>str</td>
+<td>极限趋近方向（<code>'+'</code> 或 <code>'-'</code>，仅 limit
+领域使用）</td>
+<td>公共</td>
+</tr>
+<tr>
+<td>steps</td>
+<td>List[Expr]</td>
+<td>到目前为止的推导链表达式</td>
+<td>公共</td>
+</tr>
+<tr>
+<td>explanations</td>
+<td>List[str]</td>
+<td>与 <code>steps</code> 对齐的解释文本</td>
+<td>公共</td>
+</tr>
+<tr>
+<td>top_expr</td>
+<td>Expr</td>
+<td>初始（最外层）表达式</td>
+<td>公共</td>
+</tr>
+<tr>
+<td>expr_to_operation</td>
+<td>Dict[Expr, Operation]</td>
+<td>子表达式 → 当前最新 Operation 的映射，用于全局视图</td>
+<td>公共</td>
+</tr>
+<tr>
+<td>pending</td>
+<td>Deque[Expr]</td>
+<td>BFS 等待队列，存储尚未被用户处理的子表达式</td>
+<td>公共</td>
+</tr>
+<tr>
+<td>current_expr</td>
+<td>Optional[Expr]</td>
+<td>当前正在等待用户挑选规则的表达式</td>
+<td>公共</td>
+</tr>
+<tr>
+<td>done</td>
+<td>bool</td>
+<td>推导是否已结束</td>
+<td>公共</td>
+</tr>
+<tr>
+<td>error</td>
+<td>Optional[str]</td>
+<td>上一次 <code>apply_rule</code> / <code>fallback</code>
+失败的错误说明</td>
+<td>公共</td>
+</tr>
+<tr>
+<td>rule_display_names</td>
+<td>Dict[str, str]</td>
+<td>类属性：<code>rule_key -&gt; 中文显示名</code>，子类必须覆盖</td>
+<td>类变量</td>
+</tr>
+<tr>
+<td>_domain</td>
+<td>str</td>
+<td>类属性：领域标识，子类覆盖为 <code>'diff'</code> /
+<code>'integral'</code> / <code>'limit'</code></td>
+<td>类变量</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="四.-方法">四. 方法</h2>
+<h3 id="初始化">1. 初始化</h3>
+<div class="method-signature">__init__(self, expression: str, variable: str = &#39;x&#39;,
+         point: Any = 0, direction: str = &#39;+&#39;) -&gt; None</div>
+<p>构造一个手动求解会话：</p>
+<ol type="1">
+<li>调用 <code>_create_calculator()</code> 拿到一个领域相关的
+<code>Select*Calculator</code>。</li>
+<li>把输入表达式 sympify
+并做一次性化简；若化简发生变化，把「简化表达式」作为额外步骤记入
+<code>step_generator</code>。</li>
+<li>构造初始操作对象（<code>Derivative</code> / <code>Integral</code> /
+<code>Limit</code>）并存入 <code>expr_to_operation</code>。</li>
+<li>初始化 <code>steps</code> / <code>explanations</code> /
+<code>pending</code> / <code>current_expr</code>。</li>
+</ol>
+<div class="warning">
+<p><strong>注意:</strong> 子类<strong>必须</strong>覆盖
+<code>_create_calculator()</code>；否则构造时会抛出
+<code>NotImplementedError</code>。</p>
+</div>
+<h3 id="公开-api">2. 公开 API</h3>
+<div class="method-signature">state(self) -&gt; Dict[str, Any]</div>
+<p>返回当前会话的 JSON 友好快照。字段：</p>
+<div class="parameter-table">
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>字段</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>done</code></td>
+<td>推导是否已结束</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td>上一次失败的错误说明</td>
+</tr>
+<tr>
+<td><code>domain</code></td>
+<td>领域标识</td>
+</tr>
+<tr>
+<td><code>top_level_latex</code></td>
+<td>最外层表达式的当前 LaTeX（子表达式已替换为最新结果）</td>
+</tr>
+<tr>
+<td><code>current_expr_latex</code></td>
+<td>正在等待挑选规则的子表达式 LaTeX</td>
+</tr>
+<tr>
+<td><code>pending</code></td>
+<td>等待队列中所有子表达式的 LaTeX</td>
+</tr>
+<tr>
+<td><code>steps</code></td>
+<td><code>[{latex, explanation}, ...]</code>，已提交步骤的列表</td>
+</tr>
+<tr>
+<td><code>applicable_rules</code></td>
+<td>当前表达式上可应用规则的预览（若已结束则为空）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="method-signature">applicable_rules(self) -&gt; List[Dict[str, str]]</div>
+<p>列出当前表达式上所有可应用的规则。每项：</p>
+<div class="parameter-table">
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>字段</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>规则键（例如
+<code>'chain'</code>、<code>'parts'</code>），即前端后续调用
+<code>apply_rule</code> 用的名字</td>
+</tr>
+<tr>
+<td><code>display_name</code></td>
+<td>中文显示名（来自 <code>rule_display_names</code>，缺失则回退到
+<code>name</code>）</td>
+</tr>
+<tr>
+<td><code>latex_preview</code></td>
+<td>若该规则被应用，结果表达式的 LaTeX；预览失败时为
+<code>None</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="warning">
+<p><strong>注意:</strong> 预览会临时修改 <code>step_generator</code>
+与求解器状态，但 <code>applicable_rules</code> 内部用
+<code>_snapshot_solver_state</code> / <code>_restore_solver_state</code>
+/ <code>_backup_step_generator</code> /
+<code>_restore_step_generator</code>
+四件套把所有副作用都还原，对后续调用无影响。</p>
+</div>
+<div class="method-signature">apply_rule(self, rule_name: str) -&gt; Dict[str, Any]</div>
+<p>应用指定规则到 <code>current_expr</code>，提交步骤，并推进 BFS
+队列。返回 <code>state()</code>。</p>
+<p>失败场景（不会让求解器进入非法状态）：</p>
+<ul>
+<li>会话已结束 → 抛 <code>RuntimeError</code></li>
+<li>规则未注册 → 抛 <code>KeyError</code></li>
+<li>规则被限流（例如 l’Hôpital 次数超限）→ <code>self.error</code>
+被设置，<code>state()</code> 返回</li>
+<li>规则返回 <code>None</code> / 抛异常 → <code>self.error</code>
+被设置，<code>step_generator</code> 回滚到调用前</li>
+</ul>
+<div class="method-signature">fallback(self) -&gt; Dict[str, Any]</div>
+<p>对 <code>current_expr</code> 调用 SymPy 的 <code>.doit()</code>
+兜底计算。解释文本形如 <code>手动计算（SymPy 回退）: $...$</code>。返回
+<code>state()</code>。</p>
+<div class="method-signature">finish(self) -&gt; Dict[str, Any]</div>
+<p>运行最终后处理（<code>calculator.final_postprocess</code>，包含回代换元变量
++ 保守化简），把 <code>done</code> 置为 <code>True</code>。返回
+<code>state()</code>。幂等：若已 <code>done</code>
+直接返回当前状态。</p>
+<h3 id="领域钩子子类可覆盖">3. 领域钩子（子类可覆盖）</h3>
+<div class="method-signature">_create_calculator(self)</div>
+<p><strong>抽象方法</strong>：返回一个构造完毕的
+<code>Select*Calculator</code>。三个子类必须覆盖。</p>
+<div class="method-signature">_init_calculator(self) -&gt; None</div>
+<p>构造 Calculator
+之后的领域初始化钩子。默认什么都不做；<code>LimitManualStepSolver</code>
+用它重置 <code>_lhopital_count</code>。</p>
+<div class="method-signature">_extend_context(self, ctx: Dict[str, Any], expr: Expr) -&gt; None</div>
+<p>往「传给 Calculator
+的上下文」里追加领域字段。默认什么都不做；<code>LimitManualStepSolver</code>
+用它注入 <code>point</code> 和 <code>direction</code>。</p>
+<div class="method-signature">_snapshot_solver_state(self) -&gt; Dict[str, Any]
+_restore_solver_state(self, snapshot: Dict[str, Any]) -&gt; None</div>
+<p>用于 <code>applicable_rules()</code>
+做预览前后保存/还原领域内部计数器。默认空实现；<code>LimitManualStepSolver</code>
+用它保护
+<code>_lhopital_count</code>，避免「仅仅列举规则」就消耗洛必达使用次数。</p>
+<h2 id="五.-子类化指南">五. 子类化指南</h2>
+<p>创建一个新领域（例如「行列式」）的子类需要：</p>
+<ol type="1">
+<li>在
+<code>domains/&lt;新领域&gt;/&lt;新领域&gt;_manual_step_solver.py</code>
+里写一个
+<code>class XxxManualStepSolver(BaseManualStepSolver)</code>。</li>
+<li>覆盖 <code>_domain</code> 与 <code>rule_display_names</code>。</li>
+<li>覆盖 <code>_create_calculator()</code>，返回对应领域的
+<code>Select*Calculator</code>。</li>
+<li>若该领域有特殊上下文（例如
+<code>point</code>、<code>direction</code>、<code>subs_dict</code>），覆盖
+<code>_extend_context</code> 与 <code>_snapshot_solver_state</code> /
+<code>_restore_solver_state</code>。</li>
+<li>在 <code>routes/api.py</code> 的 <code>_manual_sessions</code>
+工厂里把新领域映射到新子类，并（可选）在
+<code>ManualStepSolver</code>（<code>core/manual_step_solver.py</code>）里暴露一个统一的工厂入口。</li>
+</ol>
+<div class="warning">
+<p><strong>注意:</strong> 可参照已实现的
+<code>DiffManualStepSolver</code>、<code>IntegralManualStepSolver</code>、<code>LimitManualStepSolver</code>。</p>
+</div>
+
+</div>
+</body>
+</html>

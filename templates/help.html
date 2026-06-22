@@ -64,6 +64,14 @@
             <strong>两种使用方式</strong>：Jupyter Notebook 上 Python
             代码调用；图形化网页。
         </li>
+        <li>
+            <strong>手动规则选择</strong>：通过
+            <code>/rule_select</code> 页面，用户可以手动选择每一步要应用的规则，支持微分、积分、极限三个领域；
+        </li>
+        <li>
+            <strong>全规则遍历方法树</strong>：通过
+            <code>/method_tree</code> 页面，以蓝图画布的形式枚举并展示每一步所有可应用的规则分支，便于查看完整的求解空间。
+        </li>
     </ul>
 
     <h3>5.&nbsp;&nbsp;技术栈</h3>
@@ -166,18 +174,27 @@
 
     <h2>二.&nbsp;&nbsp;架构设计</h2>
 
-    <p>这个项目主要分为 <strong>三种</strong>架构：</p>
+    <p>这个项目主要分为 <strong>四种</strong>架构：</p>
     <h3>(1)&nbsp;&nbsp;微分、积分、极限、行列式所采用的：</h3>
     <img src="/static/images/system_architecture_1.svg" alt="架构一"/>
     <h3>(2)&nbsp;&nbsp;矩阵相关运算所采用的：</h3>
     <img src="/static/images/system_architecture_2.svg" alt="架构二"/>
     <h3>(3)&nbsp;&nbsp;前端调用后端计算所采用的：</h3>
     <img src="/static/images/system_architecture_3.svg" alt="架构三"/>
+    <h3>(4)&nbsp;&nbsp;手动规则选择与全规则遍历方法树所采用的：</h3>
+    <p>
+        由 <strong>BaseManualStepSolver</strong>（及其领域子类
+        DiffManualStepSolver / IntegralManualStepSolver / LimitManualStepSolver）
+        与 <strong>MethodTreeEnumerator</strong> 共同承担。前者把 Select*Calculator
+        封装成供 Web 客户端逐步挑选规则的 API，后者以 BFS 的方式把所有可应用规则分支展开成一棵树，
+        并通过 <code>routes/task_manager.py</code> 异步执行、通过
+        <code>snapshot()</code> 向前端流式回报进度。
+    </p>
 
     <h2>三.&nbsp;&nbsp;核心类详解</h2>
     <div class="core-class">
         <a href="/help/base_calculator"
-        ><strong>BaseCalculator</strong> (core/base_calcukator.py)</a
+        ><strong>BaseCalculator</strong> (core/base_calculator.py)</a
         >
         <a href="/help/base_step_generator"
         ><strong>BaseStepGenerator</strong> (core/base_step_generator.py)</a
@@ -192,6 +209,26 @@
         <a href="/help/matrix_step_generator"
         ><strong>MatrixStepGenerator</strong>
             (core/matrix_step_generator.py)</a
+        >
+        <a href="/help/base_manual_step_solver"
+        ><strong>BaseManualStepSolver</strong>
+            (core/base_manual_step_solver.py)</a
+        >
+        <a href="/help/diff_manual_step_solver"
+        ><strong>DiffManualStepSolver</strong>
+            (domains/differentiation/diff_manual_step_solver.py)</a
+        >
+        <a href="/help/integral_manual_step_solver"
+        ><strong>IntegralManualStepSolver</strong>
+            (domains/integral/integral_manual_step_solver.py)</a
+        >
+        <a href="/help/limit_manual_step_solver"
+        ><strong>LimitManualStepSolver</strong>
+            (domains/limit/limit_manual_step_solver.py)</a
+        >
+        <a href="/help/method_tree_enumerator"
+        ><strong>MethodTreeEnumerator</strong>
+            (core/method_tree_enumerator.py)</a
         >
     </div>
 

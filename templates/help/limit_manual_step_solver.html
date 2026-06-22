@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>LimitManualStepSolver - 极限手动规则选择器文档</title>
+    <link rel="stylesheet" href="/static/help.css"/>
+</head>
+<body>
+<div id="help-container">
+    <ul class="header">
+        <li>
+            <a href="/">HighDream Notebook</a>
+        </li>
+        <li>
+            <a href="/help">帮助文档</a>
+        </li>
+    </ul>
+
+<h1
+id="limitmanualstepsolver-domainslimitlimit_manual_step_solver.py"><strong>LimitManualStepSolver</strong>
+(domains/limit/limit_manual_step_solver.py)</h1>
+<p>极限领域的手动规则选择器，继承自
+<code>BaseManualStepSolver</code>。它在基类基础上做了三件事：（1）把
+<code>point</code> 与 <code>direction</code> 注入到每次传给 Calculator
+的上下文；（2）保护
+<code>_lhopital_count</code>，避免「仅仅列举规则」就消耗洛必达使用次数；（3）把
+<code>SelectLimitCalculator</code> 包装成 Web 客户端可调用的 API。</p>
+<div class="warning">
+<p><strong>注意:</strong> 与微分 / 积分子类不同，本类必须覆盖
+<code>_extend_context</code>、<code>_snapshot_solver_state</code>、<code>_restore_solver_state</code>，因为极限的每条规则都需要知道
+<code>x → a^+</code> / <code>x → a^-</code> 这类信息，且 l’Hôpital
+规则内部有使用次数上限。</p>
+</div>
+<h2 id="一.-类概述">一. 类概述</h2>
+<p><code>LimitManualStepSolver</code> 的全部公开行为都继承自
+<code>BaseManualStepSolver</code>：</p>
+<ul>
+<li><code>state()</code> / <code>applicable_rules()</code> /
+<code>apply_rule(rule_name)</code> / <code>fallback()</code> /
+<code>finish()</code></li>
+<li><code>steps</code> / <code>explanations</code> /
+<code>pending</code> / <code>current_expr</code> / <code>done</code> /
+<code>error</code></li>
+</ul>
+<p>子类本身声明：</p>
+<div class="method-signature">_domain = &#39;limit&#39;
+rule_display_names = _RULE_DISPLAY_NAMES
+
+def _create_calculator(self):     return SelectLimitCalculator()
+def _init_calculator(self):       self.calculator._lhopital_count = 0
+def _extend_context(self, ctx, _expr):
+    ctx[&#39;point&#39;] = self.point
+    ctx[&#39;direction&#39;] = self.direction
+def _snapshot_solver_state(self): return {&#39;lhopital_count&#39;: ...}
+def _restore_solver_state(self, snapshot): ...</div>
+<h2 id="二.-已注册的规则键">二. 已注册的规则键</h2>
+<p>极限领域既有「重要极限」类规则，也有「拆分 /
+合并」类规则，以及「洛必达法则」家族（按未定式类型细分）：</p>
+<div class="parameter-table">
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>rule_key</th>
+<th>中文显示名</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sin_over_x</td>
+<td>重要极限 <code>sin(x)/x</code></td>
+</tr>
+<tr>
+<td>one_plus_one_over_x_pow_x</td>
+<td>重要极限 <code>(1+1/x)^x</code></td>
+</tr>
+<tr>
+<td>ln_one_plus_x_over_x</td>
+<td>重要极限 <code>ln(1+x)/x</code></td>
+</tr>
+<tr>
+<td>exp_minus_one_over_x</td>
+<td>重要极限 <code>(e^x-1)/x</code></td>
+</tr>
+<tr>
+<td>g_over_sin / g_over_ln_one_plus / g_over_exp_minus_one</td>
+<td><code>g(x)/...</code> 型</td>
+</tr>
+<tr>
+<td>mul_split / add_split / div_split</td>
+<td>乘法 / 加法 / 除法拆分</td>
+</tr>
+<tr>
+<td>direct_substitution</td>
+<td>直接代入</td>
+</tr>
+<tr>
+<td>conjugate_rationalize</td>
+<td>共轭有理化</td>
+</tr>
+<tr>
+<td>small_o_add</td>
+<td>小 o 加法</td>
+</tr>
+<tr>
+<td>const_inf_add / const_inf_mul / const_inf_div / const_zero_div</td>
+<td>常数与无穷的组合</td>
+</tr>
+<tr>
+<td>lhopital_direct</td>
+<td>洛必达（0/0, ∞/∞）</td>
+</tr>
+<tr>
+<td>lhopital_zero_times_inf</td>
+<td>洛必达（0·∞）</td>
+</tr>
+<tr>
+<td>lhopital_inf_minus_inf</td>
+<td>洛必达（∞-∞）</td>
+</tr>
+<tr>
+<td>lhopital_power</td>
+<td>洛必达（幂指型）</td>
+</tr>
+<tr>
+<td>pow / exp / log</td>
+<td>幂指 / 指数 / 对数函数极限</td>
+</tr>
+<tr>
+<td>sin / cos / tan / sec / csc / cot</td>
+<td>三角函数极限</td>
+</tr>
+<tr>
+<td>asin / acos / atan</td>
+<td>反三角函数极限</td>
+</tr>
+<tr>
+<td>sinh / cosh / tanh</td>
+<td>双曲函数极限</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="warning">
+<p><strong>注意:</strong> 洛必达规则内部会递增
+<code>_lhopital_count</code>，超过 <code>SelectLimitCalculator</code>
+配置的上限（默认 3 次）后，规则仍然会出现在
+<code>applicable_rules()</code> 列表里，但
+<code>apply_rule('lhopital_*')</code> 会返回错误并让
+<code>self.error</code>
+指示「已被限制」。<code>applicable_rules()</code>
+的预览不会消耗计数——它使用 <code>_snapshot_solver_state</code> /
+<code>_restore_solver_state</code> 保护了
+<code>_lhopital_count</code>。</p>
+</div>
+<h2 id="三.-使用方法">三. 使用方法</h2>
+<div class="method-signature">solver = ManualStepSolver(
+    domain=&#39;limit&#39;,
+    expression=&#39;sin(x)/x&#39;,
+    variable=&#39;x&#39;,
+    point=0,
+    direction=&#39;+&#39;,
+)
+state = solver.state()
+rules = solver.applicable_rules()        # 通常包含 &#39;sin_over_x&#39;
+state = solver.apply_rule(&#39;sin_over_x&#39;)  # 应用重要极限
+state = solver.finish()</div>
+<h2 id="四.-参见">四. 参见</h2>
+<ul>
+<li><a href="/help/base_manual_step_solver">BaseManualStepSolver</a> —
+全部公开 API 的详细说明</li>
+<li><a href="/help/diff_manual_step_solver">DiffManualStepSolver</a> —
+微分子类</li>
+<li><a
+href="/help/integral_manual_step_solver">IntegralManualStepSolver</a> —
+积分子类</li>
+</ul>
+
+</div>
+</body>
+</html>

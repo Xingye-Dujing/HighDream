@@ -61,6 +61,11 @@ SOURCE_TO_HTML = {
     'rule_registry': 'rule_registry',
     'common_matrix_calculator': 'common_matrix_calculator',
     'matrix_step_generator': 'matrix_step_generator',
+    'base_manual_step_solver': 'base_manual_step_solver',
+    'diff_manual_step_solver': 'diff_manual_step_solver',
+    'integral_manual_step_solver': 'integral_manual_step_solver',
+    'limit_manual_step_solver': 'limit_manual_step_solver',
+    'method_tree_enumerator': 'method_tree_enumerator',
 }
 
 

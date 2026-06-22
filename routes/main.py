@@ -87,6 +87,56 @@ def help_matrix_step_generator():
     return render_template('help/matrix_step_generator.html')
 
 
+@main.route('/help/base_manual_step_solver')
+def help_base_manual_step_solver():
+    """Render the help page for the base manual step solver.
+
+    Returns:
+        str: Rendered HTML template for the help page for the base manual step solver.
+    """
+    return render_template('help/base_manual_step_solver.html')
+
+
+@main.route('/help/diff_manual_step_solver')
+def help_diff_manual_step_solver():
+    """Render the help page for the differentiation manual step solver.
+
+    Returns:
+        str: Rendered HTML template for the help page for the diff manual step solver.
+    """
+    return render_template('help/diff_manual_step_solver.html')
+
+
+@main.route('/help/integral_manual_step_solver')
+def help_integral_manual_step_solver():
+    """Render the help page for the integral manual step solver.
+
+    Returns:
+        str: Rendered HTML template for the help page for the integral manual step solver.
+    """
+    return render_template('help/integral_manual_step_solver.html')
+
+
+@main.route('/help/limit_manual_step_solver')
+def help_limit_manual_step_solver():
+    """Render the help page for the limit manual step solver.
+
+    Returns:
+        str: Rendered HTML template for the help page for the limit manual step solver.
+    """
+    return render_template('help/limit_manual_step_solver.html')
+
+
+@main.route('/help/method_tree_enumerator')
+def help_method_tree_enumerator():
+    """Render the help page for the method tree enumerator.
+
+    Returns:
+        str: Rendered HTML template for the help page for the method tree enumerator.
+    """
+    return render_template('help/method_tree_enumerator.html')
+
+
 @main.route('/matrix_panel')
 def matrix_panel():
     """Render the matrix panel page.

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>MethodTreeEnumerator - 全规则遍历方法树文档</title>
+    <link rel="stylesheet" href="/static/help.css"/>
+</head>
+<body>
+<div id="help-container">
+    <ul class="header">
+        <li>
+            <a href="/">HighDream Notebook</a>
+        </li>
+        <li>
+            <a href="/help">帮助文档</a>
+        </li>
+    </ul>
+
+<h1
+id="methodtreeenumerator-coremethod_tree_enumerator.py"><strong>MethodTreeEnumerator</strong>
+(core/method_tree_enumerator.py)</h1>
+<p>给定一个求解问题（领域 + 表达式 + 变量 / 极限点 /
+方向），<code>MethodTreeEnumerator</code> 用 BFS 把
+<code>BaseManualStepSolver</code>
+<strong>所有</strong>可走的规则应用路径全部展开成一棵树。内置硬截断（深度、总节点数、挂钟时间、外部取消）保证单次请求不会卡住工作线程。它被设计为由
+<code>routes/task_manager.py</code> 在后台线程驱动，HTTP 层通过
+<code>snapshot()</code> 拉取增量进度。</p>
+<div class="warning">
+<p><strong>注意:</strong>
+出现的所有图中，箭头的方向无实际意义，上面文字所指可能是前对后，也可能是后对前</p>
+</div>
+<h2 id="一.-类概述">一. 类概述</h2>
+<p><code>MethodTreeEnumerator</code>
+解决的核心问题是「给定一个数学问题，所有可能的求解路径长什么样」：</p>
+<ul>
+<li>每个节点是一个「已经应用了若干规则的求解器快照」。</li>
+<li>每条边是一次规则应用（边上标注规则键与中文名）。</li>
+<li>当一个节点 <code>done == True</code> 时，<code>final_latex</code>
+保存该条路径的最终答案。</li>
+<li>当一次规则触发了换元 + 回代（例如
+<code>substitution</code>），会在「回代前」和「回代后」之间插入一个额外的子节点，让用户能看清回代这一步。</li>
+</ul>
+<p>它依赖：</p>
+<ul>
+<li><code>ManualStepSolver</code>（<code>core/manual_step_solver.py</code>）：统一的领域工厂，根据
+<code>domain</code> 挑出对应 <code>BaseManualStepSolver</code>
+子类。</li>
+<li><code>config.py</code> 里的 6
+个截断常量：<code>METHOD_TREE_DEFAULT_MAX_DEPTH</code> /
+<code>METHOD_TREE_HARD_MAX_DEPTH</code> 等。</li>
+<li><code>routes/task_manager.py</code>：把它当
+<code>task_manager.create_task('method_tree', ...)</code> 的 worker
+跑。</li>
+</ul>
+<h2 id="二.-设计原则">二. 设计原则</h2>
+<ul>
+<li><strong>合作式取消</strong>：在每次出队、每条子规则分支、每个
+<code>_should_stop()</code> 调用点都检查截断条件；外部调用
+<code>cancel()</code> 后，<code>run()</code> 在下一个安全点返回。</li>
+<li><strong>增量可见</strong>：<code>snapshot()</code> 加锁复制当前
+<code>_nodes</code> / <code>_children</code>，HTTP 层可以在
+<code>run()</code> 还没结束时就开始渲染前端画布。</li>
+<li><strong>回放式一致性</strong>：每个节点的「当前求解器」不是从父节点继承来的，而是从根节点<strong>重新构造</strong>并把规则路径从头回放到该节点。这避免了并发下共享可变状态，代价是
+O(路径长度) 的重放成本——可接受，因为单次规则应用是毫秒级。</li>
+<li><strong>双模式</strong>：<code>interactive=True</code>
+时进入「逐步确认」协议，每展开一条规则边都通过
+<code>_decision_condition</code> 暂停并等待
+<code>respond_decision()</code>；<code>interactive=False</code>
+时一口气跑完，受 <code>time_limit_seconds</code> 约束。</li>
+</ul>
+<h2 id="三.-构造参数">三. 构造参数</h2>
+<div class="method-signature">__init__(self,
+         domain: str,
+         expression: str,
+         variable: str = &#39;x&#39;,
+         point: Any = 0,
+         direction: str = &#39;+&#39;,
+         max_depth: Any = METHOD_TREE_DEFAULT_MAX_DEPTH,
+         max_nodes: Any = METHOD_TREE_DEFAULT_MAX_NODES,
+         time_limit_seconds: Any = METHOD_TREE_DEFAULT_TIME_SECONDS,
+         interactive: bool = False) -&gt; None</div>
+<div class="parameter-table">
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>参数</th>
+<th>描述</th>
+<th>默认 / 上限</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>domain</td>
+<td>领域标识：<code>'diff'</code> / <code>'integral'</code> /
+<code>'limit'</code></td>
+<td>必填</td>
+</tr>
+<tr>
+<td>expression</td>
+<td>待求解的表达式字符串</td>
+<td>必填</td>
+</tr>
+<tr>
+<td>variable</td>
+<td>主变量名</td>
+<td><code>'x'</code></td>
+</tr>
+<tr>
+<td>point</td>
+<td>极限趋近点（仅 limit 领域使用）</td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td>direction</td>
+<td>极限趋近方向 <code>'+'</code> / <code>'-'</code></td>
+<td><code>'+'</code></td>
+</tr>
+<tr>
+<td>max_depth</td>
+<td>根到叶的最大深度</td>
+<td><code>METHOD_TREE_DEFAULT_MAX_DEPTH</code>；硬上限
+<code>METHOD_TREE_HARD_MAX_DEPTH</code></td>
+</tr>
+<tr>
+<td>max_nodes</td>
+<td>树的最大节点总数</td>
+<td><code>METHOD_TREE_DEFAULT_MAX_NODES</code>；硬上限
+<code>METHOD_TREE_HARD_MAX_NODES</code></td>
+</tr>
+<tr>
+<td>time_limit_seconds</td>
+<td>挂钟预算（仅 <code>interactive=False</code> 生效）</td>
+<td><code>METHOD_TREE_DEFAULT_TIME_SECONDS</code>；硬上限
+<code>METHOD_TREE_HARD_MAX_TIME_SECONDS</code></td>
+</tr>
+<tr>
+<td>interactive</td>
+<td>是否进入逐步确认协议</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="warning">
+<p><strong>注意:</strong> 超过硬上限的值会被 <code>_clamp</code>
+静默裁剪回硬上限；非法类型或 ≤0 的值会被替换为默认值。仅当最终值仍
+<code>&lt; 1</code> 时才抛 <code>ValueError</code>。</p>
+</div>
+<h2 id="四.-公开方法">四. 公开方法</h2>
+<h3 id="run">1. run</h3>
+<div class="method-signature">run(self) -&gt; Dict[str, Any]</div>
+<p>启动 BFS 并返回完整的方法树 payload。payload 字段：</p>
+<div class="parameter-table">
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>字段</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>root_id</code></td>
+<td>根节点的 ID（字符串，形如 <code>'n0'</code>）</td>
+</tr>
+<tr>
+<td><code>nodes</code></td>
+<td><code>id -&gt; node_dict</code>，节点字典</td>
+</tr>
+<tr>
+<td><code>children</code></td>
+<td><code>id -&gt; [child_ids]</code>，便于前端按父子关系布局</td>
+</tr>
+<tr>
+<td><code>pending_decision</code></td>
+<td>仅 <code>interactive=True</code>：等待用户确认的边</td>
+</tr>
+<tr>
+<td><code>stats</code></td>
+<td>节点数、已用时间、最深节点深度等统计</td>
+</tr>
+<tr>
+<td><code>truncated</code></td>
+<td>是否被任一截断条件打断</td>
+</tr>
+<tr>
+<td><code>reason</code></td>
+<td>结束原因：<code>'completed'</code> / <code>'depth_limit'</code> /
+<code>'node_limit'</code> / <code>'time_limit'</code> /
+<code>'cancelled'</code> / <code>'error'</code></td>
+</tr>
+<tr>
+<td><code>max_depth_seen</code></td>
+<td>实际达到的最大深度</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td>异常信息（仅 <code>reason == 'error'</code> 时非空）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>节点字典字段：</p>
+<div class="parameter-table">
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>字段</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code> / <code>parent</code> / <code>depth</code></td>
+<td>节点 ID / 父 ID / 深度</td>
+</tr>
+<tr>
+<td><code>latex</code></td>
+<td>当前工作表达式的 LaTeX（回代前为回代前，回代后为回代后）</td>
+</tr>
+<tr>
+<td><code>top_latex</code></td>
+<td>顶层表达式的当前 LaTeX（便于显示「全局视图」）</td>
+</tr>
+<tr>
+<td><code>rule_applied</code> / <code>rule_display</code></td>
+<td>到达该节点所用的规则键与中文名；回代节点的 <code>rule_applied</code>
+是 <code>'back_subs'</code></td>
+</tr>
+<tr>
+<td><code>explanation</code></td>
+<td>规则返回的解释文本</td>
+</tr>
+<tr>
+<td><code>done</code></td>
+<td>该节点是否已完成推导</td>
+</tr>
+<tr>
+<td><code>truncated</code></td>
+<td>该节点是否被深度截断</td>
+</tr>
+<tr>
+<td><code>final_latex</code></td>
+<td>当 <code>done == True</code> 时，最终答案的 LaTeX</td>
+</tr>
+<tr>
+<td><code>children</code></td>
+<td>子节点 ID 列表</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="cancel">2. cancel</h3>
+<div class="method-signature">cancel(self) -&gt; None</div>
+<p>请求合作式取消。<code>run()</code> 会在下一个
+<code>_should_stop()</code> 调用点返回。<code>reason</code> 会被设为
+<code>'cancelled'</code>。若在交互模式下且正等待
+<code>respond_decision</code>，该方法同时会把响应置为 <code>False</code>
+并唤醒等待线程。</p>
+<h3 id="respond_decision">3. respond_decision</h3>
+<div class="method-signature">respond_decision(self, accepted: bool) -&gt; bool</div>
+<p>仅 <code>interactive=True</code> 时生效。回应
+<code>snapshot()['pending_decision']</code>
+所描述的「是否应用这条规则」的询问。返回 <code>True</code>
+表示当时确实在等待响应；<code>False</code>
+表示没有等待（例如已取消或已结束）。</p>
+<h3 id="snapshot">4. snapshot</h3>
+<div class="method-signature">snapshot(self) -&gt; Dict[str, Any]</div>
+<p>返回当前已构建部分的方法树快照（线程安全）。HTTP 层通常在
+<code>run()</code> 异步跑的同时轮询本方法以增量渲染前端画布。结构与
+<code>run()</code> 返回的 payload 一致，只是可能还不完整。</p>
+<h2 id="五.-内部机制阅读源码时参考">五. 内部机制（阅读源码时参考）</h2>
+<h3 id="回放式求解器">1. 回放式求解器</h3>
+<p>每个节点并不持有自己的 <code>ManualStepSolver</code>
+实例。当需要「当前节点上的可用规则」时，<code>_replay_solver(rule_path)</code>
+会从根节点重新构造一个新 solver，按 <code>rule_path</code> 把规则顺序
+<code>apply_rule</code>
+一遍，得到和该节点一致的求解器状态。这避免了共享可变状态，但让每个节点的代价是
+O(路径长度)。</p>
+<h3 id="截断检查">2. 截断检查</h3>
+<p><code>_should_stop()</code> 依次检查：</p>
+<ol type="1">
+<li>节点数 ≥ <code>max_nodes</code> →
+<code>reason = 'node_limit'</code></li>
+<li>非交互模式 + 已用时间 ≥ <code>time_limit</code> →
+<code>reason = 'time_limit'</code></li>
+<li><code>_stop</code> 被置位（<code>cancel()</code> 触发）→
+<code>reason = 'cancelled'</code></li>
+</ol>
+<p>任一条件命中都会设置 <code>truncated = True</code> 并返回
+<code>True</code>。深度截断（<code>depth &gt;= max_depth</code>）在出队时单独判断并标记对应节点
+<code>truncated = True</code>。</p>
+<h3 id="回代检测">3. 回代检测</h3>
+<p><code>_build_tree()</code> 在每次 <code>apply_rule</code> 后检查
+<code>solver.calculator.step_generator.subs_dict</code>
+是否非空；若非空，说明发生了换元 +
+回代，会在「回代前」与「回代后」之间插入一个
+<code>rule_applied = 'back_subs'</code>、<code>rule_display = '回代换元变量'</code>
+的额外子节点，让前端能把回代这一步单独可视化。</p>
+<h2 id="六.-与-http-层的配合">六. 与 HTTP 层的配合</h2>
+<p><code>routes/api.py</code> 暴露：</p>
+<ul>
+<li><code>POST /api/method_tree_start</code> — 启动一次遍历，返回
+<code>task_id</code>。</li>
+<li><code>POST /api/method_tree_status</code> — 拉取
+<code>task_manager</code> 状态；若仍在跑，调用 <code>snapshot()</code>
+返回增量树；若已结束，从 <code>task.result</code> 拿完整树。</li>
+<li><code>POST /api/method_tree_cancel</code> — 调用
+<code>cancel()</code>。</li>
+</ul>
+<p><code>routes/method_tree_service.py</code>
+封装了具体的调用与快照逻辑。</p>
+<h2 id="七.-使用示例">七. 使用示例</h2>
+<div class="method-signature">enumerator = MethodTreeEnumerator(
+    domain=&#39;integral&#39;,
+    expression=&#39;x*exp(x)&#39;,
+    variable=&#39;x&#39;,
+    max_depth=6,
+    max_nodes=200,
+    time_limit_seconds=30,
+)
+payload = enumerator.run()
+print(payload[&#39;stats&#39;])
+for nid, node in payload[&#39;nodes&#39;].items():
+    if node[&#39;done&#39;]:
+        print(nid, &#39;=&gt;&#39;, node[&#39;final_latex&#39;])</div>
+<h2 id="八.-参见">八. 参见</h2>
+<ul>
+<li><a href="/help/base_manual_step_solver">BaseManualStepSolver</a> —
+单条路径上的手动求解器</li>
+<li><a href="/help/rule_registry">RuleRegistry</a> — 规则匹配与调度</li>
+</ul>
+
+</div>
+</body>
+</html>

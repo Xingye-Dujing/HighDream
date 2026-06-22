@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>IntegralManualStepSolver - 积分手动规则选择器文档</title>
+    <link rel="stylesheet" href="/static/help.css"/>
+</head>
+<body>
+<div id="help-container">
+    <ul class="header">
+        <li>
+            <a href="/">HighDream Notebook</a>
+        </li>
+        <li>
+            <a href="/help">帮助文档</a>
+        </li>
+    </ul>
+
+<h1
+id="integralmanualstepsolver-domainsintegralintegral_manual_step_solver.py"><strong>IntegralManualStepSolver</strong>
+(domains/integral/integral_manual_step_solver.py)</h1>
+<p>积分领域的手动规则选择器，继承自
+<code>BaseManualStepSolver</code>。它把
+<code>SelectIntegralCalculator</code> 包装成一个 Web 客户端可调用的
+API，前端在每一步从候选规则列表里选一条，本类驱动
+<code>SelectIntegralCalculator</code>
+把规则应用到当前表达式，并把新产生的子表达式放回 BFS 队列。</p>
+<div class="warning">
+<p><strong>注意:</strong>
+本类<strong>不</strong>重新实现任何积分算法；所有规则注册、匹配、实际计算都由
+<code>SelectIntegralCalculator</code> 完成。本类只负责：（1）把领域标识
+<code>_domain = 'integral'</code> 注入到基类；（2）提供
+<code>rule_display_names</code> 把规则键翻译成中文显示名；（3）覆盖
+<code>_create_calculator()</code> 返回正确的 Calculator。</p>
+</div>
+<h2 id="一.-类概述">一. 类概述</h2>
+<p><code>IntegralManualStepSolver</code> 的全部公开行为都继承自
+<code>BaseManualStepSolver</code>：</p>
+<ul>
+<li><code>state()</code> / <code>applicable_rules()</code> /
+<code>apply_rule(rule_name)</code> / <code>fallback()</code> /
+<code>finish()</code></li>
+<li><code>steps</code> / <code>explanations</code> /
+<code>pending</code> / <code>current_expr</code> / <code>done</code> /
+<code>error</code></li>
+</ul>
+<p>子类本身只声明三件事：</p>
+<div class="method-signature">_domain = &#39;integral&#39;
+rule_display_names = _RULE_DISPLAY_NAMES
+
+def _create_calculator(self):
+    return SelectIntegralCalculator()</div>
+<h2 id="二.-已注册的规则键">二. 已注册的规则键</h2>
+<p>积分领域的规则覆盖较广，除基础函数外还包含换元法、分部积分法、万能公式代换等复杂规则。</p>
+<div class="parameter-table">
+<table>
+<thead>
+<tr>
+<th>rule_key</th>
+<th>中文显示名</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>add</td>
+<td>加法展开</td>
+</tr>
+<tr>
+<td>const / var</td>
+<td>常数积分 / 变量积分</td>
+</tr>
+<tr>
+<td>mul_const</td>
+<td>常数乘法</td>
+</tr>
+<tr>
+<td>pow</td>
+<td>幂函数积分</td>
+</tr>
+<tr>
+<td>exp / log</td>
+<td>指数 / 对数函数积分</td>
+</tr>
+<tr>
+<td>sin / cos / tan / sec / csc / cot</td>
+<td>三角函数积分</td>
+</tr>
+<tr>
+<td>sinh / cosh / tanh / sech / csch / coth</td>
+<td>双曲函数积分</td>
+</tr>
+<tr>
+<td>inverse_trig</td>
+<td>反三角函数积分</td>
+</tr>
+<tr>
+<td>inverse_tangent_linear</td>
+<td>线性反正切积分</td>
+</tr>
+<tr>
+<td>sin_power / cos_power / tan_power</td>
+<td>三角函数幂积分</td>
+</tr>
+<tr>
+<td>logarithmic</td>
+<td>对数函数积分</td>
+</tr>
+<tr>
+<td>parts</td>
+<td>分部积分法</td>
+</tr>
+<tr>
+<td>substitution</td>
+<td>换元积分法</td>
+</tr>
+<tr>
+<td>f_x_mul_exp_g_x</td>
+<td><code>f(x) e^{g(x)}</code> 型积分</td>
+</tr>
+<tr>
+<td>quotient_diff_form</td>
+<td>商微分形式</td>
+</tr>
+<tr>
+<td>quadratic_sqrt_reciprocal</td>
+<td>二次根式倒数积分</td>
+</tr>
+<tr>
+<td>sqrt_div_sqrt</td>
+<td>根式相除积分</td>
+</tr>
+<tr>
+<td>weierstrass_substitution</td>
+<td>万能公式代换</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="warning">
+<p><strong>注意:</strong> <code>substitution</code>
+类规则触发后，<code>finish()</code>
+会自动做回代（把中间变量替换回原变量）。在
+<code>MethodTreeEnumerator</code>
+的遍历里，回代会被作为一个额外的子节点显示。</p>
+</div>
+<h2 id="三.-使用方法">三. 使用方法</h2>
+<div class="method-signature">solver = ManualStepSolver(domain=&#39;integral&#39;, expression=&#39;x*exp(x)&#39;, variable=&#39;x&#39;)
+state = solver.state()
+rules = solver.applicable_rules()   # 通常会包含 &#39;parts&#39;
+state = solver.apply_rule(&#39;parts&#39;)  # 分部积分
+state = solver.finish()             # 回代换元变量 + 化简</div>
+<h2 id="四.-参见">四. 参见</h2>
+<ul>
+<li><a href="/help/base_manual_step_solver">BaseManualStepSolver</a> —
+全部公开 API 的详细说明</li>
+<li><a href="/help/diff_manual_step_solver">DiffManualStepSolver</a> —
+微分子类</li>
+<li><a href="/help/limit_manual_step_solver">LimitManualStepSolver</a> —
+极限子类</li>
+</ul>
+
+</div>
+</body>
+</html>

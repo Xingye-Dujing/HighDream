@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>DiffManualStepSolver - 微分手动规则选择器文档</title>
+    <link rel="stylesheet" href="/static/help.css"/>
+</head>
+<body>
+<div id="help-container">
+    <ul class="header">
+        <li>
+            <a href="/">HighDream Notebook</a>
+        </li>
+        <li>
+            <a href="/help">帮助文档</a>
+        </li>
+    </ul>
+
+<h1
+id="diffmanualstepsolver-domainsdifferentiationdiff_manual_step_solver.py"><strong>DiffManualStepSolver</strong>
+(domains/differentiation/diff_manual_step_solver.py)</h1>
+<p>微分领域的手动规则选择器，继承自
+<code>BaseManualStepSolver</code>。它把
+<code>SelectDiffCalculator</code> 包装成一个 Web 客户端可调用的
+API：前端在每一步从候选规则列表里选一条，本类驱动
+<code>SelectDiffCalculator</code>
+把规则应用到当前表达式，并把新产生的子表达式放回 BFS 队列。</p>
+<div class="warning">
+<p><strong>注意:</strong>
+本类<strong>不</strong>重新实现任何微分算法；所有规则注册、匹配、实际计算都由
+<code>SelectDiffCalculator</code> 完成。本类只负责：（1）把领域标识
+<code>_domain = 'diff'</code> 注入到基类；（2）提供
+<code>rule_display_names</code> 把规则键翻译成中文显示名；（3）覆盖
+<code>_create_calculator()</code> 返回正确的 Calculator。</p>
+</div>
+<h2 id="一.-类概述">一. 类概述</h2>
+<p><code>DiffManualStepSolver</code> 的全部公开行为都继承自
+<code>BaseManualStepSolver</code>：</p>
+<ul>
+<li><code>state()</code> / <code>applicable_rules()</code> /
+<code>apply_rule(rule_name)</code> / <code>fallback()</code> /
+<code>finish()</code></li>
+<li><code>steps</code> / <code>explanations</code> /
+<code>pending</code> / <code>current_expr</code> / <code>done</code> /
+<code>error</code></li>
+</ul>
+<p>子类本身只声明三件事：</p>
+<div class="method-signature">_domain = &#39;diff&#39;
+rule_display_names = _RULE_DISPLAY_NAMES
+
+def _create_calculator(self):
+    return SelectDiffCalculator()</div>
+<h2 id="二.-已注册的规则键">二. 已注册的规则键</h2>
+<div class="parameter-table">
+<table>
+<thead>
+<tr>
+<th>rule_key</th>
+<th>中文显示名</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>add</td>
+<td>加法法则</td>
+</tr>
+<tr>
+<td>mul</td>
+<td>乘法法则</td>
+</tr>
+<tr>
+<td>div</td>
+<td>除法法则</td>
+</tr>
+<tr>
+<td>chain</td>
+<td>链式法则</td>
+</tr>
+<tr>
+<td>const</td>
+<td>常数求导</td>
+</tr>
+<tr>
+<td>var</td>
+<td>变量求导</td>
+</tr>
+<tr>
+<td>pow</td>
+<td>幂函数求导</td>
+</tr>
+<tr>
+<td>sin / cos / tan / sec / csc / cot</td>
+<td>对应三角函数求导</td>
+</tr>
+<tr>
+<td>asin / acos / atan</td>
+<td>对应反三角函数求导</td>
+</tr>
+<tr>
+<td>exp</td>
+<td>指数求导</td>
+</tr>
+<tr>
+<td>log</td>
+<td>对数求导</td>
+</tr>
+<tr>
+<td>sinh / cosh / tanh</td>
+<td>对应双曲函数求导</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="warning">
+<p><strong>注意:</strong> 若 <code>SelectDiffCalculator</code>
+新增了规则但此处没有同步加中文名，<code>applicable_rules()</code> 返回的
+<code>display_name</code> 会回退到 <code>name</code>
+本身（前端会看到英文键名）。</p>
+</div>
+<h2 id="三.-使用方法">三. 使用方法</h2>
+<p>通过统一的工厂入口（<code>core/manual_step_solver.py</code> 的
+<code>ManualStepSolver</code> 类）创建：</p>
+<div class="method-signature">solver = ManualStepSolver(domain=&#39;diff&#39;, expression=&#39;sin(x)*exp(x)&#39;, variable=&#39;x&#39;)
+state = solver.state()             # 初始快照
+rules = solver.applicable_rules()  # 当前可应用规则列表
+state = solver.apply_rule(&#39;mul&#39;)   # 选乘法法则
+state = solver.fallback()          # 或让 SymPy 兜底
+state = solver.finish()            # 结束会话</div>
+<h2 id="四.-参见">四. 参见</h2>
+<ul>
+<li><a href="/help/base_manual_step_solver">BaseManualStepSolver</a> —
+全部公开 API 的详细说明</li>
+<li><a
+href="/help/integral_manual_step_solver">IntegralManualStepSolver</a> —
+积分子类</li>
+<li><a href="/help/limit_manual_step_solver">LimitManualStepSolver</a> —
+极限子类</li>
+</ul>
+
+</div>
+</body>
+</html>
