@@ -76,6 +76,7 @@ As mentioned above, this idea originated from my high school days `(The Dream of
 12. Manual rule selection page (`/rule_select`)(running on Chrome in Windows)
 
 ![Manual rule selection page](./docs/img/01.gif)
+![Manual rule selection page](./docs/img/29.png)
 
 13. Blueprint-based manual rule selection / exhaustive rule enumeration (`/method_tree`)(running on Chrome in Windows)
 
@@ -86,7 +87,10 @@ As mentioned above, this idea originated from my high school days `(The Dream of
     - Step-by-step confirmation of whether each rule should be applied, with live progress display
     - Supports fully-automatic exhaustive traversal of the whole method tree (async, cancellable)
 
-![Manual rule selection page with blueprint usage](./docs/img/02.gif)
+![Manual rule selection page with blueprint usage](./docs/img/25.png)
+![Manual rule selection page with blueprint usage](./docs/img/26.png)
+![Manual rule selection page with blueprint usage](./docs/img/27.png)
+![Manual rule selection page with blueprint usage](./docs/img/28.png)
 
 ## Features
 
@@ -121,8 +125,8 @@ This project mainly consists of **four** architectures:
 - [**RuleRegistry**](https://high-dream.vercel.app/help/rule_registry) (`core/rule_registry.py`)
 - [**CommonMatrixCalculator**](https://high-dream.vercel.app/help/common_matrix_calculator) (`core/common_matrix_calculator.py`)
 - [**MatrixStepGenerator**](https://high-dream.vercel.app/help/matrix_step_generator) (`core/matrix_step_generator.py`)
-- [**BaseManualStepSolver**](core/base_manual_step_solver.py) — Base orchestrator for manual rule selection, encapsulating shared selection/rollback/state-management logic across domains
-- [**MethodTreeEnumerator**](core/method_tree_enumerator.py) — Core enumerator for the exhaustive method tree, recursively expanding every applicable rule branch
+- [**BaseManualStepSolver**](https://high-dream.vercel.app/help/base_manual_step_solver) — Base orchestrator for manual rule selection, encapsulating shared selection/rollback/state-management logic across domains
+- [**MethodTreeEnumerator**](https://high-dream.vercel.app/help/method_tree_enumerator) — Core enumerator for the exhaustive method tree, recursively expanding every applicable rule branch
 
 ## Usage
 
