@@ -135,7 +135,7 @@ This project mainly consists of **four** architectures:
 
   (1) Run `python app_local.py` (requires Python installation)
 
-  (2) Run `high-dream.exe` (download from Releases page, not yet released)
+  (2) Run `high-dream.exe` (download from Releases page)
 
   (3) Visit `https://high-dream.vercel.app/` (for experience only, computation speed is slow)
 
