@@ -18,7 +18,7 @@ class SelectRuleCalculator(BaseCalculator, ABC):
         applicable_rules_list = list(self._rule_registry.get_applicable_rules(
             expr, rule_context))
 
-        # display(Math(latex(expr)))
+        # Jupyter Notebook: display(Math(latex(expr)))
         pprint(operation(expr), use_unicode=True)
         print("以下规则可应用：")
         for i, rule in enumerate(applicable_rules_list):

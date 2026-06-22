@@ -386,14 +386,15 @@ def sqrt_div_sqrt_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     return None
 
+# To save some time, I have combined the logic for checking if a rule is applicable directly into
+# the corresponding rule handling function.
+# However, to maintain architectural consistency, we must still have a matcher function.
 
 def logarithmic_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     return 'logarithmic'
 
 
-def parts_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
-    if expr.is_constant() or expr == context['variable']:
-        return None
+def parts_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     return 'parts'
 
 
@@ -429,3 +430,4 @@ def quadratic_sqrt_reciprocal_matcher(_expr: Expr, _context: RuleContext) -> Mat
 def sqrt_div_sqrt_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
     if isinstance(expr, (Mul, Pow)):
         return 'sqrt_div_sqrt'
+    return None

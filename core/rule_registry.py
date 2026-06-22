@@ -40,6 +40,24 @@ class RuleRegistry:
         self._register_all_rules(rules)
         self._register_all_matchers(matchers)
 
+    def replace_matcher(self, old_matcher: MatcherFunction, new_matcher: MatcherFunction) -> None:
+        """Replace an existing matcher with a new one by function identity.
+
+        Args:
+            old_matcher: The existing matcher function reference to replace.
+            new_matcher: The new matcher function to use instead.
+
+        Raises:
+            ValueError: If old_matcher is not found in the registry.
+        """
+        for i, m in enumerate(self._matchers):
+            if m is old_matcher:
+                self._matchers[i] = new_matcher
+                return
+        raise ValueError(
+            f"Matcher '{getattr(old_matcher, '__name__', '?')}' not found in registry."
+        )
+
     def get_applicable_rules(self, expr: Expr, context: RuleContext) -> Generator[RuleFunction, None, None]:
         """Return all rules applicable to the given expression."""
         for matcher in self._matchers:

@@ -2,8 +2,12 @@
 
 from typing import Dict
 
+from sympy import Expr
+
 from core.base_manual_step_solver import BaseManualStepSolver
 from domains.integral.integral_calculator import SelectIntegralCalculator
+from domains.integral.rules.integral_special_rules import parts_matcher as _default_parts_matcher
+from utils import MatcherFunctionReturn, RuleContext
 
 
 _RULE_DISPLAY_NAMES: Dict[str, str] = {
@@ -50,3 +54,24 @@ class IntegralManualStepSolver(BaseManualStepSolver):
 
     def _create_calculator(self):
         return SelectIntegralCalculator()
+
+    @staticmethod
+    def _custom_parts_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+        """Custom parts matcher used only by IntegralManualStepSolver.
+
+        Override this method in a subclass to customize when 'parts' (integration
+        by parts) is offered as an option. The default delegates to the original
+        parts_matcher from integral_special_rules.
+
+        Returns:
+            'parts' if the rule should be offered, None otherwise.
+        """
+        if expr.is_constant() or expr == context['variable']:
+            return None
+        return 'parts'
+
+    def _init_calculator(self) -> None:
+        """Replace the default parts_matcher with the custom version."""
+        self.calculator._rule_registry.replace_matcher(
+            _default_parts_matcher, self._custom_parts_matcher,
+        )

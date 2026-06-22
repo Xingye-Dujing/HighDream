@@ -1,7 +1,7 @@
 /* Rule-select page — flex layout with invisible draggable divider */
 
 mjx-container {
-  margin: 0px !important;
+  margin: 10px 0 10px 0!important;
 }
 
 #rule-select-layout {
