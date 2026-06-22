@@ -682,10 +682,7 @@
   // ----------------------------------------------------- SVG bezier edges
 
   function clearEdgesSvg() {
-    // Keep the <defs> (arrowhead marker) intact.
-    var defs = elEdges.querySelector('defs');
     elEdges.innerHTML = '';
-    if (defs) elEdges.appendChild(defs);
   }
 
   function renderEdges() {
@@ -716,7 +713,8 @@
           return;
         }
         var parentNode = nodeData[pid];
-        var parentH = parentNode ? estimateHeight(parentNode) : (HEADER_HEIGHT + BODY_MIN_HEIGHT);
+        var parentH = parentPos.height ||
+          (parentNode ? estimateHeight(parentNode) : (HEADER_HEIGHT + BODY_MIN_HEIGHT));
 
         var x1 = parentPos.cx;
         var y1 = parentPos.y + parentH;
@@ -731,7 +729,6 @@
           ' C ' + x1 + ' ' + midY + ', ' +
                 x2 + ' ' + midY + ', ' +
                 x2 + ' ' + y2);
-        path.setAttribute('marker-end', 'url(#mt-arrowhead)');
         path.dataset.parent = pid;
         path.dataset.child = cid;
         path.addEventListener('dblclick', function (e) {
@@ -966,6 +963,7 @@
         el.style.height = newH + 'px';
       }
       if (userPositions[resizeState.id]) {
+        userPositions[resizeState.id].width = newW;
         userPositions[resizeState.id].cx = userPositions[resizeState.id].x + newW / 2;
         userPositions[resizeState.id].height = newH;
       }
