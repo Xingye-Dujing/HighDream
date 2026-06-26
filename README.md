@@ -153,4 +153,4 @@ https://high-dream.vercel.app/help （需翻墙）
 ## 特别致谢
 
 1. 参考了 [MathDF](https://mathdf.com/int/cn/) 很多。它是能给出中间过程的神。本项目依据它无法解决的积分类型作了些拓展（比如 `f(x)*e^g(x)` 型）。
-2. **AI** 全过程参与。衷心感谢国内各种免费 AI 工具（比如千问和 DeepSeek）。后面补：因为 Qoder 每天有 200 次的免费问答额度，所以我于 2026 年 6 月 19 日开始使用 Qoder CLI。什么时候它没有免费额度了，什么时候我就不再用 Qoder CLI 了。
+2. **AI** 全过程参与。衷心感谢国内各种免费 AI 工具（比如千问和 DeepSeek）。后面补：因为 Qoder 每天有 200 次的免费问答额度，所以我于 2026 年 6 月 19 日开始使用 Qoder CLI。什么时候它没有免费额度了，什么时候我就不再用 Qoder CLI 了。6 月 22 日结束 Qoder CLI 的使用。
