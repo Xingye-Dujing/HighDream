@@ -3,6 +3,7 @@ from typing import List, Tuple
 from sympy import AccumBounds, Basic, Expr, Limit, S, Symbol, latex, sympify, zoo
 
 from core import BaseCalculator, SelectRuleCalculator
+from core.cached_calculator import DBCachedCalculator
 from domains.limit import LHOPITAL_RULES, LimitStepGenerator, MATCHER_LIST, RULE_DICT
 from utils import Context, Operation, RuleFunction
 from .limit_help_func import detect_feasible_directions
@@ -208,3 +209,7 @@ def create_limit_calculator(base_class):
 
 LimitCalculator = create_limit_calculator(BaseCalculator)
 SelectLimitCalculator = create_limit_calculator(SelectRuleCalculator)
+
+
+class CachedLimitCalculator(DBCachedCalculator, LimitCalculator):
+    """Limit calculator with database cache support."""

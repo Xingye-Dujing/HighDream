@@ -3,6 +3,7 @@ from typing import List, Tuple
 from sympy import Add, Expr, Integral, Symbol, simplify
 
 from core import BaseCalculator, SelectRuleCalculator
+from core.cached_calculator import DBCachedCalculator
 from domains.integral import MATCHER_LIST, RULE_DICT, N_MATCHER_LIST
 
 # Define the constant of integration C for indefinite integrals.
@@ -88,3 +89,7 @@ def create_integral_calculator(base_class):
 
 IntegralCalculator = create_integral_calculator(BaseCalculator)
 SelectIntegralCalculator = create_integral_calculator(SelectRuleCalculator)
+
+
+class CachedIntegralCalculator(DBCachedCalculator, IntegralCalculator):
+    """Integral calculator with database cache support."""

@@ -1,6 +1,7 @@
 from .base_calculator import BaseCalculator
 from .base_manual_step_solver import BaseManualStepSolver
 from .base_step_generator import BaseStepGenerator
+from .cached_calculator import DBCachedCalculator
 from .common_matrix_calculator import CommonMatrixCalculator
 from .matrix_step_generator import MatrixStepGenerator
 from .rule_registry import RuleRegistry
@@ -15,4 +16,5 @@ __all__ = [
     "CommonMatrixCalculator",
     "RuleRegistry",
     "SelectRuleCalculator",
+    "DBCachedCalculator",
 ]

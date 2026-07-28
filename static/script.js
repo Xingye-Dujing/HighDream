@@ -630,6 +630,15 @@ function createCellElement(id, type) {
                 -->
               </div>
 
+              <label class="cache-toggle" title="使用缓存加速计算">
+                <input type="checkbox" class="use-cache-checkbox" checked>
+                <span>缓存</span>
+              </label>
+              <label class="cache-toggle" title="将计算结果存入缓存">
+                <input type="checkbox" class="record-cache-checkbox" checked>
+                <span>记录</span>
+              </label>
+
               <button class="keyboard-button" title="打开虚拟键盘">
                 <i class="fas fa-keyboard"></i>
               </button>
@@ -825,6 +834,12 @@ function runCell(cell) {
     const det_type = cell.querySelector(".det-sort").value;
     payload.type = det_type;
   }
+
+  // Cache control
+  const useCacheCheckbox = cell.querySelector(".use-cache-checkbox");
+  const recordCacheCheckbox = cell.querySelector(".record-cache-checkbox");
+  payload.use_cache = useCacheCheckbox ? (useCacheCheckbox.checked ? 'True' : 'False') : 'False';
+  payload.record_cache = recordCacheCheckbox ? (recordCacheCheckbox.checked ? 'True' : 'False') : 'False';
 
   // If solving for equivalent expressions, add sorting and depth parameters
   if (operationType === 'expr') {

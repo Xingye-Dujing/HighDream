@@ -1,10 +1,13 @@
+from domains.differentiation.diff_calculator import CachedDiffCalculator
 from domains.differentiation.diff_calculator import DiffCalculator
 from domains.differentiation.diff_calculator import SelectDiffCalculator
 from domains.differentiation.diff_manual_step_solver import DiffManualStepSolver
 from domains.expression_parser import ExpressionParser
+from domains.integral.integral_calculator import CachedIntegralCalculator
 from domains.integral.integral_calculator import IntegralCalculator
 from domains.integral.integral_calculator import SelectIntegralCalculator
 from domains.integral.integral_manual_step_solver import IntegralManualStepSolver
+from domains.limit.limit_calculator import CachedLimitCalculator
 from domains.limit.limit_calculator import LimitCalculator
 from domains.limit.limit_calculator import SelectLimitCalculator
 from domains.limit.limit_manual_step_solver import LimitManualStepSolver
@@ -41,6 +44,7 @@ __all__ = [
     'EigenSolver',
     'Inverter',
     'IntegralManualStepSolver',
+    'CachedLimitCalculator',
     'LimitCalculator',
     'LimitManualStepSolver',
     'SelectLimitCalculator',
@@ -58,9 +62,11 @@ __all__ = [
     'SchurDecomposition',
     'SVDSolver',
     'VectorProjectionSolver',
+    'CachedDiffCalculator',
     'DiffCalculator',
     'SelectDiffCalculator',
     'ExpressionParser',
+    'CachedIntegralCalculator',
     'IntegralCalculator',
     'SelectIntegralCalculator',
 ]

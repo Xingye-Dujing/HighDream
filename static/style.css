@@ -1020,3 +1020,19 @@ body:hover .math-bg-element {
 .operation-type optgroup option {
   background-color: var(--jp-layout-color0);
 }
+
+.cache-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--jp-ui-font-color1);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.cache-toggle input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}

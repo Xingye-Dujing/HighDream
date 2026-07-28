@@ -15,6 +15,7 @@ from sympy import Symbol, preorder_traversal, latex, sympify
 
 from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
 from domains import (
+    CachedDiffCalculator, CachedIntegralCalculator, CachedLimitCalculator,
     DiffCalculator, IntegralCalculator, LimitCalculator, ExpressionParser,
     RefCalculator, BasicOperations, Inverter, Rank, LUDecomposition,
     Diagonalization, SVDSolver, SchurDecomposition, EigenSolver,
@@ -22,6 +23,13 @@ from domains import (
     VectorProjectionSolver, LinearDependence, LinearTransform,
     LinearSystemConverter, LinearSystemSolver, BaseTransform
 )
+
+# Cached calculator variants used when use_cache or record_cache is set
+_cached_calculators = {
+    'diff': CachedDiffCalculator,
+    'integral': CachedIntegralCalculator,
+    'limit': CachedLimitCalculator,
+}
 
 # Registry of available calculators mapped by operation type
 _calculators = {
@@ -98,18 +106,33 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
         expression = data.get('expression', '')
         variable = data.get('variable', 'x')
 
+        use_cache = data.get('use_cache', False) == 'True'
+        record_cache = data.get('record_cache', False) == 'True'
+
         if operation_type == 'diff':
-            return True, _calculators['diff']().compute_latex(expression, Symbol(variable))  # type: ignore
+            if use_cache or record_cache:
+                calc = _cached_calculators['diff']()
+                return True, calc.compute_latex(expression, Symbol(variable),
+                                                use_cache=use_cache, record_cache=record_cache)
+            return True, _calculators['diff']().compute_latex(expression, Symbol(variable))
 
         if operation_type == 'integral':
             include_special_matchers = data.get('include_special_matchers', True) == 'True'
-            return (True, _calculators['integral'](include_special_matchers).
-                    compute_latex(expression, Symbol(variable)))  # type: ignore
+            if use_cache or record_cache:
+                calc = _cached_calculators['integral'](include_special_matchers)
+                return True, calc.compute_latex(expression, Symbol(variable),
+                                                use_cache=use_cache, record_cache=record_cache)
+            return True, _calculators['integral'](include_special_matchers). \
+                compute_latex(expression, Symbol(variable))
 
         if operation_type == 'limit':
             point = sympify(data.get('point', '0'))
             direction = data.get('direction', '+')
             max_lhopital = int(data.get('max_lhopital_count', DEFAULT_LHOPITAL_MAX_COUNT))
+            if use_cache or record_cache:
+                limiter = _cached_calculators['limit'](max_lhopital=max_lhopital)
+                return True, limiter.compute_latex(expression, Symbol(variable), point, direction,
+                                                   use_cache=use_cache, record_cache=record_cache)
             limiter = LimitCalculator(max_lhopital=max_lhopital)
             return True, limiter.compute_latex(expression, Symbol(variable), point, direction)
 

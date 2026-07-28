@@ -7,6 +7,9 @@
 dist/
 build/
 
+# Ignore computation cache database
+cache/
+
 # Ignore Python cache files
 __pycache__/
 .ipynb_checkpoints/

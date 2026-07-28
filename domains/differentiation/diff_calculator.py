@@ -3,6 +3,7 @@ from typing import List, Tuple
 from sympy import Derivative, Expr, Symbol
 
 from core import BaseCalculator, SelectRuleCalculator
+from core.cached_calculator import DBCachedCalculator
 from domains.differentiation import MATCHER_LIST, RULE_DICT
 
 
@@ -40,3 +41,7 @@ def create_diff_calculator(base_class):
 
 DiffCalculator = create_diff_calculator(BaseCalculator)
 SelectDiffCalculator = create_diff_calculator(SelectRuleCalculator)
+
+
+class CachedDiffCalculator(DBCachedCalculator, DiffCalculator):
+    """Differentiation calculator with database cache support."""

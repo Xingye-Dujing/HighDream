@@ -1,52 +1,67 @@
 # AGENTS.md
 
-This file provides guidance to the AI agent when working with code in this repository.
+Guidance for AI agents working in this repository.
 
 ## Running the app
 
-- **Local (interactive, opens a browser at http://127.0.0.1:5000/):** `python app_local.py` — uses `gevent.pywsgi.WSGIServer`. Don't close the terminal window while it's running.
-- **Vercel-style entry (used by the deployed site):** `python app.py` — plain `Flask.run()`.
-- **Build a Windows executable:** `pyinstaller app_local.spec` → produces `dist/HighDreamWeb.exe`. Do NOT change `optimize=1` in the spec to `2`; it breaks SymPy.
+- **Local dev (opens http://127.0.0.1:5000/):** `python app_local.py` — uses `gevent.pywsgi.WSGIServer`, opens browser automatically.
+- **Vercel entrypoint:** `python app.py` — plain `Flask.run()` (for local testing of deploy path).
+- **Build executable:** `pyinstaller app_local.spec` → `dist/HighDreamWeb.exe`. Do NOT set `optimize=2`; breaks SymPy.
+- **Dependencies:** `requirements_local.txt` for dev, `requirements_deployment.txt` for Vercel (just `sympy`, `flask`).
 
-## SymPy gotchas (from the user-facing README — enforce in generated examples and tests)
+## SymPy gotchas (enforce in generated code/examples)
 
-- Multiplication `*` is **never** implicit: `ab` parses as one symbol, not `a*b`.
+- `*` is never implicit: `ab` parses as one symbol, not `a*b`.
 - Inverse trig is `asin`, `acos`, `atan` — NOT `arcsin`/`arccos`/`arctan`.
-- Natural exponential is `exp()`. `e` alone is just a symbol like `x`; `e**x` and `e^x` will not be treated as `exp(x)`.
+- Natural exponential is `exp()`. `e` alone is just a symbol; `e**x` / `e^x` ≠ `exp(x)`.
 
-## Project layout (quick reference — read the files for details)
+## Architecture
 
-- `core/` — the BFS + rule-driven solver engine. See `BaseCalculator`, `BaseStepGenerator`, `RuleRegistry`, `CommonMatrixCalculator`, `MatrixStepGenerator`.
+- `core/` — BFS + rule-driven solver engine: `BaseCalculator`, `BaseStepGenerator`, `RuleRegistry`, `CommonMatrixCalculator`, `MatrixStepGenerator`, `ManualStepSolver`, `MethodTreeEnumerator`.
 - `domains/` — per-domain rule sets: `differentiation/`, `integral/`, `limit/`, `matrix/`, plus `expression_parser.py`.
-- `routes/` — Flask blueprints: `main.py` (pages), `api.py` (compute endpoints, async via `task_manager.py`).
-- `utils/` — LaTeX rendering and expression helpers.
-- `templates/`, `static/` — web UI. `static/trees/` holds generated equivalence-derivation tree images.
-- `help_docs/` — `/help/*` 帮助文档源文件与 pandoc 构建脚本。`help_docs/src/*.md` 是内容源；`templates/help/*.html` 由 pandoc 生成（详见 `help_docs/README.md`）。
+- `routes/` — Flask blueprints: `main.py` (pages), `api.py` (compute endpoints). Async tasks via `task_manager.py` (in-memory `ThreadPoolExecutor`). Compute dispatch in `compute_service.py` (`_calculators` dict maps operation_type → calculator class).
+- `utils/` — LaTeX rendering (`latex_formatter.py`) and expression helpers.
+- `config.py` — central tunables: parser depth, L'Hôpital count, method-tree cutoffs (defaults and hard limits), task timeouts.
+- `app_local.py` / `app.py` both call `create_app()` which registers `main` and `api` blueprints.
+
+## Lint & auto-format
+
+- **Pylint** only (`.pylintrc` disables many pedantic rules). Run `pylint <file>`.
+- A PostToolUse hook in `.qoder/settings.json` auto-runs `pylint` on every `.py` file after editing.
+- No auto-formatter. Match existing 4-space PEP-8-ish style.
 
 ## Help documentation (`/help/*`)
 
-Content for the `/help/<page>` routes is authored as Markdown under
-`help_docs/src/`. The HTML Flask serves (`templates/help/<page>.html`) is
-**generated** from those `.md` files by pandoc via `help_docs/build_help.py`.
+- **Author in:** `help_docs/src/*.md`
+- **Generate HTML:** `python help_docs/build_help.py html` (requires pandoc ≥3 on `PATH`)
+- **Never hand-edit** `templates/help/*.html` — changes are clobbered on next build.
+- Both `.md` and generated `.html` are git-tracked (Vercel serves the HTML directly); commit the pair together.
+- Existing `.qoder/skills/help-build` and `help-new` contain the Qoder-specific workflows for this.
 
-- After editing a `.md` source, rebuild with `python help_docs/build_help.py html`.
-- Both `.md` and the generated `.html` are tracked in git (Vercel deploys the rendered pages directly); commit the pair together.
-- Never hand-edit `templates/help/*.html` — changes will be clobbered on the next build.
-- Two Qoder skills exist for this: `/help-build` (run the pandoc build) and `/help-new` (add / edit / delete a help page end-to-end, including the Flask route and the `SOURCE_TO_HTML` map in `help_docs/build_help.py`).
+## Docs
 
-## Documentation
-
-The project has **two** top-level READMEs that should stay in sync on content changes: `README.md` (Chinese, primary) and `README-EN.md` (English). When changing user-facing behavior, update both.
-
-## Commit messages
-
-Use short **Chinese** commit messages, matching the existing log (e.g. `更新文档`, `添加在墨干中调用的示例`, `Fix md`).
+Update **both** `README.md` (Chinese, primary) and `README-EN.md` (English) on user-facing changes.
 
 ## Testing
 
-There is **no test directory and no test runner**. Before marking a behavior change as done, verify it manually — either via `main.ipynb` (Python calls) or by running `python app_local.py` and exercising the web UI. Prefer adding a test file under a new `tests/` directory if you are asked to add regression coverage; use `pytest`.
+- No test directory or runner exists. Verify manually: `main.ipynb` (Python calls) or `python app_local.py` + web UI.
+- If adding regression coverage, create `tests/` and use `pytest`.
 
-## Lint
+## Commit messages
 
-- Pylint is the configured linter: `.pylintrc` disables many rules (line-too-long, missing docstrings, too-many-*, etc.). Run `pylint <file>` — do not add a new linter without asking.
-- No auto-formatter is configured. Match the surrounding 4-space, PEP-8-ish style of the file you're editing.
+Short **Chinese**, matching existing log (e.g. `更新文档`, `Fix md`).
+
+## Code style
+
+- **Reuse** existing functions and patterns; add new ones only when existing utilities cannot be adapted.
+- Prefer **loose coupling** — modules should depend on abstractions (`BaseCalculator`, `BaseStepGenerator`), not on concrete implementations.
+- **Keep extension points:** when adding a new domain or operation, follow the existing registration pattern (`_calculators` dict, rule registry, step generator).
+- Avoid redundant helper layers; a function with a single caller in the same module is usually unnecessary.
+
+## Keys an agent would miss
+
+- **Manual step solver sessions** (`/rule_select` page) are in-memory dicts in `api.py` (`_manual_sessions`) — lost on server restart.
+- **Method tree API** is async: POST to `/api/method_tree_start`, poll `/api/method_tree_status`, cancel via `/api/method_tree_cancel`, interactive decisions via `/api/method_tree_respond`.
+- **Calculator registry:** adding a new operation type requires registering it in `compute_service.py` `_calculators` dict and adding the route in `api.py`.
+- **Result cache DB:** SQLite cache at `cache/computation.db`, managed by `utils/db_cache.py`. Hash key via SHA256 of (op_type + expression + variable/point/direction). Per-cell toggles ("缓存"/"记录") in the frontend send `use_cache` / `record_cache` flags through the compute payload. Cached calculator variants (`CachedDiffCalculator`, `CachedIntegralCalculator`, `CachedLimitCalculator`) use the `DBCachedCalculator` mixin in `core/cached_calculator.py`; switching is handled in `compute_service.py` based on the flags.
+- **No CI/CD** — no `.github/`, no `vercel.json`. Deployment is manual via Vercel.
