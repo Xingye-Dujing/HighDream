@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from sympy import Expr, expand_log, latex, radsimp, simplify, sympify
+from sympy import Expr, expand_log, latex, log, radsimp, simplify, sympify
 
 
 @lru_cache(maxsize=512)
@@ -26,5 +26,7 @@ def cached_sympify(expr_str: str) -> Expr:
 @lru_cache(maxsize=128)
 def cached_simplify_radsimp(expr: Expr, is_radsimp: bool) -> Expr:
     if is_radsimp:
-        return expand_log(radsimp(expr), force=True)
-    return expand_log(expr, force=True)
+        expr = radsimp(expr)
+    if expr.has(log):
+        expr = expand_log(expr, force=True)
+    return expr
