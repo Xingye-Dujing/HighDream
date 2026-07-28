@@ -122,10 +122,59 @@ def compute():
     data = request.json or {}
     op_type = data.get('operation_type', '')
 
-    # Create the asynchronous task
     task_id = task_manager.create_task(op_type, data)
 
     return jsonify({'success': True, 'task_id': task_id})
+
+
+@api.route('/stream')
+def task_stream():
+    """SSE endpoint that pushes task status updates in real time.
+
+    The client opens an EventSource to ``/api/stream?task_id=...`` and receives:
+
+    - ``status`` event while the task is pending or running
+    - ``completed`` event with the full task dict on success
+    - ``failed`` event on failure or if the task does not exist
+
+    A ``heartbeat`` event is sent every 15 s to keep the connection alive.
+    """
+    from flask import Response, stream_with_context  # pylint: disable=import-outside-toplevel
+    from flask.json import dumps as json_dumps     # pylint: disable=import-outside-toplevel
+
+    task_id = request.args.get('task_id', '')
+
+    def generate():
+        last_status = None
+        while True:
+            task_info = task_manager.wait_for_task(task_id, timeout=3)
+            if task_info is None:
+                yield f"event: failed\ndata: {json_dumps({'error': '任务不存在: ' + task_id})}\n\n"
+                return
+
+            status = task_info['status']
+
+            if status == 'completed':
+                yield f"event: completed\ndata: {json_dumps(task_info)}\n\n"
+                return
+            if status == 'failed':
+                yield f"event: failed\ndata: {json_dumps({'error': task_info.get('error', '')})}\n\n"
+                return
+
+            if status != last_status:
+                last_status = status
+                yield f"event: status\ndata: {json_dumps({'status': status})}\n\n"
+            else:
+                yield f"event: heartbeat\ndata: {{}}\n\n"
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no',
+        }
+    )
 
 
 @api.route('/task_status', methods=['POST'])

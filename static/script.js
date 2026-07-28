@@ -868,7 +868,7 @@ function runCell(cell) {
     .then((data) => {
       if (data.success && data.task_id) {
         // Start polling task status
-        pollTaskStatus(data.task_id, outputArea, runButton, operationType);
+        subscribeTask(data.task_id, outputArea, runButton, operationType);
       } else {
         runButton.classList.remove("running");
         updateKernelStatus('idle');
@@ -1325,94 +1325,74 @@ function loadNotebook() {
   input.click();
 }
 
-// Poll task status
-function pollTaskStatus(taskId, outputArea, runButton, operationType) {
-  const pollInterval = 500; // Poll every 500ms for faster UI updates
+// Subscribe to task status via SSE
+function subscribeTask(taskId, outputArea, runButton, operationType) {
+  const es = new EventSource(`/api/stream?task_id=${taskId}`);
+  pollTimers.set(taskId, es);
 
-  const poll = async () => {
-    try {
-      const response = await fetch("/api/task_status", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ task_id: taskId }),
+  es.addEventListener('status', function (e) {
+    const data = JSON.parse(e.data);
+    updateComputingStatus(outputArea, data.status);
+  });
+
+  es.addEventListener('completed', function (e) {
+    es.close();
+    pollTimers.delete(taskId);
+
+    runButton.classList.remove("running");
+    updateKernelStatus('idle');
+
+    const task = JSON.parse(e.data);
+
+    if (operationType === "expr") {
+      renderExpressionResult(outputArea, {
+        success: true,
+        result: task.result[0],
+        tree_svg_url: task.result[1]
       });
+    } else {
+      outputArea.innerHTML = `<div class="math-output">${task.result}</div>`;
 
-      const data = await response.json();
+      addMathOutputControls();
 
-      if (data.success && data.task) {
-        const task = data.task;
-
-        // Update status display
-        updateComputingStatus(outputArea, task.status);
-
-        if (task.status === 'completed') {
-          // Clear polling timer
-          if (pollTimers.has(taskId)) {
-            clearInterval(pollTimers.get(taskId));
-            pollTimers.delete(taskId);
-          }
-
-          runButton.classList.remove("running");
-          updateKernelStatus('idle');
-
-          if (operationType === "expr") {
-            renderExpressionResult(outputArea, {
-              success: true,
-              result: task.result[0],
-              tree_svg_url: task.result[1]
-            });
-          } else {
-            outputArea.innerHTML = `<div class="math-output">${task.result}</div>`;
-
-            addMathOutputControls();
-
-            if (typeof MathJax !== "undefined") {
-              MathJax.typesetPromise([outputArea]);
-            }
-
-            outputArea.classList.add("result-animation");
-            setTimeout(() => {
-              outputArea.classList.remove("result-animation");
-            }, 1000);
-          }
-        } else if (task.status === 'failed') {
-          // Clear polling timer
-          if (pollTimers.has(taskId)) {
-            clearInterval(pollTimers.get(taskId));
-            pollTimers.delete(taskId);
-          }
-
-          runButton.classList.remove("running");
-          updateKernelStatus('idle');
-          outputArea.innerHTML = `<div class="error">错误: ${task.error}</div>`;
-          updateKernelStatus('error');
-        }
-      } else {
-        // Task query failed
-        if (pollTimers.has(taskId)) {
-          clearInterval(pollTimers.get(taskId));
-          pollTimers.delete(taskId);
-        }
-
-        runButton.classList.remove("running");
-        updateKernelStatus('idle');
-        outputArea.innerHTML = `<div class="error">任务查询失败: ${data.error || '未知错误'}</div>`;
-        updateKernelStatus('error');
+      if (typeof MathJax !== "undefined") {
+        MathJax.typesetPromise([outputArea]);
       }
-    } catch (error) {
-      console.error('轮询错误:', error);
-      // Network error does not clear the timer, continue trying
+
+      outputArea.classList.add("result-animation");
+      setTimeout(() => {
+        outputArea.classList.remove("result-animation");
+      }, 1000);
+    }
+  });
+
+  es.addEventListener('failed', function (e) {
+    es.close();
+    pollTimers.delete(taskId);
+
+    runButton.classList.remove("running");
+    updateKernelStatus('idle');
+
+    let msg = '任务失败';
+    try {
+      const data = JSON.parse(e.data);
+      msg = data.error || msg;
+    } catch (_) {}
+
+    outputArea.innerHTML = `<div class="error">错误: ${msg}</div>`;
+    updateKernelStatus('error');
+  });
+
+  es.onerror = function () {
+    // EventSource auto-reconnects; only clean up if permanently closed
+    if (es.readyState === EventSource.CLOSED) {
+      pollTimers.delete(taskId);
+      runButton.classList.remove("running");
+      updateKernelStatus('idle');
+      outputArea.innerHTML = '<div class="error">连接中断</div>';
+      updateKernelStatus('error');
     }
   };
-
-  // Execute once immediately
-  poll();
-
-  // Set up timed polling
-  const timerId = setInterval(poll, pollInterval);
-  pollTimers.set(taskId, timerId);
 }
 
 // Update computing status display

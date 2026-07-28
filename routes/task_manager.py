@@ -66,8 +66,8 @@ class TaskManager:
             self._task_lock = threading.Lock()
             self._initialized = True
             self._executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
-            # Semaphore to control concurrent tasks
             self._semaphore = threading.Semaphore(MAX_WORKERS)
+            self._task_events: Dict[str, threading.Event] = {}
             self._start_cleanup_thread()
 
     def create_task(self, operation_type: str, data: Dict[str, Any],
@@ -85,11 +85,10 @@ class TaskManager:
 
         with self._task_lock:
             self._tasks[task_id] = task
+            self._task_events[task_id] = threading.Event()
 
-        # Propagate the id so the worker side can register per-task state.
         data['task_id'] = task_id
 
-        # Start asynchronous processing
         thread = threading.Thread(target=self._execute_task, args=(task,))
         thread.daemon = True
         thread.start()
@@ -103,6 +102,22 @@ class TaskManager:
             if task:
                 return task.to_dict()
             return None
+
+    def wait_for_task(self, task_id: str, timeout: float = 2.0) -> Optional[Dict[str, Any]]:
+        """Block until task completes or timeout elapses, then return current status.
+
+        Returns None if the task no longer exists.
+        """
+        with self._task_lock:
+            task = self._tasks.get(task_id)
+            event = self._task_events.get(task_id)
+        if task is None:
+            return None
+        if event is not None:
+            event.wait(timeout)
+        with self._task_lock:
+            task = self._tasks.get(task_id)
+            return task.to_dict() if task else None
 
     def _execute_task(self, task: Task):
         """Execute the task (runs in background thread)"""
@@ -137,6 +152,10 @@ class TaskManager:
 
             finally:
                 task.completed_at = datetime.now()
+                with self._task_lock:
+                    event = self._task_events.get(task.task_id)
+                    if event:
+                        event.set()
 
     def _start_cleanup_thread(self):
         def cleanup_worker():
@@ -159,6 +178,7 @@ class TaskManager:
                     tasks_to_delete.append(task_id)
 
             for task_id in tasks_to_delete:
+                self._task_events.pop(task_id, None)
                 del self._tasks[task_id]
 
 
