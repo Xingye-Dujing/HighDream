@@ -1,7 +1,9 @@
 from abc import ABC
 from typing import List, Tuple
 
-from sympy import Expr, Symbol, latex
+from sympy import Expr, Symbol
+
+from utils.cache_utils import cached_latex
 
 # from sympy import Dummy
 
@@ -71,7 +73,7 @@ class BaseStepGenerator(ABC):
             if step == 'None':
                 line = rf"& \quad \quad"
             else:
-                line = r"&=" + latex(step) if i > 0 else "&" + latex(step)
+                line = r"&=" + cached_latex(step) if i > 0 else "&" + cached_latex(step)
             if explanation:
                 line += rf" \quad \text{{{explanation}}}"
             lines.append(line)

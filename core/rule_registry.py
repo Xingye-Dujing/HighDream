@@ -1,6 +1,6 @@
 from typing import Generator, Type
 
-from sympy import Expr, exp, latex, log
+from sympy import Expr, exp, log
 from sympy.functions.elementary.hyperbolic import HyperbolicFunction
 from sympy.functions.elementary.trigonometric import InverseTrigonometricFunction, TrigonometricFunction
 
@@ -8,6 +8,7 @@ from utils import (
     MatcherFunction, MatcherFunctionReturn, MatcherList,
     Operation, RuleContext, RuleDict, RuleFunction, RuleFunctionReturn
 )
+from utils.cache_utils import cached_latex as latex
 
 
 class RuleRegistry:

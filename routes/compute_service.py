@@ -11,9 +11,10 @@ and handles data processing, error handling, and result formatting.
 # form config import TREES_DIR
 from typing import Any, Dict, Tuple
 
-from sympy import Symbol, preorder_traversal, latex, sympify
+from sympy import Symbol, preorder_traversal, latex
 
 from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
+from utils.cache_utils import cached_sympify
 from domains import (
     CachedDiffCalculator, CachedIntegralCalculator, CachedLimitCalculator,
     DiffCalculator, IntegralCalculator, LimitCalculator, ExpressionParser,
@@ -126,7 +127,7 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
                 compute_latex(expression, Symbol(variable))
 
         if operation_type == 'limit':
-            point = sympify(data.get('point', '0'))
+            point = cached_sympify(data.get('point', '0'))
             direction = data.get('direction', '+')
             max_lhopital = int(data.get('max_lhopital_count', DEFAULT_LHOPITAL_MAX_COUNT))
             if use_cache or record_cache:

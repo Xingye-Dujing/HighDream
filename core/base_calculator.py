@@ -3,26 +3,32 @@ from collections import deque
 from functools import lru_cache
 from typing import Deque, Dict, List, Tuple
 
-from sympy import Expr, Matrix, Symbol, expand_log, latex, radsimp, simplify, sympify
+from sympy import Expr, Matrix, Symbol
 
 from utils import (
     Context, MatcherList, Operation, RuleContext,
     RuleDict, RuleFunction, is_elementary_expression
 )
+from utils.cache_utils import (
+    cached_doit, cached_latex, cached_simplify,
+    cached_simplify_radsimp, cached_sympify,
+)
 from .base_step_generator import BaseStepGenerator
 from .rule_registry import RuleRegistry
 
 
-@lru_cache(maxsize=128)
-def _simplify_impl(expr: Expr, is_radsimp: bool) -> Expr:
-    if is_radsimp:
-        return expand_log(radsimp(expr), force=True)
-    return expand_log(expr, force=True)
-
-
-@lru_cache(maxsize=256)
-def _sympify_impl(expr_str: str) -> Expr:
-    return sympify(expr_str)  # type: ignore
+@lru_cache(maxsize=2048)
+def _cached_perform_operation(expr: Expr, operation_cls_name: str,
+                               var_name: str, point_str: str, direction: str) -> Operation:
+    from sympy import Derivative, Integral, Limit, sympify  # pylint: disable=import-outside-toplevel
+    mapping = {'Derivative': Derivative, 'Integral': Integral, 'Limit': Limit}
+    cls = mapping.get(operation_cls_name)
+    if cls is None:
+        raise ValueError(f"Unknown operation: {operation_cls_name}")
+    var = Symbol(var_name) if var_name else Symbol('x')
+    if cls is Limit:
+        return cls(expr, var, sympify(point_str), dir=direction)
+    return cls(expr, var)
 
 
 class BaseCalculator(ABC):
@@ -79,10 +85,14 @@ class BaseCalculator(ABC):
 
     def _get_cached_operation(self, expr: Expr, operation: Operation, **context: Context) -> Operation:
         """Return a cached operation if available, otherwise compute and cache the operation."""
-        key = (expr, str(context))
-        if key not in self.cache:
-            self.cache[key] = self._perform_operation(expr, operation, **context)
-        return self.cache[key]
+        try:
+            op_name = operation.__name__
+        except AttributeError:
+            op_name = operation.__class__.__name__
+        var = str(context.get('variable', 'x'))
+        point = str(context.get('point', '0'))
+        direction = str(context.get('direction', '+'))
+        return _cached_perform_operation(expr, op_name, var, point, direction)
 
     @staticmethod
     def _step_expr_postprocess(step_expr: Expr) -> Expr:
@@ -95,7 +105,7 @@ class BaseCalculator(ABC):
         """Return a simplified version of the expression, using caching to avoid redundant computation.
         Note: Force log simplification."""
 
-        return _simplify_impl(expr, self.is_radsimp)
+        return cached_simplify_radsimp(expr, self.is_radsimp)
 
     def _get_context_dict(self, **context: Context) -> RuleContext:
         context_dict = {}
@@ -125,10 +135,10 @@ class BaseCalculator(ABC):
 
         # Fallback to SymPy if no rule matches
         operation_obj = self._perform_operation(expr, operation, **context)
-        operation_val = operation_obj.doit()
+        operation_val = cached_doit(operation_obj)
         if not is_elementary_expression(operation_val):
             self.sudden_end = [True, operation_obj]
-        return operation_val, f"需手动计算表达式: ${latex(operation_obj)}$"
+        return operation_val, f"需手动计算表达式: ${cached_latex(operation_obj)}$"
 
     def _update_expression(self, current_expr: Expr | Matrix, operation: Operation,
                            expr_to_operation: Dict[str | Expr, Operation], direct_compute: bool, **context: Context) \
@@ -136,10 +146,10 @@ class BaseCalculator(ABC):
 
         current_operation = self._get_cached_operation(current_expr, operation, **context)
         if direct_compute:
-            new_expr = current_operation.doit()
+            new_expr = cached_doit(current_operation)
             if not is_elementary_expression(new_expr):
                 self.sudden_end = [True, current_operation]
-            explanation = f"${latex(current_operation)}$ 之前已计算过，不再显示中间过程"
+            explanation = f"${cached_latex(current_operation)}$ 之前已计算过，不再显示中间过程"
         else:
             new_expr, explanation = self._apply_rule(current_expr, operation, **context)
         # Replace all occurrences of operation(current, var) with new_expr
@@ -166,7 +176,7 @@ class BaseCalculator(ABC):
 
         self.step_generator.add_step(final_expr, "回代换元变量")
 
-        return simplify(final_expr, inverse=True)
+        return cached_simplify(final_expr, inverse=True)
 
     def final_postprocess(self, final_expr: Expr) -> None:
         """Apply domain-aware simplification by assuming all free symbols are positive real numbers.
@@ -191,7 +201,7 @@ class BaseCalculator(ABC):
 
     def _sympify(self, expr: str) -> Expr:
         """Convert the input expression to a SymPy expression."""
-        return _sympify_impl(expr)
+        return cached_sympify(expr)
 
     def _do_compute(self, expr: str, operation: Operation, **context: Context) -> None:
         """Perform the core symbolic computation and record each evaluation step."""
@@ -243,7 +253,7 @@ class BaseCalculator(ABC):
 
             if self.sudden_end[0]:
                 self.step_generator.add_step(
-                    None, f'${latex(self.sudden_end[1])}$ 无法用初等函数表示, 退出计算.')
+                    None, f'${cached_latex(self.sudden_end[1])}$ 无法用初等函数表示, 退出计算.')
                 break
 
             self.step_generator.add_step(current_step, explanation)
@@ -260,7 +270,7 @@ class BaseCalculator(ABC):
             final_expr = exprs[-1]
 
             # Final simplification
-            simplified_expr = simplify(final_expr, inverse=True)
+            simplified_expr = cached_simplify(final_expr, inverse=True)
             if simplified_expr != final_expr:
                 self.step_generator.steps[-1] = simplified_expr
                 final_expr = simplified_expr

@@ -1,6 +1,5 @@
-from sympy import latex
-
 from core import BaseStepGenerator
+from utils.cache_utils import cached_latex
 
 
 class LimitStepGenerator(BaseStepGenerator):
@@ -15,13 +14,13 @@ class LimitStepGenerator(BaseStepGenerator):
             step_type = self._get_step_type(explanation)
 
             if step_type == "left_limit_start":
-                line = rf"& {latex(step)} \quad \text{{{explanation}}}"
+                line = rf"& {cached_latex(step)} \quad \text{{{explanation}}}"
             elif step_type == "right_limit_start":
-                line = rf"\newline \newline & {latex(step)} \quad \text{{{explanation}}}"
+                line = rf"\newline \newline & {cached_latex(step)} \quad \text{{{explanation}}}"
             elif step_type == "comparison":
                 line = rf"\newline \newline & \text{{{explanation}}}"
             else:
-                line = r"&=" + latex(step) if i > 0 else "&" + latex(step)
+                line = r"&=" + cached_latex(step) if i > 0 else "&" + cached_latex(step)
                 if explanation:
                     line += rf"\quad \text{{{explanation}}}"
             lines.append(line)
