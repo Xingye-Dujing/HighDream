@@ -1327,7 +1327,7 @@ function loadNotebook() {
 
 // Poll task status
 function pollTaskStatus(taskId, outputArea, runButton, operationType) {
-  const pollInterval = 1000; // Poll once per second
+  const pollInterval = 500; // Poll every 500ms for faster UI updates
 
   const poll = async () => {
     try {

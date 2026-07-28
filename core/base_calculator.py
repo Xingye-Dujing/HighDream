@@ -13,6 +13,18 @@ from .base_step_generator import BaseStepGenerator
 from .rule_registry import RuleRegistry
 
 
+@lru_cache(maxsize=128)
+def _simplify_impl(expr: Expr, is_radsimp: bool) -> Expr:
+    if is_radsimp:
+        return expand_log(radsimp(expr), force=True)
+    return expand_log(expr, force=True)
+
+
+@lru_cache(maxsize=256)
+def _sympify_impl(expr_str: str) -> Expr:
+    return sympify(expr_str)  # type: ignore
+
+
 class BaseCalculator(ABC):
     """Abstract base class for symbolic expression evaluators that support step-by-step evaluation."""
 
@@ -79,14 +91,11 @@ class BaseCalculator(ABC):
 
         return step_expr
 
-    @lru_cache(maxsize=128)
     def _cached_simplify(self, expr: Expr) -> Expr:
         """Return a simplified version of the expression, using caching to avoid redundant computation.
         Note: Force log simplification."""
 
-        if self.is_radsimp:
-            return expand_log(radsimp(expr), force=True)
-        return expand_log(expr, force=True)
+        return _simplify_impl(expr, self.is_radsimp)
 
     def _get_context_dict(self, **context: Context) -> RuleContext:
         context_dict = {}
@@ -182,7 +191,7 @@ class BaseCalculator(ABC):
 
     def _sympify(self, expr: str) -> Expr:
         """Convert the input expression to a SymPy expression."""
-        return sympify(expr)  # type: ignore
+        return _sympify_impl(expr)
 
     def _do_compute(self, expr: str, operation: Operation, **context: Context) -> None:
         """Perform the core symbolic computation and record each evaluation step."""
