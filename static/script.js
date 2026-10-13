@@ -4,15 +4,16 @@ const APPLIED_OPS = ["tangent", "linearization", "critical_points", "newton", "a
 
 // Operations whose input is structured text (matrices / vectors), not a rendered
 // math expression: these keep the plain <textarea> instead of the MathLive editor.
-// Ops whose input is plain multi-line text (kept as a textarea): transforms,
-// equation lists, and symbolic matrix expressions.
-const MATH_TEXT_OPS = new Set(["transform-1", "transform-2", "linear-system", "matrix_symbolic"]);
+// Ops whose input is plain multi-line text: equation lists (linear-system) and
+// sympy-syntax symbolic matrix expressions (matrix_symbolic), which don't fit a
+// rendered matrix editor.
+const MATH_TEXT_OPS = new Set(["linear-system", "matrix_symbolic"]);
 
 // Single-matrix linear-algebra ops: use the WYSIWYG editor and get a matrix skeleton.
 const MATRIX_SINGLE_OPS = new Set(["ref", "det", "invert", "rank", "LU", "diag", "eigen", "singular", "svd", "schur", "orthogonal", "dependence"]);
 
 // Two-input matrix/vector ops: show a second WYSIWYG field; backend splits on newline.
-const MULTI_INPUT_OPS = new Set(["operations", "linear-solver", "projection"]);
+const MULTI_INPUT_OPS = new Set(["operations", "linear-solver", "projection", "transform-1", "transform-2"]);
 
 // Per-operation LaTeX hint shown as the editor placeholder ("预设题的形式").
 const OP_PLACEHOLDER = {
