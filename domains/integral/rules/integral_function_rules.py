@@ -1,6 +1,6 @@
 from sympy import (
     Abs, Expr, Integral, Pow, acos, asin, atan, cos, cosh, cot, csc, exp,
-    latex, log, sec, sin, sinh, sqrt, tan, tanh, csch, sech, coth
+    latex, log, sec, sin, sinh, sqrt, tan, tanh, trigsimp, csch, sech, coth
 )
 
 from core import RuleRegistry
@@ -484,6 +484,38 @@ def cot_csc_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     if expr.equals(cot(var) * csc(var)):
         return 'cot_csc'
     return None
+
+
+def _has_trig_power(expr: Expr, var) -> bool:
+    return any(isinstance(a, Pow) and a.base.func in (sin, cos) and a.exp.is_Integer
+               and a.exp > 0 and a.base.args == (var,) for a in expr.atoms(Pow))
+
+
+def _fully_linearized(expr: Expr) -> bool:
+    return not any(isinstance(a, Pow) and a.base.func in (sin, cos) and a.exp.is_Integer
+                   and a.exp > 0 for a in expr.atoms(Pow))
+
+
+def trig_power_reduce_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Match a product of sin/cos integer powers that trigsimp can reduce to a
+    linear combination of multiple-angle terms (e.g. sin^2 * cos^2)."""
+    var = context['variable']
+    if not expr.is_Mul or not _has_trig_power(expr, var):
+        return None
+    reduced = trigsimp(expr)
+    if reduced == expr or not _fully_linearized(reduced):
+        return None
+    return 'trig_power_reduce'
+
+
+def trig_power_reduce_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Rewrite sin^m * cos^n into multiple-angle form so each term integrates easily."""
+    var = context['variable']
+    reduced = trigsimp(expr)
+    return Integral(reduced, var), (
+        f"降幂(倍角/积化和差): $\\int {latex(expr)}\\,d{latex(var)} = "
+        f"\\int {latex(reduced)}\\,d{latex(var)}$"
+    )
 
 
 def cot_csc_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:  # pylint: disable=unused-argument
