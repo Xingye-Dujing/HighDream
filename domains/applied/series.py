@@ -14,6 +14,7 @@ from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import (align, derivative_value, expr_text, get_var,
                                      integral_steps, render_note as note, to_num)
+from domains.applied._convergence import convergence_rows
 
 
 def taylor(data):
@@ -58,31 +59,14 @@ def taylor_error(data):
 def series_convergence(data):
     n = Symbol(data.get('variable', 'n') or 'n')
     a = sympify(expr_text(data))
-    items = [(a, note("一般项"))]
-    term_lim = limit(a, n, oo)
-    items.append((Eq(Symbol('lim_a_n'), term_lim), note("第 n 项极限")))
-    if term_lim not in (0,):
-        items.append((None, note("第 n 项不趋于 0, 级数发散")))
-        return True, align(items)
-    ratio = simplify(limit(abs(a.subs(n, n + 1) / a), n, oo))
-    items.append((Eq(Symbol('L_ratio'), ratio), note("比值判别")))
-    if ratio.is_number:
-        verdict = ('收敛' if ratio < 1 else '发散' if ratio > 1 else '比值判别不确定')
-        items.append((None, note(f"比值判别得 L={ratio}, 故级数{verdict}")))
-    root = simplify(limit(Abs(a) ** (1 / n), n, oo))
-    items.append((Eq(Symbol('rho_root'), root), note("根值判别")))
-    if root.is_number:
-        rv = ('收敛' if root < 1 else '发散' if root > 1 else '根值判别不确定')
-        items.append((None, note(f"根值判别得, 故级数{rv}")))
+    items, verdict = convergence_rows(a, n)
+    if verdict == 'unknown':
+        items.append((None, note("标准判别法未能定论 (可尝试比较/积分判别)")))
     try:
-        abs_sum = summation(Abs(a), (n, 1, oo))
-        items.append((Eq(Symbol('sum_abs'), abs_sum), note("绝对收敛 Σ|a_n|")))
-        if abs_sum.is_finite:
-            items.append((None, note("Σ|a_n| 收敛, 故级数绝对收敛")))
+        closed = summation(a, (n, 1, oo))
+        items.append((Eq(Symbol('sum_a_n'), closed), note("闭式求和(若存在), 供参考")))
     except Exception:  # pylint: disable=broad-exception-caught
         pass
-    closed = summation(a, (n, 1, oo))
-    items.append((Eq(Symbol('sum_a_n'), closed), note("闭式求和(若存在)")))
     return True, align(items)
 
 
@@ -136,15 +120,15 @@ def _verdict_text(value):
 
 
 def _endpoint_converges(coef, n, radius, sign):
-    """Whether Σ c_n (sign·R)^n converges (True/False), or None if undecidable."""
+    """Whether Σ c_n (sign·R)^n converges, via the rule-based test engine.
+
+    Returns True/False, or None when the tests cannot decide.
+    """
     if radius in (oo, 0):
         return None
     term = coef * (sign * radius) ** n
-    try:
-        res = Sum(term, (n, 1, oo)).is_convergent()
-    except (TypeError, ValueError):
-        return None
-    return None if res is None else bool(res)
+    _rows, verdict = convergence_rows(term, n)
+    return {'converge': True, 'diverge': False}.get(verdict)
 
 
 def power_series(data):

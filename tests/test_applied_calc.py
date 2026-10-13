@@ -76,7 +76,25 @@ def test_taylor_error_remainder():
 
 def test_series_absolute_and_integral_test_present():
     body = _res('series_convergence', expression='1/n**2', variable='n')
-    assert '绝对收敛' in body and '$' not in body
+    assert '收敛' in body and 'p-级数' in body and '$' not in body
+
+
+def test_convergence_ratio_test_factorial():
+    # 1/n! converges by the ratio test (rho = 0 < 1)
+    body = _res('series_convergence', expression='1/factorial(n)', variable='n')
+    assert '比值判别' in body and '绝对收敛' in body and '$' not in body
+
+
+def test_convergence_alternating_leibniz():
+    # (-1)^n / n converges by Leibniz (nth-term 0, ratio/root inconclusive)
+    body = _res('series_convergence', expression='(-1)**n/n', variable='n')
+    assert '莱布尼茨' in body and '$' not in body
+
+
+def test_convergence_nth_term_diverges():
+    # 1/n diverges (p-series p=1)
+    body = _res('series_convergence', expression='1/n', variable='n')
+    assert '发散' in body and '$' not in body
 
 
 def test_iterated_integral_rectangular():
