@@ -15,6 +15,22 @@ available_sym_chars = [
 ]
 
 
+def format_note(explanation) -> str:
+    """Render a step explanation as a MathJax fragment.
+
+    Text between ``$...$`` becomes live LaTeX (so formulas render); the rest is
+    wrapped in ``\\text{}`` as prose. This avoids showing literal ``$`` or unicode
+    math symbols as plain text.
+    """
+    parts = str(explanation).split('$')
+    out = []
+    for i, seg in enumerate(parts):
+        if seg == '':
+            continue
+        out.append(seg if i % 2 == 1 else r"\text{" + seg + r"}")
+    return ''.join(out)
+
+
 class BaseStepGenerator(ABC):
     """Abstract base class for generating and formatting the step-by-step evaluation."""
 
@@ -75,7 +91,7 @@ class BaseStepGenerator(ABC):
             else:
                 line = r"&=" + cached_latex(step) if i > 0 else "&" + cached_latex(step)
             if explanation:
-                line += rf" \quad \text{{{explanation}}}"
+                line += r" \quad " + format_note(explanation)
             lines.append(line)
 
         body = r"\newline".join(lines)

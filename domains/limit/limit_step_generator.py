@@ -1,4 +1,5 @@
 from core import BaseStepGenerator
+from core.base_step_generator import format_note
 from utils.cache_utils import cached_latex
 
 
@@ -14,15 +15,15 @@ class LimitStepGenerator(BaseStepGenerator):
             step_type = self._get_step_type(explanation)
 
             if step_type == "left_limit_start":
-                line = rf"& {cached_latex(step)} \quad \text{{{explanation}}}"
+                line = rf"& {cached_latex(step)} \quad {format_note(explanation)}"
             elif step_type == "right_limit_start":
-                line = rf"\newline \newline & {cached_latex(step)} \quad \text{{{explanation}}}"
+                line = rf"\newline \newline & {cached_latex(step)} \quad {format_note(explanation)}"
             elif step_type == "comparison":
-                line = rf"\newline \newline & \text{{{explanation}}}"
+                line = rf"\newline \newline & {format_note(explanation)}"
             else:
                 line = r"&=" + cached_latex(step) if i > 0 else "&" + cached_latex(step)
                 if explanation:
-                    line += rf"\quad \text{{{explanation}}}"
+                    line += r"\quad " + format_note(explanation)
             lines.append(line)
 
         body = r"\newline".join(lines)

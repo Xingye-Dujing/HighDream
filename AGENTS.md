@@ -63,6 +63,8 @@ Short **Chinese**, matching existing log (e.g. `更新文档`, `Fix md`).
 ## Keys an agent would miss
 
 - **Manual step solver sessions** (`/rule_select` page) are in-memory dicts in `api.py` (`_manual_sessions`) — lost on server restart.
+- **Step LaTeX rendering:** `core/base_step_generator.py::format_note` turns an explanation's ``$...$`` into live LaTeX and wraps prose in ``\text{}``. Do NOT wrap whole explanations in `\text{}` (that shows literal `$`). Keep math in `$...$` inside rule-explanation strings.
+- **Applied ops** (`core/applied_calc.py`, dispatched by `compute_service`): each returns a `\begin{align}` block; integral-based ops reuse `IntegralCalculator` for step-by-step. All output must be LaTeX (no unicode math symbols in labels).
 - **Method tree API** is async: POST to `/api/method_tree_start`, poll `/api/method_tree_status`, cancel via `/api/method_tree_cancel`, interactive decisions via `/api/method_tree_respond`.
 - **Task results** can stream over SSE at `/api/stream` (`text/event-stream`) as an alternative to polling `/api/task_status`.
 - **`/api/sympy_execute` is RCE by design** — it `exec()`/`eval()`s user-submitted code (`exec-used`/`eval-used` are pylint-disabled). Treat it as a sensitive area: don't casually expand, refactor, or copy its pattern into other endpoints.

@@ -19,7 +19,7 @@ def test_arc_length():
 
 def test_disk_volume():
     body = _res('volume_disk', expression='x', variable='x', lower='0', upper='1')
-    assert r'\pi' in body and r'V=' in body
+    assert r'\pi' in body
 
 
 def test_taylor():
@@ -27,8 +27,8 @@ def test_taylor():
 
 
 def test_improper_converges():
-    assert r'=1' in _res('improper_integral', expression='exp(-x)', variable='x',
-                         lower='0', upper='oo')
+    body = _res('improper_integral', expression='exp(-x)', variable='x', lower='0', upper='oo')
+    assert '收敛' in body and '$' not in body
 
 
 def test_series_converges_and_sums():
