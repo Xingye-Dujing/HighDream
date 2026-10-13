@@ -254,6 +254,19 @@ def series_convergence(data):
     if root.is_number:
         r_verdict = ('收敛' if root < 1 else '发散' if root > 1 else '根值判别不确定')
         items.append((None, _p(f"根值判别得, 故级数{r_verdict}")))
+    try:
+        abs_sum = summation(Abs(a), (n, 1, oo))
+        items.append((Eq(Symbol('sum_abs_a_n'), abs_sum), _p("绝对收敛: Σ|a_n|")))
+        if abs_sum.is_finite:
+            items.append((None, _p("Σ|a_n| 收敛, 故级数绝对收敛")))
+    except Exception:  # pylint: disable=broad-exception-caught
+        pass
+    try:
+        tt = Symbol('t')
+        integral_val = Integral(Abs(a).subs(n, tt), (tt, 1, oo)).doit()
+        items.append((integral_val, _p("积分判别法 (积分与级数同敛散)")))
+    except Exception:  # pylint: disable=broad-exception-caught
+        pass
     closed = summation(a, (n, 1, oo))
     items.append((Eq(Symbol('sum_a_n'), closed), _p("闭式求和(若存在)")))
     return True, _align(items)
@@ -387,6 +400,22 @@ def radius_of_convergence(data):
     ])
 
 
+def taylor_error_bound(data):
+    x = _var(data)
+    f = sympify(_expr_text(data))
+    x0 = _num(data.get('point'), 0)
+    order = int(data.get('order') or data.get('expr-depth') or 6)
+    m = order + 1
+    deriv = simplify(f.diff(x, m))
+    xi = Symbol('xi')
+    remainder = deriv.subs(x, xi) / factorial(m) * (x - x0) ** m
+    return True, _align([
+        (f, _p("f(x)")),
+        (deriv, _p(f"n+1 = {m} 阶导数")),
+        (Eq(Symbol('R_n'), remainder), _p("拉格朗日余项 (xi 介于 x0 与 x 之间)")),
+    ])
+
+
 HANDLERS = {
     'tangent': tangent_line,
     'linearization': linearization,
@@ -409,4 +438,5 @@ HANDLERS = {
     'complex_roots': complex_roots,
     'mean_value': mean_value,
     'radius_of_convergence': radius_of_convergence,
+    'taylor_error': taylor_error_bound,
 }

@@ -67,3 +67,13 @@ def test_complex_polar_modulus():
 
 def test_complex_roots():
     assert '-i' in _res('complex_roots', expression='z**2+1', variable='z')
+
+
+def test_taylor_error_remainder():
+    body = _res('taylor_error', expression='sin(x)', variable='x', point='0', order='3')
+    assert 'sin' in body and '$' not in body
+
+
+def test_series_absolute_and_integral_test_present():
+    body = _res('series_convergence', expression='1/n**2', variable='n')
+    assert '绝对收敛' in body and '$' not in body
