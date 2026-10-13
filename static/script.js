@@ -1,6 +1,49 @@
 // Global variables
 let cellCounter = 0;
-const APPLIED_OPS = ["tangent", "linearization", "critical_points", "newton", "arc_length", "volume_disk", "surface_area", "implicit_diff", "parametric_diff", "polar_area", "polar_slope", "taylor", "series_convergence", "improper_integral", "ode", "numerical_integration", "mean_value", "radius_of_convergence", "taylor_error", "complex_simplify", "complex_polar", "complex_roots", "volume_shell", "de_moivre"];
+const APPLIED_OPS = ["tangent", "linearization", "critical_points", "newton", "arc_length", "volume_disk", "surface_area", "implicit_diff", "parametric_diff", "polar_area", "polar_slope", "taylor", "series_convergence", "improper_integral", "ode", "numerical_integration", "mean_value", "radius_of_convergence", "taylor_error", "complex_simplify", "complex_polar", "complex_roots", "volume_shell", "de_moivre", "iterated_integral", "power_series"];
+
+// Operations whose input is structured text (matrices / vectors), not a rendered
+// math expression: these keep the plain <textarea> instead of the MathLive editor.
+const MATH_TEXT_OPS = new Set(["ref", "operations", "transform-1", "transform-2", "det", "dependence", "projection", "rank", "LU", "orthogonal", "diag", "eigen", "singular", "svd", "schur", "linear-system", "linear-solver", "matrix_symbolic"]);
+
+// Per-operation LaTeX hint shown as the editor placeholder ("预设题的形式").
+const OP_PLACEHOLDER = {
+  expr: "\\text{表达式: }\\frac{1}{x}+\\sin x",
+  diff: "\\frac{d}{d\\square}\\left[\\square\\right]",
+  integral: "\\int \\square\\, d\\square",
+  limit: "\\lim_{\\square \\to \\square}\\ \\square",
+};
+
+function isTextOp(op) {
+  return MATH_TEXT_OPS.has(op);
+}
+
+// Canonical value store for a cell is the hidden <textarea.math-input>; the
+// visible MathLive <math-field> mirrors it for scalar (non-text) operations.
+function getMathSource(cell) {
+  return cell.querySelector("textarea.math-input");
+}
+function getMathField(cell) {
+  return cell.querySelector("math-field");
+}
+// Show the MathLive editor for scalar ops, the textarea for matrix/text ops.
+function applyInputMode(cell) {
+  const op = cell.querySelector(".operation-type").value;
+  const field = getMathField(cell);
+  const src = getMathSource(cell);
+  if (!field || !src) return;
+  if (isTextOp(op)) {
+    field.style.display = "none";
+    src.style.display = "";
+  } else {
+    field.value = src.value;      // sync editor from canonical store
+    field.style.display = "";
+    src.style.display = "none";
+    const ph = OP_PLACEHOLDER[op] || "\\square";
+    field.setAttribute("placeholder", ph);
+  }
+}
+
 let activeCellId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
 let isKeyboardVisible = false;
@@ -286,6 +329,7 @@ function bindEvents() {
 function setupCellEvents(cell) {
   const operationSelector = cell.querySelector(".operation-type");
   const textarea = cell.querySelector("textarea");
+  const mathField = cell.querySelector("math-field");
   const runButton = cell.querySelector(".run-cell-button");
   const keyboardButton = cell.querySelector(".keyboard-button");
   const addCellButton = cell.querySelector(".add-cell-button");
@@ -293,10 +337,23 @@ function setupCellEvents(cell) {
   const cellType = cell.dataset.cellType;
 
   if (cellType === "code") {
+    // MathLive editor is the visible input for scalar ops; it mirrors its LaTeX into
+    // the hidden textarea, which stays the canonical value every other path reads.
+    if (mathField) {
+      mathField.addEventListener("change", function () {
+        textarea.value = mathField.value;
+      });
+      mathField.addEventListener("click", function () {
+        setActiveCell(cell);
+      });
+    }
+    applyInputMode(cell);
+
     // Operation type change event
     operationSelector.addEventListener("change", function () {
-      // Update input area rendering
-      renderMathPreview(cell);
+      // Switch editor/textarea visibility and set the per-op template hint.
+      applyInputMode(cell);
+
 
       // If diff, integral, limit is selected, show variable input box
       /*
@@ -379,13 +436,6 @@ function setupCellEvents(cell) {
       runCell(cell);
     });
 
-    // Textbox input event - real-time preview
-    textarea.addEventListener("input", function () {
-      debounce(() => {
-        renderMathPreview(cell);
-      }, 500)();
-    });
-
     // Virtual keyboard button
     keyboardButton.addEventListener("click", function () {
       toggleKeyboard();
@@ -456,9 +506,11 @@ function setActiveCell(cell) {
       cell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   } else {
+    const field = cell.querySelector("math-field");
     const textarea = cell.querySelector("textarea");
-    if (textarea) {
-      textarea.focus();
+    const target = (field && field.style.display !== "none") ? field : textarea;
+    if (target) {
+      target.focus();
       cell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }
@@ -691,8 +743,8 @@ function createCellElement(id, type) {
                 <i class="fas fa-keyboard"></i>
               </button>
             </div>
+            <math-field class="math-editor" virtual-keyboard-mode="onfocus" style="display:none;"></math-field>
             <textarea placeholder="输入数学表达式..." class="math-input"></textarea>
-            <div class="math-preview"></div>
           </div>
         </div>
         <div class="cell-output-container">
@@ -981,44 +1033,6 @@ function renderExpressionResult(outputArea, data) {
   if (typeof MathJax !== "undefined") {
     MathJax.typesetPromise([outputArea]);
   }
-}
-
-// Render math preview
-function renderMathPreview(cell) {
-  const textarea = cell.querySelector("textarea");
-  const content = textarea.value.trim();
-  const previewArea = cell.querySelector(".math-preview");
-  const operationType = cell.querySelector(".operation-type").value;
-
-  if (!content) {
-    previewArea.innerHTML = "";
-    return;
-  }
-
-  fetch("/api/parse", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      expression: content,
-      operation_type: operationType,
-    }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
-        previewArea.innerHTML = `$$${data.result} $$`;
-        if (typeof MathJax !== "undefined") {
-          MathJax.typesetPromise([previewArea]);
-        }
-      } else {
-        previewArea.innerHTML = `<span class="preview-error"> 解析错误: ${data.error}</> `;
-      }
-    })
-    .catch((error) => {
-      previewArea.innerHTML = `<span class="preview-error"> 请求错误: ${error.message}</> `;
-    });
 }
 
 // Render Markdown content
@@ -1375,7 +1389,6 @@ function loadNotebook() {
 
               if (exprSort) exprSort.value = cellData.exprSort || "complexity";
               if (exprDepth) exprDepth.value = cellData.exprDepth || "3";
-              if (geneSort) geneSort.value = cellData.geneSort || "false";
             }
 
             // Trigger change event to show/hide appropriate controls
@@ -1455,6 +1468,7 @@ function spawnCellFromSubtask(sub) {
     const l = cell.querySelector(".integral-lower");
     if (l) l.value = sub.lower || "";
   }
+  applyInputMode(cell);
   runCell(cell);
 }
 

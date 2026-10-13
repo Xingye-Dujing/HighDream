@@ -6,11 +6,22 @@
     <title>HighDream Notebook</title>
     <link rel="stylesheet" href="../static/fontawesome/css/all.min.css"/>
     <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/mathlive/mathlive-fonts.css"/>
     <script
             id="MathJax-script"
             async
             src="../static/mathjax/es5/tex-chtml-full.js"
     ></script>
+    <script src="/static/mathlive/mathlive.min.js"></script>
+    <script>
+        // Point MathLive's KaTeX @font-face URLs at the locally-vendored fonts so the
+        // WYSIWYG editor renders fully offline (no CDN dependency).
+        window.addEventListener('DOMContentLoaded', function () {
+            if (window.MathLive && typeof window.MathLive.setFonts === 'function') {
+                try { window.MathLive.setFonts('/static/mathlive/fonts/'); } catch (e) { /* ignore */ }
+            }
+        });
+    </script>
     <script src="/static/script.js"></script>
 </head>
 
