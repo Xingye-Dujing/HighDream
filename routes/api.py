@@ -11,14 +11,13 @@ Routes:
     /matrix_analyze - Analyze matrix properties
     /matrix_cal     - Perform matrix calculations
     /get_process    - Retrieve process information
-    /static/trees   - Serve static tree diagram files.
 """
 
 import uuid
 import traceback
 
 import sympy as sp
-from flask import Blueprint, request, jsonify, send_from_directory
+from flask import Blueprint, request, jsonify
 from sympy import (
     # Basic classes
     Symbol, symbols, sympify, Expr, Integer, Rational, Float, Piecewise,
@@ -62,7 +61,6 @@ from sympy import (
 )
 from sympy.simplify.fu import fu
 
-from config import TREES_DIR
 from domains import MatrixAnalyzer, MatrixCalculator, ProcessManager
 from core.manual_step_solver import ManualStepSolver
 from utils.latex_formatter import str_to_latex
@@ -264,19 +262,6 @@ def get_process():
     ptype = data.get('type', '')
     expr = data.get('expression', '')
     return jsonify(ProcessManager.get_process(ptype, expr))
-
-
-@api.route('/static/trees/<path:filename>')
-def serve_tree(filename):
-    """Serve static tree diagram files.
-
-    Args:
-        filename (str): Name of the file to serve from TREES_DIR
-
-    Returns:
-        File content from the trees directory
-    """
-    return send_from_directory(TREES_DIR, filename)
 
 
 @api.route('/render_latex', methods=['POST'])

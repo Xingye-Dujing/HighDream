@@ -1,10 +1,6 @@
-# import os
-
 # Path settings
 TEMPLATE_FOLDER = 'templates'
 STATIC_FOLDER = 'static'
-TREES_DIR = STATIC_FOLDER + "/trees"
-# os.makedirs(TREES_DIR, exist_ok=True)
 
 # Input render settings
 RENDER_SINGLE_MATRIX = ['matrix', 'ref', 'diag', 'eigen', 'rank', 'det', 'dependence',
@@ -15,6 +11,11 @@ RENDER_MANY_ROWS_ONLY_NUMBER_MATRIX = ['operations', 'linear-solver',
 # Calculator settings
 DEFAULT_PARSER_MAX_DEPTH = 3
 DEFAULT_LHOPITAL_MAX_COUNT = 5
+# Integer-exponent literals with at least this many digits (e.g. 2**1000000 ->
+# exponent "1000000" is 7 digits) are parsed with evaluation disabled, so huge
+# integer powers are never materialized -- doing so wastes CPU/memory and trips
+# Python's int<->str digit-conversion limit when the result is rendered.
+LARGE_POWER_EXPONENT_DIGITS = 5
 
 # Task manager settings
 MAX_WORKERS = 10

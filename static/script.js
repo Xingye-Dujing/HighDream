@@ -883,11 +883,10 @@ function runCell(cell) {
     });
 }
 
-// Render results returned by ExpressionParser (equivalent expression list + visualization derivation tree)
+// Render the equivalent-expression list returned by ExpressionParser.
 function renderExpressionResult(outputArea, data) {
-  // data.expected: { expressions: [{latex, reason}, ...], tree_svg_url: '/static/trees/....svg' }
+  // data.result: [{latex, reason}, ...]
   const expressions = data.result || [];
-  // const treeUrl = data.tree_svg_url || null;
 
   let html = `<div class="math-output">`;
   if (expressions.length === 0) {
@@ -1347,8 +1346,7 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
     if (operationType === "expr") {
       renderExpressionResult(outputArea, {
         success: true,
-        result: task.result[0],
-        tree_svg_url: task.result[1]
+        result: task.result[0]
       });
     } else {
       outputArea.innerHTML = `<div class="math-output">${task.result}</div>`;

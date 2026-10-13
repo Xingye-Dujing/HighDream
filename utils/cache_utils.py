@@ -1,6 +1,21 @@
+import re
 from functools import lru_cache
 
-from sympy import Expr, expand_log, latex, log, radsimp, simplify, sympify
+from sympy import Expr, evaluate, expand_log, latex, log, radsimp, simplify, sympify
+
+from config import LARGE_POWER_EXPONENT_DIGITS
+
+_HUGE_POWER_RE = re.compile(r'(?:\*\*|\^)\s*-?(\d+)')
+
+
+def _has_huge_power_literal(expr_str: str) -> bool:
+    """True if the input has a power whose integer exponent literal is very large.
+
+    Detection uses the exponent literal's digit count as a cheap pre-check so we
+    can avoid ever materializing huge integer powers such as ``2**1000000``.
+    """
+    return any(len(match.group(1)) >= LARGE_POWER_EXPONENT_DIGITS
+               for match in _HUGE_POWER_RE.finditer(expr_str))
 
 
 @lru_cache(maxsize=512)
@@ -20,6 +35,11 @@ def cached_doit(operation) -> Expr:
 
 @lru_cache(maxsize=256)
 def cached_sympify(expr_str: str) -> Expr:
+    if _has_huge_power_literal(expr_str):
+        # Parse without evaluation so a huge integer power stays symbolic instead
+        # of being computed (which wastes memory and breaks int -> str rendering).
+        with evaluate(False):
+            return sympify(expr_str)
     return sympify(expr_str)  # type: ignore
 
 
