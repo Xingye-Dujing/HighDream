@@ -506,6 +506,7 @@ function createCellElement(id, type) {
                 </optgroup>
                 <optgroup label="线性代数">
                   <option value="operations">基本运算</option>
+                  <option value="matrix_symbolic">符号矩阵化简</option>
                   <option value="invert">求逆</option>
                   <option value="ref">行阶梯/行最简</option>
                   <option value="transform-1">基/坐标变换</option>

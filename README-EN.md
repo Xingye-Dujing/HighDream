@@ -100,6 +100,7 @@ As mentioned above, this idea originated from my high school days `(The Dream of
 - Definite integrals: enter an upper bound (lower bound optional, defaults to 0) in an integral cell to compute a definite integral, showing "find the antiderivative, then apply the Newton-Leibniz formula"; indefinite integrals still append the constant C
 - Partial derivatives: pick any single letter variable as the differentiation variable in a derivative cell; all other symbols are treated as constants
 - Extended integral rules: direct antiderivatives for sec/csc/cot squares, power-reduction formulas, and the tan·sec and cot·csc products, avoiding the bloated forms produced by the Weierstrass substitution
+- Symbolic matrix simplification: a new linear-algebra mode reducing A·A⁻¹=I, I·A=A, (A⁻¹)⁻¹=A, (AB)⁻¹=B⁻¹A⁻¹, (AB)ᵀ=BᵀAᵀ, A·(B+C)=A·B+A·C step by step (uppercase symbols are treated as n×n matrices)
 - LaTeX output: beautiful rendering of mathematical formulas
 - Extensible architecture: easy to add new calculation rules and operation types
 - Two ways to use: Python code calls in Jupyter Notebook; graphical web interface

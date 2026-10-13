@@ -1,0 +1,82 @@
+"""Symbolic matrix expression simplification (uppercase symbols = n x n matrices).
+
+Reduces MatExpr using the standard linear-algebra identities that undergrad
+courses expect, recording one step per transformation so the UI can show work:
+
+    A*I = A,  A*A^-1 = I,  (A^-1)^-1 = A,  (A*B)^-1 = B^-1*A^-1,
+    (A*B)^T = B^T*A^T,  A*(B + C) = A*B + A*C, ...
+
+All free identifiers are treated as square matrices of a shared symbolic size
+``n`` so products are dimension-valid.
+"""
+
+import re
+from typing import List, Tuple
+
+from sympy import Expr, Symbol, expand
+from sympy.matrices.expressions import Identity, Inverse, MatMul, MatrixSymbol, Transpose
+from sympy.parsing.sympy_parser import parse_expr, standard_transformations
+
+_N = Symbol('n')
+_TOKEN_RE = re.compile(r'[A-Za-z_]\w*')
+_RESERVED = {'Inverse', 'Transpose', 'Identity', 'MatMul', 'MatAdd', 'n'}
+
+
+def _free_names(text: str) -> set:
+    """Identifier tokens that are matrix names (not built-in functions)."""
+    return {tok for tok in _TOKEN_RE.findall(text) if tok not in _RESERVED}
+
+
+def _parse_matrix_expr(text: str) -> Expr:
+    """Parse ``text`` mapping every free identifier to an n x n MatrixSymbol."""
+    local: dict = {name: MatrixSymbol(name, _N, _N) for name in _free_names(text)}
+    local['n'] = _N
+    local['Inverse'] = Inverse
+    local['Transpose'] = Transpose
+    local['Identity'] = Identity
+    return parse_expr(text, local_dict=local, transformations=standard_transformations)
+
+
+def _is_inverse_target(e) -> bool:
+    return isinstance(e, Inverse) and isinstance(e.arg, (MatMul, Inverse))
+
+
+def _flip_inverse(e):
+    """Rewrite (A*B)^-1 -> B^-1*A^-1 and (A^-1)^-1 -> A."""
+    inner = e.arg
+    if isinstance(inner, MatMul):
+        return MatMul(*[Inverse(f) for f in reversed(inner.args)])
+    if isinstance(inner, Inverse):
+        return inner.arg
+    return e
+
+
+def simplify_matrix_symbolic(text: str) -> List[Tuple[Expr, str]]:
+    """Return ``[(expr, reason), ...]`` — a step-by-step symbolic simplification.
+
+    Raises on invalid input; the caller turns exceptions into an error result.
+    """
+    expr = _parse_matrix_expr(text)
+    steps: List[Tuple[Expr, str]] = [(expr, '原始符号矩阵表达式')]
+
+    # 1) Apply inverse/identity rewrites, then collapse via doit (A*A^-1 -> I etc.).
+    flipped = expr
+    for _ in range(6):
+        nxt = flipped.replace(_is_inverse_target, _flip_inverse).doit()
+        if nxt == flipped:
+            break
+        flipped = nxt
+    if flipped != expr:
+        steps.append((flipped, '逆与单位矩阵化简: A·A⁻¹=I, A·I=A, (A⁻¹)⁻¹=A, (AB)⁻¹=B⁻¹A⁻¹'))
+
+    # 2) Distribute matrix products over sums.
+    distributed = expand(flipped, matrix=True).doit()
+    if distributed != flipped:
+        steps.append((distributed, '乘法对加法的分配律展开'))
+
+    # 3) Final collapse after distribution.
+    final = distributed.doit()
+    if final != distributed:
+        steps.append((final, '合并同类项并再次化简'))
+
+    return steps

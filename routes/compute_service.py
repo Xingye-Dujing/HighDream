@@ -276,6 +276,22 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
             # as unused; the result stays a 1-tuple so the frontend reads result[0].
             return True, (expressions_out,)
 
+        if operation_type == 'matrix_symbolic':
+            # pylint: disable=import-outside-toplevel
+            from domains.matrix.matrix_symbolic import simplify_matrix_symbolic
+            try:
+                steps = simplify_matrix_symbolic(data.get('expression', ''))
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                return False, f'符号矩阵化简失败: {exc}'
+            lines = []
+            for idx, (mexpr, reason) in enumerate(steps):
+                head = '&' if idx == 0 else '&='
+                line = head + latex(mexpr)
+                if reason:
+                    line += rf" \quad \text{{{reason}}}"
+                lines.append(line)
+            return True, r"\begin{align}" + r"\newline".join(lines) + r"\end{align}"
+
         return False, f"Unsupported operation type: {operation_type}"
 
     except Exception as e:
