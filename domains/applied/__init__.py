@@ -21,11 +21,13 @@ HANDLERS = {
     'volume_disk': integral_apps.volume_disk,
     'volume_shell': integral_apps.volume_shell,
     'surface_area': integral_apps.surface_area,
+    'iterated_integral': integral_apps.iterated_integral,
     # series / Taylor / improper
     'taylor': series.taylor,
     'taylor_error': series.taylor_error,
     'series_convergence': series.series_convergence,
     'radius_of_convergence': series.radius_of_convergence,
+    'power_series': series.power_series,
     'improper_integral': series.improper_integral,
     # implicit / parametric / polar
     'implicit_diff': multivar.implicit_diff,

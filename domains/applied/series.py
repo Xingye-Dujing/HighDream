@@ -7,7 +7,8 @@ explicit steps.
 """
 # pylint: disable=duplicate-code
 
-from sympy import Abs, Eq, Integral, Symbol, expand, factorial, limit, oo, simplify, summation, sympify
+from sympy import (Abs, Eq, Integral, Symbol, expand, factorial, latex, limit,
+                   oo, simplify, summation, sympify, Sum)
 
 from domains.applied._common import (align, expr_text, get_var, integral_steps,
                                      render_note as note, to_num)
@@ -107,4 +108,85 @@ def improper_integral(data):
         last = real[-1]
         verdict = ('收敛' if (hasattr(last, 'is_finite') and last.is_finite) else '发散(或不存在)')
         items.append((None, note(f"结论: 该反常积分{verdict}")))
+    return True, align(items)
+
+
+def _bound_latex(value):
+    if value == oo:
+        return r"\infty"
+    if value == -oo:
+        return r"-\infty"
+    return latex(value)
+
+
+def _verdict_text(value):
+    if value is True:
+        return "收敛"
+    if value is False:
+        return "发散"
+    return "无法判定"
+
+
+def _endpoint_converges(coef, n, radius, sign):
+    """Whether Σ c_n (sign·R)^n converges (True/False), or None if undecidable."""
+    if radius in (oo, 0):
+        return None
+    term = coef * (sign * radius) ** n
+    try:
+        res = Sum(term, (n, 1, oo)).is_convergent()
+    except (TypeError, ValueError):
+        return None
+    return None if res is None else bool(res)
+
+
+def power_series(data):
+    """Power series Σ c_n (x - x0)^n: radius, endpoint verdicts, interval and
+    termwise differentiation / integration (radius unchanged)."""
+    n = Symbol(data.get('variable', 'n') or 'n')
+    coef = sympify(expr_text(data))
+    x0 = to_num(data.get('point'), 0)
+    x = Symbol('x')
+
+    l_val = simplify(limit(Abs(coef.subs(n, n + 1) / coef), n, oo))
+    items = [
+        (Sum(coef * (x - x0) ** n, (n, 1, oo)), note("幂级数 $\\sum c_n (x-x_0)^n$")),
+        (Eq(Symbol('L'), l_val), note(r"比值极限 $L=\lim_{n\to\infty}\left|\frac{c_{n+1}}{c_n}\right|$")),
+    ]
+
+    if l_val == 0:
+        radius = oo
+    elif l_val == oo:
+        radius = 0
+    elif l_val.is_number:
+        radius = simplify(1 / l_val)
+    else:
+        radius = None
+
+    if radius is None:
+        items.append((None, note("比值极限不是具体数值, 无法确定收敛半径")))
+        return True, align(items)
+
+    items.append((Eq(Symbol('R'), radius), note("收敛半径 $R=1/L$")))
+
+    if radius == oo:
+        items.append((None, note("收敛域为全体实数 $(-\\infty,\\ +\\infty)$")))
+    else:
+        left = _endpoint_converges(coef, n, radius, -1)
+        right = _endpoint_converges(coef, n, radius, 1)
+        items.append((Sum(coef * (-radius) ** n, (n, 1, oo)),
+                      note(f"左端点 $x_0-R$ 代入后{_verdict_text(left)}")))
+        items.append((Sum(coef * radius ** n, (n, 1, oo)),
+                      note(f"右端点 $x_0+R$ 代入后{_verdict_text(right)}")))
+        lo, hi = simplify(x0 - radius), simplify(x0 + radius)
+        interval = rf"({_bound_latex(lo)},\ {_bound_latex(hi)})"
+        if left is True:
+            interval = r"[" + interval[1:]
+        if right is True:
+            interval = interval[:-1] + r"]"
+        items.append((None, note(rf"收敛域 ${interval}$")))
+
+    items.append((Sum(n * coef * (x - x0) ** (n - 1), (n, 1, oo)),
+                  note("逐项求导 $\\sum n c_n (x-x_0)^{n-1}$, 收敛半径不变")))
+    items.append((Sum(coef * (x - x0) ** (n + 1) / (n + 1), (n, 1, oo)),
+                  note("逐项积分 $\\sum \\frac{c_n}{n+1}(x-x_0)^{n+1}$, 收敛半径不变")))
     return True, align(items)

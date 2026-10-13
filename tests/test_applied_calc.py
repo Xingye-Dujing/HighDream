@@ -77,3 +77,23 @@ def test_taylor_error_remainder():
 def test_series_absolute_and_integral_test_present():
     body = _res('series_convergence', expression='1/n**2', variable='n')
     assert '绝对收敛' in body and '$' not in body
+
+
+def test_iterated_integral_rectangular():
+    # int_0^2 int_0^1 x*y dx dy = 1, inner result F(y)=y/2
+    body = _res('iterated_integral', expression='x*y', variable='x', variable2='y',
+                lower='0', upper='1', lower2='0', upper2='2')
+    assert r'\frac{y}{2}' in body and '$' not in body
+
+
+def test_power_series_interval_of_convergence():
+    # sum x^n/n : R=1, converges at left endpoint (alternating) only -> [-1, 1)
+    body = _res('power_series', expression='1/n', variable='n', point='0')
+    assert 'R=1' in body and r'[-1' in body and '$' not in body
+
+
+def test_power_series_infinite_radius():
+    # sum x^n/n! : ratio limit 0 -> R=oo, whole real line
+    body = _res('power_series', expression='1/factorial(n)', variable='n', point='0')
+    assert r'R=\infty' in body and '$' not in body
+
