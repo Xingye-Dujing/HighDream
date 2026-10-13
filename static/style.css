@@ -801,6 +801,23 @@ a {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+.keyboard-group-label {
+  font-size: 12px;
+  color: var(--jp-ui-font-color1);
+  margin: 4px 0 2px;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+/* Hide MathLive's built-in on-screen keyboard entirely: the in-page palette
+   (#math-keyboard) is the sole, theme-matched keyboard and exposes only the
+   tokens this program can parse. */
+#mathlive-virtual-keyboard,
+math-virtual-keyboard,
+.virtual-keyboard-container {
+  display: none !important;
+}
+
 .notification {
   position: fixed;
   top: 24px;

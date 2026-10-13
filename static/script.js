@@ -825,10 +825,10 @@ function createCellElement(id, type) {
                 <i class="fas fa-keyboard"></i>
               </button>
             </div>
-            <math-field class="math-editor" virtual-keyboard-mode="onfocus" style="display:none;"></math-field>
+            <math-field class="math-editor" virtual-keyboard-mode="manual" style="display:none;"></math-field>
             <textarea placeholder="输入数学表达式..." class="math-input"></textarea>
             <span class="input-b-label" style="display:none; font-size:12px; color:#888; margin-top:4px;">第二个矩阵/向量:</span>
-            <math-field class="math-editor math-editor-b" virtual-keyboard-mode="onfocus" style="display:none;"></math-field>
+            <math-field class="math-editor math-editor-b" virtual-keyboard-mode="manual" style="display:none;"></math-field>
             <textarea placeholder="第二个输入..." class="math-input math-input-b" style="display:none;"></textarea>
           </div>
         </div>
