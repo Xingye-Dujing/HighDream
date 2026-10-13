@@ -69,24 +69,16 @@ def mul_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
                 new_factor = 1 / (den.args[0] - 1)  # 1/(f(x))
 
         # Case: (exp(f(x))-1)/f(x) or f(x)/(exp(f(x))-1), where f(x) to 0
-        elif isinstance(num, Add) and len(num.args) == 2:
-            other = num.args[0]
-            if other != -1:
-                continue
+        elif (isinstance(num, Add) and len(num.args) == 2
+                and num.args[0] == -1 and isinstance(num.args[1], exp)):
             f = num.args[1].args[0]
-            if (not f.has(var) and check_function_tends_to_zero(f, var, point, direction)
-                    and not isinstance(num.args[1], exp)):
-                continue
-            new_factor = f
-        elif isinstance(den, Add) and len(den.args) == 2:
-            other = den.args[0]
-            if other != -1:
-                continue
+            if f.has(var) and check_function_tends_to_zero(f, var, point, direction):
+                new_factor = f
+        elif (isinstance(den, Add) and len(den.args) == 2
+                and den.args[0] == -1 and isinstance(den.args[1], exp)):
             f = den.args[1].args[0]
-            if (not f.has(var) and check_function_tends_to_zero(f, var, point, direction)
-                    or not isinstance(den.args[1], exp)):
-                continue
-            new_factor = 1 / f  # type: ignore
+            if f.has(var) and check_function_tends_to_zero(f, var, point, direction):
+                new_factor = 1 / f  # type: ignore
 
         # Case: (1+f(x))**h(x) with f(x) to 0 and f(x)*h(x) to constant
         elif isinstance(factor, Pow):

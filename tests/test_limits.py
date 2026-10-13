@@ -30,3 +30,13 @@ def test_exponential_minus_one_over_x():
 
 def test_removable_singularity_at_finite_point():
     assert simplify(_limit('(x**3-1)/(x-1)', 1) - 3) == 0
+
+
+def test_third_order_trig_quotient():
+    # (sin x - x)/x**3 -> -1/6; guards that mul_split must not treat (cos x - 1)
+    # as the exp-standard-limit form and split into 0 * oo.
+    assert simplify(_limit('(sin(x)-x)/x**3', 0) + Rational(1, 6)) == 0
+
+
+def test_exp_linear_standard_limit_still_works():
+    assert simplify(_limit('(exp(2*x)-1)/x', 0) - 2) == 0
