@@ -1,6 +1,6 @@
 from sympy import (
     AccumBounds, Add, Expr, Integer, Limit, Mul, Pow, S, UnevaluatedExpr,
-    exp, latex, limit, log, nan, oo, simplify, sin, sqrt, zoo
+    exp, latex, limit, log, nan, oo, simplify, sin, zoo
 )
 
 from domains.limit.limit_help_func import (
@@ -523,6 +523,16 @@ def small_o_add_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionRetu
     return 'small_o_add'
 
 
+def _is_sqrt_term(term) -> bool:
+    """A term is a (possibly signed) square root: Pow(_, 1/2) or ±Pow(_, 1/2)."""
+    if term.is_Pow and term.exp == S.Half:
+        return True
+    if term.is_Mul and term.args[0] in (S.NegativeOne, S.One) \
+            and any(a.is_Pow and a.exp == S.Half for a in term.args[1:]):
+        return True
+    return False
+
+
 def conjugate_rationalize_matcher(expr, _context) -> MatcherFunctionReturn:
     """Matches expressions whose numerator is the difference (or sum) of two square roots,
     i.e., of the form (sqrt(A)+-sqrt(B))/D, where A and B are subexpressions.
@@ -531,10 +541,8 @@ def conjugate_rationalize_matcher(expr, _context) -> MatcherFunctionReturn:
     conjugate (sqrt(A)+-sqrt(B))."""
 
     num, _ = expr.as_numer_denom()
-    # Check if numerator is a sum/difference of exactly two terms.
-    if isinstance(num, Add) and len(num.args) == 2:
-        a, b = num.args
-        # Both terms must be explicit square roots
-        if a.func == sqrt and b.func == sqrt:
-            return 'conjugate_rationalize'
+    # SymPy stores sqrt(x) as Pow(x, 1/2); match an Add of two terms where at least
+    # one is a radical (covers sqrt(A) +- sqrt(B) and sqrt(A) +- B).
+    if num.is_Add and len(num.args) == 2 and any(_is_sqrt_term(a) for a in num.args):
+        return 'conjugate_rationalize'
     return None

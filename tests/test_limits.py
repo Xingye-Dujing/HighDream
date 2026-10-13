@@ -40,3 +40,13 @@ def test_third_order_trig_quotient():
 
 def test_exp_linear_standard_limit_still_works():
     assert simplify(_limit('(exp(2*x)-1)/x', 0) - 2) == 0
+
+
+def test_infinity_minus_infinity_radical():
+    # sqrt(x+1) - sqrt(x) -> 0 via conjugate rationalization at infinity
+    assert simplify(_limit('sqrt(x+1)-sqrt(x)', S('oo'))) == 0
+
+
+def test_radical_minus_linear_conjugate():
+    # sqrt(x**2 + x) - x -> 1/2 (one-radical conjugate case)
+    assert simplify(_limit('sqrt(x**2+x)-x', S('oo')) - Rational(1, 2)) == 0
