@@ -30,6 +30,7 @@ Guidance for AI agents working in this repository.
 - A PostToolUse hook in `.qoder/settings.json` auto-runs `.venv/Scripts/pylint.exe` on every `.py` file after editing (a pylint failure blocks the edit).
 - **`.pylintrc` is gitignored** — a fresh clone won't have it; recreate it or the hook re-flags rules the project intentionally allows.
 - No auto-formatter. Match existing 4-space PEP-8-ish style.
+- Rule subpackages under `domains/*/rules/` carry an `__init__.py`; without one pylint treats that dir as the source root and false-flags top-level `core`/`utils` as import-errors, blocking the edit hook.
 
 ## Help documentation (`/help/*`)
 

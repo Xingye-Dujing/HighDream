@@ -404,3 +404,91 @@ def tan_power_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn
             return 'tan_power'
 
     return None
+
+
+def sec_power_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for sec(x)^n (n >= 2) expressions."""
+    var = context['variable']
+    if expr.is_Pow:
+        base, _exp = expr.as_base_exp()
+        if base.func == sec and len(base.args) == 1 and base.args[0] == var \
+                and _exp.is_Integer and _exp >= 2:
+            return 'sec_power'
+    return None
+
+
+def csc_power_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for csc(x)^n (n >= 2) expressions."""
+    var = context['variable']
+    if expr.is_Pow:
+        base, _exp = expr.as_base_exp()
+        if base.func == csc and len(base.args) == 1 and base.args[0] == var \
+                and _exp.is_Integer and _exp >= 2:
+            return 'csc_power'
+    return None
+
+
+def sec_power_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Reduce sec(x)^n via the standard reduction formula (exact for n == 2)."""
+    var = context['variable']
+    var_latex = wrap_latex(var)
+    _, n = expr.as_base_exp()
+    if n == 2:
+        result = tan(var)
+        return result, (f"正割平方积分: $\\int \\sec^2({var_latex})\\,d{var_latex} = "
+                        f"\\tan({var_latex}) + C$")
+    result = (sec(var) ** (n - 2) * tan(var) / (n - 1)
+              + (n - 2) / (n - 1) * Integral(sec(var) ** (n - 2), var))
+    n_latex = wrap_latex(n)
+    return result, (f"正割幂递推: $\\int \\sec^{{{n_latex}}} = "
+                    f"\\frac{{\\sec^{{{n_latex}-2}}\\tan}}{{{n_latex}-1}} + "
+                    f"\\frac{{{n_latex}-2}}{{{n_latex}-1}}\\int \\sec^{{{n_latex}-2}}$")
+
+
+def csc_power_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Reduce csc(x)^n via the standard reduction formula (exact for n == 2)."""
+    var = context['variable']
+    var_latex = wrap_latex(var)
+    _, n = expr.as_base_exp()
+    if n == 2:
+        result = -cot(var)
+        return result, (f"余割平方积分: $\\int \\csc^2({var_latex})\\,d{var_latex} = "
+                        f"-\\cot({var_latex}) + C$")
+    result = (-csc(var) ** (n - 2) * cot(var) / (n - 1)
+              + (n - 2) / (n - 1) * Integral(csc(var) ** (n - 2), var))
+    n_latex = wrap_latex(n)
+    return result, (f"余割幂递推: $\\int \\csc^{{{n_latex}}} = "
+                    f"-\\frac{{\\csc^{{{n_latex}-2}}\\cot}}{{{n_latex}-1}} + "
+                    f"\\frac{{{n_latex}-2}}{{{n_latex}-1}}\\int \\csc^{{{n_latex}-2}}$")
+
+
+def tan_sec_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for tan(x) * sec(x)."""
+    var = context['variable']
+    if expr.equals(tan(var) * sec(var)):
+        return 'tan_sec'
+    return None
+
+
+def tan_sec_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:  # pylint: disable=unused-argument
+    """Integral of tan(x) * sec(x) is sec(x)."""
+    var = context['variable']
+    var_latex = wrap_latex(var)
+    return sec(var), (f"正割正切乘积积分: $\\int \\sec({var_latex})\\tan({var_latex})\\,d{var_latex} = "
+                      f"\\sec({var_latex}) + C$")
+
+
+def cot_csc_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Matcher for cot(x) * csc(x)."""
+    var = context['variable']
+    if expr.equals(cot(var) * csc(var)):
+        return 'cot_csc'
+    return None
+
+
+def cot_csc_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:  # pylint: disable=unused-argument
+    """Integral of cot(x) * csc(x) is -csc(x)."""
+    var = context['variable']
+    var_latex = wrap_latex(var)
+    return -csc(var), (f"余割余切乘积积分: $\\int \\csc({var_latex})\\cot({var_latex})\\,d{var_latex} = "
+                       f"-\\csc({var_latex}) + C$")
