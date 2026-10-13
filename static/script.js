@@ -4,11 +4,15 @@ const APPLIED_OPS = ["tangent", "linearization", "critical_points", "newton", "a
 
 // Operations whose input is structured text (matrices / vectors), not a rendered
 // math expression: these keep the plain <textarea> instead of the MathLive editor.
-// Ops whose input is multi-matrix / equation text (kept as a plain textarea).
-const MATH_TEXT_OPS = new Set(["operations", "transform-1", "transform-2", "projection", "linear-system", "linear-solver", "matrix_symbolic"]);
+// Ops whose input is plain multi-line text (kept as a textarea): transforms,
+// equation lists, and symbolic matrix expressions.
+const MATH_TEXT_OPS = new Set(["transform-1", "transform-2", "linear-system", "matrix_symbolic"]);
 
 // Single-matrix linear-algebra ops: use the WYSIWYG editor and get a matrix skeleton.
 const MATRIX_SINGLE_OPS = new Set(["ref", "det", "invert", "rank", "LU", "diag", "eigen", "singular", "svd", "schur", "orthogonal", "dependence"]);
+
+// Two-input matrix/vector ops: show a second WYSIWYG field; backend splits on newline.
+const MULTI_INPUT_OPS = new Set(["operations", "linear-solver", "projection"]);
 
 // Per-operation LaTeX hint shown as the editor placeholder ("预设题的形式").
 const OP_PLACEHOLDER = {
@@ -34,43 +38,69 @@ function isTextOp(op) {
 }
 
 // Canonical value store for a cell is the hidden <textarea.math-input>; the
-// visible MathLive <math-field> mirrors it for scalar (non-text) operations.
-function getMathSource(cell) {
-  return cell.querySelector("textarea.math-input");
-}
-function getMathField(cell) {
-  return cell.querySelector("math-field");
-}
-// Read the live expression from whichever input is visible, keeping the hidden
-// textarea authoritative so every existing path (run/save/steps) stays correct.
+// visible MathLive <math-field> mirrors it. Two-input ops keep "a\nb" in the
+// canonical textarea and split it across two editors.
+function getMathSource(cell) { return cell.querySelector("textarea.math-input"); }
+function getMathField(cell) { return cell.querySelector("math-field.math-editor"); }
+function getMathSourceB(cell) { return cell.querySelector("textarea.math-input-b"); }
+function getMathFieldB(cell) { return cell.querySelector("math-field.math-editor-b"); }
+function getOp(cell) { return cell.querySelector(".operation-type").value; }
+
+// Read the live expression, committing the visible editor(s) into the canonical
+// store first so every existing path (run/save/steps) stays correct.
 function readExpr(cell) {
-  const field = getMathField(cell);
+  const op = getOp(cell);
   const src = getMathSource(cell);
   if (!src) return "";
+  if (MULTI_INPUT_OPS.has(op)) {
+    const a = getMathField(cell);
+    const b = getMathFieldB(cell);
+    const va = (a && a.style.display !== "none") ? a.value : src.value.split("\n")[0];
+    const vb = (b && b.style.display !== "none") ? b.value : (src.value.split("\n")[1] || "");
+    src.value = va + "\n" + vb;
+    return src.value.trim();
+  }
+  const field = getMathField(cell);
   if (field && field.style.display !== "none") {
-    src.value = field.value;      // commit latest editor state before reading
+    src.value = field.value;
   }
   return src.value.trim();
 }
-// Show the MathLive editor for scalar ops, the textarea for matrix/text ops.
+
+// Show the right input(s) for the operation: two editors (multi), one editor
+// (scalar/single-matrix), or the plain textarea (text ops).
 function applyInputMode(cell) {
-  const op = cell.querySelector(".operation-type").value;
+  const op = getOp(cell);
   const field = getMathField(cell);
   const src = getMathSource(cell);
+  const fieldB = getMathFieldB(cell);
+  const srcB = getMathSourceB(cell);
+  const labelB = cell.querySelector(".input-b-label");
   if (!field || !src) return;
+  const multi = MULTI_INPUT_OPS.has(op);
+  if (fieldB) fieldB.style.display = multi ? "" : "none";
+  if (srcB) srcB.style.display = "none";
+  if (labelB) labelB.style.display = multi ? "" : "none";
+
   if (isTextOp(op)) {
     field.style.display = "none";
     src.style.display = "";
   } else {
-    field.value = src.value;      // sync editor from canonical store
+    const parts = (src.value || "").split("\n");
+    field.value = parts[0] || "";
+    if (multi && fieldB) fieldB.value = parts[1] || "";
     if (!src.value && MATRIX_SINGLE_OPS.has(op)) {
       field.value = MATRIX_SKELETON;
       src.value = MATRIX_SKELETON;
     }
+    if (!src.value && multi && fieldB) {
+      field.value = MATRIX_SKELETON;
+      fieldB.value = MATRIX_SKELETON;
+      src.value = MATRIX_SKELETON + "\n" + MATRIX_SKELETON;
+    }
     field.style.display = "";
     src.style.display = "none";
-    const ph = OP_PLACEHOLDER[op] || "\\square";
-    field.setAttribute("placeholder", ph);
+    field.setAttribute("placeholder", OP_PLACEHOLDER[op] || "\\square");
   }
   const varInput = cell.querySelector(".var-input input");
   if (varInput) varInput.value = VAR_DEFAULT[op] || "x";
@@ -355,7 +385,6 @@ function bindEvents() {
 // Set cell events
 function setupCellEvents(cell) {
   const operationSelector = cell.querySelector(".operation-type");
-  const textarea = cell.querySelector("textarea");
   const mathField = cell.querySelector("math-field");
   const runButton = cell.querySelector(".run-cell-button");
   const keyboardButton = cell.querySelector(".keyboard-button");
@@ -364,15 +393,16 @@ function setupCellEvents(cell) {
   const cellType = cell.dataset.cellType;
 
   if (cellType === "code") {
-    // MathLive editor is the visible input for scalar ops; it mirrors its LaTeX into
-    // the hidden textarea, which stays the canonical value every other path reads.
+    // The MathLive editor(s) mirror their LaTeX into the hidden textarea, which
+    // stays the canonical value every other path reads (readExpr commits them).
+    const mathFieldB = cell.querySelector("math-field.math-editor-b");
     if (mathField) {
-      mathField.addEventListener("change", function () {
-        textarea.value = mathField.value;
-      });
-      mathField.addEventListener("click", function () {
-        setActiveCell(cell);
-      });
+      mathField.addEventListener("change", function () { readExpr(cell); });
+      mathField.addEventListener("click", function () { setActiveCell(cell); });
+    }
+    if (mathFieldB) {
+      mathFieldB.addEventListener("change", function () { readExpr(cell); });
+      mathFieldB.addEventListener("click", function () { setActiveCell(cell); });
     }
     applyInputMode(cell);
 
@@ -793,6 +823,9 @@ function createCellElement(id, type) {
             </div>
             <math-field class="math-editor" virtual-keyboard-mode="onfocus" style="display:none;"></math-field>
             <textarea placeholder="输入数学表达式..." class="math-input"></textarea>
+            <span class="input-b-label" style="display:none; font-size:12px; color:#888; margin-top:4px;">第二个矩阵/向量:</span>
+            <math-field class="math-editor math-editor-b" virtual-keyboard-mode="onfocus" style="display:none;"></math-field>
+            <textarea placeholder="第二个输入..." class="math-input math-input-b" style="display:none;"></textarea>
           </div>
         </div>
         <div class="cell-output-container">
