@@ -68,6 +68,49 @@ _calculators = {
 }
 
 
+def _derivative_var(obj):
+    """The differentiation variable of a Derivative (handles (x,), (x, n), x)."""
+    for spec in obj.args[1:]:
+        if isinstance(spec, (tuple, list)):
+            return spec[0]
+        return spec
+    return None
+
+
+def _dispatch_calculus(expression: str):
+    """Auto-route a combined calculus expression by its top-level operator.
+
+    d/dx -> differentiation, integral -> integration (with bounds), lim -> limit,
+    sum -> series convergence, otherwise simplify the plain expression.
+    """
+    from sympy import Derivative, Integral, Limit, Sum, simplify  # pylint: disable=import-outside-toplevel
+    obj = cached_sympify(expression)
+
+    if isinstance(obj, Derivative):
+        var = _derivative_var(obj)
+        if var is None:
+            return False, '导数缺少求导变量'
+        return True, _calculators['diff']().compute_latex(str(obj.args[0]), var)
+
+    if isinstance(obj, Integral):
+        bounds = obj.args[1] if len(obj.args) > 1 else None
+        var = bounds[0] if bounds else Symbol('x')
+        kwargs = {}
+        if bounds is not None and len(bounds) == 3:
+            kwargs['lower'], kwargs['upper'] = bounds[1], bounds[2]
+        return True, _calculators['integral']().compute_latex(str(obj.args[0]), var, **kwargs)
+
+    if isinstance(obj, Limit):
+        direction = obj.args[3] if len(obj.args) > 3 else '+'
+        return True, LimitCalculator().compute_latex(str(obj.args[0]), obj.args[1], obj.args[2], direction)
+
+    if isinstance(obj, Sum):
+        from domains.applied import HANDLERS  # pylint: disable=import-outside-toplevel
+        return HANDLERS['series_convergence']({'expression': str(obj.args[0]), 'variable': str(obj.args[1][0])})
+
+    return True, r'\begin{align}' + latex(simplify(obj)) + r'\end{align}'
+
+
 def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]:
     """Dispatch a computation and guarantee its string result contains no literal ``$``.
 
@@ -184,6 +227,9 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
                                                    use_cache=use_cache, record_cache=record_cache)
             limiter = LimitCalculator(max_lhopital=max_lhopital)
             return True, limiter.compute_latex(expression, Symbol(variable), point, direction)
+
+        if operation_type == 'calculus':
+            return _dispatch_calculus(expression)
 
         if operation_type == 'ref':
             target = data.get('target_form', 'ref')

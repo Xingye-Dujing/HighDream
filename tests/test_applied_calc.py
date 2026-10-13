@@ -154,6 +154,26 @@ def test_convergence_integral_test():
     assert '积分判别' in body and '发散' in body
 
 
+def test_calculus_auto_detect_derivative():
+    body = _res('calculus', expression=r'\frac{d}{dx}\left(x^2\right)', variable='x')
+    assert '幂' in body and '$' not in body
+
+
+def test_calculus_auto_detect_definite_integral():
+    body = _res('calculus', expression=r'\int_{0}^{1} x^{2}\, dx', variable='x')
+    assert '牛顿-莱布尼茨' in body and '1}{3}' in body.replace(' ', '')
+
+
+def test_calculus_auto_detect_limit():
+    body = _res('calculus', expression=r'\lim_{x \to 0} \frac{\sin(x)}{x}', variable='x')
+    assert '$' not in body and len(body) > 20
+
+
+def test_calculus_plain_expression_simplifies():
+    body = _res('calculus', expression=r'\frac{1}{x}+\frac{1}{x}', variable='x')
+    assert '\\begin{align}' in body and '$' not in body
+
+
 def test_iterated_integral_rectangular():
     # int_0^2 int_0^1 x*y dx dy = 1, inner result F(y)=y/2
     body = _res('iterated_integral', expression='x*y', variable='x', variable2='y',
@@ -171,4 +191,3 @@ def test_power_series_infinite_radius():
     # sum x^n/n! : ratio limit 0 -> R=oo, whole real line
     body = _res('power_series', expression='1/factorial(n)', variable='n', point='0')
     assert r'R=\infty' in body and '$' not in body
-
