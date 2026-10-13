@@ -14,6 +14,14 @@ const OP_PLACEHOLDER = {
   limit: "\\lim_{\\square \\to \\square}\\ \\square",
 };
 
+// Natural variable / summation index per operation (avoids the series index
+// colliding with the power-series argument, which broke convergence checks).
+const VAR_DEFAULT = {
+  series_convergence: "n", radius_of_convergence: "n", power_series: "n",
+  parametric_diff: "t", polar_area: "theta", polar_slope: "theta",
+  complex_roots: "z", complex_simplify: "z", complex_polar: "z", de_moivre: "z",
+};
+
 function isTextOp(op) {
   return MATH_TEXT_OPS.has(op);
 }
@@ -53,6 +61,8 @@ function applyInputMode(cell) {
     const ph = OP_PLACEHOLDER[op] || "\\square";
     field.setAttribute("placeholder", ph);
   }
+  const varInput = cell.querySelector(".var-input input");
+  if (varInput) varInput.value = VAR_DEFAULT[op] || "x";
 }
 
 let activeCellId = null;
@@ -433,6 +443,10 @@ function setupCellEvents(cell) {
       const isApplied = APPLIED_OPS.indexOf(this.value) !== -1;
       if (appliedControls) appliedControls.style.display = isApplied ? "flex" : "none";
 
+      // 累次/二重积分: 额外第二变量与其上下限
+      const iteratedControls = cell.querySelector(".iterated-controls");
+      if (iteratedControls) iteratedControls.style.display = (this.value === "iterated_integral") ? "flex" : "none";
+
       // If expr is selected, show additional options
       const expressionControls = cell.querySelector(".expression-controls");
       if (this.value === "expr") {
@@ -603,6 +617,7 @@ function createCellElement(id, type) {
                   <option value="volume_disk">旋转体体积(圆盘)</option>
                   <option value="surface_area">旋转曲面面积</option>
                   <option value="volume_shell">旋转体体积(柱壳法)</option>
+                  <option value="iterated_integral">累次/二重积分(矩形区域)</option>
                   <option value="implicit_diff">隐函数求导</option>
                   <option value="parametric_diff">参数方程求导</option>
                   <option value="polar_area">极坐标面积</option>
@@ -614,6 +629,7 @@ function createCellElement(id, type) {
                   <option value="numerical_integration">数值积分(梯形/辛普森)</option>
                   <option value="mean_value">中值定理/罗尔定理</option>
                   <option value="radius_of_convergence">幂级数收敛半径</option>
+                  <option value="power_series">幂级数收敛域+逐项求导积分</option>
                   <option value="taylor_error">泰勒余项误差估计(拉格朗日)</option>
                   <option value="complex_simplify">复数化简(a+bi)</option>
                   <option value="complex_polar">复数极坐标/指数形式</option>
@@ -741,6 +757,21 @@ function createCellElement(id, type) {
                 <label style="font-size:12px;">阶数/次数:</label>
                 <input class="applied-order" value="6" style="width:50px;">
               </div>
+
+              <!-- 累次/二重积分: 第二个变量与其上下限 (第一变量的上下限复用"下限/上限") -->
+              <div class="iterated-controls" style="display: none; gap:8px; margin-left:8px; align-items:center; flex-wrap:wrap;">
+                <label style="font-size:12px;">变量2:</label>
+                <input class="iterated-var2" value="y" style="width:50px;">
+                <label style="font-size:12px;">下限2:</label>
+                <input class="iterated-lower2" value="0" style="width:60px;">
+                <label style="font-size:12px;">上限2:</label>
+                <input class="iterated-upper2" value="1" style="width:60px;">
+              </div>
+
+              <span class="var-input" style="display:inline-flex; align-items:center; gap:4px; margin-left:8px;">
+                <label style="font-size:12px;">变量/指标:</label>
+                <input value="x" style="width:50px;" title="求导/积分/极限变量, 级数指标等">
+              </span>
 
               <label class="cache-toggle" title="使用缓存加速计算">                <input type="checkbox" class="use-cache-checkbox" checked>
                 <span>缓存</span>
@@ -934,6 +965,15 @@ function runCell(cell) {
     if (al) payload.lower = al.value.trim();
     if (au) payload.upper = au.value.trim();
     if (ao) payload.order = ao.value.trim();
+  }
+
+  if (operationType === "iterated_integral") {
+    const v2 = cell.querySelector(".iterated-var2");
+    const l2 = cell.querySelector(".iterated-lower2");
+    const u2 = cell.querySelector(".iterated-upper2");
+    if (v2) payload.variable2 = v2.value.trim() || "y";
+    if (l2) payload.lower2 = l2.value.trim();
+    if (u2) payload.upper2 = u2.value.trim();
   }
 
   if (operationType === "ref") {
