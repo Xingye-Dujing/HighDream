@@ -131,6 +131,53 @@ function applyInputMode(cell) {
   if (varInput) varInput.value = VAR_DEFAULT[op] || "x";
 }
 
+// Reflect the hidden <select class="operation-type"> in a custom, styled dropdown.
+function syncOpSelectLabel(cell) {
+  const sel = cell.querySelector(".operation-type");
+  const label = cell.querySelector(".op-select-label");
+  if (!sel || !label) return;
+  const opt = sel.querySelector(`option[value="${CSS.escape(sel.value)}"]`);
+  label.textContent = opt ? opt.textContent : sel.value;
+  const panel = cell.querySelector(".op-select-panel");
+  if (panel) {
+    panel.querySelectorAll(".op-select-option").forEach((o) => {
+      o.classList.toggle("selected", o.dataset.value === sel.value);
+    });
+  }
+}
+
+function buildOpSelect(cell) {
+  const sel = cell.querySelector(".operation-type");
+  const trigger = cell.querySelector(".op-select-trigger");
+  const panel = cell.querySelector(".op-select-panel");
+  if (!sel || !trigger || !panel) return;
+  if (!panel.dataset.built) {
+    let html = "";
+    sel.querySelectorAll("optgroup").forEach((g) => {
+      html += `<div class="op-select-group">${g.label}</div>`;
+      g.querySelectorAll("option").forEach((o) => {
+        html += `<div class="op-select-option" role="option" data-value="${o.value}">${o.textContent}</div>`;
+      });
+    });
+    panel.innerHTML = html;
+    panel.dataset.built = "1";
+    panel.querySelectorAll(".op-select-option").forEach((opt) => {
+      opt.addEventListener("click", function () {
+        sel.value = this.dataset.value;
+        sel.dispatchEvent(new Event("change"));
+        panel.classList.remove("open");
+        trigger.setAttribute("aria-expanded", "false");
+      });
+    });
+  }
+  trigger.addEventListener("click", function (e) {
+    e.stopPropagation();
+    const open = panel.classList.toggle("open");
+    trigger.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  syncOpSelectLabel(cell);
+}
+
 let activeCellId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
 let isKeyboardVisible = false;
@@ -396,6 +443,17 @@ function bindEvents() {
     });
   }
 
+  // Close any open custom operation dropdown when clicking elsewhere.
+  document.addEventListener('click', function (e) {
+    document.querySelectorAll('.op-select-panel.open').forEach((panel) => {
+      if (!panel.parentElement.contains(e.target)) {
+        panel.classList.remove('open');
+        const trig = panel.parentElement.querySelector('.op-select-trigger');
+        if (trig) trig.setAttribute('aria-expanded', 'false');
+      }
+    });
+  });
+
   // ESC key to close fullscreen
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
@@ -430,11 +488,13 @@ function setupCellEvents(cell) {
       mathFieldB.addEventListener("click", function () { setActiveCell(cell); });
     }
     applyInputMode(cell);
+    buildOpSelect(cell);
 
     // Operation type change event
     operationSelector.addEventListener("change", function () {
       // Switch editor/textarea visibility and set the per-op template hint.
       applyInputMode(cell);
+      syncOpSelectLabel(cell);
 
 
       // If diff, integral, limit is selected, show variable input box
@@ -705,6 +765,13 @@ function createCellElement(id, type) {
                   <option value="de_moivre">复数高次幂(棣莫弗)</option>
                 </optgroup>
               </select>
+              <div class="op-select">
+                <button type="button" class="op-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="op-select-label"></span>
+                  <i class="fas fa-chevron-down op-select-caret"></i>
+                </button>
+                <div class="op-select-panel" role="listbox"></div>
+              </div>
               <!-- 变量输入框 -->
               <!--
               <span class="var-input" style="display: flex;">
