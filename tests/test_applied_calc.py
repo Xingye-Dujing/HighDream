@@ -44,6 +44,18 @@ def test_ode():
     assert r'f{' in _res('ode', expression="f'(x)+f(x)-exp(x)", variable='x')
 
 
+def test_ode_separable_rule():
+    # y' = x*y handled by the separable rule (shows separated factors)
+    body = _res('ode', expression='Derivative(f(x),x)-x*f(x)', variable='x')
+    assert '分离' in body and '$' not in body
+
+
+def test_ode_linear_integrating_factor():
+    # y' + y = e^x handled by the linear rule (shows integrating factor)
+    body = _res('ode', expression='Derivative(f(x),x)+f(x)-exp(x)', variable='x')
+    assert '积分因子' in body and '$' not in body
+
+
 def test_critical_points():
     assert r'3x^{2}' in _res('critical_points', expression='x**3-3*x', variable='x')
 

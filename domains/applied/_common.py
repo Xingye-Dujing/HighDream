@@ -106,3 +106,12 @@ def integral_steps(integrand, x, lower=None, upper=None, allow_multi=False):
     steps, explanations = calc.compute_list(str(integrand), x, **kwargs)
     return [(e, render_note(r)) for e, r in zip(steps, explanations) if r != ''] \
         or [(steps[-1], '')]
+
+
+def integral_value(integrand, x):
+    """The antiderivative VALUE produced by the rule engine (constant of integration dropped)."""
+    from domains import IntegralCalculator  # pylint: disable=import-outside-toplevel
+    steps, _expl = IntegralCalculator().compute_list(str(integrand), x)
+    concrete = [s for s in steps if s is not None]
+    value = concrete[-1] if concrete else sympify(str(integrand))
+    return value.subs(Symbol('C'), 0) if value.has(Symbol('C')) else value
