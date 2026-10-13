@@ -150,7 +150,7 @@ def _complementary(a2, a1, a0, x, f):
         rows.append((alpha, note("复根实部 $\\alpha$")))
         rows.append((beta, note("复根虚部 $\\beta$")))
         y1, y2 = exp(alpha * x) * cos(beta * x), exp(alpha * x) * sin(beta * x)
-    yc = simplify(c1 * y1 + c2 * y2)
+    yc = c1 * y1 + c2 * y2
     rows.append((Eq(f, yc), note("对应齐次通解 $y_h$")))
     return rows, y1, y2, yc
 
