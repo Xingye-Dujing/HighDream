@@ -1,6 +1,6 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
-from sympy import Add, Expr, Integral, Symbol, simplify
+from sympy import Add, Expr, Integral, Symbol, latex, simplify
 
 from core import BaseCalculator, SelectRuleCalculator
 from core.cached_calculator import DBCachedCalculator
@@ -15,6 +15,10 @@ def create_integral_calculator(base_class):
 
     class IntegralCalculatorImpl(base_class):
         """Symbolic integral calculator that supports step-by-step evaluation.
+
+        Indefinite integrals end with the constant of integration ``+C``. When a
+        definite upper bound is supplied the ``+C`` step is skipped and the
+        Newton-Leibniz formula ``F(b) - F(a)`` is appended instead.
 
         Examples:
         >>> from sympy import Symbol
@@ -35,6 +39,16 @@ def create_integral_calculator(base_class):
                 super().__init__(Integral, RULE_DICT, MATCHER_LIST)
             else:
                 super().__init__(Integral, RULE_DICT, N_MATCHER_LIST)
+            # Definite-integral state; populated by compute_list / compute_latex so
+            # that reset_process() (run inside the engine) cannot clear it.
+            self._var: Symbol = Symbol('x')
+            self._lower: Optional[Expr] = None
+            self._upper: Optional[Expr] = None
+
+        @property
+        def _is_definite(self) -> bool:
+            """A definite integral is only requested when an upper bound is given."""
+            return self._upper is not None
 
         @staticmethod
         def _merge_constants_with_c(expr: Expr) -> Expr:
@@ -54,12 +68,18 @@ def create_integral_calculator(base_class):
             return simplify(Add(*other_terms)) + C
 
         def final_postprocess(self, final_expr: Expr) -> None:
-            """Add constant of integration (+C) for indefinite integrals without the integral symbol.
-
-            Ensure the constant of integration (+C) appears only in explanatory text or final output,
-            never embedded in the symbolic antiderivative expression."""
+            """Add ``+C`` for indefinite integrals, or apply the definite evaluation."""
 
             super().final_postprocess(final_expr)
+
+            if self._is_definite:
+                self._append_definite_evaluation(final_expr)
+                return
+
+            self._append_constant_of_integration()
+
+        def _append_constant_of_integration(self) -> None:
+            """Merge constant terms into ``+C`` across the final steps."""
 
             # Add C to the last step
             self.step_generator.steps[-1] = self._merge_constants_with_c(self.step_generator.steps[-1])
@@ -76,12 +96,44 @@ def create_integral_calculator(base_class):
             except (IndexError, AttributeError):
                 pass
 
-        def compute_list(self, expr: str, var: Symbol) -> Tuple[List[Expr], List[str]]:
-            """Define Integral context."""
+        def _resolve_antiderivative(self, value: Expr) -> Expr:
+            """Resolve any leftover (unevaluated) Integral via SymPy's doit()."""
+
+            if value.has(Integral):
+                return value.doit()
+            return value
+
+        def _append_definite_evaluation(self, antiderivative: Expr) -> None:
+            """Append the Newton-Leibniz steps using the computed antiderivative."""
+
+            var, upper = self._var, self._upper
+            lower = self._lower if self._lower is not None else 0
+            lower = 0 if lower is None else lower
+
+            F = self._resolve_antiderivative(antiderivative)
+
+            diff_expr = F.subs(var, upper) - F.subs(var, lower)
+            result = simplify(diff_expr)
+
+            lb, ub = latex(lower), latex(upper)
+            self.step_generator.add_step(
+                result,
+                rf"应用牛顿-莱布尼茨公式: $\left. {latex(F)} \right|_{{{lb}}}^{{{ub}}} "
+                rf"= {latex(diff_expr)} = {latex(result)}$"
+            )
+
+        def compute_list(self, expr: str, var: Symbol,
+                         lower: Optional[Expr] = None,
+                         upper: Optional[Expr] = None) -> Tuple[List[Expr], List[str]]:
+            """Define Integral context, capturing optional definite bounds."""
+            self._var, self._lower, self._upper = var, lower, upper
             return super().compute_list(expr, variable=var)
 
-        def compute_latex(self, expr: str, var: Symbol) -> str:
-            """Define Integral context."""
+        def compute_latex(self, expr: str, var: Symbol,
+                          lower: Optional[Expr] = None,
+                          upper: Optional[Expr] = None) -> str:
+            """Define Integral context, capturing optional definite bounds."""
+            self._var, self._lower, self._upper = var, lower, upper
             return super().compute_latex(expr, variable=var)
 
     return IntegralCalculatorImpl

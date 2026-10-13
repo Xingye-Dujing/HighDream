@@ -609,6 +609,10 @@ function createCellElement(id, type) {
                 <input type="radio" name="${radioButtonGroupName}" value="none">
                 <span>不包含特殊匹配器</span>
                </label>
+               <label style="font-size:12px; margin-left:8px;">上限:</label>
+               <input class="integral-upper" placeholder="空=不定积分" style="width:80px;">
+               <label style="font-size:12px;">下限:</label>
+               <input class="integral-lower" placeholder="默认0" style="width:70px;">
               </div>
 
               <!-- ExpressionParser 专有 -->
@@ -801,13 +805,17 @@ function runCell(cell) {
   if (operationType === "integral") {
     const radioButtonGroupName = `include-option-${cell.dataset.cellId}`;
     const selectedRadio = cell.querySelector(`input[name="${radioButtonGroupName}"]:checked`).value === "include";
-    if (selectedRadio) {
-      include_special_matchers = 'True'
+    payload.include_special_matchers = selectedRadio ? 'True' : 'False';
+
+    // 定积分: 仅当填写上限时按定积分处理; 下限留空默认 0
+    const upperInput = cell.querySelector(".integral-upper");
+    const lowerInput = cell.querySelector(".integral-lower");
+    const upper = upperInput ? upperInput.value.trim() : "";
+    const lower = lowerInput ? lowerInput.value.trim() : "";
+    if (upper !== "") {
+      payload.upper = upper;
+      payload.lower = lower;
     }
-    else {
-      include_special_matchers = 'False'
-    }
-    payload.include_special_matchers = include_special_matchers
   }
 
   if (operationType === "ref") {
@@ -1172,6 +1180,16 @@ function saveNotebook() {
         cellData.maxLhopitalCount = cell.querySelector(".max-lhopital-count").value || "5";
       }
 
+      if (operationType === "integral") {
+        const radioButtonGroupName = `include-option-${cell.dataset.cellId}`;
+        const selectedRadio = cell.querySelector(`input[name="${radioButtonGroupName}"]:checked`);
+        cellData.includeSpecialMatchers = selectedRadio ? selectedRadio.value : "include";
+        const upperInput = cell.querySelector(".integral-upper");
+        const lowerInput = cell.querySelector(".integral-lower");
+        cellData.integralUpper = upperInput ? upperInput.value : "";
+        cellData.integralLower = lowerInput ? lowerInput.value : "";
+      }
+
       if (operationType === "ref") {
         cellData.targetForm = cell.querySelector(".ref-sort").value || "ref";
       }
@@ -1258,6 +1276,16 @@ function loadNotebook() {
               if (pointInput) pointInput.value = cellData.point || "0";
               if (directionSelect) directionSelect.value = cellData.direction || "+";
               if (maxLhopitalInput) maxLhopitalInput.value = cellData.maxLhopitalCount || "5";
+            }
+
+            if (cellData.operationType === "integral") {
+              const upperInput = cell.querySelector(".integral-upper");
+              const lowerInput = cell.querySelector(".integral-lower");
+              if (upperInput) upperInput.value = cellData.integralUpper || "";
+              if (lowerInput) lowerInput.value = cellData.integralLower || "";
+              const which = cellData.includeSpecialMatchers || "include";
+              const radio = cell.querySelector(`.integral-controls input[type="radio"][value="${which}"]`);
+              if (radio) radio.checked = true;
             }
 
             if (cellData.operationType === "ref") {

@@ -7,8 +7,6 @@ The service routes requests to appropriate calculators based on operation type
 and handles data processing, error handling, and result formatting.
 """
 
-# import uuid
-# form config import TREES_DIR
 from typing import Any, Dict, Tuple
 
 from sympy import Symbol, preorder_traversal, latex
@@ -32,7 +30,10 @@ _cached_calculators = {
     'limit': CachedLimitCalculator,
 }
 
-# Registry of available calculators mapped by operation type
+# Class lookup keyed by operation name. NOTE: the authoritative routing is the
+# if/elif chain in start_compute(), not this dict -- the runtime operation_type
+# strings it compares (e.g. 'det', 'transform-1', 'linear-system') differ from
+# several dict keys here ('det_1' / 'transform_1' / 'linear_system_converter').
 _calculators = {
     'diff': DiffCalculator,
     'expr': ExpressionParser,
@@ -119,12 +120,21 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
 
         if operation_type == 'integral':
             include_special_matchers = data.get('include_special_matchers', True) == 'True'
-            if use_cache or record_cache:
+            bounds = {}
+            lower_raw = str(data.get('lower', '')).strip()
+            upper_raw = str(data.get('upper', '')).strip()
+            if upper_raw != '':
+                bounds['upper'] = cached_sympify(upper_raw)
+                bounds['lower'] = cached_sympify(lower_raw) if lower_raw != '' else 0
+            # Result cache is keyed only by op/expr/var/point/direction (db_cache.
+            # build_hash) and has no columns for bounds, so it is used only for
+            # indefinite integrals; definite integrals bypass it to avoid collisions.
+            if (use_cache or record_cache) and not bounds:
                 calc = _cached_calculators['integral'](include_special_matchers)
                 return True, calc.compute_latex(expression, Symbol(variable),
                                                 use_cache=use_cache, record_cache=record_cache)
             return True, _calculators['integral'](include_special_matchers). \
-                compute_latex(expression, Symbol(variable))
+                compute_latex(expression, Symbol(variable), **bounds)
 
         if operation_type == 'limit':
             point = cached_sympify(data.get('point', '0'))
@@ -236,7 +246,6 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
 
         if operation_type == 'expr':
             max_depth = int(data.get('max_depth', DEFAULT_PARSER_MAX_DEPTH))
-            # is_draw_tree = data.get('is_draw_tree') == 'true'
             sort_strategy = data.get('sort_strategy', 'complexity')
 
             def length_sort(expr):
@@ -263,18 +272,8 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
                 expr_latex = latex(expr_obj)
                 expressions_out.append({'latex': expr_latex, 'reason': str(reason)})
 
-            # # Generate derivation tree SVG and return accessible static path
-            # tree_svg_url = None
-            # if is_draw_tree:
-            #     tree = parser.parse_tree(expression)
-            #     # Generate unique filename
-            #     file_name = f"{uuid.uuid4().hex}.svg"
-            #     save_path = f"{TREES_DIR}/{file_name}"
-
-            #     parser.draw_expr_tree(tree, save_path=save_path)
-            #     tree_svg_url = save_path
-
-            # return True, (expressions_out, tree_svg_url)
+            # NOTE: derivation-tree rendering (parse_tree/draw_expr_tree) was removed
+            # as unused; the result stays a 1-tuple so the frontend reads result[0].
             return True, (expressions_out,)
 
         return False, f"Unsupported operation type: {operation_type}"
