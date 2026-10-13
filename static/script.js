@@ -1353,6 +1353,100 @@ function loadNotebook() {
 }
 
 // Subscribe to task status via SSE
+// ---- Step-linking: open a derivation sub-expression in a fresh cell ----
+function collectStepsPayload(cell) {
+  const operationType = cell.querySelector(".operation-type").value;
+  const expression = cell.querySelector("textarea").value.trim();
+  const varEl = cell.querySelector(".var-input input");
+  const variable = (varEl && varEl.value.trim()) || "x";
+  const payload = { operation_type: operationType, expression: expression, variable: variable };
+  if (operationType === "limit") {
+    const pointEl = cell.querySelector(".point");
+    const dirEl = cell.querySelector(".limit-sort");
+    payload.point = (pointEl && pointEl.value) || "0";
+    payload.direction = (dirEl && dirEl.value) || "+";
+  }
+  if (operationType === "integral") {
+    const upperEl = cell.querySelector(".integral-upper");
+    const lowerEl = cell.querySelector(".integral-lower");
+    payload.upper = (upperEl && upperEl.value.trim()) || "";
+    payload.lower = (lowerEl && lowerEl.value.trim()) || "";
+  }
+  return payload;
+}
+
+function spawnCellFromSubtask(sub) {
+  addNewCell();
+  const cell = document.getElementById("notebook").lastElementChild;
+  if (!cell) return;
+  const opSel = cell.querySelector(".operation-type");
+  if (opSel) {
+    opSel.value = sub.op;
+    opSel.dispatchEvent(new Event("change"));
+  }
+  const ta = cell.querySelector("textarea");
+  if (ta) ta.value = sub.expression || "";
+  const varInput = cell.querySelector(".var-input input");
+  if (varInput && sub.variable) varInput.value = sub.variable;
+  if (sub.op === "limit") {
+    const p = cell.querySelector(".point");
+    if (p && sub.point) p.value = sub.point;
+    const d = cell.querySelector(".limit-sort");
+    if (d && sub.direction) d.value = sub.direction;
+  }
+  if (sub.op === "integral") {
+    const u = cell.querySelector(".integral-upper");
+    if (u) u.value = sub.upper || "";
+    const l = cell.querySelector(".integral-lower");
+    if (l) l.value = sub.lower || "";
+  }
+  runCell(cell);
+}
+
+function attachStepLinks(outputArea, cell) {
+  if (!cell) return;
+  let payload;
+  try {
+    payload = collectStepsPayload(cell);
+  } catch (e) {
+    return;
+  }
+  fetch("/api/steps", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+    .then((r) => r.json())
+    .then((data) => {
+      if (!data || !data.success || !Array.isArray(data.steps)) return;
+      const box = document.createElement("div");
+      box.className = "step-links";
+      box.style.cssText = "margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;";
+      const title = document.createElement("span");
+      title.textContent = "可继续计算的子式：";
+      title.style.cssText = "font-size:12px;color:#888;margin-right:4px;";
+      box.appendChild(title);
+      let count = 0;
+      data.steps.forEach((st) => {
+        (st.subtasks || []).forEach((sub) => {
+          if (!sub.op) return;
+          count += 1;
+          const btn = document.createElement("button");
+          btn.className = "step-link-btn";
+          btn.type = "button";
+          btn.style.cssText = "cursor:pointer;font-size:12px;padding:2px 8px;border:1px solid #ccc;border-radius:4px;background:#f7f7f7;";
+          const prefix = sub.op === "integral" ? "∫" : sub.op === "diff" ? ("d/d" + (sub.variable || "x")) : "lim";
+          btn.textContent = prefix + " " + sub.expression;
+          btn.title = "在新单元格中计算此式";
+          btn.addEventListener("click", function () { spawnCellFromSubtask(sub); });
+          box.appendChild(btn);
+        });
+      });
+      if (count > 0) outputArea.appendChild(box);
+    })
+    .catch(() => {});
+}
+
 function subscribeTask(taskId, outputArea, runButton, operationType) {
   const es = new EventSource(`/api/stream?task_id=${taskId}`);
   pollTimers.set(taskId, es);
@@ -1389,6 +1483,10 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
       setTimeout(() => {
         outputArea.classList.remove("result-animation");
       }, 1000);
+
+      if (["diff", "integral", "limit"].includes(operationType)) {
+        attachStepLinks(outputArea, outputArea.closest(".cell"));
+      }
     }
   });
 
