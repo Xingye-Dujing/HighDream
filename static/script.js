@@ -1,6 +1,6 @@
 // Global variables
 let cellCounter = 0;
-const APPLIED_OPS = ["tangent", "linearization", "critical_points", "newton", "arc_length", "volume_disk", "surface_area", "implicit_diff", "parametric_diff", "polar_area", "polar_slope", "taylor", "series_convergence", "improper_integral", "ode", "numerical_integration", "mean_value", "radius_of_convergence", "taylor_error", "complex_simplify", "complex_polar", "complex_roots"];
+const APPLIED_OPS = ["tangent", "linearization", "critical_points", "newton", "arc_length", "volume_disk", "surface_area", "implicit_diff", "parametric_diff", "polar_area", "polar_slope", "taylor", "series_convergence", "improper_integral", "ode", "numerical_integration", "mean_value", "radius_of_convergence", "taylor_error", "complex_simplify", "complex_polar", "complex_roots", "volume_shell", "de_moivre"];
 let activeCellId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
 let isKeyboardVisible = false;
@@ -539,6 +539,7 @@ function createCellElement(id, type) {
                   <option value="arc_length">弧长</option>
                   <option value="volume_disk">旋转体体积(圆盘)</option>
                   <option value="surface_area">旋转曲面面积</option>
+                  <option value="volume_shell">旋转体体积(柱壳法)</option>
                   <option value="implicit_diff">隐函数求导</option>
                   <option value="parametric_diff">参数方程求导</option>
                   <option value="polar_area">极坐标面积</option>
@@ -554,6 +555,7 @@ function createCellElement(id, type) {
                   <option value="complex_simplify">复数化简(a+bi)</option>
                   <option value="complex_polar">复数极坐标/指数形式</option>
                   <option value="complex_roots">复数方程求根</option>
+                  <option value="de_moivre">复数高次幂(棣莫弗)</option>
                 </optgroup>
               </select>
               <!-- 变量输入框 -->

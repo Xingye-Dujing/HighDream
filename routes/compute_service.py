@@ -316,7 +316,7 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
             return True, r"\begin{align}" + r"\newline".join(lines) + r"\end{align}"
 
         # pylint: disable=import-outside-toplevel
-        from core.applied_calc import HANDLERS
+        from domains.applied import HANDLERS
         handler = HANDLERS.get(operation_type)
         if handler is not None:
             try:
