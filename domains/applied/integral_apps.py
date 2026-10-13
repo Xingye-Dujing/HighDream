@@ -65,10 +65,9 @@ def surface_area(data):
 def iterated_integral(data):
     """Rectangular iterated (double) integral ∫_c^d ∫_a^b f dx dy.
 
-    The inner integral over x keeps y as a parameter, so it is evaluated with the
-    definite-integral engine directly (the single-variable rule engine rejects a
-    two-symbol integrand). The resulting F(y) is then expanded step-by-step by the
-    core IntegralCalculator for the outer integral over y.
+    Both layers are rule-derived: the inner integral is a partial integral over x
+    (every other symbol held constant) and the outer is a definite integral over y,
+    each expanded step-by-step by the core IntegralCalculator.
     """
     x = get_var(data)
     y = Symbol(data.get('variable2', 'y') or 'y')
@@ -76,11 +75,13 @@ def iterated_integral(data):
     a, b = to_num(data.get('lower'), 0), to_num(data.get('upper'), 1)
     c, d = to_num(data.get('lower2'), 0), to_num(data.get('upper2'), 1)
 
-    inner_val = simplify(Integral(f, (x, a, b)).doit())
     items = [
         (Integral(f, (x, a, b), (y, c, d)), note("累次积分 (矩形区域)")),
-        (Integral(f, (x, a, b)), note("先对 x 积分, y 视为常数")),
-        (inner_val, note(r"内层结果 $F(" + str(y) + r")$")),
+        (Integral(f, (x, a, b)), note("先对 x 积分, 其余字母视为常数")),
     ]
+    inner = integral_steps(f, x, a, b, allow_multi=True)
+    items += inner
+    inner_val = simplify([e for (e, _n) in inner][-1]) if inner else f
+    items.append((Integral(inner_val, (y, c, d)), note("再对 y 积分")))
     items += integral_steps(inner_val, y, c, d)
     return True, align(items)

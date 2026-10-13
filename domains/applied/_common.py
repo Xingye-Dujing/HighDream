@@ -60,20 +60,33 @@ def _latex(obj):
 
 
 def derivative_steps(f_str, x):
-    """Full rule-driven derivative derivation rows via the core DiffCalculator."""
+    """Full rule-driven derivative derivation rows via the core DiffCalculator.
+
+    DiffCalculator already honors ``x`` and treats every other free symbol as a
+    constant, so the same call yields genuine partial-derivative steps for
+    multivariable operations.
+    """
     from domains import DiffCalculator  # pylint: disable=import-outside-toplevel
     steps, explanations = DiffCalculator().compute_list(f_str, x)
     return [(e, render_note(r)) for e, r in zip(steps, explanations) if r != ''] \
         or [(steps[-1], '')]
 
 
-def integral_steps(integrand, x, lower=None, upper=None):
-    """Full rule-driven integration rows via the core IntegralCalculator."""
+def integral_steps(integrand, x, lower=None, upper=None, allow_multi=False):
+    """Full rule-driven integration rows via the core IntegralCalculator.
+
+    ``allow_multi=True`` integrates with respect to ``x`` while treating every other
+    free symbol as a constant (a partial integral), instead of the engine's default
+    one-symbol rejection. Used for the inner integral of iterated integrals.
+    """
     from domains import IntegralCalculator  # pylint: disable=import-outside-toplevel
+    calc = IntegralCalculator()
+    if allow_multi:
+        calc._allow_multi_symbols = True
     kwargs = {}
     if upper is not None:
         kwargs['upper'] = upper
         kwargs['lower'] = 0 if lower is None else lower
-    steps, explanations = IntegralCalculator().compute_list(str(integrand), x, **kwargs)
+    steps, explanations = calc.compute_list(str(integrand), x, **kwargs)
     return [(e, render_note(r)) for e, r in zip(steps, explanations) if r != ''] \
         or [(steps[-1], '')]
