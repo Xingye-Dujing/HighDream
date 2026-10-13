@@ -286,32 +286,27 @@ function bindEvents() {
     }
   });
 
-  // Bind virtual keyboard buttons
+  // Bind virtual keyboard / template palette buttons
   document.querySelectorAll(".keyboard-key").forEach((key) => {
     key.addEventListener("click", function () {
-      const value = this.getAttribute("data-value");
+      const latex = this.getAttribute("data-latex");
       const activeCell = document.querySelector(".cell-active");
-      if (activeCell) {
-        const textarea = activeCell.querySelector("textarea");
-        if (textarea) {
-          const cursorPos = textarea.selectionStart;
-          const textBefore = textarea.value.substring(0, cursorPos);
-          const textAfter = textarea.value.substring(cursorPos);
-
-          if (value.includes("{}")) {
-            const parts = value.split("{}");
-            textarea.value = textBefore + parts[0] + textAfter;
-            textarea.selectionStart = cursorPos + parts[0].length;
-            textarea.selectionEnd = cursorPos + parts[0].length;
-          } else {
-            textarea.value = textBefore + value + textAfter;
-            textarea.selectionStart = cursorPos + value.length;
-            textarea.selectionEnd = cursorPos + value.length;
-          }
-
-          textarea.focus();
-          textarea.dispatchEvent(new Event("input"));
+      if (!activeCell) return;
+      const field = getMathField(activeCell);
+      const textarea = getMathSource(activeCell);
+      if (field && field.style.display !== "none") {
+        // Insert a LaTeX template with editable \square placeholders into the editor.
+        field.focus();
+        if (typeof field.insert === "function") {
+          field.insert(latex);
+        } else {
+          field.value = (field.value || "") + latex;
         }
+        if (textarea) textarea.value = field.value;
+      } else if (textarea) {
+        const cursorPos = textarea.selectionStart || textarea.value.length;
+        textarea.value = textarea.value.substring(0, cursorPos) + latex + textarea.value.substring(cursorPos);
+        textarea.focus();
       }
     });
   });
