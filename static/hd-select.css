@@ -1,0 +1,270 @@
+/* ==========================================================================
+   HighDream custom <select>
+   --------------------------------------------------------------------------
+   The native option list is drawn by the OS and cannot be styled, so the
+   popup is rebuilt in HTML. It follows the same rules as the rest of the
+   product: paper, a 1px hairline, `--radius`, and a selected row marked with
+   the 2px inset underline rather than a fill.
+
+   Loaded after /static/hd-theme.css, which owns the design tokens.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   The wrapper inherits the box the real <select> used to occupy, so existing
+   layout rules (.rs-input-row, .mt-field, .cell-controls, ...) keep working.
+   -------------------------------------------------------------------------- */
+.hd-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+/*  The real control stays in the DOM -- select.value, change events and form
+    submission all depend on it -- but it is no longer painted or clicked.  */
+.hd-select-native {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/*  The two places that sized the <select> with `flex: 1` now size its
+    wrapper, so the row proportions are unchanged.                           */
+.rs-input-row .hd-select {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+.mt-field .hd-select {
+  min-width: 70px;
+}
+.mt-field.mt-grow .hd-select {
+  flex: 1 1 200px;
+}
+.bp-operation-inputs .hd-select,
+.bp-node-operation.hd-select {
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   Trigger -- the closed control
+   -------------------------------------------------------------------------- */
+.hd-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: calc(var(--font-meta) * var(--fscale));
+  font-weight: var(--weight);
+  letter-spacing: var(--ls-meta);
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.hd-select-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.hd-select-caret {
+  flex-shrink: 0;
+  font-size: calc(9px * var(--fscale));
+  line-height: 1;
+  color: var(--text-faint);
+  transition: transform var(--transition-speed);
+}
+
+.hd-select-trigger:hover {
+  background: var(--hover);
+  border-color: var(--border);
+}
+.hd-select-trigger:hover .hd-select-caret {
+  color: var(--text-dim);
+}
+
+/*  Open matches the selected pattern used across the product: the 2px
+    inset underline, never a dark fill.                                     */
+.hd-select-trigger.hd-open {
+  background: var(--hover);
+  border-color: var(--border);
+  box-shadow: inset 0 -2px 0 var(--selected-line);
+}
+.hd-select-trigger.hd-open .hd-select-caret {
+  color: var(--text);
+  transform: rotate(180deg);
+}
+
+.hd-select-trigger:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 1px;
+}
+.hd-select-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+/*  Mirror the states the native select used to get for free.               */
+.hd-select.has-error .hd-select-trigger {
+  border-color: var(--accent-red);
+}
+
+/* --------------------------------------------------------------------------
+   The popup
+   -------------------------------------------------------------------------- */
+/*  This box carries the border, the radius and the shadow, and it never
+    scrolls. The list scrolls in the square child below, so the scrollbar
+    can never overflow a rounded corner. */
+.hd-select-menu {
+  position: fixed;
+  z-index: 4000;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  animation: hd-select-in 0.14s ease;
+}
+
+.hd-select-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+}
+
+@keyframes hd-select-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hd-select-menu[hidden] {
+  display: none;
+}
+
+.hd-select-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.hd-select-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.hd-select-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-dim);
+  border-radius: var(--radius);
+}
+.hd-select-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+/*  A square scroll container with a rounded thumb: at any --radius the
+    track ends flush with the clipped edge instead of leaving a gap. */
+.hd-select-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-dim) transparent;
+}
+
+/*  <optgroup> caption -- the 9px uppercase faint label used for field names. */
+.hd-select-label {
+  padding: 8px 10px 4px;
+  font-size: calc(var(--font-label) * var(--fscale));
+  letter-spacing: var(--ls-section);
+  text-transform: uppercase;
+  font-weight: var(--weight);
+  color: var(--text-faint);
+  user-select: none;
+}
+
+/*  No border: like omm-planner's .dd-item, an option is marked by ink and
+    weight of colour alone. */
+.hd-select-option {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: calc(var(--font-sub) * var(--fscale));
+  line-height: 1.5;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+  border-radius: var(--radius);
+  transition: all var(--transition-speed);
+}
+
+.hd-select-option > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hd-select-option.hd-hl,
+.hd-select-option:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   Selected row
+   --------------------------------------------------------------------------
+   No border, no fill, no underline. A chosen option is marked the way
+   omm-planner marks a chosen tag item -- `inset 3px 0 0` draws a short ink
+   bar down the leading edge, and the text goes to full ink. It therefore
+   reads as "chosen" without ever painting a dark panel, and it stays
+   distinguishable from the hover tint at any --radius.
+   -------------------------------------------------------------------------- */
+.hd-select-option.hd-sel {
+  color: var(--text);
+  box-shadow: inset 3px 0 0 var(--selected-line);
+}
+
+/*  Hovering a chosen option must not erase the bar. */
+.hd-select-option.hd-sel:hover,
+.hd-select-option.hd-sel.hd-hl {
+  background: var(--hover);
+  color: var(--text);
+  box-shadow: inset 3px 0 0 var(--selected-line);
+}
+
+.hd-select-option[disabled] {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+.hd-select-option[disabled]:hover {
+  background: transparent;
+  box-shadow: none;
+}
+
+@media print {
+  .hd-select-menu {
+    display: none !important;
+  }
+}

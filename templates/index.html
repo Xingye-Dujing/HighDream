@@ -6,6 +6,8 @@
     <title>HighDream Notebook</title>
     <link rel="stylesheet" href="../static/fontawesome/css/all.min.css"/>
     <link rel="stylesheet" href="/static/style.css"/>
+    <link rel="stylesheet" href="/static/hd-theme.css"/>
+    <link rel="stylesheet" href="/static/hd-select.css"/>
     <script
             id="MathJax-script"
             async
@@ -24,52 +26,15 @@
     <div class="math-bg-element" style="bottom: 15%; right: 5%">∇</div>
 </div>
 
-<div id="header">
-    <!-- The <i> tag here works with CSS to achieve indentation. -->
-    <h1><i></i>HighDream Notebook</h1>
-    <div id="header-controls">
-        <a href="/blueprint_canvas">
-            <button class="header-btn" id="blueprintCanvasBtn" title="画布">
-                <i class="fas fa-project-diagram"></i>
-            </button>
-        </a>
-        <a href="/matrix_panel">
-            <button class="header-btn" id="matrixLabBtn" title="矩阵面板">
-                <i class="fas fa-circle"></i>
-            </button>
-        </a>
-        <a href="/word_editor">
-            <button class="header-btn" id="wordEditorBtn" title="符号计算 Word">
-                <i class="fas fa-file-word"></i>
-            </button>
-        </a>
-        <a href="/rule_select">
-            <button class="header-btn" id="ruleSelectBtn" title="手动选择规则">
-                <i class="fas fa-hand-pointer"></i>
-            </button>
-        </a>
-        <a href="/help">
-            <button class="header-btn" id="helpBtn" title="帮助文档">
-                <i class="fas fa-hands-helping"></i>
-            </button>
-        </a>
-
-        <button class="header-btn" id="saveNotebookBtn" title="保存笔记本">
-            <i class="fas fa-save"></i>
-        </button>
-        <button class="header-btn" id="loadNotebookBtn" title="加载笔记本">
-            <i class="fas fa-folder-open"></i>
-        </button>
-        <button class="header-btn" id="toggleKeyboardBtn" title="切换虚拟键盘">
-            <i class="fas fa-keyboard"></i>
-        </button>
-        <!--
-        <button class="header-btn" id="toggleThemeBtn" title="切换主题">
-            <i class="fas fa-moon"></i>
-        </button>
-        -->
-    </div>
-</div>
+<!-- Page actions. There is no per-page title bar and no wrapper
+     div: /static/hd-menu.js moves these buttons into the product
+     menu bar. `hidden` keeps them out of the layout until then,
+     and their ids stay resolvable for the page scripts. -->
+<button class="header-btn" data-hd-action hidden id="saveNotebookBtn" title="保存笔记本"> <i class="fas fa-save"></i> </button> 
+<button class="header-btn" data-hd-action hidden id="loadNotebookBtn" title="加载笔记本"> <i class="fas fa-folder-open"></i> </button> 
+<button class="header-btn" data-hd-action hidden id="toggleKeyboardBtn" title="切换虚拟键盘"> <i class="fas fa-keyboard"></i> </button> 
+    <!--
+    -->
 
 <div id="toolbar">
     <button class="toolbar-button" id="addCellBtn">
@@ -170,5 +135,7 @@ it extends the page downward to prevent the keyboard from covering the cells. --
         <div class="math-fullscreen-body"></div>
     </div>
 </div>
+<script src="/static/hd-menu.js"></script>
+<script src="/static/hd-select.js"></script>
 </body>
 </html>

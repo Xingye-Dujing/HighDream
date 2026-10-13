@@ -1,11 +1,11 @@
 :root {
-  --word-font-family: "Consolas", serif;
+  --word-font-family: var(--font-code);
 }
 #document-container {
   display: flex;
   justify-content: center;
   padding: 20px 0;
-  min-height: calc(100vh - 96px);
+  min-height: calc(100vh - 48px);
 }
 
 #document {
@@ -15,12 +15,12 @@
 }
 
 .a4-page {
-  background-color: white;
+  background-color: var(--bg);
   width: 100%;
   min-height: 29.7cm;
   padding: 40px 50px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
+  border-radius: var(--radius);
   margin-bottom: 20px;
 }
 
@@ -31,17 +31,17 @@
 .paragraph {
   margin-bottom: 16px;
   padding: 8px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
 .paragraph:hover {
-  background-color: rgba(25, 118, 210, 0.05);
+  background-color: var(--border-dim);
 }
 
 .paragraph.active {
-  background-color: rgba(25, 118, 210, 0.1);
+  background-color: var(--border-dim);
   border: 2px solid var(--jp-brand-color1);
   padding: 6px;
 }
@@ -80,7 +80,7 @@
 
 .text-paragraph {
   font-family: var(--font-family);
-  font-size: 14px;
+  font-size: calc(14px * var(--fscale));
   line-height: 1.8;
   color: var(--jp-ui-font-color0);
 }
@@ -91,18 +91,14 @@
   border: 1px solid transparent;
   resize: vertical;
   font-family: var(--font-family);
-  font-size: 14px;
+  font-size: calc(14px * var(--fscale));
   line-height: 1.8;
   background: transparent;
   outline: none;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius);
 }
 
-.text-paragraph textarea:focus {
-  border-color: var(--jp-brand-color1);
-  background-color: white;
-}
 
 .text-paragraph .text-render {
   padding: 4px;
@@ -117,13 +113,13 @@
   margin-bottom: 8px;
   padding: 4px 8px;
   background-color: var(--jp-layout-color1);
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: var(--radius);
+  font-size: var(--font-sub);
 }
 
 .sympy-paragraph .code-label {
   color: var(--jp-brand-color0);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .sympy-paragraph .code-actions {
@@ -136,9 +132,9 @@
   border: none;
   cursor: pointer;
   color: var(--jp-ui-font-color1);
-  font-size: 12px;
+  font-size: var(--font-sub);
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius);
   transition: all 0.2s;
 }
 
@@ -152,18 +148,15 @@
   padding: 12px;
   background-color: var(--jp-layout-color1);
   border: 1px solid var(--jp-border-color1);
-  border-radius: 4px;
+  border-radius: var(--radius);
   font-family: var(--word-font-family);
-  font-size: 13px;
+  font-size: var(--font-body);
   line-height: 1.6;
   resize: vertical;
   min-height: 60px;
   outline: none;
 }
 
-.sympy-paragraph .code-input:focus {
-  border-color: var(--jp-brand-color1);
-}
 
 .sympy-paragraph .code-input.collapsed {
   display: none;
@@ -174,9 +167,9 @@
   padding: 16px;
   background-color: var(--jp-cell-output-background);
   border: 1px dashed var(--jp-border-color1);
-  border-radius: 4px;
+  border-radius: var(--radius);
   min-height: 48px;
-  font-size: 15px;
+  font-size: calc(15px * var(--fscale));
 }
 
 .sympy-paragraph .code-output:empty {
@@ -189,17 +182,17 @@
 
 .sympy-paragraph .run-button {
   background-color: var(--jp-success-color);
-  color: white;
+  color: var(--bg);
   border: none;
   padding: 4px 12px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-sub);
   transition: all 0.2s;
 }
 
 .sympy-paragraph .run-button:hover {
-  background-color: #388e3c;
+  background-color: var(--hover);
   transform: scale(1.05);
 }
 
@@ -216,13 +209,13 @@
   margin-bottom: 8px;
   padding: 4px 8px;
   background-color: var(--jp-layout-color1);
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: var(--radius);
+  font-size: var(--font-sub);
 }
 
 .latex-paragraph .latex-label {
-  color: #952d8b;
-  font-weight: 600;
+  color: var(--text);
+  font-weight: 500;
 }
 
 .latex-paragraph .latex-actions {
@@ -235,9 +228,9 @@
   border: none;
   cursor: pointer;
   color: var(--jp-ui-font-color1);
-  font-size: 12px;
+  font-size: var(--font-sub);
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius);
   transition: all 0.2s;
 }
 
@@ -251,18 +244,15 @@
   padding: 12px;
   background-color: var(--jp-layout-color1);
   border: 1px solid var(--jp-border-color1);
-  border-radius: 4px;
+  border-radius: var(--radius);
   font-family: var(--word-font-family);
-  font-size: 13px;
+  font-size: var(--font-body);
   line-height: 1.6;
   resize: vertical;
   min-height: 60px;
   outline: none;
 }
 
-.latex-paragraph .latex-input:focus {
-  border-color: #952d8b;
-}
 
 .latex-paragraph .latex-input.collapsed {
   display: none;
@@ -273,9 +263,9 @@
   padding: 16px;
   background-color: var(--jp-cell-output-background);
   border: 1px dashed var(--jp-border-color1);
-  border-radius: 4px;
+  border-radius: var(--radius);
   min-height: 48px;
-  font-size: 15px;
+  font-size: calc(15px * var(--fscale));
   text-align: center;
   max-height: 280px;
   overflow: auto;
@@ -286,19 +276,20 @@
 }
 
 .latex-paragraph .render-button {
-  background-color: #952d8b;
-  color: white;
-  border: none;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
   padding: 4px 12px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s;
+  font-size: var(--font-sub);
+  transition: all var(--transition-speed);
 }
 
 .latex-paragraph .render-button:hover {
-  background-color: #7a2470;
-  transform: scale(1.05);
+  background: var(--selected-fill);
+  box-shadow: inset 0 -2px 0 var(--selected-line);
+  transform: none;
 }
 
 #toolbar {
@@ -315,7 +306,7 @@
 .toolbar-button {
   padding: 6px 10px;
   font-family: var(--word-font-family);
-  font-size: 12px;
+  font-size: var(--font-sub);
 }
 
 .toolbar-button span {
@@ -327,8 +318,8 @@
   top: 24px;
   right: 24px;
   padding: 0;
-  border-radius: 8px;
-  color: white;
+  border-radius: var(--radius);
+  color: var(--bg);
   z-index: 3000;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -363,7 +354,7 @@
 }
 
 .notification i {
-  font-size: 20px;
+  font-size: calc(20px * var(--fscale));
 }
 
 .computing {
@@ -379,7 +370,7 @@
 .loading-spinner {
   width: 30px;
   height: 30px;
-  border: 3px solid rgba(25, 118, 210, 0.2);
+  border: 3px solid var(--border-dim);
   border-top: 3px solid var(--jp-brand-color0);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -387,7 +378,7 @@
 }
 
 .loading-text {
-  font-size: 13px;
+  font-size: var(--font-body);
   color: var(--jp-ui-font-color1);
 }
 
@@ -403,10 +394,10 @@
 .error {
   color: var(--jp-error-color);
   font-family: var(--font-family);
-  font-size: 12px;
+  font-size: var(--font-sub);
   padding: 12px;
-  background-color: rgba(244, 67, 54, 0.1);
-  border-radius: 4px;
+  background-color: var(--hover);
+  border-radius: var(--radius);
   border-left: 3px solid var(--jp-error-color);
   margin-top: 8px;
 }
@@ -414,8 +405,8 @@
 .success {
   color: var(--jp-success-color);
   padding: 12px;
-  background-color: rgba(76, 175, 80, 0.1);
-  border-radius: 4px;
+  background-color: rgba(51, 153, 51, 0.1);
+  border-radius: var(--radius);
   border-left: 3px solid var(--jp-success-color);
   margin-top: 8px;
 }
@@ -423,19 +414,19 @@
 .empty-paragraph {
   min-height: 40px;
   border: 1px dashed var(--jp-border-color1);
-  border-radius: 4px;
+  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--jp-ui-font-color1);
-  font-size: 13px;
+  font-size: var(--font-body);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .empty-paragraph:hover {
   border-color: var(--jp-brand-color1);
-  background-color: rgba(25, 118, 210, 0.05);
+  background-color: var(--border-dim);
 }
 
 .paragraph-type-indicator {
@@ -449,7 +440,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: var(--font-meta);
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s;
@@ -461,22 +452,23 @@
 
 .text-paragraph .paragraph-type-indicator {
   background-color: var(--jp-ui-font-color1);
-  color: white;
+  color: var(--bg);
 }
 
 .sympy-paragraph .paragraph-type-indicator {
-  background-color: var(--jp-brand-color0);
-  color: white;
+  background-color: var(--jp-layout-color1);
+  color: var(--bg);
 }
 
 .latex-paragraph .paragraph-type-indicator {
-  background-color: #952d8b;
-  color: white;
+  background-color: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--text);
 }
 
 @media print {
-  #header,
   #toolbar,
+  #page-actions,
   #math-keyboard,
   #math-background,
   .code-header,
@@ -493,7 +485,7 @@
 
   #document-container {
     padding: 0;
-    background-color: white;
+    background-color: var(--bg);
   }
 
   .a4-page {
@@ -510,7 +502,7 @@
   .code-output,
   .latex-render {
     border: none;
-    background-color: white;
+    background-color: var(--bg);
   }
 }
 
@@ -571,13 +563,13 @@
   height: 24px;
   background-color: var(--jp-layout-color0);
   border: 1px solid var(--jp-border-color1);
-  border-radius: 4px;
+  border-radius: var(--radius);
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
   color: var(--jp-ui-font-color1);
-  font-size: 10px;
+  font-size: var(--font-meta);
   z-index: 5;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   opacity: 0;
@@ -590,8 +582,8 @@
 }
 
 .minimal-mode-toggle:hover {
-  background-color: var(--jp-brand-color0);
-  color: white;
+  background-color: var(--jp-layout-color1);
+  color: var(--bg);
   border-color: var(--jp-brand-color0);
   transform: translateY(-50%) scale(1.1);
 }
@@ -614,9 +606,9 @@
   padding: 16px;
   background-color: transparent;
   border: 1px dashed var(--jp-border-color1);
-  border-radius: 4px;
+  border-radius: var(--radius);
   min-height: 48px;
-  font-size: 15px;
+  font-size: calc(15px * var(--fscale));
   transition: all 0.3s ease;
   overflow: auto;
 }
@@ -634,38 +626,39 @@
     background-color: transparent;
   }
   50% {
-    background-color: rgba(76, 175, 80, 0.2);
+    background-color: rgba(51, 153, 51, 0.2);
   }
   100% {
     background-color: transparent;
   }
 }
 
-/* Auto-complete styles */
+/* Auto-complete: one flat monochrome panel for both SymPy and LaTeX */
 .autocomplete {
   position: relative;
 }
 
-.autocomplete-suggestions {
+.autocomplete-suggestions,
+.autocomplete-suggestions.latex-suggestions {
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
   max-height: 280px;
   overflow-y: auto;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.98) 0%,
-    rgba(248, 250, 252, 0.98) 100%
-  );
-  border: 1px solid rgba(25, 118, 210, 0.2);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   margin-top: 8px;
   display: none;
-  backdrop-filter: blur(10px);
+  backdrop-filter: none;
   animation: slideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.autocomplete-suggestions.visible {
+  display: block;
 }
 
 @keyframes slideDown {
@@ -679,55 +672,46 @@
   }
 }
 
-/* SymPy autocomplete styles (Blue theme) */
-.autocomplete-suggestions.visible {
-  display: block;
-}
-
 .autocomplete-suggestions::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
-
 .autocomplete-suggestions::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 3px;
+  background: transparent;
 }
-
 .autocomplete-suggestions::-webkit-scrollbar-thumb {
-  background: rgba(25, 118, 210, 0.3);
-  border-radius: 3px;
+  background: var(--border-dim);
+  border-radius: var(--radius);
 }
-
-.autocomplete-suggestions::-webkit-scrollbar-thumb:hover {
-  background: rgba(25, 118, 210, 0.5);
+.autocomplete-suggestions.latex-suggestions::-webkit-scrollbar-thumb {
+  background: var(--border-dim);
+}
+.autocomplete-suggestions::-webkit-scrollbar-thumb:hover,
+.autocomplete-suggestions.latex-suggestions::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
 }
 
 .autocomplete-suggestion {
   padding: 10px 14px;
   cursor: pointer;
   font-family: var(--word-font-family);
-  font-size: 13px;
+  font-size: var(--font-body);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all var(--transition-speed);
+  border-bottom: 1px solid var(--border-faint);
 }
-
 .autocomplete-suggestion:last-child {
   border-bottom: none;
 }
-
 .autocomplete-suggestion:hover,
-.autocomplete-suggestion.active {
-  background: linear-gradient(
-    135deg,
-    rgba(25, 118, 210, 0.08) 0%,
-    rgba(25, 118, 210, 0.12) 100%
-  );
-  border-left: 3px solid var(--jp-brand-color0);
-  padding-left: 11px;
+.autocomplete-suggestion.active,
+.autocomplete-suggestion.latex-suggestion-item:hover,
+.autocomplete-suggestion.latex-suggestion-item.active {
+  background: var(--hover);
+  border-left: 2px solid var(--text);
+  padding-left: 12px;
 }
 
 .autocomplete-suggestion-content {
@@ -737,55 +721,42 @@
   flex: 1;
 }
 
-.autocomplete-suggestion-name {
-  font-weight: 600;
-  color: var(--jp-brand-color0);
-  font-size: 14px;
+.autocomplete-suggestion-name,
+.autocomplete-suggestion:hover .autocomplete-suggestion-name,
+.autocomplete-suggestion.active .autocomplete-suggestion-name,
+.autocomplete-suggestion.latex-suggestion-item .autocomplete-suggestion-name,
+.autocomplete-suggestion.latex-suggestion-item:hover .autocomplete-suggestion-name,
+.autocomplete-suggestion.latex-suggestion-item.active .autocomplete-suggestion-name {
+  font-weight: 500;
+  color: var(--text);
+  font-size: calc(14px * var(--fscale));
   letter-spacing: 0.3px;
 }
 
-.autocomplete-suggestion:hover .autocomplete-suggestion-name,
-.autocomplete-suggestion.active .autocomplete-suggestion-name {
-  color: var(--jp-brand-color0);
-}
-
-.autocomplete-suggestion .suggestion-match {
-  color: var(--jp-brand-color0);
-  background: linear-gradient(
-    135deg,
-    rgba(25, 118, 210, 0.15) 0%,
-    rgba(25, 118, 210, 0.1) 100%
-  );
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-weight: 700;
-}
-
+.autocomplete-suggestion .suggestion-match,
 .autocomplete-suggestion:hover .suggestion-match,
 .autocomplete-suggestion.active .suggestion-match {
-  background: linear-gradient(
-    135deg,
-    rgba(25, 118, 210, 0.25) 0%,
-    rgba(25, 118, 210, 0.2) 100%
-  );
-  color: var(--jp-brand-color0);
+  color: var(--text);
+  background: var(--surface-2);
+  padding: 1px 4px;
+  border-radius: var(--radius);
+  font-weight: 500;
 }
 
-.autocomplete-suggestion-signature {
+.autocomplete-suggestion-signature,
+.autocomplete-suggestion:hover .autocomplete-suggestion-signature,
+.autocomplete-suggestion.active .autocomplete-suggestion-signature,
+.autocomplete-suggestion.latex-suggestion-item:hover .autocomplete-suggestion-signature,
+.autocomplete-suggestion.latex-suggestion-item.active .autocomplete-suggestion-signature {
   font-family: var(--word-font-family);
-  font-size: 11px;
-  color: var(--jp-ui-font-color1);
-  background: rgba(0, 0, 0, 0.04);
+  font-size: var(--font-menu);
+  color: var(--text-mid);
+  background: var(--surface);
+  border: 1px solid var(--border-faint);
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   display: inline-block;
   margin-top: 2px;
-}
-
-.autocomplete-suggestion:hover .autocomplete-suggestion-signature,
-.autocomplete-suggestion.active .autocomplete-suggestion-signature {
-  background: rgba(25, 118, 210, 0.1);
-  color: var(--jp-brand-color0);
 }
 
 .autocomplete-suggestion-meta {
@@ -796,177 +767,44 @@
   flex-shrink: 0;
 }
 
-.autocomplete-suggestion .suggestion-type {
-  font-size: 10px;
-  font-weight: 700;
+/* The kind of symbol is a quiet label, never a colour code. */
+.autocomplete-suggestion .suggestion-type,
+.autocomplete-suggestion .suggestion-type.function,
+.autocomplete-suggestion .suggestion-type.class,
+.autocomplete-suggestion .suggestion-type.constant,
+.autocomplete-suggestion .suggestion-type.symbol,
+.autocomplete-suggestion .suggestion-type.command,
+.autocomplete-suggestion .suggestion-type.environment,
+.autocomplete-suggestion .suggestion-type.template,
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.function,
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.symbol,
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.command,
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.environment,
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.template {
+  font-size: var(--font-meta);
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   padding: 3px 8px;
-  border-radius: 6px;
-  background: linear-gradient(
-    135deg,
-    rgba(156, 39, 176, 0.1) 0%,
-    rgba(156, 39, 176, 0.05) 100%
-  );
-  color: #9c27b0;
-  border: 1px solid rgba(156, 39, 176, 0.2);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-dim);
+  border: 1px solid var(--border-dim);
 }
 
-.autocomplete-suggestion .suggestion-type.function {
-  background: linear-gradient(
-    135deg,
-    rgba(25, 118, 210, 0.1) 0%,
-    rgba(25, 118, 210, 0.05) 100%
-  );
-  color: #1976d2;
-  border-color: rgba(25, 118, 210, 0.2);
-}
-
-.autocomplete-suggestion .suggestion-type.class {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 152, 0, 0.1) 0%,
-    rgba(255, 152, 0, 0.05) 100%
-  );
-  color: #ff9800;
-  border-color: rgba(255, 152, 0, 0.2);
-}
-
-.autocomplete-suggestion .suggestion-type.constant {
-  background: linear-gradient(
-    135deg,
-    rgba(76, 175, 80, 0.1) 0%,
-    rgba(76, 175, 80, 0.05) 100%
-  );
-  color: #4caf50;
-  border-color: rgba(76, 175, 80, 0.2);
-}
-
-.autocomplete-suggestion-doc-cn {
-  font-size: 11px;
-  color: var(--jp-ui-font-color1);
+.autocomplete-suggestion-doc-cn,
+.autocomplete-suggestion:hover .autocomplete-suggestion-doc-cn,
+.autocomplete-suggestion.active .autocomplete-suggestion-doc-cn {
+  font-size: var(--font-menu);
+  color: var(--text-dim);
   font-style: normal;
   line-height: 1.4;
   max-width: 180px;
   text-align: right;
 }
-
 .autocomplete-suggestion:hover .autocomplete-suggestion-doc-cn,
 .autocomplete-suggestion.active .autocomplete-suggestion-doc-cn {
-  color: var(--jp-ui-font-color0);
-}
-
-/* Latex autocomplete styles (Purple theme) */
-.autocomplete-suggestions.latex-suggestions {
-  border: 1px solid rgba(149, 45, 139, 0.2);
-  box-shadow: 0 8px 32px rgba(149, 45, 139, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.autocomplete-suggestions.latex-suggestions::-webkit-scrollbar-thumb {
-  background: rgba(149, 45, 139, 0.3);
-}
-
-.autocomplete-suggestions.latex-suggestions::-webkit-scrollbar-thumb:hover {
-  background: rgba(149, 45, 139, 0.5);
-}
-
-.autocomplete-suggestion.latex-suggestion-item:hover,
-.autocomplete-suggestion.latex-suggestion-item.active {
-  background: linear-gradient(
-    135deg,
-    rgba(149, 45, 139, 0.08) 0%,
-    rgba(149, 45, 139, 0.12) 100%
-  );
-  border-left: 3px solid #952d8b;
-  padding-left: 11px;
-}
-
-.autocomplete-suggestion.latex-suggestion-item .autocomplete-suggestion-name {
-  color: #952d8b;
-}
-
-.autocomplete-suggestion.latex-suggestion-item:hover
-  .autocomplete-suggestion-name,
-.autocomplete-suggestion.latex-suggestion-item.active
-  .autocomplete-suggestion-name {
-  color: #952d8b;
-}
-
-.autocomplete-suggestion.latex-suggestion-item .suggestion-match {
-  color: #952d8b;
-  background: linear-gradient(
-    135deg,
-    rgba(149, 45, 139, 0.15) 0%,
-    rgba(149, 45, 139, 0.1) 100%
-  );
-}
-
-.autocomplete-suggestion.latex-suggestion-item:hover .suggestion-match,
-.autocomplete-suggestion.latex-suggestion-item.active .suggestion-match {
-  background: linear-gradient(
-    135deg,
-    rgba(149, 45, 139, 0.25) 0%,
-    rgba(149, 45, 139, 0.2) 100%
-  );
-  color: #952d8b;
-}
-
-.autocomplete-suggestion.latex-suggestion-item:hover
-  .autocomplete-suggestion-signature,
-.autocomplete-suggestion.latex-suggestion-item.active
-  .autocomplete-suggestion-signature {
-  background: rgba(149, 45, 139, 0.1);
-  color: #952d8b;
-}
-
-.autocomplete-suggestion.latex-suggestion-item .suggestion-type.function {
-  background: linear-gradient(
-    135deg,
-    rgba(149, 45, 139, 0.1) 0%,
-    rgba(149, 45, 139, 0.05) 100%
-  );
-  color: #952d8b;
-  border-color: rgba(149, 45, 139, 0.2);
-}
-
-.autocomplete-suggestion.latex-suggestion-item .suggestion-type.symbol {
-  background: linear-gradient(
-    135deg,
-    rgba(156, 39, 176, 0.1) 0%,
-    rgba(156, 39, 176, 0.05) 100%
-  );
-  color: #9c27b0;
-  border-color: rgba(156, 39, 176, 0.2);
-}
-
-.autocomplete-suggestion.latex-suggestion-item .suggestion-type.command {
-  background: linear-gradient(
-    135deg,
-    rgba(142, 36, 170, 0.1) 0%,
-    rgba(142, 36, 170, 0.05) 100%
-  );
-  color: #8e24aa;
-  border-color: rgba(142, 36, 170, 0.2);
-}
-
-.autocomplete-suggestion.latex-suggestion-item .suggestion-type.environment {
-  background: linear-gradient(
-    135deg,
-    rgba(123, 31, 162, 0.1) 0%,
-    rgba(123, 31, 162, 0.05) 100%
-  );
-  color: #7b1fa2;
-  border-color: rgba(123, 31, 162, 0.2);
-}
-
-.autocomplete-suggestion.latex-suggestion-item .suggestion-type.template {
-  background: linear-gradient(
-    135deg,
-    rgba(106, 27, 154, 0.1) 0%,
-    rgba(106, 27, 154, 0.05) 100%
-  );
-  color: #6a1b9a;
-  border-color: rgba(106, 27, 154, 0.2);
+  color: var(--text);
 }
 
 /* Floating Formula Editor Panel */
@@ -979,9 +817,9 @@
   min-height: 300px;
   max-width: 600px;
   max-height: 700px;
-  background-color: white;
+  background-color: var(--bg);
   border: 1px solid var(--jp-border-color1);
-  border-radius: 8px;
+  border-radius: var(--radius);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   z-index: 1500;
   display: flex;
@@ -997,14 +835,14 @@
   padding: 10px 14px;
   background-color: var(--jp-layout-color1);
   border-bottom: 1px solid var(--jp-border-color1);
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--radius) var(--radius) 0 0;
   cursor: move;
   user-select: none;
   flex-shrink: 0;
 }
 
 .formula-editor-header span {
-  font-size: 13px;
+  font-size: var(--font-body);
   font-weight: 500;
   color: var(--jp-ui-font-color0);
 }
@@ -1013,10 +851,10 @@
   background: none;
   border: none;
   color: var(--jp-ui-font-color1);
-  font-size: 12px;
+  font-size: var(--font-sub);
   cursor: pointer;
   padding: 4px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   transition: all 0.2s;
 }
 
@@ -1044,14 +882,14 @@
 
 .formula-editor-body .formula-category-btn {
   padding: 4px 10px;
-  font-size: 11px;
+  font-size: var(--font-menu);
   border: 1px solid var(--jp-border-color1);
   background: transparent;
   color: var(--jp-ui-font-color1);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius);
   transition: all 0.2s;
-  white-space: nowrap;
+  var(--bg)-space: nowrap;
 }
 
 .formula-editor-body .formula-category-btn:hover {
@@ -1060,8 +898,8 @@
 }
 
 .formula-editor-body .formula-category-btn.active {
-  background-color: var(--jp-brand-color0);
-  color: white;
+  background-color: var(--jp-layout-color1);
+  color: var(--bg);
   border-color: var(--jp-brand-color0);
 }
 
@@ -1074,10 +912,10 @@
 
 .formula-editor-body .latex-symbol-btn {
   padding: 10px 6px;
-  font-size: 14px;
+  font-size: calc(14px * var(--fscale));
   border: 1px solid var(--jp-border-color1);
-  background-color: white;
-  border-radius: 4px;
+  background-color: var(--bg);
+  border-radius: var(--radius);
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -1091,8 +929,8 @@
 }
 
 .formula-editor-body .latex-symbol-btn:hover {
-  background-color: var(--jp-brand-color0);
-  color: white;
+  background-color: var(--jp-layout-color1);
+  color: var(--bg);
   border-color: var(--jp-brand-color0);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);

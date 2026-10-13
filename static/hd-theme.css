@@ -1,0 +1,1656 @@
+/* ==========================================================================
+   HighDream Design System — "MONO" theme
+   --------------------------------------------------------------------------
+   Single source of truth for the whole product.  Loaded LAST on every page so
+   that it wins over the legacy per-page stylesheets.
+
+   Rules of the house
+     * strictly black / white / gray.  No blue, no purple, no orange, no pure
+       black — the darkest ink is #1a1a1a, the lightest surface is #ffffff.
+     * one single corner radius, driven by `--radius` (0px by default).
+     * 1px hairlines instead of heavy borders and shadows.
+     * hover  -> `--hover` fill + `--border` hairline
+     * active -> `--hover` fill + `inset 0 -2px 0 var(--text)` underline
+   ========================================================================== */
+
+:root {
+  /* --- ink & paper ------------------------------------------------------ */
+  --bg: #ffffff;
+  --surface: #f7f7f7;
+  --surface-2: #ececec;
+  --text: #1a1a1a;
+  --text-mid: rgba(26, 26, 26, 0.55);
+  --text-dim: rgba(26, 26, 26, 0.4);
+  --text-faint: rgba(26, 26, 26, 0.15);
+
+  /* --- lines ------------------------------------------------------------ */
+  --border: #1a1a1a;
+  --border-dim: rgba(26, 26, 26, 0.15);
+  --border-faint: rgba(26, 26, 26, 0.06);
+
+  /* --- interaction ------------------------------------------------------ */
+  --hover: rgba(26, 26, 26, 0.06);
+  --hover-strong: rgba(26, 26, 26, 0.1);
+  /*  Selected = ink on paper, never a dark panel: a tint, a hairline and a
+      2px inset underline. These replace the old --active-bg / --active-text
+      pair, which could only ever paint a near-black rectangle.            */
+  --selected-fill: var(--hover);
+  --selected-line: var(--text);
+
+  /* --- the only two hues allowed (festival / status) --------------------- */
+  --accent-red: #cc3333;
+  --accent-green: #339933;
+
+  /* --- shape ------------------------------------------------------------ */
+  --radius: 0px;
+  --hairline: 1px;
+
+  /* --- type ------------------------------------------------------------- */
+  /*  Same face and fallback chain as omm-planner: Literata carries the Latin
+      text, 宋体 / SimSun carries the CJK.  Literata is not bundled with this
+      project, so a local serif stands in behind it — drop any Literata
+      webfont into /static and the stack picks it up with no other change. */
+  --font-mono: 'Literata', 'Charter', Georgia, Cambria, 'Songti SC', SimSun, 宋体, NSimSun,
+    STSong, 'Times New Roman', serif;
+  --font-code: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+
+  /*  The whole UI is sized off one 13px base and one global scale, exactly as
+      omm-planner does it.  `--fscale` is driven by the 界面字体 control in the
+      product menu bar, so every rule below stays relative. */
+  --fscale: 1;
+  --font-base: 13px;
+  --font-title: 16px;
+  --font-body: 13px;
+  --font-sub: 12px;
+  --font-menu: 11px;
+  --font-meta: 10px;
+  --font-label: 9px;
+  --ls-title: 3px;
+  --ls-section: 2px;
+  --ls-label: 1.5px;
+  --ls-meta: 1px;
+  --ls-menu: 0.4px;
+  --weight: 500;
+  --leading: 1.6;
+
+  /* --- motion ----------------------------------------------------------- */
+  --transition-speed: 0.15s;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Dark theme — the exact inverse of the light one, as in omm-planner        */
+/* -------------------------------------------------------------------------- */
+body.theme-dark {
+  --bg: #1a1a1a;
+  --surface: #232323;
+  --surface-2: #2e2e2e;
+  --text: #e8e8e8;
+  --text-mid: rgba(232, 232, 232, 0.55);
+  --text-dim: rgba(232, 232, 232, 0.4);
+  --text-faint: rgba(232, 232, 232, 0.15);
+
+  --border: #e8e8e8;
+  --border-dim: rgba(232, 232, 232, 0.15);
+  --border-faint: rgba(232, 232, 232, 0.06);
+
+  --hover: rgba(232, 232, 232, 0.08);
+  --hover-strong: rgba(232, 232, 232, 0.13);
+
+  --accent-red: #d95757;
+  --accent-green: #45b045;
+}
+
+/* ========================================================================== */
+/*  Legacy token bridge                                                      */
+/*  Every existing stylesheet in this project speaks `--jp-*`.  Point those   */
+/*  names at the design tokens so a single edit re-themes the whole product.  */
+/* ========================================================================== */
+:root {
+  --jp-font-family: var(--font-mono);
+  --jp-border-width: var(--hairline);
+  --jp-border-color0: var(--border-faint);
+  --jp-border-color1: var(--border-dim);
+  --jp-border-color2: var(--border);
+  --jp-ui-font-size: calc(var(--font-base) * var(--fscale));
+  --jp-ui-font-color0: var(--text);
+  --jp-ui-font-color1: var(--text-mid);
+  --jp-ui-font-color2: var(--text-dim);
+  --jp-content-line-height: var(--leading);
+  --jp-layout-color0: var(--bg);
+  --jp-layout-color1: var(--surface);
+  --jp-layout-color2: var(--surface-2);
+  --jp-layout-color3: var(--surface-2);
+  --jp-brand-color0: var(--text);
+  --jp-brand-color1: var(--text-dim);
+  --jp-error-color: var(--accent-red);
+  --jp-success-color: var(--accent-green);
+  --jp-kernel-idle-color: var(--accent-green);
+  --jp-kernel-busy-color: var(--text-dim);
+  --jp-kernel-error-color: var(--accent-red);
+  --jp-cell-padding: 10px;
+  --jp-cell-prompt-width: 100px;
+  --jp-cell-prompt-opacity: 1;
+  --jp-cell-prompt-not-active-opacity: 0.5;
+  --jp-cell-editor-background: var(--bg);
+  --jp-cell-editor-border-color: var(--border-dim);
+  --jp-cell-editor-active-border-color: var(--text);
+  --jp-cell-output-background: var(--surface);
+  --jp-code-font-size: 13px;
+  --jp-code-line-height: 1.6;
+  --jp-toolbar-border-color: var(--border-dim);
+  --jp-ui-font-scale-factor: 1;
+}
+
+/* ========================================================================== */
+/*  Page shell                                                               */
+/* ========================================================================== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-family);
+  transition:
+    background-color 0.3s,
+    color 0.3s;
+}
+
+::selection {
+  background: rgba(136, 136, 136, 0.3);
+  color: inherit;
+}
+
+/* ========================================================================== */
+/*  Type scale                                                               */
+/*  ------------------------------------------------------------------------- */
+/*  omm-planner builds every size off one 13px base and one --fscale, and gets  */
+/*  its airiness from three devices rather than from weight:                   */
+/*    * 500 is the heaviest weight anywhere — no 600, no 700, no bold         */
+/*    * wide tracking (1.5–3px) on anything structural                         */
+/*    * 9–10px uppercase micro-labels in faint ink for every field name       */
+/*  Reproduced here so the whole product reads as one voice.                   */
+/* ========================================================================== */
+
+/*  Controls — omm's .menu-btn: 11px, 0.4px tracking.                          */
+.toolbar-button,
+.bp-toolbar-button,
+.mt-field.mt-buttons button,
+.rs-btn-primary,
+.rs-btn-secondary,
+.rs-btn-warning,
+.mt-btn-accept,
+.mt-btn-skip,
+.add-cell-button,
+.run-cell-button,
+.operation-button,
+.keyboard-button,
+.run-button,
+.math-control-btn,
+.header-btn,
+.keyboard-key,
+.formula-editor-close-btn,
+.formula-editor-body .formula-category-btn,
+.formula-editor-body .latex-symbol-btn,
+.minimal-mode-toggle,
+.sympy-paragraph .code-actions button,
+.latex-paragraph .latex-actions button {
+  font-family: var(--font-mono);
+  font-size: calc(var(--font-menu) * var(--fscale));
+  font-weight: var(--weight);
+  letter-spacing: var(--ls-menu);
+}
+
+/*  Secondary text and field names — omm's 10px meta, 9px uppercase label.     */
+.cell-prompt,
+.operation-type,
+.expr-sort,
+.gene-sort,
+.limit-sort,
+.sort,
+.mt-field,
+.mt-field label,
+.rs-input-row,
+.rs-input-row label,
+.rs-subtle,
+.rs-placeholder,
+.cache-toggle,
+.record-toggle,
+.bp-node-type,
+.mt-node-type,
+.mt-decision-label,
+.mt-node-footer,
+.cell-controls,
+.var-input,
+.expression-controls,
+.limit-controls,
+.integral-controls,
+.controls,
+.var-label,
+.expr-label,
+.gene-label,
+.limit-label,
+.label {
+  font-size: calc(var(--font-meta) * var(--fscale));
+  letter-spacing: var(--ls-meta);
+  font-weight: var(--weight);
+}
+
+/*  Section heads — omm's .hk-section-title / .dd-label: uppercase, 2px.       */
+#help-container h2,
+.rs-card h3,
+#rs-rules-panel h3,
+#rs-steps-panel h3,
+#rs-status-panel h3,
+.result-item h3,
+.mt-decision-header,
+.zp-cloud-title,
+.hd-menu-label,
+.hd-dd-label,
+.modal-title {
+  font-size: calc(var(--font-label) * var(--fscale));
+  letter-spacing: var(--ls-section);
+  text-transform: uppercase;
+  font-weight: var(--weight);
+  color: var(--text-faint);
+}
+
+/*  Sub-heads stay sentence case but keep the light weight and tight tracking. */
+#help-container h1,
+#help-container h3,
+.rs-step .rs-step-explanation,
+.rs-rule-card .rs-rule-preview,
+.rs-rule-card .rs-rule-name,
+.sr-type {
+  font-weight: var(--weight);
+}
+
+#help-container h1 {
+  font-size: calc(21px * var(--fscale));
+  letter-spacing: var(--ls-title);
+}
+#help-container h3 {
+  font-size: calc(15px * var(--fscale));
+  letter-spacing: var(--ls-meta);
+}
+
+/*  Never heavier than 500 anywhere in the product.                            */
+strong,
+b,
+th,
+.mt-node-title,
+.mt-reason,
+.mt-node-footer,
+.autocomplete-suggestion-name,
+.formula-editor-header span,
+.keyboard-header,
+.splash-logo,
+.ed-label,
+.mt-decision-value {
+  font-weight: var(--weight);
+}
+
+/*  Long-form reading keeps omm's airy 1.85 leading.                            */
+#help-container p,
+#help-container li,
+.hk-note,
+.text-paragraph,
+.sympy-paragraph .code-input,
+.latex-paragraph .latex-input {
+  line-height: 1.85;
+}
+
+/*  Math output is set slightly larger than the surrounding text, as in omm's  */
+/*  `font-size: 1.2em` on the rendered formula.                                 */
+.math-output mjx-container,
+.bp-node-result mjx-container,
+.cell-output mjx-container {
+  font-size: 1.15em !important;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-family);
+}
+
+button:focus,
+select:focus,
+input:focus,
+textarea:focus {
+  outline: none;
+}
+
+/* --------------------------------------------------------------------------
+   Checkboxes & radios
+   Two browser defaults had to be overridden:
+     * the OS paints these with the system accent colour, which on Windows is
+       blue -- so `appearance` is taken over completely and `accent-color` is
+       pinned to the product ink as a fallback;
+     * a filled box would be a near-black square, so no state here ever uses
+       a dark fill.  A checked box stays paper and says "yes" with an ink
+       tick inside a full-strength frame, which is the omm-planner way of
+       marking a thing (ink on paper, as in its `.dd-item.selected`).
+
+   A checkbox is a square with a `--radius` corner; a radio stays circular
+   because roundness is its shape, not a corner treatment.
+   -------------------------------------------------------------------------- */
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--text);
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  flex-shrink: 0;
+  position: relative;
+  cursor: pointer;
+  background: var(--bg);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius);
+  transition: all var(--transition-speed);
+}
+
+input[type='radio'] {
+  border-radius: 50%;
+}
+
+input[type='checkbox']:not(:checked):hover,
+input[type='radio']:not(:checked):hover {
+  background: var(--hover);
+  border-color: var(--border);
+}
+
+input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 1px;
+}
+
+/*  Checked -- no fill, just a firmer frame ...                            */
+input[type='checkbox']:checked,
+input[type='checkbox']:indeterminate {
+  background: var(--bg);
+  border-color: var(--text);
+}
+
+/*  ... and the tick itself.  Percentages keep it centred at 14px and 16px. */
+input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 27%;
+  top: 9%;
+  width: 28%;
+  height: 52%;
+  border: solid var(--text);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+input[type='checkbox']:indeterminate {
+  background: var(--surface);
+}
+input[type='checkbox']:indeterminate::after {
+  content: '';
+  position: absolute;
+  left: 22%;
+  top: 50%;
+  width: 56%;
+  height: 1.5px;
+  margin-top: -0.75px;
+  background: var(--text); /* style-guard: allow-glyph (1.5px dash) */
+}
+
+input[type='radio']:checked {
+  background: var(--bg);
+  border: 4px solid var(--text);
+}
+
+input[type='checkbox']:disabled,
+input[type='radio']:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+  background: var(--bg);
+  border-color: var(--border-faint);
+}
+input[type='checkbox']:checked:disabled,
+input[type='checkbox']:indeterminate:disabled,
+input[type='radio']:checked:disabled {
+  background: var(--bg);
+  border-color: var(--border-faint);
+}
+input[type='checkbox']:checked:disabled::after {
+  border-color: var(--text-faint);
+}
+input[type='checkbox']:indeterminate:disabled::after {
+  background: var(--text-faint);
+}
+
+/* --------------------------------------------------------------------------
+   Text entry is deliberately static
+   --------------------------------------------------------------------------
+   Clicking into an expression field, a cell, a blueprint node or a search box
+   must not make anything move. The per-component `:focus` rules that used to
+   repaint a border or add an outline are all deleted from this file and the
+   legacy ones; what remains is this outline reset. Because nothing else
+   changes on focus, a field is pixel-identical focused or not, and the caret
+   is the only cue. `!important` keeps the reset from being undone by a
+   `:focus-visible` rule further down the cascade.
+   -------------------------------------------------------------------------- */
+input:not([type='checkbox']):not([type='radio']),
+textarea {
+  outline: none;
+}
+
+input:not([type='checkbox']):not([type='radio']):focus,
+input:not([type='checkbox']):not([type='radio']):focus-visible,
+textarea:focus,
+textarea:focus-visible {
+  outline: none !important;
+}
+
+/*  The global `outline: none` above needs a monochrome replacement, otherwise
+    keyboard users get nothing.  `accent-color` on <select> keeps the OS popup
+    highlight in ink as well. */
+/*  Keyboard focus needs a ring on discrete controls. Text entry deliberately
+    does not get one -- see the rule below. */
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible,
+[tabindex]:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 1px;
+}
+
+select {
+  accent-color: var(--text);
+}
+
+/*  Hairline scrollbars, exactly like omm-planner */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar:horizontal {
+  height: 4px;
+}
+::-webkit-scrollbar:vertical {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-dim);
+  border-radius: var(--radius);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+a {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition:
+    border-color var(--transition-speed),
+    color var(--transition-speed);
+}
+a:hover {
+  color: var(--text);
+  border-bottom-color: var(--border);
+}
+
+/*  Page action buttons are parked in the markup with `hidden` until
+    hd-menu.js moves them into the bar. The UA's `[hidden] { display: none }`
+    loses to any author `display` rule, so it has to be restated here --
+    otherwise they flash at the top of the page for a frame. */
+[data-hd-action][hidden] {
+  display: none !important;
+}
+
+code {
+  font-family: var(--font-mono);
+}
+
+/* ========================================================================== */
+/*  Toolbar                                                                  */
+/* ========================================================================== */
+#toolbar,
+#blueprint-toolbar,
+#mt-top-bar {
+  background-color: var(--bg);
+  border-bottom: var(--hairline) solid var(--border-dim);
+  color: var(--text);
+}
+
+.toolbar-button,
+.bp-toolbar-button,
+.mt-field.mt-buttons button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+}
+.toolbar-button:hover,
+.bp-toolbar-button:hover,
+.mt-field.mt-buttons button:hover {
+  background: var(--hover);
+  border-color: var(--border);
+  color: var(--text);
+}
+.toolbar-button::after,
+.bp-toolbar-button::after {
+  display: none;
+}
+
+.toolbar-separator,
+.bp-toolbar-separator {
+  background-color: var(--border-dim);
+}
+
+#kernel-status {
+  color: var(--text-dim);
+}
+#kernel-status span {
+  color: var(--text);
+}
+
+/* ========================================================================== */
+/*  Notebook cells                                                           */
+/* ========================================================================== */
+.cell-content {
+  background-color: var(--bg);
+  border-color: var(--border-dim);
+  box-shadow: none;
+}
+.cell.cell-active .cell-content {
+  border: 1px solid var(--text);
+}
+.cell.cell-active .cell-prompt {
+  color: var(--text);
+  font-weight: 500;
+}
+.cell-prompt {
+  color: var(--text-dim);
+}
+.cell.code-cell .cell-prompt {
+  color: var(--text);
+}
+.cell.markdown-cell .cell-prompt {
+  color: var(--text-dim);
+}
+.cell.markdown-cell.cell-active .cell-content {
+  border: 1px solid var(--text);
+}
+
+.cell-input textarea,
+.var-input input,
+.expression-controls input,
+.limit-controls input,
+.operation-type,
+.expr-sort,
+.gene-sort,
+.limit-sort,
+.sort {
+  background: var(--bg);
+  border: 1px solid var(--border-dim);
+  color: var(--text);
+}
+
+.math-preview,
+.cell-output,
+.sympy-paragraph .code-output,
+.latex-paragraph .latex-render,
+.matrix-preview,
+.math-output,
+.bp-node-result,
+.empty-paragraph {
+  background: var(--surface);
+  border: 1px solid var(--border-dim);
+  color: var(--text);
+}
+.cell.cell-active .math-preview {
+  border-color: var(--text);
+}
+
+.add-cell-button,
+.run-cell-button,
+.operation-button,
+.keyboard-button,
+.run-button,
+.math-control-btn,
+.math-fullscreen-close,
+.keyboard-close-btn,
+.minimal-mode-toggle,
+.formula-editor-close-btn,
+.sympy-paragraph .code-actions button,
+.latex-paragraph .latex-actions button {
+  background: var(--bg);
+  border: 1px solid var(--border-dim);
+  color: var(--text-dim);
+}
+/*  Hover reads as "this control is live" through a tint, a hairline and the
+    2px inset underline -- never through a filled dark rectangle. */
+.add-cell-button:hover,
+.run-cell-button:hover,
+.operation-button:hover,
+.keyboard-button:hover,
+.run-button:hover,
+.math-control-btn:hover,
+.math-fullscreen-close:hover,
+.keyboard-close-btn:hover,
+.formula-editor-close-btn:hover,
+.minimal-mode-toggle:hover,
+.sympy-paragraph .code-actions button:hover,
+.latex-paragraph .latex-actions button:hover {
+  background: var(--selected-fill);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--selected-line);
+  transform: none;
+}
+
+/*  The run button while its cell is computing. The scripts toggle `.running`
+    but nothing ever styled it, so the busy state was invisible. */
+.run-cell-button.running {
+  background: var(--selected-fill);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--selected-line);
+  pointer-events: none;
+}
+
+.cell-type-selector {
+  border-bottom-color: var(--border-faint);
+}
+.cell-type-btn {
+  color: var(--text-dim);
+  border-bottom: 2px solid transparent;
+}
+.cell-type-btn:hover {
+  color: var(--text);
+}
+.cell-type-btn.active {
+  color: var(--text);
+  border-bottom-color: var(--text);
+}
+
+.loading,
+.loading-text {
+  color: var(--text-dim);
+}
+.loading::before,
+.loading-spinner {
+  border-color: var(--border-dim);
+  border-top-color: var(--text);
+}
+.computing .fa-clock {
+  color: var(--text-dim);
+}
+
+/*  Notices — one shared shape, the red hairline is the only "danger" cue */
+.error,
+.success,
+.rs-error {
+  background: var(--hover);
+  border: 1px solid var(--border-dim);
+  border-left: 2px solid var(--text);
+  color: var(--text);
+}
+.error,
+.rs-error {
+  border-left-color: var(--accent-red);
+}
+.success {
+  border-left-color: var(--accent-green);
+}
+.preview-error {
+  color: var(--accent-red);
+}
+
+.notification {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 -2px 0 var(--selected-line), 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+.notification-success {
+  background-color: var(--bg);
+  border-color: var(--border);
+}
+.notification-error {
+  background-color: var(--accent-red);
+}
+
+.math-fullscreen-content,
+.formula-editor-panel,
+#math-keyboard {
+  background-color: var(--bg);
+  border: 1px solid var(--border-dim);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+.math-fullscreen-header,
+.formula-editor-header,
+.keyboard-header {
+  border-bottom-color: var(--border-dim);
+}
+.keyboard-key {
+  background: var(--bg);
+  border: 1px solid var(--border-dim);
+  color: var(--text);
+}
+.keyboard-key:hover,
+.keyboard-key:focus-visible {
+  background: var(--selected-fill);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--selected-line);
+  transform: none;
+}
+/*  Pressed: the underline thickens to a full ink frame. */
+.keyboard-key:active {
+  background: var(--hover-strong);
+  border-color: var(--text);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--selected-line);
+  transform: none;
+}
+.keyboard-key::after {
+  display: none;
+}
+
+/*  <optgroup> backgrounds were tinted per-domain — flatten them */
+.operation-type optgroup,
+.operation-type optgroup[label='微积分'],
+.operation-type optgroup[label='线性代数'] {
+  background-color: var(--surface);
+  color: var(--text);
+}
+.operation-type optgroup option {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+.cache-toggle,
+.record-toggle {
+  color: var(--text-mid);
+}
+
+/*  The decorative math glyphs float behind the page */
+.math-bg-element {
+  color: var(--text);
+  opacity: 0.035;
+}
+body:hover .math-bg-element {
+  opacity: 0.05;
+}
+
+/* ========================================================================== */
+/*  Blueprint canvas / method tree                                           */
+/* ========================================================================== */
+:root {
+  --bp-connection-color: var(--text);
+  --bp-grid-color: var(--border-faint);
+  --bp-node-bg: var(--bg);
+  --bp-node-border: var(--border-dim);
+}
+
+#grid-background,
+#blueprint-canvas-container,
+#mt-viewport {
+  background-color: var(--surface);
+}
+
+.bp-node,
+.mt-node {
+  background-color: var(--bg);
+  border: 1px solid var(--border-dim);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.bp-node:hover,
+.mt-node:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: var(--border);
+}
+.bp-node-header,
+.mt-node-header {
+  background-color: var(--surface);
+  border-bottom-color: var(--border-dim);
+}
+.bp-node-type,
+.mt-node-type {
+  background-color: var(--surface-2);
+  color: var(--text-mid);
+  border: 1px solid var(--border-dim);
+}
+.mt-node-footer {
+  background-color: var(--surface);
+  border-top-color: var(--border-dim);
+  color: var(--text-mid);
+}
+
+.bp-node-expression,
+.bp-node-text,
+.bp-node-operation,
+.bp-node-variable,
+.bp-node-limit-point,
+.mt-field input,
+.mt-field select,
+.rs-input-row input,
+.rs-input-row select {
+  background: var(--bg);
+  border: 1px solid var(--border-dim);
+  color: var(--text);
+}
+
+.bp-port,
+.mt-port {
+  background-color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+.bp-port:hover,
+.mt-port:hover,
+.bp-port.connecting,
+.mt-port.mt-port-connecting {
+  background-color: var(--text-dim);
+  border-color: var(--text);
+  box-shadow: none;
+}
+.bp-port-label,
+.bp-node-resizer,
+.mt-node-resizer {
+  background-color: var(--bg);
+  border: 1px solid var(--border-dim);
+  color: var(--text-dim);
+}
+.bp-node-resizer:hover,
+.mt-node-resizer:hover {
+  background-color: var(--selected-fill);
+  border-color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--selected-line);
+}
+.bp-node-resizer:hover::after,
+.mt-node-resizer:hover::after {
+  border-right-color: var(--text);
+  border-bottom-color: var(--text);
+}
+
+.connection-path,
+.mt-connection-path,
+.temp-connection,
+.mt-temp-connection {
+  stroke: var(--text-dim);
+}
+.connection-path:hover,
+.mt-connection-path:hover {
+  stroke: var(--text);
+}
+#arrowhead polygon {
+  fill: var(--text-dim);
+}
+
+.context-menu {
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 4px;
+}
+.context-menu-item {
+  color: var(--text-dim);
+}
+.context-menu-item:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.context-menu-separator {
+  background-color: var(--border-dim);
+}
+
+/*  Node state tags: outline / fill instead of green & orange */
+.mt-node.mt-root {
+  border-width: 2px;
+  border-color: var(--text);
+}
+.mt-node.mt-root > .mt-node-header {
+  background-color: var(--surface-2);
+  border-bottom: 2px solid var(--text);
+}
+.mt-node.mt-root > .mt-node-header .mt-node-title,
+.mt-node.mt-root > .mt-node-header .mt-node-type {
+  color: var(--text);
+}
+.mt-node.mt-root > .mt-node-header .mt-node-type {
+  background-color: transparent;
+  border-color: var(--text);
+}
+.mt-node.mt-done {
+  border-color: var(--accent-green);
+}
+.mt-node.mt-done > .mt-node-header {
+  background-color: rgba(51, 153, 51, 0.08);
+}
+.mt-node.mt-done > .mt-node-header .mt-node-type {
+  background-color: transparent;
+  color: var(--accent-green);
+  border-color: var(--accent-green);
+}
+.mt-node.mt-truncated {
+  border-style: dashed;
+  border-color: var(--text-dim);
+}
+.mt-node.mt-truncated > .mt-node-header {
+  background-color: var(--surface-2);
+}
+.mt-node.mt-truncated > .mt-node-header .mt-node-type {
+  background-color: var(--surface-2);
+  color: var(--text);
+  border-color: var(--text-dim);
+}
+.mt-node-footer.mt-final {
+  color: var(--accent-green);
+  background-color: rgba(51, 153, 51, 0.08);
+}
+.mt-node-footer.mt-trunc {
+  color: var(--text);
+  background-color: var(--surface-2);
+}
+
+.mt-spinner,
+.rs-loading-spinner {
+  border-color: var(--border-dim);
+  border-top-color: var(--text);
+}
+
+#mt-loading,
+#mt-stats,
+.mt-decision-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+.mt-decision-panel {
+  border-width: 1px;
+  backdrop-filter: none;
+}
+.mt-decision-header {
+  color: var(--text);
+  border-bottom-color: var(--border-dim);
+}
+.mt-decision-latex {
+  background: var(--surface);
+  border: 1px solid var(--border-dim);
+  color: var(--text);
+}
+.mt-decision-label {
+  color: var(--text-faint);
+  letter-spacing: 1.5px;
+}
+.mt-decision-value {
+  color: var(--text);
+}
+
+#mt-stats .mt-reason {
+  color: var(--text);
+}
+#mt-stats .mt-reason.mt-truncated {
+  color: var(--text-dim);
+}
+#mt-stats .mt-reason.mt-error {
+  color: var(--accent-red);
+}
+
+.mt-checkbox-label {
+  color: var(--text);
+}
+#mt-start-btn {
+  color: var(--text);
+}
+#mt-cancel-btn {
+  color: var(--accent-red);
+}
+
+/* ========================================================================== */
+/*  Buttons with intent (rule_select / method_tree decisions)                */
+/* ========================================================================== */
+.rs-btn-primary,
+.rs-btn-secondary,
+.rs-btn-warning,
+.mt-btn-accept,
+.mt-btn-skip,
+.sympy-paragraph .run-button,
+.latex-paragraph .render-button,
+.empty-paragraph:hover {
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  color: var(--text-dim);
+}
+.rs-btn-primary,
+.mt-btn-accept,
+.sympy-paragraph .run-button,
+.latex-paragraph .render-button,
+.formula-editor-body .formula-category-btn.active {
+  color: var(--text);
+  border-color: var(--border);
+}
+.rs-btn-primary:hover,
+.mt-btn-accept:hover,
+.sympy-paragraph .run-button:hover,
+.latex-paragraph .render-button:hover,
+.formula-editor-body .formula-category-btn.active:hover {
+  background: var(--hover);
+  box-shadow: inset 0 -2px 0 var(--text);
+  filter: none;
+  transform: none;
+}
+.rs-btn-warning,
+.mt-btn-skip {
+  color: var(--accent-red);
+  border-color: var(--accent-red);
+}
+.rs-btn-warning:hover,
+.mt-btn-skip:hover {
+  background: var(--hover);
+  box-shadow: inset 0 -2px 0 var(--accent-red);
+  filter: none;
+  transform: none;
+}
+.sympy-paragraph .run-button:disabled {
+  background: transparent;
+  color: var(--text-faint);
+  border-color: var(--border-faint);
+}
+.rs-btn-secondary:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.rs-card,
+#matrix-render,
+.result-section,
+#render {
+  background: var(--bg);
+  border: 1px solid var(--border-dim);
+}
+.rs-card h3,
+#rs-rules-panel h3,
+.result-item h3 {
+  color: var(--text);
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+.rs-step {
+  border-bottom-color: var(--border-faint);
+}
+.rs-step.active {
+  border-left-color: var(--text);
+  background: var(--hover);
+}
+.rs-rule-card {
+  border: 1px solid var(--border-dim);
+  background: var(--bg);
+  color: var(--text);
+}
+.rs-rule-card:hover {
+  background: var(--hover);
+  border-color: var(--border);
+}
+.rs-rule-card .rs-rule-name {
+  color: var(--text);
+}
+.rs-input-row label,
+.rs-placeholder,
+.rs-subtle {
+  color: var(--text-dim);
+}
+.rs-status-content,
+.rs-step .rs-step-explanation {
+  color: var(--text-mid);
+}
+.rs-loading::after {
+  background: rgba(255, 255, 255, 0.72);
+}
+body.theme-dark .rs-loading::after {
+  background: rgba(26, 26, 26, 0.72);
+}
+
+/* ========================================================================== */
+/*  Word editor                                                              */
+/* ========================================================================== */
+.a4-page {
+  background-color: var(--bg);
+  border: 1px solid var(--border-dim);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+body.theme-dark .a4-page {
+  background-color: var(--bg);
+}
+.paragraph:hover {
+  background: var(--hover);
+}
+.paragraph.active {
+  background: var(--hover);
+  border: 1px solid var(--text);
+  padding: 7px;
+}
+.text-paragraph textarea {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+}
+.sympy-paragraph .code-label,
+.latex-paragraph .latex-label {
+  color: var(--text);
+}
+.sympy-paragraph .code-input,
+.latex-paragraph .latex-input {
+  background: var(--surface);
+  border: 1px solid var(--border-dim);
+  color: var(--text);
+}
+.paragraph-type-indicator {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--text);
+}
+.sympy-paragraph .paragraph-type-indicator,
+.latex-paragraph .paragraph-type-indicator {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/*  Autocomplete — flat, hairline, no gradients, no colour coding */
+.autocomplete-suggestions,
+.autocomplete-suggestions.latex-suggestions {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  backdrop-filter: none;
+}
+.autocomplete-suggestions::-webkit-scrollbar-thumb,
+.autocomplete-suggestions.latex-suggestions::-webkit-scrollbar-thumb {
+  background: var(--border-dim);
+}
+.autocomplete-suggestions::-webkit-scrollbar-thumb:hover,
+.autocomplete-suggestions.latex-suggestions::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+.autocomplete-suggestion {
+  border-bottom: 1px solid var(--border-faint);
+}
+.autocomplete-suggestion:hover,
+.autocomplete-suggestion.active,
+.autocomplete-suggestion.latex-suggestion-item:hover,
+.autocomplete-suggestion.latex-suggestion-item.active {
+  background: var(--hover);
+  border-left: 2px solid var(--text);
+  padding-left: 12px;
+}
+.autocomplete-suggestion-name,
+.autocomplete-suggestion:hover .autocomplete-suggestion-name,
+.autocomplete-suggestion.active .autocomplete-suggestion-name,
+.autocomplete-suggestion.latex-suggestion-item .autocomplete-suggestion-name,
+.autocomplete-suggestion.latex-suggestion-item:hover .autocomplete-suggestion-name,
+.autocomplete-suggestion.latex-suggestion-item.active .autocomplete-suggestion-name {
+  color: var(--text);
+}
+.autocomplete-suggestion .suggestion-match {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.autocomplete-suggestion-signature {
+  background: var(--surface);
+  color: var(--text-mid);
+  border: 1px solid var(--border-faint);
+}
+.autocomplete-suggestion .suggestion-type,
+.autocomplete-suggestion .suggestion-type.function,
+.autocomplete-suggestion .suggestion-type.class,
+.autocomplete-suggestion .suggestion-type.constant,
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.function,
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.symbol,
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.command,
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.environment,
+.autocomplete-suggestion.latex-suggestion-item .suggestion-type.template {
+  background: var(--surface);
+  color: var(--text-dim);
+  border: 1px solid var(--border-dim);
+}
+.formula-editor-body .latex-symbol-btn {
+  background: var(--bg);
+  border: 1px solid var(--border-dim);
+  color: var(--text);
+}
+.formula-editor-body .latex-symbol-btn:hover {
+  background: var(--selected-fill);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--selected-line);
+  transform: none;
+}
+.formula-editor-body .formula-category-btn {
+  border: 1px solid var(--border-dim);
+  color: var(--text-dim);
+}
+.formula-editor-body .formula-category-btn:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+@keyframes hd-flash-in {
+  0% {
+    background: var(--hover);
+  }
+  100% {
+    background: transparent;
+  }
+}
+.cell-output.result-animation,
+.sympy-paragraph .code-output.success-flash {
+  animation: hd-flash-in 0.5s ease;
+}
+
+/* ========================================================================== */
+/*  Help documentation (static/help.css)                                     */
+/* ========================================================================== */
+:root {
+  --code-font-family: var(--font-code);
+  --jp-ui-font-color: var(--text);
+}
+#help-container {
+  padding: 40px 20px 72px;
+}
+#help-container h1,
+#help-container h2,
+#help-container h3 {
+  color: var(--text);
+  font-weight: 500;
+  letter-spacing: 2px;
+}
+#help-container h1 {
+  border-bottom-color: var(--border);
+}
+#help-container p,
+#help-container li {
+  color: var(--text);
+}
+#help-container a {
+  color: var(--text);
+  border-bottom: 1px solid var(--border-dim);
+}
+#help-container a:hover {
+  color: var(--text);
+  border-bottom-color: var(--text);
+}
+#help-container code {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-faint);
+}
+#help-container pre {
+  background: var(--surface);
+  border: 1px solid var(--border-dim);
+  color: var(--text);
+}
+#help-container .warning {
+  background: var(--hover);
+  border: 1px solid var(--border-dim);
+  border-left: 2px solid var(--text);
+}
+#help-container strong,
+#help-container .note,
+#help-container .method-signature,
+#help-container .core-area {
+  color: var(--text);
+}
+#help-container .note,
+#help-container .method-signature,
+#help-container .core-area {
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
+}
+#help-container .core-class a {
+  display: block;
+  border: 1px solid var(--border-dim);
+  padding: 8px 10px;
+  transition:
+    background var(--transition-speed),
+    border-color var(--transition-speed);
+}
+#help-container .core-class a:hover {
+  background: var(--hover);
+  border-color: var(--border);
+}
+#help-container .parameter-table th,
+#help-container .parameter-table td,
+#help-container .parameter-table table th,
+#help-container .parameter-table table td {
+  border: 1px solid var(--border-faint);
+}
+#help-container .parameter-table th,
+#help-container .parameter-table table th {
+  background: var(--surface);
+}
+#help-container .header a {
+  border-bottom: 1px solid transparent;
+  letter-spacing: 2px;
+}
+
+/* ========================================================================== */
+/*  The product menu bar  (markup injected by static/hd-menu.js)             */
+/*  Mirrors omm-planner: hidden above the viewport, slides down on hover,    */
+/*  and can be pinned in place.                                              */
+/* ========================================================================== */
+#hd-menu-trigger {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  z-index: 1000;
+}
+
+#hd-top-menu {
+  position: fixed;
+  top: -48px;
+  left: 0;
+  width: 100%;
+  height: 48px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  z-index: 999;
+  padding: 0 12px;
+  transition: top 0.3s var(--ease);
+  user-select: none;
+}
+#hd-menu-trigger:hover ~ #hd-top-menu,
+#hd-top-menu:hover,
+#hd-top-menu.hd-pinned,
+body.hd-submenu-open #hd-top-menu {
+  top: 0;
+}
+
+.hd-menu-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  position: relative;
+  flex-shrink: 0;
+}
+.hd-menu-group + .hd-menu-group::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 20px;
+  background: var(--border-dim);
+}
+.hd-menu-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  padding: 0 4px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+/*  The page's own action buttons are declared in this same rule on purpose.
+    In a separate block they drift out of line with the navigation items next
+    to them, which is exactly the misalignment this replaces.             */
+.hd-menu-btn,
+.hd-menu-group-actions .header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: calc(var(--font-menu) * var(--fscale));
+  font-weight: var(--weight);
+  letter-spacing: var(--ls-menu);
+  line-height: 1.4;
+  white-space: nowrap;
+  border-radius: var(--radius);
+  transition: all var(--transition-speed);
+}
+.hd-menu-btn i,
+.hd-menu-group-actions .header-btn i {
+  font-size: 10px;
+  line-height: 1;
+}
+.hd-menu-btn:hover,
+.hd-menu-group-actions .header-btn:hover {
+  color: var(--text);
+  border-color: var(--border);
+  background: var(--hover);
+}
+.hd-menu-btn.active {
+  color: var(--text);
+  background: var(--hover);
+  border-color: var(--border);
+  box-shadow: inset 0 -2px 0 var(--text);
+}
+
+.hd-pin-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  cursor: pointer;
+  color: var(--text-faint);
+  font-size: 14px;
+  margin-left: 2px;
+  background: transparent;
+  flex-shrink: 0;
+  border-radius: var(--radius);
+  transition: all var(--transition-speed);
+}
+.hd-pin-btn:hover {
+  color: var(--text);
+  border-color: var(--border-dim);
+}
+.hd-pin-btn.hd-pinned {
+  color: var(--text);
+  border-color: var(--border);
+  background: var(--hover);
+}
+.hd-pin-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/*  Settings popover — theme & corner radius, like omm-planner */
+.hd-dropdown {
+  position: fixed;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 4px;
+  min-width: 200px;
+  z-index: 1001;
+  display: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: var(--radius);
+  user-select: none;
+}
+.hd-dropdown.hd-open {
+  display: block;
+  animation: hd-dd-in 0.15s ease;
+}
+@keyframes hd-dd-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.hd-dd-item,
+.hd-dd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-dim);
+  border: 1px solid transparent;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  border-radius: var(--radius);
+  gap: 10px;
+}
+.hd-dd-item:hover,
+.hd-dd-row:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.hd-dd-item .hd-hint,
+.hd-dd-row .hd-hint {
+  font-size: 10px;
+  color: var(--text-faint);
+}
+.hd-dd-divider {
+  height: 1px;
+  background: var(--border-dim);
+  margin: 4px 0;
+}
+.hd-dd-label {
+  padding: 6px 10px 2px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-faint);
+  font-weight: 500;
+}
+.hd-control {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.hd-step-btn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid var(--border-dim);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  transition: all var(--transition-speed);
+  user-select: none;
+  border-radius: var(--radius);
+}
+.hd-step-btn:hover {
+  border-color: var(--border);
+  color: var(--text);
+  background: var(--hover);
+}
+.hd-step-value {
+  min-width: 34px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text);
+}
+
+/*  Reserve room for the pinned bar so it never covers page content.
+    The bar is fixed at 0..48, so every sticky row below shifts by 48 as well. */
+body.hd-menu-pinned {
+  padding-top: 48px;
+}
+body.hd-menu-pinned #toolbar,
+body.hd-menu-pinned #blueprint-toolbar,
+body.hd-menu-pinned #mt-top-bar {
+  top: 48px;
+}
+body.hd-menu-pinned #mt-viewport {
+  height: calc(100vh - 114px);
+}
+body.hd-menu-pinned #blueprint-canvas-container {
+  height: calc(100vh - 96px);
+}
+
+/*  Toast used by the menu itself */
+#hd-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 6px 16px;
+  font-size: 11px;
+  color: var(--text);
+  z-index: 3000;
+  opacity: 0;
+  transition: all 0.2s;
+  pointer-events: none;
+  border-radius: var(--radius);
+  user-select: none;
+}
+#hd-toast.hd-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/*  Hide the bar entirely while printing */
+@media print {
+  [data-hd-action],
+  #hd-menu-trigger,
+  #hd-top-menu,
+  .hd-dropdown,
+  #hd-toast {
+    display: none !important;
+  }
+  body.hd-menu-pinned {
+    padding-top: 0;
+  }
+  body.hd-menu-pinned #toolbar,
+  body.hd-menu-pinned #blueprint-toolbar,
+  body.hd-menu-pinned #mt-top-bar {
+    top: 0;
+  }
+}
+
+/*  Narrow screens: keep the bar reachable via a compact tab strip */
+@media (max-width: 720px) {
+  #hd-top-menu {
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  #hd-top-menu::-webkit-scrollbar {
+    display: none;
+  }
+  .hd-menu-group {
+    flex-shrink: 0;
+  }
+}

@@ -387,7 +387,8 @@ function bindEvents() {
   document.getElementById('loadBtn').addEventListener('click', () => document.getElementById('fileInput').click());
 
   document.getElementById('fileInput').addEventListener('change', loadDocument);
-  document.getElementById('toggleThemeBtn').addEventListener('click', toggleTheme);
+  const _themeBtn = document.getElementById('toggleThemeBtn');
+  if (_themeBtn) _themeBtn.addEventListener('click', toggleTheme);
 
   document.getElementById('formulaEditorBtn').addEventListener('click', toggleFormulaEditor);
   document.getElementById('closeFormulaEditorBtn').addEventListener('click', closeFormulaEditor);
@@ -402,7 +403,7 @@ function bindEvents() {
 
   // Click on other areas of the document to deactivate
   document.addEventListener('click', function (e) {
-    if (!e.target.closest('.paragraph') && !e.target.closest('#toolbar') && !e.target.closest('#header') && !e.target.closest('#formulaEditorPanel')) {
+    if (!e.target.closest('.paragraph') && !e.target.closest('#toolbar') && !e.target.closest('#hd-top-menu') && !e.target.closest('#formulaEditorPanel')) {
       document.querySelectorAll('.paragraph').forEach((p) => {
         p.classList.remove('active');
       });
@@ -685,7 +686,7 @@ function renderMarkdown(paragraph) {
   html = html.replace(/(<br>\s*){2+}/gim, '</p><p>');
   html = '<p>' + html + '</p>';
 
-  render.innerHTML = html || '<span style="color: #999;">空段落</span>';
+  render.innerHTML = html || '<span style="color: var(--text-faint);">空段落</span>';
 }
 
 function runSymPyCode(paragraph) {
@@ -712,7 +713,7 @@ function runSymPyCode(paragraph) {
       if (data.success) {
         // If there is LaTeX result, prioritize displaying LaTeX
         if (data.latex) {
-          output.innerHTML = `$$${data.latex}$$<div style="font-size: 12px; color: #999; margin-top: 8px;">${data.result}</div>`;
+          output.innerHTML = `$$${data.latex}$$<div style="font-size: 12px; color: var(--text-faint); margin-top: 8px;">${data.result}</div>`;
         } else {
           output.innerHTML = data.result;
         }
@@ -964,27 +965,15 @@ function toggleTheme() {
 }
 
 function applyTheme(isDark) {
-  if (isDark) {
-    document.documentElement.style.setProperty('--jp-layout-color0', '#1e1e1e');
-    document.documentElement.style.setProperty('--jp-layout-color1', '#2d2d2d');
-    document.documentElement.style.setProperty('--jp-layout-color2', '#3d3d3d');
-    document.documentElement.style.setProperty('--jp-ui-font-color0', '#e0e0e0');
-    document.documentElement.style.setProperty('--jp-ui-font-color1', '#b0b0b0');
-    document.documentElement.style.setProperty('--jp-border-color0', '#3d3d3d');
-    document.documentElement.style.setProperty('--jp-border-color1', '#4d4d4d');
-    document.querySelector('.a4-page').style.backgroundColor = '#1e1e1e';
-    document.querySelector('.a4-page').style.color = '#e0e0e0';
-  } else {
-    document.documentElement.style.setProperty('--jp-layout-color0', 'white');
-    document.documentElement.style.setProperty('--jp-layout-color1', '#f7f7f7');
-    document.documentElement.style.setProperty('--jp-layout-color2', '#e7e7e7');
-    document.documentElement.style.setProperty('--jp-ui-font-color0', 'rgba(0, 0, 0, 0.87)');
-    document.documentElement.style.setProperty('--jp-ui-font-color1', 'rgba(0, 0, 0, 0.54)');
-    document.documentElement.style.setProperty('--jp-border-color0', '#e0e0e0');
-    document.documentElement.style.setProperty('--jp-border-color1', '#bdbdbd');
-    document.querySelector('.a4-page').style.backgroundColor = 'white';
-    document.querySelector('.a4-page').style.color = 'rgba(0, 0, 0, 0.87)';
+  // The whole product is themed from one place: /static/hd-theme.css reads
+  // the body.theme-dark class and re-points every design token.
+  document.body.classList.toggle('theme-dark', !!isDark);
+  const themeBtn = document.getElementById('toggleThemeBtn');
+  if (themeBtn) {
+    themeBtn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
   }
+  isDarkTheme = !!isDark;
+  localStorage.setItem('darkTheme', isDarkTheme);
 }
 
 function showNotification(message, type = 'success') {

@@ -32,13 +32,14 @@ function bindEvents() {
   document.getElementById("deleteCellBtn").addEventListener("click", deleteActiveCell);
   document.getElementById("toggleKeyboardBtn").addEventListener("click", toggleKeyboard);
   document.getElementById("closeKeyboardBtn").addEventListener("click", toggleKeyboard);
-  document.getElementById("toggleThemeBtn").addEventListener("click", toggleTheme);
+  const _themeBtn = document.getElementById("toggleThemeBtn");
+  if (_themeBtn) _themeBtn.addEventListener("click", toggleTheme);
   document.getElementById("saveNotebookBtn").addEventListener("click", saveNotebook);
   document.getElementById("loadNotebookBtn").addEventListener("click", loadNotebook);
 
   // Cancel active cell when clicking elsewhere in the document
   document.addEventListener("click", function (e) {
-    if (!e.target.closest(".cell") && !e.target.closest("#math-keyboard") && !e.target.closest("#header") && !e.target.closest("#toolbar")) {
+    if (!e.target.closest(".cell") && !e.target.closest("#math-keyboard") && !e.target.closest("#hd-top-menu") && !e.target.closest("#toolbar")) {
       document.querySelectorAll(".cell").forEach((cell) => {
         cell.classList.remove("cell-active");
         if (cell.dataset.cellType === "markdown") {
@@ -501,34 +502,15 @@ function toggleKeyboard() {
 
 // Apply theme settings
 function applyTheme(isDark) {
+  // The whole product is themed from one place: /static/hd-theme.css reads
+  // the body.theme-dark class and re-points every design token.
+  document.body.classList.toggle("theme-dark", !!isDark);
   const themeBtn = document.getElementById("toggleThemeBtn");
-  if (isDark) {
-    document.documentElement.style.setProperty("--jp-ui-font-color0", "rgba(255, 255, 255, 0.87)");
-    document.documentElement.style.setProperty("--jp-ui-font-color1", "rgba(255, 255, 255, 0.6)");
-    document.documentElement.style.setProperty("--jp-layout-color0", "#1e1e1e");
-    document.documentElement.style.setProperty("--jp-layout-color1", "#2d2d30");
-    document.documentElement.style.setProperty("--jp-layout-color2", "#252526");
-    document.documentElement.style.setProperty("--jp-layout-color3", "#3e3e42");
-    document.documentElement.style.setProperty("--jp-border-color0", "#454545");
-    document.documentElement.style.setProperty("--jp-border-color1", "#606060");
-    document.documentElement.style.setProperty("--jp-border-color2", "#808080");
-    themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
-    isDarkTheme = true;
-  } else {
-    document.documentElement.style.setProperty("--jp-ui-font-color0", "rgba(0, 0, 0, 0.87)");
-    document.documentElement.style.setProperty("--jp-ui-font-color1", "rgba(0, 0, 0, 0.54)");
-    document.documentElement.style.setProperty("--jp-layout-color0", "white");
-    document.documentElement.style.setProperty("--jp-layout-color1", "#f7f7f7");
-    document.documentElement.style.setProperty("--jp-layout-color2", "#e7e7e7");
-    document.documentElement.style.setProperty("--jp-layout-color3", "#d7d7d7");
-    document.documentElement.style.setProperty("--jp-border-color0", "#e0e0e0");
-    document.documentElement.style.setProperty("--jp-border-color1", "#bdbdbd");
-    document.documentElement.style.setProperty("--jp-border-color2", "#9e9e9e");
-    themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
-    isDarkTheme = false;
+  if (themeBtn) {
+    themeBtn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
   }
-
-  localStorage.setItem('darkTheme', isDarkTheme);
+  isDarkTheme = !!isDark;
+  localStorage.setItem("darkTheme", isDarkTheme);
 }
 
 // Toggle theme

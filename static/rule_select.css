@@ -49,7 +49,7 @@ mjx-container {
   box-sizing: border-box;
   background: var(--jp-layout-color0);
   border: var(--jp-border-width) solid var(--jp-border-color1);
-  border-radius: 6px;
+  border-radius: var(--radius);
   padding: 14px 16px;
 }
 
@@ -81,16 +81,11 @@ mjx-container {
   font-family: var(--font-family);
   font-size: 0.95em;
   border: var(--jp-border-width) solid var(--jp-border-color1);
-  border-radius: 4px;
+  border-radius: var(--radius);
   background: var(--jp-layout-color0);
   color: var(--jp-ui-font-color0);
 }
 
-.rs-input-row input:focus,
-.rs-input-row select:focus {
-  border-color: var(--jp-brand-color1);
-  outline: none;
-}
 
 /* Buttons */
 
@@ -99,39 +94,44 @@ mjx-container {
 .rs-btn-warning {
   padding: 6px 16px;
   border: var(--jp-border-width) solid var(--jp-border-color1);
-  border-radius: 4px;
+  border-radius: var(--radius);
   cursor: pointer;
   font-size: 0.92em;
   font-family: var(--font-family);
 }
 
 .rs-btn-primary {
-  background: var(--jp-brand-color0);
-  color: #fff;
-  border-color: var(--jp-brand-color0);
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
 }
 
 .rs-btn-primary:hover {
-  filter: brightness(1.1);
+  background: var(--hover);
+  box-shadow: inset 0 -2px 0 var(--text);
+  filter: none;
 }
 
 .rs-btn-secondary {
-  background: var(--jp-layout-color1);
-  color: var(--jp-ui-font-color0);
+  background: transparent;
+  color: var(--text-dim);
 }
 
 .rs-btn-secondary:hover {
-  background: var(--jp-layout-color2);
+  background: var(--hover);
+  color: var(--text);
 }
 
 .rs-btn-warning {
-  background: #e65100;
-  color: #fff;
-  border-color: #e65100;
+  background: transparent;
+  color: var(--accent-red);
+  border-color: var(--accent-red);
 }
 
 .rs-btn-warning:hover {
-  filter: brightness(1.1);
+  background: var(--hover);
+  box-shadow: inset 0 -2px 0 var(--accent-red);
+  filter: none;
 }
 
 /* Error */
@@ -139,9 +139,9 @@ mjx-container {
 .rs-error {
   margin-top: 8px;
   padding: 6px 10px;
-  background: #fce4ec;
+  background: var(--hover);
   border: 1px solid var(--jp-error-color);
-  border-radius: 4px;
+  border-radius: var(--radius);
   color: var(--jp-error-color);
   font-size: 0.88em;
 }
@@ -200,7 +200,7 @@ mjx-container {
   align-items: center;
   padding: 8px 12px;
   border: var(--jp-border-width) solid var(--jp-border-color1);
-  border-radius: 4px;
+  border-radius: var(--radius);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
   font-family: var(--font-family);
@@ -212,7 +212,7 @@ mjx-container {
 }
 
 .rs-rule-card .rs-rule-name {
-  font-weight: bold;
+  font-weight: 500;
   font-size: 0.92em;
   color: var(--jp-ui-font-color0);
 }
@@ -221,7 +221,7 @@ mjx-container {
   font-size: 0.85em;
   color: var(--jp-ui-font-color1);
   margin-left: 12px;
-  white-space: nowrap;
+  var(--bg)-space: nowrap;
 }
 
 /* Status summary */
