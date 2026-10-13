@@ -13,6 +13,7 @@ from sympy import Symbol, preorder_traversal, latex
 
 from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
 from utils.cache_utils import cached_sympify
+from utils.matrix_latex import latex_to_nested
 from domains import (
     CachedDiffCalculator, CachedIntegralCalculator, CachedLimitCalculator,
     DiffCalculator, IntegralCalculator, LimitCalculator, ExpressionParser,
@@ -22,6 +23,14 @@ from domains import (
     VectorProjectionSolver, LinearDependence, LinearTransform,
     LinearSystemConverter, LinearSystemSolver, BaseTransform
 )
+
+# Operation types that accept MathLive LaTeX matrices (bmatrix/pmatrix). The
+# converter is a no-op for plain-text input, so all linear-algebra ops are listed.
+_MATRIX_LATEX_OPS = {
+    'ref', 'operations', 'invert', 'rank', 'LU', 'diag', 'svd', 'singular',
+    'eigen', 'schur', 'det', 'orthogonal', 'projection', 'dependence',
+    'linear-system', 'linear-solver', 'transform-1', 'transform-2', 'matrix_symbolic',
+}
 
 # Cached calculator variants used when use_cache or record_cache is set
 _cached_calculators = {
@@ -130,6 +139,12 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
 
         expression = data.get('expression', '')
         variable = data.get('variable', 'x')
+
+        # Linear-algebra cells may carry MathLive LaTeX matrices; convert each
+        # bmatrix/pmatrix block to the nested-list form the calculators parse.
+        # No-op when the input is already plain text.
+        if operation_type in _MATRIX_LATEX_OPS:
+            expression = latex_to_nested(expression)
 
         use_cache = data.get('use_cache', False) == 'True'
         record_cache = data.get('record_cache', False) == 'True'
