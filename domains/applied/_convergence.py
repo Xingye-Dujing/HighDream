@@ -6,9 +6,9 @@ individual limits that appear inside a test (a value shown as part of the step),
 as a black-box ``is_convergent``/``doit`` that returns the final verdict directly.
 """
 
-from sympy import Abs, Eq, Pow, Symbol, limit, oo, simplify
+from sympy import Abs, Eq, Integral, Pow, Symbol, limit, oo, simplify
 
-from domains.applied._common import render_note as note
+from domains.applied._common import integral_value, render_note as note
 
 
 def _is_alternating(a):
@@ -76,7 +76,50 @@ def convergence_rows(a, n):
         rows.append((None, note(f"p-级数 $\\sum 1/n^{{{p}}}$: $p={p}$, {'收敛' if p > 1 else '发散'}")))
         return rows, ('converge' if p > 1 else 'diverge')
 
+    # 6) geometric recognition: a == r**n with constant ratio r
+    geo = _geometric_ratio(a, n)
+    if geo is not None:
+        rows.append((Eq(Symbol('r'), geo), note("几何(等比)级数, 公比 $r$")))
+        if Abs(geo) < 1:
+            rows.append((None, note("$|r|<1$, 几何级数收敛")))
+            return rows, 'converge'
+        rows.append((None, note("$|r|\\geq 1$, 几何级数发散")))
+        return rows, 'diverge'
+
+    # 7) limit comparison against p-series (p = 1 and p = 2)
+    for p_try in (1, 2):
+        lc = _lim(a * n ** p_try, n)
+        if lc is not None and lc.is_number and lc != 0 and lc != oo and Abs(lc) != oo:
+            rows.append((Eq(Symbol('L_cmp'), lc),
+                         note(f"极限比较判别: 与 $\\sum 1/n^{{{p_try}}}$ 比较, $\\lim a_n n^{{{p_try}}}$")))
+            verdict = 'converge' if p_try > 1 else 'diverge'
+            zh = '收敛' if p_try > 1 else '发散'
+            rows.append((None, note(f"极限为正常数, 与 p={p_try} 的 p-级数同敛散, 故级数{zh}")))
+            return rows, verdict
+
+    # 8) integral test (positive terms): compare with improper integral via the engine
+    x = Symbol('x')
+    f = a.subs(n, x)
+    try:
+        anti = integral_value(f, x)
+        finf = _lim(anti, x, oo)
+        if finf is not None and finf.is_finite:
+            rows.append((Integral(f, (x, 1, oo)), note("积分判别: $\\int_1^{\\infty} f(x)\\,dx$ 收敛")))
+            return rows, 'converge'
+        if finf in (oo, -oo):
+            rows.append((Integral(f, (x, 1, oo)), note("积分判别: $\\int_1^{\\infty} f(x)\\,dx$ 发散")))
+            return rows, 'diverge'
+    except Exception:  # pylint: disable=broad-exception-caught
+        pass
+
     return rows, 'unknown'
+
+
+def _geometric_ratio(a, n):
+    """If a == r**n for a constant r, return r, else None."""
+    if isinstance(a, Pow) and a.exp == n:
+        return a.base if a.base.is_number or not a.base.has(n) else None
+    return None
 
 
 def _p_series_exponent(a, n):

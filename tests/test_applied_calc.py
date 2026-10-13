@@ -127,6 +127,27 @@ def test_convergence_nth_term_diverges():
     assert '发散' in body and '$' not in body
 
 
+def test_convergence_limit_comparison():
+    # 1/(n^2+1) ~ 1/n^2 -> converges by limit comparison
+    body = _res('series_convergence', expression='1/(n**2+1)', variable='n')
+    assert '极限比较' in body and '收敛' in body and '$' not in body
+    # 1/(n+1) ~ 1/n -> diverges
+    body2 = _res('series_convergence', expression='1/(n+1)', variable='n')
+    assert '极限比较' in body2 and '发散' in body2
+
+
+def test_convergence_geometric():
+    # 1/2**n geometric, |r|=1/2<1 -> converges (ratio test also catches it)
+    body = _res('series_convergence', expression='1/2**n', variable='n')
+    assert '收敛' in body and '$' not in body
+
+
+def test_convergence_integral_test():
+    # 1/(n log n) diverges by the integral test
+    body = _res('series_convergence', expression='1/(n*log(n))', variable='n')
+    assert '积分判别' in body and '发散' in body
+
+
 def test_iterated_integral_rectangular():
     # int_0^2 int_0^1 x*y dx dy = 1, inner result F(y)=y/2
     body = _res('iterated_integral', expression='x*y', variable='x', variable2='y',
