@@ -26,6 +26,17 @@ function getMathSource(cell) {
 function getMathField(cell) {
   return cell.querySelector("math-field");
 }
+// Read the live expression from whichever input is visible, keeping the hidden
+// textarea authoritative so every existing path (run/save/steps) stays correct.
+function readExpr(cell) {
+  const field = getMathField(cell);
+  const src = getMathSource(cell);
+  if (!src) return "";
+  if (field && field.style.display !== "none") {
+    src.value = field.value;      // commit latest editor state before reading
+  }
+  return src.value.trim();
+}
 // Show the MathLive editor for scalar ops, the textarea for matrix/text ops.
 function applyInputMode(cell) {
   const op = cell.querySelector(".operation-type").value;
@@ -824,7 +835,7 @@ function runAllCells() {
   updateKernelStatus('busy');
 
   document.querySelectorAll('.cell[data-cell-type="code"]').forEach((cell) => {
-    const expression = cell.querySelector("textarea").value.trim();
+    const expression = readExpr(cell);
     if (expression) runCell(cell);
   });
 
@@ -858,7 +869,7 @@ function updateKernelStatus(status) {
 // Run single cell
 function runCell(cell) {
   const operationType = cell.querySelector(".operation-type").value;
-  const expression = cell.querySelector("textarea").value.trim();
+  const expression = readExpr(cell);
   const variable = cell.querySelector(".var-input input")
     ? cell.querySelector(".var-input input").value.trim() || "x"
     : "x";
@@ -1401,6 +1412,7 @@ function loadNotebook() {
           }
 
           notebook.appendChild(cell);
+          if (cellData.type === "code") applyInputMode(cell);
         });
 
         cellCounter = cells.length;
@@ -1424,7 +1436,7 @@ function loadNotebook() {
 // ---- Step-linking: open a derivation sub-expression in a fresh cell ----
 function collectStepsPayload(cell) {
   const operationType = cell.querySelector(".operation-type").value;
-  const expression = cell.querySelector("textarea").value.trim();
+  const expression = readExpr(cell);
   const varEl = cell.querySelector(".var-input input");
   const variable = (varEl && varEl.value.trim()) || "x";
   const payload = { operation_type: operationType, expression: expression, variable: variable };
