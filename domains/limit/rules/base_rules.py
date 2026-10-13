@@ -1,5 +1,5 @@
 from sympy import (
-    AccumBounds, Add, Expr, Integer, Limit, Mul, Pow, S, UnevaluatedExpr,
+    AccumBounds, Add, atan, cos, Expr, Integer, Limit, Mul, Pow, S, UnevaluatedExpr,
     exp, latex, limit, log, nan, oo, simplify, sin, zoo
 )
 
@@ -546,3 +546,28 @@ def conjugate_rationalize_matcher(expr, _context) -> MatcherFunctionReturn:
     if num.is_Add and len(num.args) == 2 and any(_is_sqrt_term(a) for a in num.args):
         return 'conjugate_rationalize'
     return None
+
+
+def bounded_oscillation_infinity_matcher(expr, context) -> MatcherFunctionReturn:
+    """Handle x -> +-oo quotients that mix a dominant power with bounded oscillatory
+    terms (sin/cos/arctan). L'Hopital is invalid there (its derivative ratio oscillates),
+    so divide by the dominant power: the bounded terms vanish and the limit is the ratio
+    of leading terms. Only fires when that value is finite."""
+    var, point, direction = get_limit_args(context)
+    if point not in (oo, -oo):
+        return None
+    _num, den = expr.as_numer_denom()
+    if den == 1 or not expr.has(sin, cos, atan):
+        return None
+    try:
+        val = Limit(expr, var, point, dir=direction).doit()
+    except Exception:  # pylint: disable=broad-exception-caught
+        return None
+    return 'bounded_oscillation_infinity' if val.is_finite else None
+
+
+def bounded_oscillation_infinity_rule(expr, context) -> RuleFunctionReturn:
+    var, point, direction = get_limit_args(context)
+    val = Limit(expr, var, point, dir=direction).doit()
+    return val, (f"有界振荡项除以最高次幂趋于 0, 取主导项之比: "
+                 f"$\\lim_{{{var} \\to {latex(point)}}} {latex(expr)} = {latex(val)}$")

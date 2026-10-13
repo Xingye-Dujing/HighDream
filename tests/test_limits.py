@@ -50,3 +50,8 @@ def test_infinity_minus_infinity_radical():
 def test_radical_minus_linear_conjugate():
     # sqrt(x**2 + x) - x -> 1/2 (one-radical conjugate case)
     assert simplify(_limit('sqrt(x**2+x)-x', S('oo')) - Rational(1, 2)) == 0
+
+
+def test_bounded_oscillation_infinity():
+    # (x + sin x)/(x + cos x) -> 1 at infinity (L'Hopital invalid; divide by dominant power)
+    assert simplify(_limit('(x+sin(x))/(x+cos(x))', S('oo')) - 1) == 0

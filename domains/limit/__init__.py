@@ -12,7 +12,8 @@ from .rules.base_rules import (
     mul_split_rule, mul_split_matcher,
     div_split_rule, div_split_matcher,
     direct_substitution_rule, direct_substitution_matcher,
-    conjugate_rationalize_matcher, conjugate_rationalize_rule
+    conjugate_rationalize_matcher, conjugate_rationalize_rule,
+    bounded_oscillation_infinity_matcher, bounded_oscillation_infinity_rule
 )
 from .rules.function_rules import (
     acos_matcher, acos_rule, asin_matcher, asin_rule, atan_matcher, atan_rule,
@@ -40,19 +41,9 @@ from .rules.lhopital_rules import (
 
 __all__ = [
     'LimitStepGenerator',
-    'check_combination_indeterminate',
-    'check_function_tends_to_zero',
-    'check_limit_exists',
-    'check_limit_exists_oo',
-    'check_add_split',
-    'check_mul_split',
-    'check_div_split',
-    'get_limit_args',
-    'is_constant',
-    'is_indeterminate_form',
-    'is_infinite',
-    'is_zero',
-    'LimitStepGenerator',
+    'RULE_DICT',
+    'MATCHER_LIST',
+    'LHOPITAL_RULES',
 ]
 
 # Lhopital rules' names
@@ -101,6 +92,7 @@ RULE_DICT: RuleDict = {
     'lhopital_inf_minus_inf': lhopital_inf_minus_inf_rule,
     'lhopital_power': lhopital_power_rule,
     'conjugate_rationalize': conjugate_rationalize_rule,
+    'bounded_oscillation_infinity': bounded_oscillation_infinity_rule,
 }
 
 # Matchers are applied in order — earlier entries have higher priority.
@@ -134,6 +126,7 @@ MATCHER_LIST: MatcherList = [
     g_over_ln_one_plus_matcher,
     g_over_exp_minus_one_matcher,
     # Arithmetic splitting: (f+g), (f*g), (f/g)
+    bounded_oscillation_infinity_matcher,
     add_split_matcher,
     mul_split_matcher,
     div_split_matcher,
