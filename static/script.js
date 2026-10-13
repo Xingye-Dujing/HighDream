@@ -515,9 +515,12 @@ function setupCellEvents(cell) {
   });
 
   // Textbox click event - set active cell
-  textarea.addEventListener("click", function () {
-    setActiveCell(cell);
-  });
+  const sourceArea = getMathSource(cell);
+  if (sourceArea) {
+    sourceArea.addEventListener("click", function () {
+      setActiveCell(cell);
+    });
+  }
 }
 
 // Debounce function
