@@ -74,6 +74,12 @@ def test_ode_second_order_complex_roots():
     assert '\\cos' in body and '\\sin' in body
 
 
+def test_ode_second_order_nonhomogeneous_variation():
+    # y'' + y = x -> homogeneous (cos/sin) + particular via variation of parameters
+    body = _res('ode', expression='Derivative(f(x),(x,2))+f(x)-x', variable='x')
+    assert '朗斯基' in body and '特解' in body and '通解' in body and '$' not in body
+
+
 def test_critical_points():
     assert r'3x^{2}' in _res('critical_points', expression='x**3-3*x', variable='x')
 
