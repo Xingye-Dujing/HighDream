@@ -111,6 +111,95 @@ def _dispatch_calculus(expression: str):
     return True, r'\begin{align}' + latex(simplify(obj)) + r'\end{align}'
 
 
+def _extract_paren_arg(text: str, open_idx: int):
+    """Return the substring inside the balanced parentheses starting at open_idx."""
+    depth = 0
+    for i in range(open_idx, len(text)):
+        if text[i] == '(':
+            depth += 1
+        elif text[i] == ')':
+            depth -= 1
+            if depth == 0:
+                return text[open_idx + 1:i]
+    return None
+
+
+_MATRIX_FUNCS = {
+    'det': 'det', 'determinant': 'det',
+    'inverse': 'invert', 'inv': 'invert',
+    'rank': 'rank',
+    'rref': 'rref', 'ref': 'ref',
+    'eigenvals': 'eigen', 'eigen': 'eigen', 'eigenvects': 'eigen',
+    'transpose': 'transpose',
+}
+
+
+def _run_matrix_op(kind: str, arg: str):
+    """Invoke the existing matrix calculator for a detected operation."""
+    if kind == 'det':
+        return True, _calculators['det_1']().compute_latex(arg)
+    if kind in ('rref', 'ref'):
+        return True, _calculators['ref']().compute_latex(arg, 'rref' if kind == 'rref' else 'ref')
+    calc_cls = {'invert': 'invert', 'rank': 'rank', 'eigen': 'eigen'}.get(kind)
+    if calc_cls:
+        calc = _calculators[calc_cls]()
+        runner = {'invert': 'auto_matrix_inverse', 'rank': 'auto_matrix_rank',
+                  'eigen': 'auto_eigen_solver'}[kind]
+        getattr(calc, runner)(arg)
+        return True, calc.get_steps_latex()
+    if kind == 'transpose':
+        return True, _calculators['operations']().compute(arg + '\n' + arg, 'transpose')
+    return False, f'暂不支持的矩阵算子: {kind}'
+
+
+def _dispatch_auto(expression: str):
+    """Universal single-box dispatcher (Maple-like): classify by operator/structure.
+
+    Handles calculus operators (d/dx, integral, limit, sum) and linear-algebra
+    operators (det/rank/inverse/rref/eigenvals/transpose, and A+B / A-B / A*B)."""
+    import re  # pylint: disable=import-outside-toplevel
+    from sympy import Derivative, Integral, Limit, Sum  # pylint: disable=import-outside-toplevel
+    text = latex_to_nested(expression)  # bmatrix blocks -> [[...]] (no-op otherwise)
+
+    # 1) explicit matrix function: name(...) or \name <matrix>
+    fm = re.match(r'\s*\\?([A-Za-z]+)\s*(\()?', text)
+    if fm and fm.group(1).lower() in _MATRIX_FUNCS:
+        kind = _MATRIX_FUNCS[fm.group(1).lower()]
+        if fm.group(2):  # parenthesized argument
+            arg = _extract_paren_arg(text, text.index('(', fm.end() - 1))
+        else:            # bare form, e.g. \det [[1,2],[3,4]]
+            m2 = re.search(r'\[\[.*?\]\]', text)
+            arg = m2.group(0) if m2 else None
+        if arg:
+            return _run_matrix_op(kind, arg.strip())
+
+    # 2) two matrices with a binary operator -> matrix arithmetic
+    mats = re.findall(r'\[\[.*?\]\]', text)
+    if len(mats) >= 2:
+        op = 'add'
+        seg = text[text.index(mats[0]) + len(mats[0]):text.index(mats[1])]
+        if '-' in seg:
+            op = 'subtract'
+        elif '*' in seg or '\u00b7' in seg or 'times' in text.lower():
+            op = 'multiply'
+        return True, _calculators['operations']().compute(mats[0] + '\n' + mats[1], op)
+
+    # 3) a single matrix with no operator -> row-reduce (canonical display)
+    if len(mats) == 1:
+        return True, _calculators['ref']().compute_latex(mats[0], 'rref')
+
+    # 4) calculus structural operators
+    try:
+        obj = cached_sympify(text)
+    except Exception:  # pylint: disable=broad-exception-caught
+        obj = None
+    if isinstance(obj, (Derivative, Integral, Limit, Sum)):
+        return _dispatch_calculus(text)
+
+    # 5) plain expression -> simplify
+    return _dispatch_calculus(text)
+
+
 def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]:
     """Dispatch a computation and guarantee its string result contains no literal ``$``.
 
@@ -230,6 +319,9 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
 
         if operation_type == 'calculus':
             return _dispatch_calculus(expression)
+
+        if operation_type == 'auto':
+            return _dispatch_auto(expression)
 
         if operation_type == 'ref':
             target = data.get('target_form', 'ref')

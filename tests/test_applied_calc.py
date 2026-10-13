@@ -174,6 +174,36 @@ def test_calculus_plain_expression_simplifies():
     assert '\\begin{align}' in body and '$' not in body
 
 
+def test_auto_matrix_det():
+    body = _res('auto', expression='det([[1,2],[3,4]])', variable='x')
+    assert '-2' in body and '$' not in body
+
+
+def test_auto_matrix_rank():
+    body = _res('auto', expression='rank([[1,2],[2,4]])', variable='x')
+    assert '$' not in body and len(body) > 20
+
+
+def test_auto_matrix_inverse():
+    body = _res('auto', expression='inverse([[1,0],[0,2]])', variable='x')
+    assert '$' not in body and len(body) > 20
+
+
+def test_auto_matrix_add():
+    body = _res('auto', expression='[[1,0],[0,1]]+[[2,0],[0,2]]', variable='x')
+    assert '$' not in body and len(body) > 20
+
+
+def test_auto_calculus_derivative():
+    body = _res('auto', expression=r'\frac{d}{dx}\left(x^2\right)', variable='x')
+    assert '幂' in body and '$' not in body
+
+
+def test_auto_plain_simplify():
+    body = _res('auto', expression='x+x', variable='x')
+    assert '\\begin{align}' in body and '$' not in body
+
+
 def test_iterated_integral_rectangular():
     # int_0^2 int_0^1 x*y dx dy = 1, inner result F(y)=y/2
     body = _res('iterated_integral', expression='x*y', variable='x', variable2='y',

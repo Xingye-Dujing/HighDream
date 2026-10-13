@@ -17,6 +17,7 @@ const MULTI_INPUT_OPS = new Set(["operations", "linear-solver", "projection", "t
 
 // Per-operation LaTeX hint shown as the editor placeholder ("预设题的形式").
 const OP_PLACEHOLDER = {
+  auto: "\\frac{d}{d\\square}\\square\\ \\ \\int\\square\\, d\\square\\ \\ \\det\\begin{bmatrix}\\square&\\square\\\\\\square&\\square\\end{bmatrix}\\ \\ \\cdots",
   calculus: "\\frac{d}{d\\square}\\left[\\square\\right]\\ \\text{或}\\ \\int_{\\square}^{\\square}\\square\\, d\\square\\ \\text{或}\\ \\lim_{\\square\\to\\square}\\square",
   expr: "\\text{表达式: }\\frac{1}{x}+\\sin x",
   diff: "\\frac{d}{d\\square}\\left[\\square\\right]",
@@ -642,11 +643,14 @@ function createCellElement(id, type) {
                 <i class="fas fa-play"></i>
               </button>
               <select class="operation-type">
+                <optgroup label="万能输入">
+                  <option value="auto" selected>自动识别(微积分+线性代数)</option>
+                </optgroup>
                 <optgroup label="基本处理">
                 <option value="expr">等价表达式</option>
                 </optgroup>
                 <optgroup label="微积分">
-                  <option value="calculus" selected>微积分(自动识别算子)</option>
+                  <option value="calculus">微积分(自动识别算子)</option>
                   <option value="diff">求导/微分</option>
                   <option value="integral">积分</option>
                   <option value="limit">极限</option>
