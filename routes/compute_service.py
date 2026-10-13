@@ -60,6 +60,29 @@ _calculators = {
 
 
 def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]:
+    """Dispatch a computation and guarantee its string result contains no literal ``$``.
+
+    All step output is expected to be live LaTeX (math in math mode, prose in
+    ``\\text{}``); any stray ``$`` delimiter that slipped through is stripped so
+    nothing renders as raw text. Non-string results (e.g. the ``expr`` tuple) are
+    returned unchanged.
+    """
+    ok, result = _dispatch_compute(operation_type, data)
+    return ok, _strip_dollar(result) if ok else result
+
+
+def _strip_dollar(value):
+    """Recursively remove literal ``$`` from string results (lists/tuples/dicts ok)."""
+    if isinstance(value, str):
+        return value.replace('$', '')
+    if isinstance(value, list):
+        return [_strip_dollar(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_strip_dollar(v) for v in value)
+    return value
+
+
+def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]:
     """Execute mathematical computation based on operation type and input data.
 
     This function serves as the main entry point for all computational operations,

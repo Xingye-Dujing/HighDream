@@ -32,7 +32,9 @@ class MatrixStepGenerator:
 
         latex_str = "\\begin{align}"
         for step in self.steps:
-            step_str = f"& {step}"
+            # Steps are already LaTeX in math mode; drop stray ``$`` delimiters so
+            # nothing renders as literal text.
+            step_str = f"& {step.replace('$', '')}"
             latex_str += step_str
             # Add line break for next step
             latex_str += r"\\\\"
