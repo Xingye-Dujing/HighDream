@@ -72,6 +72,22 @@ def derivative_steps(f_str, x):
         or [(steps[-1], '')]
 
 
+def derivative_value(f_str, x, order=1):
+    """The n-th derivative VALUE, obtained by running the rule engine ``order`` times.
+
+    Each application is a genuine DiffCalculator derivation; the previous result is
+    fed back in, so higher derivatives never fall back to a black-box ``.diff(n)``.
+    """
+    from domains import DiffCalculator  # pylint: disable=import-outside-toplevel
+    calc = DiffCalculator()
+    current = sympify(str(f_str))
+    for _ in range(max(1, int(order))):
+        steps, _expl = calc.compute_list(str(current), x)
+        concrete = [s for s in steps if s is not None]
+        current = concrete[-1] if concrete else current
+    return current
+
+
 def integral_steps(integrand, x, lower=None, upper=None, allow_multi=False):
     """Full rule-driven integration rows via the core IntegralCalculator.
 

@@ -10,7 +10,7 @@ from sympy import Eq, Symbol, simplify, solve
 
 from utils.cache_utils import cached_sympify as sympify
 
-from domains.applied._common import align, derivative_steps, expr_text, get_var
+from domains.applied._common import align, derivative_steps, derivative_value, expr_text, get_var
 from domains.applied._common import render_note as note, to_num
 
 
@@ -20,7 +20,7 @@ def tangent(data):
     f = sympify(f_str)
     a = to_num(data.get('point'), 0)
     items = [(f, note("f(x)"))] + derivative_steps(f_str, x)
-    fp = f.diff(x)
+    fp = derivative_value(f_str, x, 1)
     slope = simplify(fp.subs(x, a))
     y0 = simplify(f.subs(x, a))
     items.append((slope, note("f'(a) 即切线斜率")))
@@ -34,7 +34,7 @@ def linearization(data):
     f = sympify(f_str)
     a = to_num(data.get('point'), 0)
     items = [(f, note("f(x)"))] + derivative_steps(f_str, x)
-    fp = f.diff(x)
+    fp = derivative_value(f_str, x, 1)
     lin = simplify(f.subs(x, a) + fp.subs(x, a) * (x - a))
     items.append((Eq(Symbol('L'), lin), note("线性化(切线近似) L(x)")))
     return True, align(items)
@@ -45,12 +45,12 @@ def critical_points(data):
     f_str = expr_text(data)
     f = sympify(f_str)
     items = [(f, note("f(x)"))] + derivative_steps(f_str, x)
-    fp = f.diff(x)
+    fp = derivative_value(f_str, x, 1)
     try:
         crit = sorted(solve(Eq(fp, 0), x), key=lambda v: (not v.is_real, str(v)))
     except Exception:  # pylint: disable=broad-exception-caught
         crit = []
-    fpp = f.diff(x, 2)
+    fpp = derivative_value(f_str, x, 2)
     if not crit:
         items.append((None, note("f'(x)=0 无实临界点")))
         return True, align(items)
@@ -71,7 +71,7 @@ def newton(data):
     items.append((Eq(Symbol('x_0'), x0), note("初值")))
     cur = x0
     for k in range(1, iters + 1):
-        nxt = simplify(cur - f.subs(x, cur) / f.diff(x).subs(x, cur))
+        nxt = simplify(cur - f.subs(x, cur) / derivative_value(f_str, x, 1).subs(x, cur))
         items.append((Eq(Symbol(f'x_{k}'), nxt), note("牛顿迭代 x_{k}=x_{k-1}-f/f'")))
         cur = nxt
     return True, align(items)
@@ -87,7 +87,7 @@ def mean_value(data):
     items = [(f, note("f(x)"))] + derivative_steps(f_str, x)
     items.append((Eq(Symbol('k'), secant), note("割线斜率 (f(b)-f(a))/(b-a)")))
     try:
-        cands = solve(Eq(f.diff(x), secant), x)
+        cands = solve(Eq(derivative_value(f_str, x, 1), secant), x)
     except Exception:  # pylint: disable=broad-exception-caught
         cands = []
     if not cands:

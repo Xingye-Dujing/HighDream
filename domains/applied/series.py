@@ -12,8 +12,8 @@ from sympy import (Abs, Eq, Integral, Symbol, expand, factorial, latex, limit,
 
 from utils.cache_utils import cached_sympify as sympify
 
-from domains.applied._common import (align, expr_text, get_var, integral_steps,
-                                     render_note as note, to_num)
+from domains.applied._common import (align, derivative_value, expr_text, get_var,
+                                     integral_steps, render_note as note, to_num)
 
 
 def taylor(data):
@@ -21,13 +21,19 @@ def taylor(data):
     f = sympify(expr_text(data))
     x0 = to_num(data.get('point'), 0)
     order = int(data.get('order') or data.get('expr-depth') or 6)
+    # Build each order's derivative by feeding the previous result back through the
+    # rule engine (never a black-box f.diff(x, k)).
+    derivs = [f]
+    for _k in range(1, order + 1):
+        derivs.append(derivative_value(str(derivs[-1]), x, 1))
     items = [(f, note("f(x)"))]
     terms = []
     for k in range(order + 1):
-        dk = f if k == 0 else f.diff(x, k)
+        dk = derivs[k]
         coef = simplify(dk.subs(x, x0) / factorial(k))
         terms.append(coef * (x - x0) ** k)
-        items.append((simplify(dk), note(f"第 {k} 阶导数")))
+        if k > 0:
+            items.append((simplify(dk), note(f"第 {k} 阶导数 (规则引擎)")))
         items.append((coef, note(f"第 {k} 阶系数 a_{k}")))
     items.append((expand(sum(terms)), note(f"泰勒/麦克劳林多项式 (到 {order} 阶)")))
     return True, align(items)
@@ -39,12 +45,12 @@ def taylor_error(data):
     x0 = to_num(data.get('point'), 0)
     order = int(data.get('order') or data.get('expr-depth') or 6)
     m = order + 1
-    deriv = simplify(f.diff(x, m))
+    deriv = simplify(derivative_value(expr_text(data), x, m))
     xi = Symbol('xi')
     remainder = deriv.subs(x, xi) / factorial(m) * (x - x0) ** m
     return True, align([
         (f, note("f(x)")),
-        (deriv, note(f"n+1 = {m} 阶导数")),
+        (deriv, note(f"n+1 = {m} 阶导数 (规则引擎)")),
         (Eq(Symbol('R_n'), remainder), note("拉格朗日余项 (xi 介于 x0 与 x 之间)")),
     ])
 
