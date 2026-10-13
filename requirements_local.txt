@@ -13,3 +13,6 @@ gevent
 
 # 3. if you want to build a standalone executable:
 # pyinstaller
+
+# 4. if you want to run the test suite (tests/, pytest):
+# pytest
