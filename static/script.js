@@ -1,6 +1,6 @@
 // Global variables
 let cellCounter = 0;
-const APPLIED_OPS = ["tangent", "linearization", "critical_points", "newton", "arc_length", "volume_disk", "surface_area", "implicit_diff", "parametric_diff", "polar_area", "polar_slope", "taylor", "series_convergence", "improper_integral", "ode", "numerical_integration"];
+const APPLIED_OPS = ["tangent", "linearization", "critical_points", "newton", "arc_length", "volume_disk", "surface_area", "implicit_diff", "parametric_diff", "polar_area", "polar_slope", "taylor", "series_convergence", "improper_integral", "ode", "numerical_integration", "mean_value", "radius_of_convergence", "complex_simplify", "complex_polar", "complex_roots"];
 let activeCellId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
 let isKeyboardVisible = false;
@@ -548,6 +548,11 @@ function createCellElement(id, type) {
                   <option value="improper_integral">反常积分</option>
                   <option value="ode">微分方程求解</option>
                   <option value="numerical_integration">数值积分(梯形/辛普森)</option>
+                  <option value="mean_value">中值定理/罗尔定理</option>
+                  <option value="radius_of_convergence">幂级数收敛半径</option>
+                  <option value="complex_simplify">复数化简(a+bi)</option>
+                  <option value="complex_polar">复数极坐标/指数形式</option>
+                  <option value="complex_roots">复数方程求根</option>
                 </optgroup>
               </select>
               <!-- 变量输入框 -->

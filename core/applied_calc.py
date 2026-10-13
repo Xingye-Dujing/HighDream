@@ -12,9 +12,9 @@ optional point/lower/upper/order fields) and returns ``(success, latex)`` where
 ``latex`` is a ``\\begin{align}`` block or a short rendered verdict.
 """
 
-from sympy import (Derivative, Eq, Function, Integral, N, Symbol, cos, dsolve,
-                   latex, limit, pi, simplify, sin, solve, summation, series,
-                   sqrt, sympify, oo)
+from sympy import (Abs, Derivative, Eq, Function, I, Integral, N, Symbol, arg,
+                   cos, dsolve, exp, expand, im, latex, limit, pi, re, simplify, sin,
+                   solve, summation, series, sqrt, sympify, oo)
 
 
 def _var(data):
@@ -282,6 +282,79 @@ def numerical_integration(data):
     return False, '数值积分需要数值积分上下限'
 
 
+# ---------------------------------------------------------------- complex numbers
+def complex_simplify(data):
+    z = sympify(_expr_text(data))
+    s = simplify(expand(z, complex=True))
+    return True, _align([
+        (z, '原复数式'), (re(s), '实部 Re(z)'), (im(s), '虚部 Im(z)'),
+        (s, '化简为 a+bi 形式'),
+    ])
+
+
+def complex_polar(data):
+    z = sympify(_expr_text(data))
+    r = simplify(Abs(z))
+    theta = arg(z)
+    return True, _align([
+        (z, ''), (r, '模 r=|z|'), (theta, '辐角 θ=arg(z)'),
+        (r * exp(I * theta), '指数形式 r·e^{iθ}'),
+    ])
+
+
+def complex_roots(data):
+    z = _var(data)
+    expr = sympify(_expr_text(data))
+    eq = expr if isinstance(expr, Eq) else Eq(expr, 0)
+    try:
+        sol = solve(eq, z)
+    except Exception:  # pylint: disable=broad-exception-caught
+        sol = []
+    if not sol:
+        return False, '无法在复数域求解该方程的根'
+    rows = [(eq, '求解 (复数域)')]
+    for i, s in enumerate(sol):
+        rows.append((Eq(z, simplify(expand(s, complex=True))), f'根 {i + 1}'))
+    return True, _align(rows)
+
+
+# ---------------------------------------------------------------- MVT / radius
+def mean_value(data):
+    x = _var(data)
+    f = sympify(_expr_text(data))
+    a = _num(data.get('lower'), 0)
+    b = _num(data.get('upper'), 1)
+    secant = simplify((f.subs(x, b) - f.subs(x, a)) / (b - a))
+    fp = f.diff(x)
+    try:
+        cands = solve(Eq(fp, secant), x)
+    except Exception:  # pylint: disable=broad-exception-caught
+        cands = []
+    rows = [(f, ''), (Eq(Symbol('k'), secant), '割线斜率 (f(b)-f(a))/(b-a)'),
+            (fp, "f'(x)")]
+    if not cands:
+        rows.append(('未能解出满足条件的 c', ''))
+    for i, c in enumerate(cands):
+        rows.append((Eq(Symbol('c'), c), f'中值点 c_{i + 1} (需 a<c<b)'))
+    return True, _align(rows)
+
+
+def radius_of_convergence(data):
+    n = Symbol('n')
+    coef = sympify(_expr_text(data))
+    l_val = simplify(limit(Abs(coef.subs(n, n + 1) / coef), n, oo))
+    if l_val == 0:
+        radius = oo
+    elif l_val == oo:
+        radius = 0
+    else:
+        radius = 1 / l_val if l_val.is_number else Symbol('1/L')
+    return True, _align([
+        (coef, '幂级数系数 a_n'), (l_val, 'L = lim|a_{n+1}/a_n|'),
+        (Eq(Symbol('R'), radius), '收敛半径 R = 1/L'),
+    ])
+
+
 HANDLERS = {
     'tangent': tangent_line,
     'linearization': linearization,
@@ -299,4 +372,9 @@ HANDLERS = {
     'improper_integral': improper_integral,
     'ode': solve_ode,
     'numerical_integration': numerical_integration,
+    'complex_simplify': complex_simplify,
+    'complex_polar': complex_polar,
+    'complex_roots': complex_roots,
+    'mean_value': mean_value,
+    'radius_of_convergence': radius_of_convergence,
 }

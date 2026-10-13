@@ -51,3 +51,19 @@ def test_critical_points():
 def test_numerical_simpson_exact_for_quadratic():
     assert r'0.33333' in _res('numerical_integration', expression='x**2', variable='x',
                               lower='0', upper='1', order='4')
+
+
+def test_mean_value_theorem():
+    assert 'c=1' in _res('mean_value', expression='x**2', variable='x', lower='0', upper='2')
+
+
+def test_radius_of_convergence():
+    assert 'R=1' in _res('radius_of_convergence', expression='1/n', variable='n')
+
+
+def test_complex_polar_modulus():
+    assert r'\sqrt{2}' in _res('complex_polar', expression='1+I', variable='x')
+
+
+def test_complex_roots():
+    assert '-i' in _res('complex_roots', expression='z**2+1', variable='z')
