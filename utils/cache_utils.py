@@ -35,6 +35,10 @@ def cached_doit(operation) -> Expr:
 
 @lru_cache(maxsize=256)
 def cached_sympify(expr_str: str) -> Expr:
+    # Callers may pass an already-sympified object (e.g. the limit calculator
+    # pre-sympifies); sympify is then idempotent and the regex guard must not run.
+    if not isinstance(expr_str, str):
+        return sympify(expr_str)  # type: ignore
     if _has_huge_power_literal(expr_str):
         # Parse without evaluation so a huge integer power stays symbolic instead
         # of being computed (which wastes memory and breaks int -> str rendering).

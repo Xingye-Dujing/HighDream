@@ -1,0 +1,32 @@
+"""Regression tests for the limit engine path (guards the sympified-input flow)."""
+
+from sympy import Rational, S, Symbol, simplify
+
+from domains import LimitCalculator
+
+x = Symbol('x')
+
+
+def _limit(expr, point, direction='+'):
+    steps, _ = LimitCalculator().compute_list(expr, x, point, direction)
+    return steps[-1]
+
+
+def test_sin_over_x_at_zero():
+    assert simplify(_limit('sin(x)/x', 0) - 1) == 0
+
+
+def test_one_minus_cos_over_x_squared():
+    assert simplify(_limit('(1-cos(x))/x**2', 0) - Rational(1, 2)) == 0
+
+
+def test_polynomial_ratio_at_infinity():
+    assert simplify(_limit('(2*x**2+1)/(3*x**2-5)', S('oo')) - Rational(2, 3)) == 0
+
+
+def test_exponential_minus_one_over_x():
+    assert simplify(_limit('(exp(x)-1)/x', 0) - 1) == 0
+
+
+def test_removable_singularity_at_finite_point():
+    assert simplify(_limit('(x**3-1)/(x-1)', 1) - 3) == 0
