@@ -98,6 +98,7 @@ As mentioned above, this idea originated from my high school days `(The Dream of
 - Rule-based pattern matching: rule application based on pattern matching, no AI involvement, high stability of output results
 - Multi-domain support: differentiation, integration, limits, matrix operations, equivalent transformations
 - Definite integrals: enter an upper bound (lower bound optional, defaults to 0) in an integral cell to compute a definite integral, showing "find the antiderivative, then apply the Newton-Leibniz formula"; indefinite integrals still append the constant C
+- Partial derivatives: pick any single letter variable as the differentiation variable in a derivative cell; all other symbols are treated as constants
 - LaTeX output: beautiful rendering of mathematical formulas
 - Extensible architecture: easy to add new calculation rules and operation types
 - Two ways to use: Python code calls in Jupyter Notebook; graphical web interface

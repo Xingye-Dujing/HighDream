@@ -34,6 +34,11 @@ def _cached_perform_operation(expr: Expr, operation_cls_name: str,
 class BaseCalculator(ABC):
     """Abstract base class for symbolic expression evaluators that support step-by-step evaluation."""
 
+    # When False the engine accepts only a single free symbol (existing behavior).
+    # Differentiation enables this to support partial derivatives, keeping the
+    # requested variable fixed and treating all other symbols as constants.
+    _allow_multi_symbols: bool = False
+
     def __init__(self, operation: List[Operation | None] = None, rule_dict: List[RuleDict | None] = None,
                  matcher_list: List[MatcherList | None] = None) -> None:
         # Note: The following three attributes must be initialized in the subclass.
@@ -207,11 +212,23 @@ class BaseCalculator(ABC):
         """Perform the core symbolic computation and record each evaluation step."""
         self.reset_process()
         expr = self._sympify(expr)
-        # Extract the unique variable from the expression for calculating.
         symbol_list = list(expr.free_symbols)
-        if len(symbol_list) > 1:
-            raise ValueError("仅允许出现一个字母变量.")
-        context['variable'] = symbol_list[0] if symbol_list else Symbol("x")
+        passed_var = context.get('variable')
+
+        if self._allow_multi_symbols:
+            # Partial differentiation: honor the explicitly requested variable and
+            # treat every other free symbol as a constant.
+            if isinstance(passed_var, Symbol):
+                context['variable'] = passed_var
+            elif symbol_list:
+                context['variable'] = symbol_list[0]
+            else:
+                context['variable'] = Symbol("x")
+        else:
+            # Existing single-variable behavior.
+            if len(symbol_list) > 1:
+                raise ValueError("仅允许出现一个字母变量.")
+            context['variable'] = symbol_list[0] if symbol_list else Symbol("x")
 
         initial_operation = self._get_cached_operation(expr, operation, **context)
         self.step_generator.add_step(initial_operation)
@@ -236,14 +253,17 @@ class BaseCalculator(ABC):
                 direct_compute = True
             self.processed.add(current_expr)
 
-            # Extract the unique variable from the expression for substitution.
-            symbol_list = list(current_expr.free_symbols)
-            if symbol_list:
-                context['variable'] = symbol_list[0]
-            elif self.step_generator.subs_dict:
-                context['variable'] = list(self.step_generator.subs_dict.keys())[-1]
-            else:
-                context['variable'] = Symbol("x")
+            # Determine the working variable for this sub-expression. For partial
+            # differentiation it stays fixed; otherwise it is re-derived (needed
+            # after a substitution introduces a new dummy symbol).
+            if not self._allow_multi_symbols:
+                symbol_list = list(current_expr.free_symbols)
+                if symbol_list:
+                    context['variable'] = symbol_list[0]
+                elif self.step_generator.subs_dict:
+                    context['variable'] = list(self.step_generator.subs_dict.keys())[-1]
+                else:
+                    context['variable'] = Symbol("x")
 
             new_expr, explanation, expr_to_operation = self._update_expression(
                 current_expr, operation, expr_to_operation, direct_compute, **context)

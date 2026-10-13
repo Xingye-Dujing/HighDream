@@ -28,6 +28,9 @@ def create_diff_calculator(base_class):
         def __init__(self):
             super().__init__(Derivative, RULE_DICT, MATCHER_LIST)
 
+        # Enable partial derivatives: keep the requested variable, treat others as constants.
+        _allow_multi_symbols = True
+
         def compute_list(self, expr: str, var: Symbol) -> Tuple[List[Expr], List[str]]:
             """Define Derivative context."""
             return super().compute_list(expr, variable=var)
