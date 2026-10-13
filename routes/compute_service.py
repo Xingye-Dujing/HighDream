@@ -124,79 +124,166 @@ def _extract_paren_arg(text: str, open_idx: int):
     return None
 
 
-_MATRIX_FUNCS = {
-    'det': 'det', 'determinant': 'det',
-    'inverse': 'invert', 'inv': 'invert',
-    'rank': 'rank',
-    'rref': 'rref', 'ref': 'ref',
-    'eigenvals': 'eigen', 'eigen': 'eigen', 'eigenvects': 'eigen',
-    'transpose': 'transpose',
+def _split_top_args(argstr: str):
+    """Split a function argument string on top-level commas (paren/bracket aware)."""
+    args, depth, cur = [], 0, ''
+    for ch in argstr:
+        if ch in '([{':
+            depth += 1
+        elif ch in ')]}':
+            depth -= 1
+        if ch == ',' and depth == 0:
+            args.append(cur.strip())
+            cur = ''
+        else:
+            cur += ch
+    if cur.strip():
+        args.append(cur.strip())
+    return args
+
+
+# name -> (operation_type, ordered data fields). Args fill the fields positionally;
+# 'variable'/'direction'/'type'/'operations'/'target_form' fall back to defaults.
+_AUTO_FUNCS = {
+    # calculus
+    'diff': ('diff', ['expression', 'variable']), 'derivative': ('diff', ['expression', 'variable']),
+    'd': ('diff', ['expression', 'variable']),
+    'int': ('integral', ['expression', 'variable', 'lower', 'upper']),
+    'integrate': ('integral', ['expression', 'variable', 'lower', 'upper']),
+    'limit': ('limit', ['expression', 'variable', 'point']),
+    'sum': ('series_convergence', ['expression', 'variable']),
+    'series': ('series_convergence', ['expression', 'variable']),
+    'converge': ('series_convergence', ['expression', 'variable']),
+    'taylor': ('taylor', ['expression', 'variable', 'point', 'order']),
+    'maclaurin': ('taylor', ['expression', 'variable', 'point', 'order']),
+    'taylorerror': ('taylor_error', ['expression', 'variable', 'point', 'order']),
+    'radius': ('radius_of_convergence', ['expression', 'variable']),
+    'radiusofconvergence': ('radius_of_convergence', ['expression', 'variable']),
+    'powerseries': ('power_series', ['expression', 'variable', 'point']),
+    'improper': ('improper_integral', ['expression', 'variable', 'lower', 'upper']),
+    'improperintegral': ('improper_integral', ['expression', 'variable', 'lower', 'upper']),
+    'iterated': ('iterated_integral', ['expression', 'variable', 'variable2', 'lower', 'upper', 'lower2', 'upper2']),
+    'doubleintegral': ('iterated_integral', ['expression', 'variable', 'variable2', 'lower', 'upper', 'lower2', 'upper2']),
+    # applications of differentiation / integration
+    'tangent': ('tangent', ['expression', 'variable', 'point']),
+    'linearization': ('linearization', ['expression', 'variable', 'point']),
+    'linearize': ('linearization', ['expression', 'variable', 'point']),
+    'critical': ('critical_points', ['expression', 'variable']),
+    'extrema': ('critical_points', ['expression', 'variable']),
+    'newton': ('newton', ['expression', 'variable', 'point', 'order']),
+    'meanvalue': ('mean_value', ['expression', 'variable', 'lower', 'upper']),
+    'rolle': ('mean_value', ['expression', 'variable', 'lower', 'upper']),
+    'arclength': ('arc_length', ['expression', 'variable', 'lower', 'upper']),
+    'volume': ('volume_disk', ['expression', 'variable', 'lower', 'upper']),
+    'disk': ('volume_disk', ['expression', 'variable', 'lower', 'upper']),
+    'shell': ('volume_shell', ['expression', 'variable', 'lower', 'upper']),
+    'surface': ('surface_area', ['expression', 'variable', 'lower', 'upper']),
+    'implicit': ('implicit_diff', ['expression', 'variable']),
+    'parametric': ('parametric_diff', ['expression', 'variable']),
+    'polararea': ('polar_area', ['expression', 'variable', 'lower', 'upper']),
+    'polarslope': ('polar_slope', ['expression', 'variable']),
+    'ode': ('ode', ['expression', 'variable']),
+    'dsolve': ('ode', ['expression', 'variable']),
+    'numerical': ('numerical_integration', ['expression', 'variable', 'lower', 'upper', 'order']),
+    'numericalintegration': ('numerical_integration', ['expression', 'variable', 'lower', 'upper', 'order']),
+    'simpson': ('numerical_integration', ['expression', 'variable', 'lower', 'upper', 'order']),
+    'trapezoid': ('numerical_integration', ['expression', 'variable', 'lower', 'upper', 'order']),
+    # complex
+    'complex': ('complex_simplify', ['expression']),
+    'complexsimplify': ('complex_simplify', ['expression']),
+    'complexpolar': ('complex_polar', ['expression']),
+    'complexroots': ('complex_roots', ['expression', 'variable']),
+    'demoivre': ('de_moivre', ['expression', 'order']),
+    # linear algebra
+    'det': ('det', ['expression']), 'determinant': ('det', ['expression']),
+    'rank': ('rank', ['expression']),
+    'inverse': ('invert', ['expression']), 'inv': ('invert', ['expression']),
+    'rref': ('ref', ['expression']), 'ref': ('ref', ['expression']), 'rowreduce': ('ref', ['expression']),
+    'eigen': ('eigen', ['expression']), 'eigenvals': ('eigen', ['expression']),
+    'eigenvects': ('eigen', ['expression']),
+    'svd': ('svd', ['expression']), 'singular': ('svd', ['expression']),
+    'schur': ('schur', ['expression']),
+    'lu': ('LU', ['expression']),
+    'diag': ('diag', ['expression']), 'diagonalize': ('diag', ['expression']),
+    'orthogonal': ('orthogonal', ['expression']), 'orthogonalize': ('orthogonal', ['expression']),
+    'gramschmidt': ('orthogonal', ['expression']),
+    'dependent': ('dependence', ['expression']), 'dependence': ('dependence', ['expression']),
+    'project': ('projection', ['expression']), 'projection': ('projection', ['expression']),
+    # symbolic / expression
+    'simplify': ('expr', ['expression']), 'expand': ('expr', ['expression']),
+    'factor': ('expr', ['expression']), 'equivalent': ('expr', ['expression']),
+    'msimplify': ('matrix_symbolic', ['expression']),
+    'matrixsimplify': ('matrix_symbolic', ['expression']),
+    'symmatrix': ('matrix_symbolic', ['expression']),
 }
 
+# op -> fixed extra data fields the calculators require.
+_AUTO_DEFAULTS = {
+    'det': {'type': '1'}, 'ref': {'target_form': 'rref'}, 'svd': {},
+    'expr': {'sort_strategy': 'simplify'},
+}
 
-def _run_matrix_op(kind: str, arg: str):
-    """Invoke the existing matrix calculator for a detected operation."""
-    if kind == 'det':
-        return True, _calculators['det_1']().compute_latex(arg)
-    if kind in ('rref', 'ref'):
-        return True, _calculators['ref']().compute_latex(arg, 'rref' if kind == 'rref' else 'ref')
-    calc_cls = {'invert': 'invert', 'rank': 'rank', 'eigen': 'eigen'}.get(kind)
-    if calc_cls:
-        calc = _calculators[calc_cls]()
-        runner = {'invert': 'auto_matrix_inverse', 'rank': 'auto_matrix_rank',
-                  'eigen': 'auto_eigen_solver'}[kind]
-        getattr(calc, runner)(arg)
-        return True, calc.get_steps_latex()
-    if kind == 'transpose':
-        return True, _calculators['operations']().compute(arg + '\n' + arg, 'transpose')
-    return False, f'暂不支持的矩阵算子: {kind}'
+# Matrix-function names that may appear bare (e.g. \det [[1,2],[3,4]]).
+_MATRIX_OP_NAMES = {
+    'det', 'determinant', 'rank', 'inverse', 'inv', 'rref', 'ref', 'rowreduce',
+    'eigen', 'eigenvals', 'eigenvects', 'svd', 'singular', 'schur', 'lu', 'diag',
+    'diagonalize', 'orthogonal', 'orthogonalize', 'gramschmidt', 'dependent',
+    'dependence', 'project', 'projection', 'transpose',
+}
 
 
 def _dispatch_auto(expression: str):
     """Universal single-box dispatcher (Maple-like): classify by operator/structure.
 
-    Handles calculus operators (d/dx, integral, limit, sum) and linear-algebra
-    operators (det/rank/inverse/rref/eigenvals/transpose, and A+B / A-B / A*B)."""
+    Recognizes function-style operators (det/rank/integral/diff/taylor/...) for every
+    supported operation, plus structural forms: d/dx, integral, limit, sum, matrix
+    literals (A+B / A*B / lone matrix), partial (∂), and uppercase-symbol products
+    (symbolic matrices). Delegates to the existing per-op dispatch so all step-by-step
+    engines are reused."""
     import re  # pylint: disable=import-outside-toplevel
     from sympy import Derivative, Integral, Limit, Sum  # pylint: disable=import-outside-toplevel
     text = latex_to_nested(expression)  # bmatrix blocks -> [[...]] (no-op otherwise)
 
-    # 1) explicit matrix function: name(...) or \name <matrix>
+    # 1) function-style operator: name(args); bare \name<matrix> only for matrix ops
     fm = re.match(r'\s*\\?([A-Za-z]+)\s*(\()?', text)
-    if fm and fm.group(1).lower() in _MATRIX_FUNCS:
-        kind = _MATRIX_FUNCS[fm.group(1).lower()]
-        if fm.group(2):  # parenthesized argument
-            arg = _extract_paren_arg(text, text.index('(', fm.end() - 1))
-        else:            # bare form, e.g. \det [[1,2],[3,4]]
-            m2 = re.search(r'\[\[.*?\]\]', text)
-            arg = m2.group(0) if m2 else None
-        if arg:
-            return _run_matrix_op(kind, arg.strip())
+    if fm:
+        name = fm.group(1).lower()
+        spec = _AUTO_FUNCS.get(name)
+        bare_ok = name in _MATRIX_OP_NAMES
+        if spec and (fm.group(2) or bare_ok):
+            if fm.group(2):
+                inner = _extract_paren_arg(text, text.index('(', fm.end() - 1))
+                args = _split_top_args(inner) if inner is not None else []
+            else:
+                m2 = re.search(r'\[\[.*?\]\]', text)
+                args = [m2.group(0)] if m2 else []
+            if args:
+                op, fields = spec
+                data = {'operation_type': op}
+                for i, field in enumerate(fields):
+                    if i < len(args):
+                        data[field] = args[i]
+                for key, val in _AUTO_DEFAULTS.get(op, {}).items():
+                    data.setdefault(key, val)
+                return _dispatch_compute(op, data)
 
-    # 2) two matrices with a binary operator -> matrix arithmetic
+    # 2) matrix literals: arithmetic or lone matrix
     mats = re.findall(r'\[\[.*?\]\]', text)
     if len(mats) >= 2:
-        op = 'add'
         seg = text[text.index(mats[0]) + len(mats[0]):text.index(mats[1])]
-        if '-' in seg:
-            op = 'subtract'
-        elif '*' in seg or '\u00b7' in seg or 'times' in text.lower():
-            op = 'multiply'
-        return True, _calculators['operations']().compute(mats[0] + '\n' + mats[1], op)
-
-    # 3) a single matrix with no operator -> row-reduce (canonical display)
+        op = 'subtract' if '-' in seg else ('multiply' if ('*' in seg or '\u00b7' in seg) else 'add')
+        return _dispatch_compute('operations', {'operation_type': 'operations',
+                                                'expression': mats[0] + '\n' + mats[1], 'operations': op})
     if len(mats) == 1:
-        return True, _calculators['ref']().compute_latex(mats[0], 'rref')
+        return _dispatch_compute('ref', {'operation_type': 'ref', 'expression': mats[0], 'target_form': 'rref'})
 
-    # 4) calculus structural operators
+    # 3) structural operators (calculus) and simplify fallback
     try:
         obj = cached_sympify(text)
     except Exception:  # pylint: disable=broad-exception-caught
         obj = None
-    if isinstance(obj, (Derivative, Integral, Limit, Sum)):
+    if obj is not None and isinstance(obj, (Derivative, Integral, Limit, Sum)):
         return _dispatch_calculus(text)
-
-    # 5) plain expression -> simplify
     return _dispatch_calculus(text)
 
 

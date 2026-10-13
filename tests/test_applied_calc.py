@@ -204,6 +204,20 @@ def test_auto_plain_simplify():
     assert '\\begin{align}' in body and '$' not in body
 
 
+def test_auto_function_forms():
+    # function-style operators route to the right engine
+    assert '\\cos' in _res('auto', expression='diff(sin(x),x)', variable='x')
+    assert '泰勒' in _res('auto', expression='taylor(exp(x),x,0,4)', variable='x')
+    assert '积分因子' in _res('auto', expression="ode(f'(x)+f(x)-exp(x),x)", variable='x')
+    assert '牛顿' in _res('auto', expression='int(x^2,x,0,1)', variable='x')
+
+
+def test_auto_matrix_svd_and_symbolic():
+    assert '$' not in _res('auto', expression='svd([[1,0],[0,2]])', variable='x')
+    sym = _res('auto', expression='msimplify(A*B*Inverse(B))', variable='x')
+    assert '$' not in sym and len(sym) > 20
+
+
 def test_iterated_integral_rectangular():
     # int_0^2 int_0^1 x*y dx dy = 1, inner result F(y)=y/2
     body = _res('iterated_integral', expression='x*y', variable='x', variable2='y',
