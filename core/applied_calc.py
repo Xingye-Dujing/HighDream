@@ -222,6 +222,11 @@ def series_convergence(data):
     if ratio.is_number:
         verdict = ('收敛' if ratio < 1 else '发散' if ratio > 1 else '比值判别不确定')
         rows.append((f'比值判别: L={latex(ratio)} → {verdict}', ''))
+    root = simplify(limit(Abs(a) ** (1 / n), n, oo))
+    rows.append((Eq(Symbol('rho=lim (|a_n|)^(1/n)'), root), '根值判别'))
+    if root.is_number:
+        r_verdict = ('收敛' if root < 1 else '发散' if root > 1 else '根值判别不确定')
+        rows.append((f'根值判别: ρ={latex(root)} → {r_verdict}', ''))
     closed = summation(a, (n, 1, oo))
     rows.append((Eq(Symbol('Σ a_n'), closed), '求和(若可闭式)'))
     return True, _align(rows)
