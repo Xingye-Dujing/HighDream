@@ -244,6 +244,10 @@ def _dispatch_auto(expression: str):
     from sympy import Derivative, Integral, Limit, Sum  # pylint: disable=import-outside-toplevel
     text = latex_to_nested(expression)  # bmatrix blocks -> [[...]] (no-op otherwise)
 
+    # Any unfilled placeholder box -> one clear message, before routing.
+    if re.search(r'\\square\b|\\Box\b|\\bigbox\b', text):
+        return False, '请先填写输入框中的占位（□）后再计算'
+
     # 1) function-style operator: name(args); bare \name<matrix> only for matrix ops
     fm = re.match(r'\s*\\?([A-Za-z]+)\s*(\()?', text)
     if fm:
