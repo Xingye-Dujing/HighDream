@@ -292,6 +292,15 @@ def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]
                 lines.append(line)
             return True, r"\begin{align}" + r"\newline".join(lines) + r"\end{align}"
 
+        # pylint: disable=import-outside-toplevel
+        from core.applied_calc import HANDLERS
+        handler = HANDLERS.get(operation_type)
+        if handler is not None:
+            try:
+                return handler(data)
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                return False, f'计算失败: {exc}'
+
         return False, f"Unsupported operation type: {operation_type}"
 
     except Exception as e:

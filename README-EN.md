@@ -101,6 +101,7 @@ As mentioned above, this idea originated from my high school days `(The Dream of
 - Partial derivatives: pick any single letter variable as the differentiation variable in a derivative cell; all other symbols are treated as constants
 - Extended integral rules: direct antiderivatives for sec/csc/cot squares, power-reduction formulas, and the tan·sec and cot·csc products, avoiding the bloated forms produced by the Weierstrass substitution; even mixed sin^m·cos^n products are power-reduced via multiple-angle identities before termwise integration
 - Symbolic matrix simplification: a new linear-algebra mode reducing A·A⁻¹=I, I·A=A, (A⁻¹)⁻¹=A, (AB)⁻¹=B⁻¹A⁻¹, (AB)ᵀ=BᵀAᵀ, A·(B+C)=A·B+A·C step by step (uppercase symbols are treated as n×n matrices)
+- Advanced calculus: tangent line / linearization / critical points (extrema) / Newton's method, arc length / solid-of-revolution volume (disk) / surface area, implicit and parametric differentiation, polar area & slope, Taylor/Maclaurin series, series convergence (n-th-term & ratio tests, closed-form sums), improper integrals, ODE solving (dsolve), and numerical integration (trapezoid / Simpson)
 - LaTeX output: beautiful rendering of mathematical formulas
 - Extensible architecture: easy to add new calculation rules and operation types
 - Two ways to use: Python code calls in Jupyter Notebook; graphical web interface

@@ -1,5 +1,6 @@
 // Global variables
 let cellCounter = 0;
+const APPLIED_OPS = ["tangent", "linearization", "critical_points", "newton", "arc_length", "volume_disk", "surface_area", "implicit_diff", "parametric_diff", "polar_area", "polar_slope", "taylor", "series_convergence", "improper_integral", "ode", "numerical_integration"];
 let activeCellId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
 let isKeyboardVisible = false;
@@ -359,6 +360,11 @@ function setupCellEvents(cell) {
         if (integralControls) integralControls.style.display = "none";
       }
 
+      // 高等数学(应用/级数/方程)类: 显示统一参数输入
+      const appliedControls = cell.querySelector(".applied-controls");
+      const isApplied = APPLIED_OPS.indexOf(this.value) !== -1;
+      if (appliedControls) appliedControls.style.display = isApplied ? "flex" : "none";
+
       // If expr is selected, show additional options
       const expressionControls = cell.querySelector(".expression-controls");
       if (this.value === "expr") {
@@ -525,6 +531,24 @@ function createCellElement(id, type) {
                   <option value="linear-system">方程组矩阵转换</option>
                   <option value="linear-solver">方程组求解</option>
                 </optgroup>
+                <optgroup label="高等数学(应用/级数/方程)">
+                  <option value="tangent">切线方程</option>
+                  <option value="linearization">线性化</option>
+                  <option value="critical_points">临界点/极值</option>
+                  <option value="newton">牛顿法</option>
+                  <option value="arc_length">弧长</option>
+                  <option value="volume_disk">旋转体体积(圆盘)</option>
+                  <option value="surface_area">旋转曲面面积</option>
+                  <option value="implicit_diff">隐函数求导</option>
+                  <option value="parametric_diff">参数方程求导</option>
+                  <option value="polar_area">极坐标面积</option>
+                  <option value="polar_slope">极坐标斜率</option>
+                  <option value="taylor">泰勒/麦克劳林展开</option>
+                  <option value="series_convergence">级数敛散性</option>
+                  <option value="improper_integral">反常积分</option>
+                  <option value="ode">微分方程求解</option>
+                  <option value="numerical_integration">数值积分(梯形/辛普森)</option>
+                </optgroup>
               </select>
               <!-- 变量输入框 -->
               <!--
@@ -635,8 +659,19 @@ function createCellElement(id, type) {
                 -->
               </div>
 
-              <label class="cache-toggle" title="使用缓存加速计算">
-                <input type="checkbox" class="use-cache-checkbox" checked>
+              <!-- 高等数学(应用/级数/方程) 专有 -->
+              <div class="applied-controls" style="display: none; gap:8px; margin-left:8px; align-items:center; flex-wrap:wrap;">
+                <label style="font-size:12px;">点/初值:</label>
+                <input class="applied-point" value="0" style="width:60px;">
+                <label style="font-size:12px;">下限:</label>
+                <input class="applied-lower" value="0" style="width:60px;">
+                <label style="font-size:12px;">上限:</label>
+                <input class="applied-upper" value="1" style="width:60px;">
+                <label style="font-size:12px;">阶数/次数:</label>
+                <input class="applied-order" value="6" style="width:50px;">
+              </div>
+
+              <label class="cache-toggle" title="使用缓存加速计算">                <input type="checkbox" class="use-cache-checkbox" checked>
                 <span>缓存</span>
               </label>
               <label class="cache-toggle" title="将计算结果存入缓存">
@@ -817,6 +852,17 @@ function runCell(cell) {
       payload.upper = upper;
       payload.lower = lower;
     }
+  }
+
+  if (APPLIED_OPS.indexOf(operationType) !== -1) {
+    const ap = cell.querySelector(".applied-point");
+    const al = cell.querySelector(".applied-lower");
+    const au = cell.querySelector(".applied-upper");
+    const ao = cell.querySelector(".applied-order");
+    if (ap) payload.point = ap.value.trim();
+    if (al) payload.lower = al.value.trim();
+    if (au) payload.upper = au.value.trim();
+    if (ao) payload.order = ao.value.trim();
   }
 
   if (operationType === "ref") {
