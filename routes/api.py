@@ -125,6 +125,28 @@ def compute():
     return jsonify({'success': True, 'task_id': task_id})
 
 
+@api.route('/steps', methods=['POST'])
+def get_steps():
+    """Return structured, per-step solver output used for step-linking (synchronous).
+
+    Expected JSON input:
+        operation_type (str): one of 'diff', 'integral', 'limit'
+        expression (str): the mathematical expression
+        variable (str): integration/differentiation variable
+        plus point/direction (limit) or lower/upper (integral) as applicable.
+
+    Returns:
+        {success, op, steps: [{index, latex, reason, subtasks: [...]}]}
+    """
+    data = request.json or {}
+    op_type = data.get('operation_type', '')
+    if op_type not in ('diff', 'integral', 'limit'):
+        return jsonify({'success': False, 'error': f'不支持的操作类型: {op_type}'})
+
+    from core.step_tree import structured_solve  # pylint: disable=import-outside-toplevel
+    return jsonify(structured_solve(op_type, data))
+
+
 @api.route('/stream')
 def task_stream():
     """SSE endpoint that pushes task status updates in real time.
