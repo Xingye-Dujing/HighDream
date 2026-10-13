@@ -56,6 +56,24 @@ def test_ode_linear_integrating_factor():
     assert '积分因子' in body and '$' not in body
 
 
+def test_ode_exact():
+    # (2xy) + (x^2+1) y' = 0 exact -> (x^2+1) y = C
+    body = _res('ode', expression='2*x*f(x)+(x**2+1)*Derivative(f(x),x)', variable='x')
+    assert '恰当' in body and 'x^{2}+1' in body.replace(' ', '') and '$' not in body
+
+
+def test_ode_second_order_distinct_roots():
+    # y'' - 5y' + 6y = 0 -> e^{2x}, e^{3x}
+    body = _res('ode', expression='Derivative(f(x),(x,2))-5*Derivative(f(x),x)+6*f(x)', variable='x')
+    assert '特征方程' in body and 'e^{2x}' in body.replace(' ', '') and 'e^{3x}' in body.replace(' ', '')
+
+
+def test_ode_second_order_complex_roots():
+    # y'' + y = 0 -> cos x, sin x
+    body = _res('ode', expression='Derivative(f(x),(x,2))+f(x)', variable='x')
+    assert '\\cos' in body and '\\sin' in body
+
+
 def test_critical_points():
     assert r'3x^{2}' in _res('critical_points', expression='x**3-3*x', variable='x')
 

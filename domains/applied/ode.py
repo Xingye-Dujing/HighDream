@@ -10,7 +10,7 @@ from sympy import Eq, Function, Symbol, dsolve, simplify, solve
 from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import align, expr_text, get_var, render_note as note, to_num
-from domains.applied._odesolver import first_order_ode
+from domains.applied._odesolver import solve_ode_rule
 
 
 def _fit_constant(rows, x, x0, y0, f):
@@ -37,7 +37,7 @@ def solve_ode(data):
     expr = sympify(raw)
     eq = expr if isinstance(expr, Eq) else Eq(expr, 0)
 
-    rows, handled = first_order_ode(eq, x, f)
+    rows, handled = solve_ode_rule(eq, x, f)
     if handled:
         items = [(eq, note("微分方程"))] + rows
         x0 = to_num(data.get('point'))

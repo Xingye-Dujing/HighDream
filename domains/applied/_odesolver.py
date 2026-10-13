@@ -6,7 +6,8 @@ integral through the core IntegralCalculator so the working is genuine. Returns
 ``handled=False`` for any other form so the caller can fall back to ``dsolve``.
 """
 
-from sympy import Derivative, Eq, Mul, Symbol, exp, simplify, solve
+from sympy import (Derivative, Eq, I, Mul, Symbol, cos, diff, exp, simplify, sin,
+                   solve, sqrt)
 
 from domains.applied._common import (integral_steps, integral_value,
                                      render_note as note)
@@ -92,3 +93,104 @@ def first_order_ode(eq, x, f):
         return rows, True
     except Exception:  # pylint: disable=broad-exception-caught
         return None, False
+
+
+def _exact_rows(alg, x, y, c, f):
+    """Solve M(x,y) + N(x,y) y' = 0 when it is exact (dM/dy == dN/dx)."""
+    expr = simplify(alg.lhs - alg.rhs) if isinstance(alg, Eq) else simplify(alg)
+    p = Symbol('p')
+    expr = expr.subs(Derivative(y, x), p)
+    n = expr.coeff(p, 1)
+    m = simplify(expr - n * p)
+    if simplify(diff(m, y) - diff(n, x)) != 0:
+        return None                 # not exact
+    rows = [
+        (m, note("$M(x,y)$")),
+        (n, note("$N(x,y)$")),
+        (simplify(diff(m, y)), note("$\\partial M/\\partial y$")),
+        (simplify(diff(n, x)), note("$\\partial N/\\partial x$ (相等则为恰当方程)")),
+    ]
+    psi = integral_value(m, x, allow_multi=True)   # integrate M wrt x, y constant
+    rows += integral_steps(m, x, allow_multi=True)
+    gprime = simplify(n - diff(psi, y))
+    if x in gprime.free_symbols:
+        return None
+    rows.append((gprime, note("由 $\\psi_y=N$ 得 $g'(y)$")))
+    g = integral_value(gprime, y) if gprime != 0 else 0
+    psi_final = simplify(psi + g)
+    rows.append((Eq(psi_final.subs(y, f), c), note("势函数 $\\psi(x,y)=C$ 即通解")))
+    return rows
+
+
+def _second_order_rows(alg, x, f):
+    """Solve a2 y'' + a1 y' + a0 y = 0 with constant coefficients (characteristic eq)."""
+    y = Symbol('y')
+    p = Symbol('p')
+    q = Symbol('q')
+    expr = simplify((alg.lhs - alg.rhs) if isinstance(alg, Eq) else alg)
+    expr = expr.subs({Derivative(f, (x, 2)): q, Derivative(f, x): p, f: y})
+    a2 = expr.coeff(q, 1)
+    rest = simplify(expr - a2 * q)
+    a1 = rest.coeff(p, 1)
+    rest2 = simplify(rest - a1 * p)
+    a0 = rest2.coeff(y, 1)
+    forcing = simplify(rest2 - a0 * y)
+    if a2 == 0 or forcing != 0:
+        return None                                 # not 2nd-order homogeneous
+    for coef in (a2, a1, a0):
+        if x in coef.free_symbols or y in coef.free_symbols:
+            return None                             # coefficients not constant
+    r = Symbol('r')
+    charpoly = a2 * r ** 2 + a1 * r + a0
+    disc = simplify(a1 ** 2 - 4 * a2 * a0)
+    c1, c2 = Symbol('C1'), Symbol('C2')
+    rows = [
+        (a2, note("$a_2$")), (a1, note("$a_1$")), (a0, note("$a_0$")),
+        (charpoly, note("特征方程 $a_2 r^2 + a_1 r + a_0 = 0$")),
+        (disc, note("判别式 $\\Delta = a_1^2 - 4 a_2 a_0$")),
+    ]
+    if disc == 0:
+        root = simplify(-a1 / (2 * a2))
+        rows.append((root, note("重根 $r$")))
+        sol = Eq(f, (c1 + c2 * x) * exp(root * x))
+    elif disc.is_real and disc > 0:
+        r1 = simplify((-a1 - sqrt(disc)) / (2 * a2))
+        r2 = simplify((-a1 + sqrt(disc)) / (2 * a2))
+        rows.append((Eq(Symbol('r'), r1), note("实根 $r_1$")))
+        rows.append((Eq(Symbol('r'), r2), note("实根 $r_2$")))
+        sol = Eq(f, c1 * exp(r1 * x) + c2 * exp(r2 * x))
+    else:
+        alpha = simplify(-a1 / (2 * a2))
+        beta = simplify(sqrt(-disc) / (2 * a2))
+        beta = simplify(beta.as_real_imag()[0]) if beta.has(I) else beta
+        rows.append((alpha, note("复根实部 $\\alpha$")))
+        rows.append((beta, note("复根虚部 $\\beta$")))
+        sol = Eq(f, exp(alpha * x) * (c1 * cos(beta * x) + c2 * sin(beta * x)))
+    rows.append((sol, note("常系数二阶齐次通解")))
+    return rows
+
+
+def solve_ode_rule(eq, x, f):
+    """Dispatch to the applicable rule method (2nd-order, exact, separable, linear)."""
+    try:
+        has_second = Derivative(f, (x, 2)) in _derivs_of(eq)
+        if has_second:
+            rows = _second_order_rows(eq, x, f)
+            if rows is not None:
+                return rows, True
+            return None, False
+        y = Symbol('y')
+        c = Symbol('C')
+        alg = eq.subs({f: y, Derivative(f, x): Symbol('p')})
+        rows = _exact_rows(alg, x, y, c, f)
+        if rows is not None:
+            return rows, True
+        return first_order_ode(eq, x, f)
+    except Exception:  # pylint: disable=broad-exception-caught
+        return None, False
+
+
+def _derivs_of(eq):
+    """All Derivative objects present in the equation."""
+    from sympy import preorder_traversal  # pylint: disable=import-outside-toplevel
+    return [e for e in preorder_traversal(eq) if isinstance(e, Derivative)]

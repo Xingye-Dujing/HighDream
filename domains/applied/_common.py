@@ -108,10 +108,21 @@ def integral_steps(integrand, x, lower=None, upper=None, allow_multi=False):
         or [(steps[-1], '')]
 
 
-def integral_value(integrand, x):
-    """The antiderivative VALUE produced by the rule engine (constant of integration dropped)."""
+def integral_value(integrand, x, allow_multi=False):
+    """The antiderivative VALUE produced by the rule engine (constant of integration dropped).
+
+    ``allow_multi=True`` integrates with respect to ``x`` treating other symbols as
+    constants (a partial integral), used by exact-ODE potential functions.
+    """
     from domains import IntegralCalculator  # pylint: disable=import-outside-toplevel
-    steps, _expl = IntegralCalculator().compute_list(str(integrand), x)
+    expr = sympify(str(integrand))
+    if expr.is_number:
+        # The engine defaults a constant integrand to wrt x; honor the requested var.
+        return expr * x
+    calc = IntegralCalculator()
+    if allow_multi:
+        calc._allow_multi_symbols = True
+    steps, _expl = calc.compute_list(str(integrand), x)
     concrete = [s for s in steps if s is not None]
-    value = concrete[-1] if concrete else sympify(str(integrand))
+    value = concrete[-1] if concrete else expr
     return value.subs(Symbol('C'), 0) if value.has(Symbol('C')) else value
