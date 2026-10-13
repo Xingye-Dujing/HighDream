@@ -809,12 +809,14 @@ a {
   letter-spacing: 0.5px;
 }
 
-/* Hide MathLive's built-in on-screen keyboard entirely: the in-page palette
-   (#math-keyboard) is the sole, theme-matched keyboard and exposes only the
-   tokens this program can parse. */
+/* Hide MathLive's built-in on-screen keyboard and per-field toolbar entirely:
+   the in-page palette (#math-keyboard) is the sole, theme-matched keyboard and
+   exposes only the tokens this program can parse. */
 #mathlive-virtual-keyboard,
 math-virtual-keyboard,
-.virtual-keyboard-container {
+.virtual-keyboard-container,
+.ML__keyboard,
+.mf-toolbar {
   display: none !important;
 }
 

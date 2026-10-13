@@ -47,6 +47,22 @@ function getMathSourceB(cell) { return cell.querySelector("textarea.math-input-b
 function getMathFieldB(cell) { return cell.querySelector("math-field.math-editor-b"); }
 function getOp(cell) { return cell.querySelector(".operation-type").value; }
 
+// MathLive renders a keyboard-toggle and insert-menu button inside each field's
+// shadow DOM; hide them so the only insertion path is our curated palette.
+function hideMlToggles(field) {
+  if (!field) return;
+  const apply = () => {
+    const sr = field.shadowRoot;
+    if (!sr || sr.querySelector("#hl-hide-toggles")) return;
+    const s = document.createElement("style");
+    s.id = "hl-hide-toggles";
+    s.textContent = ".ML__virtual-keyboard-toggle,.ML__menu-toggle{display:none!important}";
+    sr.appendChild(s);
+  };
+  apply();
+  requestAnimationFrame(apply);
+}
+
 // Read the live expression, committing the visible editor(s) into the canonical
 // store first so every existing path (run/save/steps) stays correct.
 function readExpr(cell) {
@@ -101,6 +117,12 @@ function applyInputMode(cell) {
     }
     field.style.display = "";
     src.style.display = "none";
+    // Hide MathLive's built-in field toolbar (keyboard toggle + insert menu) so the
+    // only way to insert is our curated, supported-token palette.
+    field.toolbar = "hide";
+    if (fieldB) fieldB.toolbar = "hide";
+    hideMlToggles(field);
+    if (fieldB) hideMlToggles(fieldB);
     field.setAttribute("placeholder", OP_PLACEHOLDER[op] || "\\square");
   }
   const varInput = cell.querySelector(".var-input input");
@@ -825,10 +847,10 @@ function createCellElement(id, type) {
                 <i class="fas fa-keyboard"></i>
               </button>
             </div>
-            <math-field class="math-editor" virtual-keyboard-mode="manual" style="display:none;"></math-field>
+            <math-field class="math-editor" virtual-keyboard-mode="manual" toolbar="hide" style="display:none;"></math-field>
             <textarea placeholder="输入数学表达式..." class="math-input"></textarea>
             <span class="input-b-label" style="display:none; font-size:12px; color:#888; margin-top:4px;">第二个矩阵/向量:</span>
-            <math-field class="math-editor math-editor-b" virtual-keyboard-mode="manual" style="display:none;"></math-field>
+            <math-field class="math-editor math-editor-b" virtual-keyboard-mode="manual" toolbar="hide" style="display:none;"></math-field>
             <textarea placeholder="第二个输入..." class="math-input math-input-b" style="display:none;"></textarea>
           </div>
         </div>
