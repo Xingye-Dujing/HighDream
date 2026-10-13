@@ -5,7 +5,9 @@ These deliberately REUSE the core rule-driven engines (``DiffCalculator`` /
 derivations, matching the main calculus engines rather than one-line formulas.
 """
 
-from sympy import Symbol, sympify
+from sympy import Symbol
+
+from utils.cache_utils import cached_sympify as sympify
 
 
 def get_var(data):

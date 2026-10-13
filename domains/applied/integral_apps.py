@@ -5,7 +5,9 @@ resulting definite integral is expanded by IntegralCalculator, so both the
 formula setup and the integration show complete steps.
 """
 
-from sympy import Integral, Symbol, pi, simplify, sqrt, sympify
+from sympy import Integral, Symbol, pi, simplify, sqrt
+
+from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import (align, derivative_steps, expr_text, get_var,
                                      integral_steps, render_note as note, to_num)

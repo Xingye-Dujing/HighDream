@@ -8,7 +8,9 @@ explicit steps.
 # pylint: disable=duplicate-code
 
 from sympy import (Abs, Eq, Integral, Symbol, expand, factorial, latex, limit,
-                   oo, simplify, summation, sympify, Sum)
+                   oo, simplify, summation, Sum)
+
+from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import (align, expr_text, get_var, integral_steps,
                                      render_note as note, to_num)

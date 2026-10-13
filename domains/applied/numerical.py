@@ -1,6 +1,8 @@
 """Numerical integration: trapezoidal and Simpson rules over [a, b]."""
 
-from sympy import N, sympify
+from sympy import N
+
+from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import align, expr_text, get_var, render_note as note, to_num
 

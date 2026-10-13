@@ -10,9 +10,10 @@ domain-specific hooks).
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional
 
-from sympy import Expr, Symbol, latex, sympify
+from sympy import Expr, Symbol, latex
 
 from utils import Operation
+from utils.cache_utils import cached_sympify
 
 
 class BaseManualStepSolver:
@@ -32,7 +33,7 @@ class BaseManualStepSolver:
         self._init_calculator()
 
         self.variable = Symbol(variable)
-        self.point = sympify(point)
+        self.point = cached_sympify(point)
         self.direction = direction
 
         expr = self.calculator._sympify(expression)

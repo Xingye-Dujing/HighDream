@@ -6,7 +6,9 @@ IntegralCalculator; implicit differentiation shows the differentiated equation
 then solves for y'.
 """
 
-from sympy import Eq, Function, Symbol, cos, sin, solve, simplify, Integral, sympify
+from sympy import Eq, Function, Symbol, cos, sin, solve, simplify, Integral
+
+from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import (align, derivative_steps, expr_text, get_var,
                                      integral_steps, render_note as note, to_num)

@@ -6,7 +6,9 @@ iteration, mean-value theorem), so the intermediate steps are as complete as the
 main calculus output.
 """
 
-from sympy import Eq, Symbol, simplify, solve, sympify
+from sympy import Eq, Symbol, simplify, solve
+
+from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import align, derivative_steps, expr_text, get_var
 from domains.applied._common import render_note as note, to_num

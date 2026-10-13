@@ -64,6 +64,7 @@ from sympy.simplify.fu import fu
 from domains import MatrixAnalyzer, MatrixCalculator, ProcessManager
 from core.manual_step_solver import ManualStepSolver
 from utils.latex_formatter import str_to_latex
+from utils.cache_utils import cached_sympify
 from .task_manager import task_manager
 
 # Create a Flask blueprint for API routes
@@ -305,7 +306,7 @@ def render_latex():
     expression = data.get('expression', '')
 
     try:
-        latex_output = latex(sympify(expression))
+        latex_output = latex(cached_sympify(expression))
 
         return jsonify({'success': True, 'latex': latex_output})
     except Exception as e:

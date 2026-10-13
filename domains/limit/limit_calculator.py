@@ -1,11 +1,12 @@
 from typing import List, Tuple
 
-from sympy import AccumBounds, Basic, Expr, Limit, S, Symbol, latex, sympify, zoo
+from sympy import AccumBounds, Basic, Expr, Limit, S, Symbol, latex, zoo
 
 from core import BaseCalculator, SelectRuleCalculator
 from core.cached_calculator import DBCachedCalculator
 from domains.limit import LHOPITAL_RULES, LimitStepGenerator, MATCHER_LIST, RULE_DICT
 from utils import Context, Operation, RuleFunction
+from utils.cache_utils import cached_sympify
 from .limit_help_func import detect_feasible_directions
 
 
@@ -130,7 +131,7 @@ def create_limit_calculator(base_class):
         def _compute(self, expr: str, **context: Context) -> None:
             """Compute the limit in the specified direction after validating its feasibility."""
             var, point, direction = self._context_split(**context)
-            expr, point = sympify(expr), sympify(point)
+            expr, point = cached_sympify(expr), cached_sympify(point)
 
             feasible_directions = detect_feasible_directions(expr, var, point)
             # Validate both directions' feasibility

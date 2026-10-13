@@ -20,14 +20,14 @@ from .rule_registry import RuleRegistry
 @lru_cache(maxsize=2048)
 def _cached_perform_operation(expr: Expr, operation_cls_name: str,
                                var_name: str, point_str: str, direction: str) -> Operation:
-    from sympy import Derivative, Integral, Limit, sympify  # pylint: disable=import-outside-toplevel
+    from sympy import Derivative, Integral, Limit  # pylint: disable=import-outside-toplevel
     mapping = {'Derivative': Derivative, 'Integral': Integral, 'Limit': Limit}
     cls = mapping.get(operation_cls_name)
     if cls is None:
         raise ValueError(f"Unknown operation: {operation_cls_name}")
     var = Symbol(var_name) if var_name else Symbol('x')
     if cls is Limit:
-        return cls(expr, var, sympify(point_str), dir=direction)
+        return cls(expr, var, cached_sympify(point_str), dir=direction)
     return cls(expr, var)
 
 

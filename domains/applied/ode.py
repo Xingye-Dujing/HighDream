@@ -1,6 +1,8 @@
 """Ordinary differential equations (SymPy dsolve), with optional initial value."""
 
-from sympy import Eq, Function, Symbol, dsolve, simplify, solve, sympify
+from sympy import Eq, Function, Symbol, dsolve, simplify, solve
+
+from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import align, expr_text, get_var, render_note as note, to_num
 

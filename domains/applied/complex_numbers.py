@@ -1,6 +1,8 @@
 """Complex-number operations: a+bi simplification, polar form, solving z^n = w."""
 
-from sympy import Abs, Eq, I, arg, expand, exp, im, re, simplify, solve, sympify
+from sympy import Abs, Eq, I, arg, expand, exp, im, re, simplify, solve
+
+from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import align, expr_text, get_var, render_note as note
 
