@@ -11,8 +11,9 @@ import re
 
 from utils.cache_utils import cached_sympify
 
-# \begin{Xmatrix} ... \end{Xmatrix}; body captured lazily across newlines.
-_MATRIX_RE = re.compile(r'\\begin\{([bvpBVP]?matrix)\}(.*?)\\end\{\1\}', re.DOTALL)
+# \begin{Xmatrix} ... \end{Xmatrix}; the leading backslash on begin/end is optional
+# because MathLive's serializer sometimes drops it. Body captured across newlines.
+_MATRIX_RE = re.compile(r'\\?begin\{([bvpBVP]?matrix)\}(.*?)\\?end\{\1\}', re.DOTALL)
 
 
 def _cell_to_sympy_str(cell: str) -> str:
@@ -27,7 +28,9 @@ def _cell_to_sympy_str(cell: str) -> str:
 
 
 def _block_to_nested(body: str) -> str:
-    rows = [r for r in body.split('\\\\') if r.strip() != '']
+    # Row separator is two-or-more backslashes (a single backslash belongs to a
+    # command like \frac/\sqrt, so it must NOT split rows).
+    rows = [r for r in re.split(r'\\{2,}', body) if r.strip() != '']
     nested = []
     for row in rows:
         cells = [_cell_to_sympy_str(c) for c in row.split('&')]
@@ -37,7 +40,7 @@ def _block_to_nested(body: str) -> str:
 
 def latex_to_nested(text: str) -> str:
     """Replace every LaTeX matrix block in ``text`` with its ``[[...]]`` form."""
-    if '\\begin{' not in text:
+    if 'begin{' not in text:
         return text
 
     def repl(match):

@@ -4,7 +4,11 @@ const APPLIED_OPS = ["tangent", "linearization", "critical_points", "newton", "a
 
 // Operations whose input is structured text (matrices / vectors), not a rendered
 // math expression: these keep the plain <textarea> instead of the MathLive editor.
-const MATH_TEXT_OPS = new Set(["ref", "operations", "transform-1", "transform-2", "det", "dependence", "projection", "rank", "LU", "orthogonal", "diag", "eigen", "singular", "svd", "schur", "linear-system", "linear-solver", "matrix_symbolic"]);
+// Ops whose input is multi-matrix / equation text (kept as a plain textarea).
+const MATH_TEXT_OPS = new Set(["operations", "transform-1", "transform-2", "projection", "linear-system", "linear-solver", "matrix_symbolic"]);
+
+// Single-matrix linear-algebra ops: use the WYSIWYG editor and get a matrix skeleton.
+const MATRIX_SINGLE_OPS = new Set(["ref", "det", "invert", "rank", "LU", "diag", "eigen", "singular", "svd", "schur", "orthogonal", "dependence"]);
 
 // Per-operation LaTeX hint shown as the editor placeholder ("预设题的形式").
 const OP_PLACEHOLDER = {
@@ -13,6 +17,9 @@ const OP_PLACEHOLDER = {
   integral: "\\int \\square\\, d\\square",
   limit: "\\lim_{\\square \\to \\square}\\ \\square",
 };
+
+// A 2x2 fillable matrix seeded into single-matrix ops when the editor is empty.
+const MATRIX_SKELETON = "\\begin{bmatrix}{}&{}\\\\{}&{}\\end{bmatrix}";
 
 // Natural variable / summation index per operation (avoids the series index
 // colliding with the power-series argument, which broke convergence checks).
@@ -56,6 +63,10 @@ function applyInputMode(cell) {
     src.style.display = "";
   } else {
     field.value = src.value;      // sync editor from canonical store
+    if (!src.value && MATRIX_SINGLE_OPS.has(op)) {
+      field.value = MATRIX_SKELETON;
+      src.value = MATRIX_SKELETON;
+    }
     field.style.display = "";
     src.style.display = "none";
     const ph = OP_PLACEHOLDER[op] || "\\square";

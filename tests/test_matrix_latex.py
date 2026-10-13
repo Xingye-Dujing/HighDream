@@ -24,6 +24,12 @@ def test_converter_noop_for_plain_text():
     assert latex_to_nested('[[1,2],[3,4]]') == '[[1,2],[3,4]]'
 
 
+def test_converter_handles_mathlive_emission_quirk():
+    # MathLive sometimes drops the backslash on \end; converter must still parse.
+    s = r'\begin{bmatrix}1&2\\3&4end{bmatrix}'
+    assert latex_to_nested(s) == '[[1,2],[3,4]]'
+
+
 def test_det_accepts_bmatrix_latex():
     s = r'\begin{bmatrix}1&2\\3&4\end{bmatrix}'
     ok, res = start_compute('det', {'operation_type': 'det', 'expression': s, 'type': '1'})
