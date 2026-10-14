@@ -143,3 +143,11 @@ def test_taylor_shows_order_remainder_term():
 def test_taylor_rejects_non_analytic_point():
     ok, res = _dispatch_auto('taylor(log(x),x,0,3)')
     assert not ok and '不能作泰勒展开' in res
+
+
+def test_matrix_jordan_form():
+    # defective matrix -> a non-diagonal Jordan block; diagonal case also works
+    ok, res = _dispatch_auto('jordan([[4,1],[0,4]])')
+    assert ok and 'J =' in res and 'P =' in res and 'Jordan' in res
+    ok2, res2 = _dispatch_auto('jordan([[2,0],[0,3]])')
+    assert ok2 and 'J =' in res2
