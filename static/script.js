@@ -356,9 +356,22 @@ function bindEvents() {
   // Bind virtual keyboard / template palette buttons
   document.querySelectorAll(".keyboard-key").forEach((key) => {
     key.addEventListener("click", function () {
-      const latex = this.getAttribute("data-latex");
       const activeCell = document.querySelector(".cell-active");
       if (!activeCell) return;
+
+      // Some capabilities need a dedicated operation type (multi-matrix solving,
+      // transforms): switch the cell to it first, which also seeds its editors.
+      const op = this.getAttribute("data-op");
+      if (op) {
+        const sel = activeCell.querySelector(".operation-type");
+        if (sel && sel.value !== op) {
+          sel.value = op;
+          sel.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      }
+
+      const latex = this.getAttribute("data-latex");
+      if (!latex) return;   // mode-switch-only key: its editors are already seeded
       const field = getMathField(activeCell);
       const textarea = getMathSource(activeCell);
       if (field && field.style.display !== "none") {

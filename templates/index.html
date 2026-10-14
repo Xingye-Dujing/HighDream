@@ -146,23 +146,6 @@
             <button class="keyboard-key" data-latex="\prod_{}^{} ()">求积</button>
             <button class="keyboard-key" data-latex="\lim_{ \to }()">极限</button>
         </div>
-        <div class="keyboard-group-label">算子函数(自动识别)</div>
-        <div class="keyboard-row">
-            <button class="keyboard-key" data-latex="det(\square)">det</button>
-            <button class="keyboard-key" data-latex="rank(\square)">rank</button>
-            <button class="keyboard-key" data-latex="inverse(\square)">逆</button>
-            <button class="keyboard-key" data-latex="rref(\square)">行最简</button>
-            <button class="keyboard-key" data-latex="eigenvals(\square)">特征值</button>
-            <button class="keyboard-key" data-latex="svd(\square)">SVD</button>
-        </div>
-        <div class="keyboard-row">
-            <button class="keyboard-key" data-latex="diff(\square,\square)">求导</button>
-            <button class="keyboard-key" data-latex="int(\square,\square)">积分</button>
-            <button class="keyboard-key" data-latex="int(\square,\square,\square,\square)">定积分</button>
-            <button class="keyboard-key" data-latex="limit(\square,\square,\square)">极限</button>
-            <button class="keyboard-key" data-latex="sum(\square,\square)">级数</button>
-            <button class="keyboard-key" data-latex="taylor(\square,\square,\square,\square)">泰勒</button>
-        </div>
         <div class="keyboard-group-label">函数</div>
         <div class="keyboard-row">
             <button class="keyboard-key" data-latex="\sin()">sin</button>
@@ -172,6 +155,93 @@
             <button class="keyboard-key" data-latex="\log_{}()">log</button>
             <button class="keyboard-key" data-latex="\exp()">exp</button>
             <button class="keyboard-key" data-latex="e^{()}">eˣ</button>
+        </div>
+        <div class="keyboard-group-label">表达式化简</div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-latex="simplify(\square)">等价表达式</button>
+            <button class="keyboard-key" data-latex="msimplify(\square)">符号矩阵化简</button>
+        </div>
+        <div class="keyboard-group-label">单变量微积分</div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-latex="diff(\square,\square)">求导</button>
+            <button class="keyboard-key" data-latex="int(\square,\square)">不定积分</button>
+            <button class="keyboard-key" data-latex="int(\square,\square,\square,\square)">定积分</button>
+            <button class="keyboard-key" data-latex="limit(\square,\square,\square)">极限</button>
+            <button class="keyboard-key" data-latex="improper(\square,\square,\square,\square)">反常积分</button>
+            <button class="keyboard-key" data-latex="taylor(\square,\square,\square,\square)">泰勒展开</button>
+            <button class="keyboard-key" data-latex="taylorerror(\square,\square,\square,\square)">泰勒余项</button>
+        </div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-latex="tangent(\square,\square,\square)">切线方程</button>
+            <button class="keyboard-key" data-latex="linearization(\square,\square,\square)">线性化</button>
+            <button class="keyboard-key" data-latex="critical(\square,\square)">临界点/极值</button>
+            <button class="keyboard-key" data-latex="newton(\square,\square,\square,\square)">牛顿法</button>
+            <button class="keyboard-key" data-latex="meanvalue(\square,\square,\square,\square)">中值定理</button>
+        </div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-latex="arclength(\square,\square,\square,\square)">弧长</button>
+            <button class="keyboard-key" data-latex="volume(\square,\square,\square,\square)">体积(圆盘)</button>
+            <button class="keyboard-key" data-latex="shell(\square,\square,\square,\square)">体积(柱壳)</button>
+            <button class="keyboard-key" data-latex="surface(\square,\square,\square,\square)">曲面面积</button>
+        </div>
+        <div class="keyboard-group-label">多变量微积分</div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-latex="diff(\square,\square)">偏导数</button>
+            <button class="keyboard-key" data-latex="iterated(\square,\square,\square,\square,\square,\square,\square)">二重积分</button>
+            <button class="keyboard-key" data-latex="implicit(\square,\square)">隐函数求导</button>
+            <button class="keyboard-key" data-latex="parametric(\square,\square)">参数方程求导</button>
+            <button class="keyboard-key" data-latex="polararea(\square,\square,\square,\square)">极坐标面积</button>
+            <button class="keyboard-key" data-latex="polarslope(\square,\square)">极坐标斜率</button>
+        </div>
+        <div class="keyboard-group-label">级数</div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-latex="sum(\square,\square)">级数敛散性</button>
+            <button class="keyboard-key" data-latex="radius(\square,\square)">收敛半径</button>
+            <button class="keyboard-key" data-latex="powerseries(\square,\square,\square)">幂级数收敛域</button>
+        </div>
+        <div class="keyboard-group-label">常微分方程</div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-latex="ode(\square,\square)">微分方程求解</button>
+        </div>
+        <div class="keyboard-group-label">数值方法</div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-latex="numerical(\square,\square,\square,\square,\square)">数值积分</button>
+        </div>
+        <div class="keyboard-group-label">复数</div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-latex="complex(\square)">复数化简</button>
+            <button class="keyboard-key" data-latex="complexpolar(\square)">极坐标形式</button>
+            <button class="keyboard-key" data-latex="complexroots(\square,\square)">复数求根</button>
+            <button class="keyboard-key" data-latex="demoivre(\square,\square)">棣莫弗高次幂</button>
+        </div>
+        <div class="keyboard-group-label">线性代数 · 单矩阵</div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-latex="det(\square)">行列式</button>
+            <button class="keyboard-key" data-latex="rank(\square)">秩</button>
+            <button class="keyboard-key" data-latex="inverse(\square)">求逆</button>
+            <button class="keyboard-key" data-latex="rref(\square)">行最简</button>
+            <button class="keyboard-key" data-latex="eigen(\square)">特征值</button>
+            <button class="keyboard-key" data-latex="svd(\square)">SVD</button>
+        </div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-latex="schur(\square)">Schur</button>
+            <button class="keyboard-key" data-latex="lu(\square)">LU</button>
+            <button class="keyboard-key" data-latex="diag(\square)">对角化</button>
+            <button class="keyboard-key" data-latex="orthogonal(\square)">正交化</button>
+            <button class="keyboard-key" data-latex="dependence(\square)">相关性</button>
+            <button class="keyboard-key" data-latex="project(\square)">向量投影</button>
+        </div>
+        <div class="keyboard-group-label">线性代数 · 运算与方程组</div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-latex="add(\square,\square)">矩阵加法</button>
+            <button class="keyboard-key" data-latex="subtract(\square,\square)">矩阵减法</button>
+            <button class="keyboard-key" data-latex="multiply(\square,\square)">矩阵乘法</button>
+        </div>
+        <div class="keyboard-row">
+            <button class="keyboard-key" data-op="linear-solver">解方程组 Ax=b</button>
+            <button class="keyboard-key" data-op="linear-system">方程组转矩阵</button>
+            <button class="keyboard-key" data-op="transform-1">基/坐标变换</button>
+            <button class="keyboard-key" data-op="transform-2">线性变换变基</button>
         </div>
     </div>
 </div>

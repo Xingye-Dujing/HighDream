@@ -215,12 +215,27 @@ _AUTO_FUNCS = {
     'msimplify': ('matrix_symbolic', ['expression']),
     'matrixsimplify': ('matrix_symbolic', ['expression']),
     'symmatrix': ('matrix_symbolic', ['expression']),
+    # matrix arithmetic via the universal box (two matrix args joined by newline)
+    'add': ('operations', []), 'subtract': ('operations', []), 'minus': ('operations', []),
+    'multiply': ('operations', []), 'matmul': ('operations', []),
 }
 
 # op -> fixed extra data fields the calculators require.
 _AUTO_DEFAULTS = {
     'det': {'type': '1'}, 'ref': {'target_form': 'rref'}, 'svd': {},
     'expr': {'sort_strategy': 'simplify'},
+}
+
+# Ops whose calculators read a single ``expression`` holding several matrices /
+# vectors separated by newlines: every function argument is joined with '\n'.
+_AUTO_MULTILINE_OPS = {
+    'operations', 'projection', 'dependence', 'orthogonal',
+}
+
+# Function name -> fixed data fields that the name itself decides.
+_AUTO_NAME_EXTRAS = {
+    'add': {'operations': '+'}, 'subtract': {'operations': '-'}, 'minus': {'operations': '-'},
+    'multiply': {'operations': '*'}, 'matmul': {'operations': '*'},
 }
 
 # Matrix-function names that may appear bare (e.g. \det [[1,2],[3,4]]).
@@ -264,9 +279,14 @@ def _dispatch_auto(expression: str):
             if args:
                 op, fields = spec
                 data = {'operation_type': op}
-                for i, field in enumerate(fields):
-                    if i < len(args):
-                        data[field] = args[i]
+                if op in _AUTO_MULTILINE_OPS:
+                    data['expression'] = '\n'.join(args)
+                else:
+                    for i, field in enumerate(fields):
+                        if i < len(args):
+                            data[field] = args[i]
+                for key, val in _AUTO_NAME_EXTRAS.get(name, {}).items():
+                    data.setdefault(key, val)
                 for key, val in _AUTO_DEFAULTS.get(op, {}).items():
                     data.setdefault(key, val)
                 return _dispatch_compute(op, data)
