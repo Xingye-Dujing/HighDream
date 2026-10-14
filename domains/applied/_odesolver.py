@@ -7,7 +7,7 @@ integral through the core IntegralCalculator so the working is genuine. Returns
 """
 
 from sympy import (Add, Derivative, Eq, I, Integral, Mul, Symbol, cos, diff,
-                   exp, latex, simplify, sin, solve, sqrt)
+                   exp, latex, log, simplify, sin, solve, sqrt)
 
 from domains.applied._common import (integral_steps, integral_value,
                                      render_note as note)
@@ -349,12 +349,69 @@ def _second_order_rows(alg, x, f):
     return rows
 
 
+def _cauchy_euler_rows(alg, x, f):
+    """Solve the homogeneous Cauchy-Euler equation a x^2 y'' + b x y' + c y = 0.
+
+    Tries y = x^m, giving the indicial equation a m^2 + (b - a) m + c = 0; the three
+    root cases (distinct / repeated / complex) map to the standard log-periodic basis."""
+    y = Symbol('y')
+    p = Symbol('p')
+    q = Symbol('q')
+    expr = simplify((alg.lhs - alg.rhs) if isinstance(alg, Eq) else alg)
+    expr = expr.subs({Derivative(f, (x, 2)): q, Derivative(f, x): p, f: y})
+    cc2 = expr.coeff(q, 1)
+    rest = simplify(expr - cc2 * q)
+    cc1 = rest.coeff(p, 1)
+    rest2 = simplify(rest - cc1 * p)
+    cc0 = rest2.coeff(y, 1)
+    if simplify(rest2 - cc0 * y) != 0:
+        return None                                   # has a forcing term
+    a = simplify(cc2 / x ** 2)
+    b = simplify(cc1 / x)
+    c = simplify(cc0)
+    if a == 0 or any(v.has(x) or v.has(y) for v in (a, b, c)):
+        return None
+    if simplify(cc2 - a * x ** 2) != 0 or simplify(cc1 - b * x) != 0 or simplify(cc0 - c) != 0:
+        return None                                   # not a pure Cauchy-Euler form
+    m = Symbol('m')
+    charpoly = a * m ** 2 + (b - a) * m + c
+    disc = simplify((b - a) ** 2 - 4 * a * c)
+    c1, c2 = Symbol('C1'), Symbol('C2')
+    rows = [
+        (a, note("$a$")), (b, note("$b$")), (c, note("$c$")),
+        (charpoly, note("欧拉方程试 $y=x^m$, 指标方程 $a m^2 + (b-a) m + c = 0$")),
+        (disc, note("判别式 $\\Delta = (b-a)^2 - 4ac$")),
+    ]
+    if disc == 0:
+        mm = simplify(-(b - a) / (2 * a))
+        rows.append((mm, note("重根 $m$")))
+        yc = (c1 + c2 * log(x)) * x ** mm
+    elif disc.is_real and disc > 0:
+        m1 = simplify((-(b - a) - sqrt(disc)) / (2 * a))
+        m2 = simplify((-(b - a) + sqrt(disc)) / (2 * a))
+        rows.append((m1, note("实根 $m_1$")))
+        rows.append((m2, note("实根 $m_2$")))
+        yc = c1 * x ** m1 + c2 * x ** m2
+    else:
+        alpha = simplify(-(b - a) / (2 * a))
+        beta = simplify(sqrt(-disc) / (2 * a))
+        beta = simplify(beta.as_real_imag()[0]) if beta.has(I) else beta
+        rows.append((alpha, note("复根实部 $\\alpha$")))
+        rows.append((beta, note("复根虚部 $\\beta$")))
+        yc = x ** alpha * (c1 * cos(beta * log(x)) + c2 * sin(beta * log(x)))
+    rows.append((Eq(f, yc), note("欧拉方程(变系数)齐次通解")))
+    return rows
+
+
 def solve_ode_rule(eq, x, f):
     """Dispatch to the applicable rule method (2nd-order, exact, separable, linear)."""
     try:
         has_second = Derivative(f, (x, 2)) in _derivs_of(eq)
         if has_second:
             rows = _second_order_rows(eq, x, f)
+            if rows is not None:
+                return rows, True
+            rows = _cauchy_euler_rows(eq, x, f)
             if rows is not None:
                 return rows, True
             return None, False

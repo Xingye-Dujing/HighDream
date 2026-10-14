@@ -47,3 +47,29 @@ def test_bernoulli_ode():
     resid = simplify(eq.lhs.subs({F: ysol, Derivative(F, x): dy})
                      - eq.rhs.subs({F: ysol}))
     assert resid == 0
+
+
+def test_cauchy_euler_distinct_roots():
+    # x^2 y'' + x y' - 4y = 0 -> indicial m^2 - 4 = 0 -> basis {x^2, x^-2}
+    xp = Symbol('x', positive=True)
+    fp = Function('f')(xp)  # pylint: disable=not-callable
+    eq = Eq(xp ** 2 * Derivative(fp, (xp, 2)) + xp * Derivative(fp, xp) - 4 * fp, 0)
+    rows, handled = solve_ode_rule(eq, xp, fp)
+    assert handled, "fell back to dsolve"
+    yc = rows[-1][0].rhs
+    resid = simplify(eq.lhs.subs({fp: yc, Derivative(fp, xp): diff(yc, xp),
+                                  Derivative(fp, (xp, 2)): diff(yc, xp, 2)}) - eq.rhs.subs({fp: yc}))
+    assert resid == 0
+
+
+def test_cauchy_euler_repeated_and_complex():
+    xp = Symbol('x', positive=True)
+    fp = Function('f')(xp)  # pylint: disable=not-callable
+    # repeated root (m=2): x^2 y'' - 3x y' + 4y = 0 -> (C1 + C2 log x) x^2
+    eq_r = Eq(xp ** 2 * Derivative(fp, (xp, 2)) - 3 * xp * Derivative(fp, xp) + 4 * fp, 0)
+    rows, handled = solve_ode_rule(eq_r, xp, fp)
+    assert handled and 'log' in str(rows[-1][0].rhs)
+    # complex roots: x^2 y'' + y = 0 -> x^{1/2}(C1 cos(b log x) + C2 sin(b log x))
+    eq_c = Eq(xp ** 2 * Derivative(fp, (xp, 2)) + fp, 0)
+    rows_c, handled_c = solve_ode_rule(eq_c, xp, fp)
+    assert handled_c and 'log' in str(rows_c[-1][0].rhs)
