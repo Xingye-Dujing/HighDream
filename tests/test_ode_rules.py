@@ -8,6 +8,7 @@ True, i.e. it does not fall back to ``dsolve`` — the project's no-black-box ru
 from sympy import Abs, Derivative, Eq, Function, Symbol, diff, simplify
 
 from domains.applied._odesolver import solve_ode_rule
+from domains.applied.ode import solve_ode
 
 x = Symbol('x')
 y = Symbol('y')
@@ -99,3 +100,11 @@ def test_higher_order_constant_coeff_homogeneous():
     # mixed real + complex: y''' + y'' + y' + y = 0
     assert _resid_2nd_or_higher(
         Eq(Derivative(F, (x, 3)) + Derivative(F, (x, 2)) + Derivative(F, x) + F, 0), 3) == 0
+
+
+def test_applied_align_no_none_sentinel_leak():
+    # Rules inject display-only integral sub-steps with the string 'None'; the applied
+    # align renderer must drop them, never printing a literal "None". A Bernoulli solve
+    # embeds an integrating-factor integral that triggers those sub-steps.
+    ok, res = solve_ode({"expression": "f'(x)+f(x)-x*f(x)**3", "variable": "x"})
+    assert ok and "\\begin{align}" in res and "None" not in res

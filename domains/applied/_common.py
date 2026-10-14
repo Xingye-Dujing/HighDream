@@ -48,7 +48,9 @@ def align(items) -> str:
     lines = []
     first = True
     for body, note in items:
-        if body is not None:
+        # Rules inject display-only sub-steps using the string 'None' as a sentinel for
+        # "no left-hand side" (mirrors core.base_step_generator.to_latex).
+        if body is not None and body != 'None':
             body_latex = body if isinstance(body, str) else _latex(body)
             prefix = '' if first else '&='
             first = False
