@@ -168,7 +168,7 @@ def create_integral_calculator(base_class):
             inside = []
             for c in cands:
                 try:
-                    if not (lo < c < hi):
+                    if not lo < c < hi:
                         continue
                     lp = limit(f, var, c, dir='+')
                     lm = limit(f, var, c, dir='-')
@@ -236,7 +236,7 @@ def create_integral_calculator(base_class):
             if imp_u or imp_l:
                 self.step_generator.add_step(
                     None,
-                    r"端点为无穷或瑕点, 按反常积分取单侧极限: $\lim_{} F\bigr|_{"
+                    r"端点为无穷或瑕点, 按反常积分取单侧极限: $\left. F \right|_{"
                     + lb + r"}^{" + ub + r"}$"
                 )
 

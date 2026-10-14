@@ -1,8 +1,10 @@
 """Deterministic tests for definite vs indefinite integral handling."""
 
-from sympy import Rational, Symbol, pi, simplify
+from sympy import Rational, Symbol, latex, oo, pi, simplify
 
 from domains import IntegralCalculator
+from routes.compute_service import _dispatch_compute
+from utils.cache_utils import cached_sympify
 
 x = Symbol('x')
 C = Symbol('C')
@@ -32,3 +34,34 @@ def test_definite_explanation_present():
 def test_definite_upper_only_defaults_lower_to_zero():
     steps, _ = IntegralCalculator().compute_list('x', x, upper=2)
     assert simplify(steps[-1] - 2) == 0
+
+
+def test_infinity_token_spellings_all_parse_to_oo():
+    # users type the infinite bound many ways; all must reach SymPy's oo
+    assert cached_sympify('∞') == oo
+    assert cached_sympify('-∞') == -oo
+    assert cached_sympify('infinity') == oo
+    assert cached_sympify('负无穷') == -oo
+    assert cached_sympify('正无穷大') == oo
+
+
+def test_improper_integral_with_unicode_infinity_bound_returns_result():
+    # the reported bug: a unicode ∞ bound failed to parse and produced no result
+    ok, res = _dispatch_compute(
+        'integral',
+        {'operation_type': 'integral', 'expression': '1/x^2',
+         'variable': 'x', 'upper': '∞', 'lower': '1'})
+    assert ok
+    assert '\\begin{align}' in res
+    assert '&=1' in res.replace(' ', '')   # the improper integral evaluates to 1
+    # no leaked literal None and no stray "1 \frac" unit coefficient
+    assert 'None' not in res
+    assert '1 \\frac' not in res
+
+
+def test_parse_latex_drops_stray_unit_coefficient():
+    # parse_latex turns 1/x^2 into Mul(1, 1/x**2) whose LaTeX shows "1 \frac{...}"
+    assert latex(cached_sympify('1/x^2')) == r'\frac{1}{x^{2}}'
+    # a genuine standalone 1 inside a sum is preserved
+    assert latex(cached_sympify('1+1/x')) == r'1 + \frac{1}{x}'
+

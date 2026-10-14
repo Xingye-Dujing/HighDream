@@ -86,7 +86,9 @@ class BaseStepGenerator(ABC):
 
         lines = []
         for i, (step, explanation) in enumerate(zip(self.steps, self._explanations)):
-            if step == 'None':
+            if step is None or step == 'None':
+                # Note-only transitional row (e.g. the improper-integral limit
+                # annotation): render no left-hand expression, just the note.
                 line = rf"& \quad \quad"
             else:
                 line = r"&=" + cached_latex(step) if i > 0 else "&" + cached_latex(step)
