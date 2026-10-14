@@ -26,7 +26,7 @@ const OP_PLACEHOLDER = {
 };
 
 // A 2x2 fillable matrix seeded into single-matrix ops when the editor is empty.
-const MATRIX_SKELETON = "\\begin{bmatrix}{}&{}\\\\{}&{}\\end{bmatrix}";
+const MATRIX_SKELETON = "\\begin{bmatrix}\\square&\\square\\\\\\square&\\square\\end{bmatrix}";
 
 // Natural variable / summation index per operation (avoids the series index
 // colliding with the power-series argument, which broke convergence checks).
