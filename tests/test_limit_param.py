@@ -13,9 +13,9 @@ x = Symbol('x')
 a = Symbol('a')
 
 
-def _limit(expr_str, point=0):
+def _limit(expr_str, point=0, direction='+'):
     calc = LimitCalculator()
-    steps, _expl = calc.compute_list(expr_str, x, point)
+    steps, _expl = calc.compute_list(expr_str, x, point, direction)
     vals = [s for s in steps if s is not None]
     return vals[-1]
 
@@ -31,3 +31,12 @@ def test_parameterized_limit_exponential_form():
     assert simplify(_limit("(1 + x)**(a/x)") - exp(a)) == 0
     # (1 + a/x)^x as x->oo equals e^a
     assert simplify(_limit("(1 + a/x)**x", point=oo) - exp(a)) == 0
+
+
+def test_abs_limit_sign_removal():
+    # |x|/x at 0+ = 1 and at 0- = -1 (previously mis-evaluated to 0 via L'Hopital on Abs)
+    assert _limit("abs(x)/x", 0, '+') == 1
+    assert _limit("abs(x)/x", 0, '-') == -1
+    # |x| at 0 is 0 from either side
+    assert _limit("abs(x)", 0, '+') == 0
+    assert _limit("abs(x)", 0, '-') == 0

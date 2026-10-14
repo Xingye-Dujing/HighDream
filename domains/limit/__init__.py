@@ -13,7 +13,8 @@ from .rules.base_rules import (
     div_split_rule, div_split_matcher,
     direct_substitution_rule, direct_substitution_matcher,
     conjugate_rationalize_matcher, conjugate_rationalize_rule,
-    bounded_oscillation_infinity_matcher, bounded_oscillation_infinity_rule
+    bounded_oscillation_infinity_matcher, bounded_oscillation_infinity_rule,
+    abs_sign_matcher, abs_sign_rule
 )
 from .rules.function_rules import (
     acos_matcher, acos_rule, asin_matcher, asin_rule, atan_matcher, atan_rule,
@@ -93,6 +94,7 @@ RULE_DICT: RuleDict = {
     'lhopital_power': lhopital_power_rule,
     'conjugate_rationalize': conjugate_rationalize_rule,
     'bounded_oscillation_infinity': bounded_oscillation_infinity_rule,
+    'abs_sign': abs_sign_rule,
 }
 
 # Matchers are applied in order — earlier entries have higher priority.
@@ -114,6 +116,8 @@ MATCHER_LIST: MatcherList = [
     const_zero_div_matcher,
     # Safe direct substitution (both sub-limits exist and are determinate)
     direct_substitution_matcher,
+    # Strip |g| -> +/-g when g's sign is fixed near the point (before L'Hopital)
+    abs_sign_matcher,
     # Algebraic rationalization (e.g., sqrt(a) - sqrt(b))
     conjugate_rationalize_matcher,
     # Standard limits: sin(x)/x, (1+1/x)^x, ln(1+x)/x, (e^x-1)/x

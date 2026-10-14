@@ -1,6 +1,6 @@
 from sympy import (
-    AccumBounds, Add, atan, cos, Expr, Integer, Limit, Mul, Pow, S, UnevaluatedExpr,
-    exp, latex, limit, log, nan, oo, simplify, sin, zoo
+    AccumBounds, Abs, Add, atan, cos, Expr, Integer, Limit, Mul, Pow, S, Symbol,
+    UnevaluatedExpr, exp, latex, limit, log, nan, oo, simplify, sin, zoo
 )
 
 from domains.limit.limit_help_func import (
@@ -571,3 +571,57 @@ def bounded_oscillation_infinity_rule(expr, context) -> RuleFunctionReturn:
     val = Limit(expr, var, point, dir=direction).doit()
     return val, (f"有界振荡项除以最高次幂趋于 0, 取主导项之比: "
                  f"$\\lim_{{{var} \\to {latex(point)}}} {latex(expr)} = {latex(val)}$")
+
+
+def _side_sign(arg: Expr, var: Symbol, point: Expr, direction: str):
+    """+1 / -1 if ``arg`` keeps a provably constant sign approaching ``point`` on the
+    given side (via a positive symbolic epsilon); None if the sign cannot be determined."""
+    if point in (oo, -oo) or getattr(point, 'is_infinite', False):
+        return None
+    eps = Symbol('__side_eps__', positive=True)
+
+    def sgn(side_pt):
+        val = simplify(arg.subs(var, side_pt))
+        if val.is_positive:
+            return 1
+        if val.is_negative:
+            return -1
+        return None
+
+    if direction == '+':
+        return sgn(point + eps)
+    if direction == '-':
+        return sgn(point - eps)
+    left = sgn(point - eps)
+    right = sgn(point + eps)
+    return left if left is not None and left == right else None
+
+
+def abs_sign_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Fire when an ``Abs(...)`` whose argument has a determined sign near the point exists."""
+    var, point, direction = get_limit_args(context)
+    if not expr.has(Abs):
+        return None
+    for a in expr.atoms(Abs):
+        if _side_sign(a.args[0], var, point, direction) is not None:
+            return 'abs_sign'
+    return None
+
+
+def abs_sign_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Replace each ``Abs(g)`` by ``±g`` where ``g``'s sign is fixed on the approach side.
+
+    Stripping the absolute value before L'Hôpital avoids differentiating ``Abs`` into a
+    complex Piecewise (which then mis-substitutes to 0 for forms like |x|/x at 0)."""
+    var, point, direction = get_limit_args(context)
+    new_expr = expr
+    replaced = []
+    for a in expr.atoms(Abs):
+        sgn = _side_sign(a.args[0], var, point, direction)
+        if sgn is not None:
+            new_expr = new_expr.replace(a, sgn * a.args[0])
+            replaced.append(a)
+    dir_tex = {'+': '^+', '-': '^-', 'real': ''}.get(str(direction), '')
+    note = (f"去绝对值: 在 $x \to {latex(point)}{dir_tex}$ 附近 "
+            f"${latex(replaced[0])}$ 内层符号确定, 直接化为带号表达式")
+    return new_expr, note
