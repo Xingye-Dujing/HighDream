@@ -65,6 +65,12 @@ class BaseManualStepSolver:
         self.error: Optional[str] = None
 
         self._visited: set = set()
+        # History of pre-action snapshots; each successful rule/fallback commit pushes
+        # one so a single "undo" rolls back a whole user action (which can commit several
+        # steps), not one step. Bounded to keep the unbounded in-memory session in check.
+        self._undo_stack: List[Dict[str, Any]] = []
+
+    _max_undo: int = 32
 
     def _init_calculator(self) -> None:
         """Hook for subclasses to perform domain-specific calculator setup."""
@@ -203,6 +209,10 @@ class BaseManualStepSolver:
         ctx = self._build_context(self.current_expr)
         rule_ctx = self.calculator._get_context_dict(**ctx)
 
+        # Capture BEFORE the rule runs: rules write into step_generator themselves, and
+        # a commit can span many steps (_advance_pending + finish()). Pushed only on the
+        # success path so a failed/blocked apply leaves history untouched.
+        snapshot = self._snapshot_session()
         step_count_before = len(self.calculator.step_generator.steps)
         try:
             result = rule(self.current_expr, rule_ctx)
@@ -219,6 +229,7 @@ class BaseManualStepSolver:
             return self.state()
 
         new_expr, explanation = result
+        self._push_undo(snapshot)
         self._commit_step(self.current_expr, new_expr, explanation)
         self._advance_pending()
         return self.state()
@@ -235,6 +246,7 @@ class BaseManualStepSolver:
             self.current_expr, self.calculator.operation, **ctx)
         new_expr = operation_obj.doit()
         explanation = f"手动计算（SymPy 回退）: ${latex(operation_obj)}$"
+        self._push_undo(self._snapshot_session())
         self._commit_step(self.current_expr, new_expr, explanation)
         self._advance_pending()
         return self.state()
@@ -331,3 +343,50 @@ class BaseManualStepSolver:
 
     def _restore_solver_state(self, snapshot: Dict[str, Any]) -> None:
         """Restore whatever ``_snapshot_solver_state`` captured."""
+
+    # --------------------------------------------------------------- undo history
+
+    def _snapshot_session(self) -> Dict[str, Any]:
+        """Capture the full pre-action state (reuses the existing backup primitives)."""
+        return {
+            'generator': self._backup_step_generator(),
+            'solver': {
+                'steps': list(self.steps),
+                'explanations': list(self.explanations),
+                'top_expr': self.top_expr,
+                'expr_to_operation': dict(self.expr_to_operation),
+                'pending': deque(self.pending),   # MUST stay a deque (popleft later)
+                'current_expr': self.current_expr,
+                'done': self.done,
+                'error': self.error,
+                'visited': set(self._visited),
+            },
+            'domain': self._snapshot_solver_state(),
+        }
+
+    def _restore_session(self, snap: Dict[str, Any]) -> None:
+        """Roll the solver back to a snapshot taken by ``_snapshot_session``."""
+        self._restore_step_generator(snap['generator'])
+        sv = snap['solver']
+        self.steps = list(sv['steps'])
+        self.explanations = list(sv['explanations'])
+        self.top_expr = sv['top_expr']
+        self.expr_to_operation = dict(sv['expr_to_operation'])
+        self.pending = deque(sv['pending'])
+        self.current_expr = sv['current_expr']
+        self.done = sv['done']
+        self.error = sv['error']
+        self._visited = set(sv['visited'])
+        self._restore_solver_state(snap['domain'])
+
+    def _push_undo(self, snapshot: Dict[str, Any]) -> None:
+        self._undo_stack.append(snapshot)
+        if len(self._undo_stack) > self._max_undo:
+            self._undo_stack.pop(0)
+
+    def undo(self) -> Dict[str, Any]:
+        """Roll back the last applied rule / SymPy fallback and return the state."""
+        if not self._undo_stack:
+            raise RuntimeError("没有可撤销的步骤")
+        self._restore_session(self._undo_stack.pop())
+        return self.state()

@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const $stepsList = document.getElementById('rs-steps-list');
   const $rulesList = document.getElementById('rs-rules-list');
   const $actions = document.getElementById('rs-actions');
+  const $undoBtn = document.getElementById('rs-undo-btn');
   const $fallbackBtn = document.getElementById('rs-fallback-btn');
   const $finishBtn = document.getElementById('rs-finish-btn');
   const $statusPanel = document.getElementById('rs-status-panel');
@@ -246,6 +247,29 @@ document.addEventListener('DOMContentLoaded', function () {
     busy = false;
   }
 
+  async function undoStep() {
+    if (busy || !sessionId) return;
+    busy = true;
+    hideError();
+    showLoading();
+
+    try {
+      const resp = await api('/manual_undo', {session_id: sessionId});
+      if (!resp.success) {
+        hideLoading();
+        showError(resp.error || '撤销失败');
+        busy = false;
+        return;
+      }
+      currentState = resp.state;
+      render(currentState);
+    } catch (e) {
+      hideLoading();
+      showError('网络错误: ' + e.message);
+    }
+    busy = false;
+  }
+
   async function fallback() {
     if (busy || !sessionId) return;
     busy = true;
@@ -372,6 +396,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   $fallbackBtn.addEventListener('click', fallback);
   $finishBtn.addEventListener('click', finishSession);
+  if ($undoBtn) $undoBtn.addEventListener('click', undoStep);
 
   // Enter key in expr input triggers start
   $expr.addEventListener('keydown', function (e) {

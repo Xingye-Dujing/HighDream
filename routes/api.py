@@ -672,6 +672,32 @@ def manual_step():
         return jsonify({'success': False, 'error': str(e)})
 
 
+@api.route('/manual_undo', methods=['POST'])
+def manual_undo():
+    """Undo the last applied rule / SymPy fallback, restoring the pre-step state.
+
+    Expected JSON input:
+        session_id (str): Session ID
+
+    Returns:
+        JSON with:
+            success (bool): True if a step was undone
+            state (dict): Restored solver state (same shape as /manual_step)
+    """
+    data = request.json or {}
+    session_id = data.get('session_id', '')
+
+    solver = _manual_sessions.get(session_id)
+    if solver is None:
+        return jsonify({'success': False, 'error': 'Session not found'})
+
+    try:
+        state = solver.undo()
+        return jsonify({'success': True, 'state': state})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
 @api.route('/manual_fallback', methods=['POST'])
 def manual_fallback():
     """Apply SymPy's .doit() fallback for the current expression.

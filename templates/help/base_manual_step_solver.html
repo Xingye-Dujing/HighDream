@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/static/fontawesome/css/all.min.css"/>
     <link rel="stylesheet" href="/static/help.css"/>
     <link rel="stylesheet" href="/static/hd-theme.css"/>
-    <link rel="stylesheet" href="/static/hd-select.css"/>
 </head>
 <body>
 <div id="help-container">
@@ -183,6 +182,13 @@ point/direction」交给子类。</li>
 <code>'integral'</code> / <code>'limit'</code></td>
 <td>类变量</td>
 </tr>
+<tr>
+<td>_undo_stack</td>
+<td>List[Dict]</td>
+<td>撤销历史：每次成功提交前抓的完整快照栈（有界
+<code>_max_undo</code>=32），<code>undo()</code> 弹栈还原</td>
+<td>私有</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -321,6 +327,44 @@ point/direction」交给子类。</li>
 + 保守化简），把 <code>done</code> 置为 <code>True</code>。返回
 <code>state()</code>。幂等：若已 <code>done</code>
 直接返回当前状态。</p>
+<div class="method-signature">undo(self) -&gt; Dict[str, Any]</div>
+<p>回退<strong>上一次成功执行的用户操作</strong>（<code>apply_rule</code>
+或 <code>fallback</code>），把求解器恢复到该操作开始前的完整状态，返回
+<code>state()</code>。</p>
+<div class="warning">
+<p><strong>注意（撤销粒度）:</strong> 一次 <code>apply_rule</code> /
+<code>fallback</code>
+可能一次提交<strong>多步</strong>推导（规则自身会写入
+<code>step_generator</code>；<code>_advance_pending</code>
+会对已访问子表达式自动提交；<code>finish()</code> 追加「回代换元变量 /
++C」等步骤）。因此撤销以「整次操作」为单位做快照回滚，而非弹出一条步骤。</p>
+</div>
+<p>实现要点：</p>
+<ul>
+<li>每次成功提交前，<code>apply_rule</code> / <code>fallback</code>
+会调用 <code>_snapshot_session()</code> 抓一份完整快照并
+<code>_push_undo()</code> 入栈；失败 / 被限流 / 规则返回
+<code>None</code>
+的路径<strong>不入栈</strong>（状态本就未变或已回滚）。</li>
+<li><code>_snapshot_session</code> 复用已有的
+<code>_backup_step_generator</code> /
+<code>_restore_step_generator</code>（步骤、解释、<code>subs_dict</code>、<code>available_sym_chars</code>）与
+<code>_snapshot_solver_state</code> /
+<code>_restore_solver_state</code>（领域计数器，如极限的
+<code>_lhopital_count</code>），再叠上求解器自身的 <code>steps</code> /
+<code>explanations</code> / <code>expr_to_operation</code> /
+<code>pending</code>（以 <code>deque</code> 恢复）/
+<code>current_expr</code> / <code>done</code> / <code>error</code> /
+<code>_visited</code>。</li>
+<li>历史栈有界（<code>_max_undo</code>，默认 32）。空栈时
+<code>undo()</code> 抛 <code>RuntimeError</code>，经
+<code>routes/api.py</code> 的 <code>/manual_undo</code> 转成
+<code>{'success': False, 'error': '没有可撤销的步骤'}</code>。</li>
+<li><code>/manual_undo</code> 的响应与 <code>/manual_step</code>
+完全同形（<code>{success, state}</code>），前端
+<code>render(state)</code> 无需分支即可复用；撤销会把 <code>done</code>
+一并回滚，因此撤销「完成」后能重新出现可选规则。</li>
+</ul>
 <h3 id="领域钩子子类可覆盖">3. 领域钩子（子类可覆盖）</h3>
 <div class="method-signature">_create_calculator(self)</div>
 <p><strong>抽象方法</strong>：返回一个构造完毕的
@@ -364,6 +408,5 @@ _restore_solver_state(self, snapshot: Dict[str, Any]) -&gt; None</div>
 
 </div>
 <script src="/static/hd-menu.js"></script>
-<script src="/static/hd-select.js"></script>
 </body>
 </html>

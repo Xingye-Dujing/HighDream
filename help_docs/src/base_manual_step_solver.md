@@ -66,6 +66,7 @@ routes/api.py  ──►  BaseManualStepSolver  ──►  Select*Calculator
 | error | Optional\[str\] | 上一次 `apply_rule` / `fallback` 失败的错误说明 | 公共 |
 | rule_display_names | Dict\[str, str\] | 类属性：`rule_key -> 中文显示名`，子类必须覆盖 | 类变量 |
 | \_domain | str | 类属性：领域标识，子类覆盖为 `'diff'` / `'integral'` / `'limit'` | 类变量 |
+| \_undo\_stack | List\[Dict\] | 撤销历史：每次成功提交前抓的完整快照栈（有界 `_max_undo`=32），`undo()` 弹栈还原 | 私有 |
 
 </div>
 
@@ -160,6 +161,25 @@ finish(self) -> Dict[str, Any]
 ```
 
 运行最终后处理（`calculator.final_postprocess`，包含回代换元变量 + 保守化简），把 `done` 置为 `True`。返回 `state()`。幂等：若已 `done` 直接返回当前状态。
+
+```
+undo(self) -> Dict[str, Any]
+```
+
+回退**上一次成功执行的用户操作**（`apply_rule` 或 `fallback`），把求解器恢复到该操作开始前的完整状态，返回 `state()`。
+
+<div class="warning">
+
+**注意（撤销粒度）:**   一次 `apply_rule` / `fallback` 可能一次提交**多步**推导（规则自身会写入 `step_generator`；`_advance_pending` 会对已访问子表达式自动提交；`finish()` 追加「回代换元变量 / +C」等步骤）。因此撤销以「整次操作」为单位做快照回滚，而非弹出一条步骤。
+
+</div>
+
+实现要点：
+
+- 每次成功提交前，`apply_rule` / `fallback` 会调用 `_snapshot_session()` 抓一份完整快照并 `_push_undo()` 入栈；失败 / 被限流 / 规则返回 `None` 的路径**不入栈**（状态本就未变或已回滚）。
+- `_snapshot_session` 复用已有的 `_backup_step_generator` / `_restore_step_generator`（步骤、解释、`subs_dict`、`available_sym_chars`）与 `_snapshot_solver_state` / `_restore_solver_state`（领域计数器，如极限的 `_lhopital_count`），再叠上求解器自身的 `steps` / `explanations` / `expr_to_operation` / `pending`（以 `deque` 恢复）/ `current_expr` / `done` / `error` / `_visited`。
+- 历史栈有界（`_max_undo`，默认 32）。空栈时 `undo()` 抛 `RuntimeError`，经 `routes/api.py` 的 `/manual_undo` 转成 `{'success': False, 'error': '没有可撤销的步骤'}`。
+- `/manual_undo` 的响应与 `/manual_step` 完全同形（`{success, state}`），前端 `render(state)` 无需分支即可复用；撤销会把 `done` 一并回滚，因此撤销「完成」后能重新出现可选规则。
 
 ### 3.   领域钩子（子类可覆盖）
 
