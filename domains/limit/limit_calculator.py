@@ -18,6 +18,11 @@ def create_limit_calculator(base_class):
 
         def __init__(self, max_lhopital: int = 5) -> None:
             super().__init__(Limit, RULE_DICT, MATCHER_LIST)
+            # A limit always carries its working variable (Limit(expr, var, point, dir));
+            # honor that var and treat any other free symbol as a constant parameter
+            # (so sin(a*x)/x -> a, (1-cos(a*x))/x^2 -> a^2/2, ...). Same mechanism as
+            # DiffCalculator's partial-derivative handling.
+            self._allow_multi_symbols = True
             # Rationalizing the denominator is helpful for solving limits
             self.is_radsimp: bool = True
             # Use a specialized step generator for two-sided limits' steps generator.
