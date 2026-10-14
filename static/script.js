@@ -1890,6 +1890,41 @@ function spawnCellFromSubtask(sub) {
   runCell(cell);
 }
 
+// Build a collapsed <details> of per-step "rule cards" from /api/steps structured
+// steps [{index, latex, reason}]. Returns null when there is nothing to show. Reason
+// text keeps its $..$ converted to \(..\) (tex-chtml uses \(..\) for inline math).
+function makeStepCards(steps) {
+  if (!Array.isArray(steps)) return null;
+  const wrap = document.createElement('details');
+  wrap.className = 'step-cards';
+  wrap.style.cssText = "margin-top:8px;";
+  const summary = document.createElement('summary');
+  summary.textContent = '分步规则卡片';
+  summary.style.cssText = "cursor:pointer;font-size:12px;color:#888;";
+  wrap.appendChild(summary);
+  let count = 0;
+  steps.forEach((st) => {
+    if (!st || !st.latex) return;
+    const expl = String(st.reason || '')
+      .replace(/\$([^$]+)\$/g, '\\(' + '$1' + '\\)');
+    const card = document.createElement('div');
+    card.className = 'step-card';
+    card.style.cssText = "border:1px solid #ccc;border-radius:6px;padding:6px 8px;margin:6px 0;background:#f7f7f7;";
+    const head = document.createElement('div');
+    head.className = 'step-card-head';
+    head.style.cssText = "font-size:12px;color:#888;margin-bottom:4px;";
+    head.textContent = (st.index === 0 ? '初始表达式' : ('第 ' + st.index + ' 步 · ' + expl));
+    const body = document.createElement('div');
+    body.className = 'step-card-body';
+    body.textContent = '$$' + st.latex + '$$';
+    card.appendChild(head);
+    card.appendChild(body);
+    wrap.appendChild(card);
+    count += 1;
+  });
+  return count > 0 ? wrap : null;
+}
+
 function attachStepLinks(outputArea, cell) {
   if (!cell) return;
   let payload;
@@ -1933,34 +1968,8 @@ function attachStepLinks(outputArea, cell) {
 
       // 分步规则卡片：默认折叠的原生 <details>，复用同一 /api/steps 响应把每一步
       // 拆成独立卡片（头部=规则说明，体内=该步 LaTeX），不改动上方整块 align 主显示。
-      const cardsWrap = document.createElement('details');
-      cardsWrap.className = 'step-cards';
-      cardsWrap.style.cssText = "margin-top:8px;";
-      const cardsSummary = document.createElement('summary');
-      cardsSummary.textContent = '分步规则卡片';
-      cardsSummary.style.cssText = "cursor:pointer;font-size:12px;color:#888;";
-      cardsWrap.appendChild(cardsSummary);
-      let cardCount = 0;
-      data.steps.forEach((st) => {
-        if (!st || !st.latex) return;
-        const expl = String(st.reason || '')
-          .replace(/\$([^$]+)\$/g, '\\(' + '$1' + '\\)');
-        const card = document.createElement('div');
-        card.className = 'step-card';
-        card.style.cssText = "border:1px solid #ccc;border-radius:6px;padding:6px 8px;margin:6px 0;background:#f7f7f7;";
-        const head = document.createElement('div');
-        head.className = 'step-card-head';
-        head.style.cssText = "font-size:12px;color:#888;margin-bottom:4px;";
-        head.textContent = (st.index === 0 ? '初始表达式' : ('第 ' + st.index + ' 步 · ' + expl));
-        const body = document.createElement('div');
-        body.className = 'step-card-body';
-        body.textContent = '$$' + st.latex + '$$';
-        card.appendChild(head);
-        card.appendChild(body);
-        cardsWrap.appendChild(card);
-        cardCount += 1;
-      });
-      if (cardCount > 0) {
+      const cardsWrap = makeStepCards(data.steps);
+      if (cardsWrap) {
         outputArea.appendChild(cardsWrap);
         if (window.MathJax && MathJax.typesetPromise) {
           MathJax.typesetPromise([cardsWrap]).catch(() => {});
