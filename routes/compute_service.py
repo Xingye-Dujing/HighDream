@@ -31,7 +31,7 @@ _MATRIX_LATEX_OPS = {
     'ref', 'operations', 'invert', 'rank', 'LU', 'diag', 'svd', 'singular',
     'eigen', 'schur', 'det', 'orthogonal', 'projection', 'dependence',
     'linear-system', 'linear-solver', 'transform-1', 'transform-2', 'matrix_symbolic',
-    'trace', 'nullspace', 'colspace', 'rowspace', 'pinv', 'jordan',
+    'trace', 'nullspace', 'colspace', 'rowspace', 'pinv', 'jordan', 'definiteness',
 }
 
 # Cached calculator variants used when use_cache or record_cache is set
@@ -207,6 +207,34 @@ def _matrix_jordan(expression):
     return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
 
 
+def _matrix_definiteness(expression):
+    """Sylvester criterion: classify A by its leading principal minors."""
+    from sympy import simplify  # pylint: disable=import-outside-toplevel
+    try:
+        mat = _matrix_of(expression)
+        if mat.rows != mat.cols:
+            return False, '正定/负定判定要求方阵'
+        minors = [simplify(mat[:k, :k].det()) for k in range(1, mat.rows + 1)]
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        return False, f'矩阵解析失败: {exc}'
+    lines = ['& ' + latex(mat) + r' \quad \text{实对称矩阵 } A']
+    for k, delta in enumerate(minors, start=1):
+        lines.append(r'& \Delta_{' + str(k) + r'} = ' + latex(delta) + r'\quad \text{顺序主子式}')
+    signs = [getattr(d, 'is_positive', None) for d in minors]
+    if all(s is True for s in signs):
+        verdict = '正定 (所有顺序主子式均大于 0)'
+    elif signs and signs[0] is False and all(signs[i] is (i % 2 == 1) for i in range(len(signs))):
+        verdict = '负定 (顺序主子式符号交替, 与 (-1)^k 同号)'
+    elif None in signs:
+        verdict = '无法判定 (含未定符号的主子式)'
+    elif all(s is not False for s in signs):
+        verdict = '半正定/不定 (存在退化的顺序主子式, 建议结合特征值)'
+    else:
+        verdict = '不定 (不满足正定或负定条件)'
+    lines.append(r'& \Rightarrow \boxed{\text{' + verdict + r'}}')
+    return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
+
+
 def _dispatch_calculus(expression: str):
     """Auto-route a combined calculus expression by its top-level operator.
 
@@ -353,6 +381,8 @@ _AUTO_FUNCS = {
     'trace': ('trace', ['expression']),
     'pinv': ('pinv', ['expression']), 'pseudoinverse': ('pinv', ['expression']),
     'jordan': ('jordan', ['expression']), 'jordanform': ('jordan', ['expression']),
+    'definite': ('definiteness', ['expression']), 'isdefinite': ('definiteness', ['expression']),
+    'sylvestar': ('definiteness', ['expression']),
     'nullspace': ('nullspace', ['expression']), 'nullity': ('nullspace', ['expression']),
     'colspace': ('colspace', ['expression']), 'columnspace': ('colspace', ['expression']),
     'rowspace': ('rowspace', ['expression']),
@@ -405,6 +435,7 @@ _MATRIX_OP_NAMES = {
     'dependence', 'project', 'projection', 'transpose',
     'trace', 'nullspace', 'nullity', 'colspace', 'columnspace', 'rowspace',
     'pinv', 'pseudoinverse', 'jordan', 'jordanform',
+    'definite', 'isdefinite', 'sylvestar',
 }
 
 
@@ -1048,6 +1079,9 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
 
         if operation_type == 'jordan':
             return _matrix_jordan(expression)
+
+        if operation_type == 'definiteness':
+            return _matrix_definiteness(expression)
 
         if operation_type in ('nullspace', 'colspace', 'rowspace'):
             return _matrix_subspace(expression, operation_type)
