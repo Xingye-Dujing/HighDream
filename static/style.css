@@ -779,6 +779,23 @@ body.keyboard-open #content {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* Math-rendered keys show the real inserted template (with \square slots).
+   Rows already flex-wrap, so wide templates drop onto their own line. */
+.keyboard-key-math {
+  min-width: 40px;
+  padding: 8px 10px;
+  font-size: calc(15px * var(--fscale));
+  line-height: 1.25;
+}
+
+.keyboard-key-math mjx-container {
+  margin: 0 !important;
+}
+
+.keyboard-key-math:hover {
+  transform: none;
+}
+
 .keyboard-group-label {
   font-size: 12px;
   color: var(--jp-ui-font-color1);

@@ -378,6 +378,9 @@ function bindEvents() {
     });
   });
 
+  // Show the real inserted math (with visible placeholders) on each key.
+  decorateKeyboardKeys();
+
   // Fullscreen related events
   const closeBtn = document.querySelector('.math-fullscreen-close');
   if (closeBtn) {
@@ -1277,6 +1280,48 @@ function showNotification(message, type = "success") {
       }
     }, 300);
   }, 3000);
+}
+
+// Turn a key's raw insert-LaTeX into a display string: fill empty template
+// slots with \square so the placeholder structure is visible (Maple-style),
+// give a bare ^{}/_{} a base to render against, and drop MathLive cursor
+// artifacts such as the stray closing brace in "\sqrt[{}]{}}".
+function displayLatex(raw) {
+  let s = raw.replace(/\{\s*\}/g, "{\\square}").replace(/\[\s*\]/g, "[\\square]");
+  if (/^[\^_]/.test(s)) s = "\\square" + s;   // bare ^{}/_{} need a base to render
+  let depth = 0;
+  let out = "";
+  for (const ch of s) {
+    if (ch === "{") { depth += 1; out += ch; }
+    else if (ch === "}") { if (depth > 0) { depth -= 1; out += ch; } }
+    else out += ch;
+  }
+  return out;
+}
+
+function typesetKeyboard() {
+  const kb = document.getElementById("math-keyboard");
+  if (!kb) return;
+  if (window.MathJax && typeof MathJax.typesetPromise === "function") {
+    if (typeof MathJax.typesetClear === "function") MathJax.typesetClear([kb]);
+    MathJax.typesetPromise([kb]).catch(function () { /* ignore */ });
+  } else {
+    setTimeout(typesetKeyboard, 200);
+  }
+}
+
+// Replace each keyboard key's text label with the rendered math it inserts,
+// keeping the original label as a hover tooltip.
+function decorateKeyboardKeys() {
+  document.querySelectorAll(".keyboard-key").forEach(function (key) {
+    const raw = key.getAttribute("data-latex");
+    if (!raw) return;
+    const label = key.textContent.trim();
+    if (label) key.title = label;
+    key.classList.add("keyboard-key-math");
+    key.textContent = "\\(" + displayLatex(raw) + "\\)";
+  });
+  typesetKeyboard();
 }
 
 function toggleKeyboard() {
