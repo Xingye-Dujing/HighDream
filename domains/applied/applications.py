@@ -6,12 +6,23 @@ iteration, mean-value theorem), so the intermediate steps are as complete as the
 main calculus output.
 """
 
-from sympy import Eq, Symbol, simplify, solve
+from sympy import Eq, N, Symbol, simplify, solve
 
 from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import align, derivative_steps, derivative_value, expr_text, get_var
 from domains.applied._common import render_note as note, to_num
+
+
+def _as_float(value):
+    """Real float of a sympy value, or None if it is not a real number."""
+    try:
+        c = complex(N(value))
+    except (TypeError, ValueError):
+        return None
+    if abs(c.imag) < 1e-12:
+        return c.real
+    return None
 
 
 def tangent(data):
@@ -74,6 +85,65 @@ def newton(data):
         nxt = simplify(cur - f.subs(x, cur) / derivative_value(f_str, x, 1).subs(x, cur))
         items.append((Eq(Symbol(f'x_{k}'), nxt), note("牛顿迭代 x_{k}=x_{k-1}-f/f'")))
         cur = nxt
+    return True, align(items)
+
+
+def bisection(data):
+    x = get_var(data)
+    f = sympify(expr_text(data))
+    lo = to_num(data.get('lower'), 0)
+    hi = to_num(data.get('upper'), 1)
+    iters = int(data.get('order') or data.get('steps') or 8)
+    flo, fhi = _as_float(f.subs(x, lo)), _as_float(f.subs(x, hi))
+    if flo is None or fhi is None or flo * fhi > 0:
+        return False, '二分法需要异号端点: f(a)·f(b) < 0'
+    items = [(f, note('f(x)')),
+             (None, note(f'端点 f({lo})={N(f.subs(x, lo), 6)}, f({hi})={N(f.subs(x, hi), 6)}, 异号'))]
+    mid = (lo + hi) / 2
+    for k in range(1, iters + 1):
+        mid = (lo + hi) / 2
+        fm = _as_float(f.subs(x, mid))
+        items.append((Eq(Symbol(f'm_{k}'), N(mid, 6)), note(f'中点, f(m)={N(f.subs(x, mid), 6)}')))
+        if fm is None:
+            break
+        if flo * fm <= 0:
+            hi = mid
+        else:
+            lo, flo = mid, fm
+    items.append((N(mid, 6), note('根的近似 (区间中点)')))
+    return True, align(items)
+
+
+def secant(data):
+    x = get_var(data)
+    f = sympify(expr_text(data))
+    x_prev = to_num(data.get('point'), 0)
+    x_cur = to_num(data.get('x1'), 1)
+    iters = int(data.get('order') or data.get('steps') or 6)
+    items = [(f, note('f(x)')), (None, note(f'初值 x_0={N(x_prev,6)}, x_1={N(x_cur,6)}'))]
+    for k in range(1, iters + 1):
+        f_prev, f_cur = _as_float(f.subs(x, x_prev)), _as_float(f.subs(x, x_cur))
+        if f_prev is None or f_cur is None or abs(f_cur - f_prev) < 1e-15:
+            break
+        x_new = simplify(x_cur - f.subs(x, x_cur) * (x_cur - x_prev)
+                         / (f.subs(x, x_cur) - f.subs(x, x_prev)))
+        items.append((Eq(Symbol(f'x_{k}'), N(x_new, 6)),
+                      note('割线法 x_k = x_{k-1} - f(x_{k-1})(x_{k-1}-x_{k-2})/(f(x_{k-1})-f(x_{k-2}))')))
+        x_prev, x_cur = x_cur, x_new
+    items.append((N(x_cur, 6), note('根的近似')))
+    return True, align(items)
+
+
+def fixed_point(data):
+    x = get_var(data)
+    g = sympify(expr_text(data))
+    cur = to_num(data.get('point'), 0)
+    iters = int(data.get('order') or data.get('steps') or 8)
+    items = [(g, note('迭代函数 g(x)')), (Eq(Symbol('x_0'), cur), note('初值'))]
+    for k in range(1, iters + 1):
+        cur = simplify(g.subs(x, cur))
+        items.append((Eq(Symbol(f'x_{k}'), N(cur, 6)), note('不动点迭代 x_k = g(x_{k-1})')))
+    items.append((N(cur, 6), note('不动点近似')))
     return True, align(items)
 
 

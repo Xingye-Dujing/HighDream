@@ -104,6 +104,7 @@ HighDream 是一个基于 **Python** 和 **SymPy** 的符号计算工具。它�
 - 高阶导数：diff(expr, x, n) / dⁿ/dxⁿ 逐阶求解——每一阶都完整走规则引擎并把上一阶结果代回，绝不 .diff(n) 黑箱跳步
 - 矩阵新算子：迹 tr(A)（对角线求和，可作为标量参与组合运算）、零空间 N(A)、列空间 C(A)、行空间 R(A)——均先给行最简形与主元列，再给出空间的一组基与维数
 - 数值解初值问题(IVP)：欧拉法 euler、改进欧拉 heun、四阶龙格库塔 rk4，按步长 h 逐步推进并列出每一步的 x_k 与 y_k(如 euler(y'=x+y, y(0)=1, 到 x=1, 4 步))，给出 y(x_end) 的数值近似
+- 数值求根：二分法 bisection(需异号端点)、割线法 secant、不动点迭代 fixedpoint，与已有牛顿法 newton 一起，逐步列出每次迭代值直至收敛(如 bisection(x^2-2, x, 1, 2, 8) → 1.414…)
 - 审计修复：商法则此前因条件写错而失效(除法现走商法则)；有限和 Σ_{k=1}^{n} 此前误入无穷级数敛散性判“发散”，现走闭式求和(Faulhaber/等比/裂项)，无上限才判敛散；收敛半径改用输入的求和变量并对振荡系数回退到柯西-阿达马根值判别，不再崩溃；simplify 单独调用不再返回空结果
 - 高等数学扩展：切线/线性化/临界点(极值)/牛顿法、弧长/旋转体体积(圆盘·柱壳)/旋转曲面、累次/二重积分(矩形区域, 内外层均逐步积分)、隐函数与参数方程求导、极坐标面积与斜率、泰勒/麦克劳林展开(各阶导数经规则引擎逐级求解)、级数敛散性(第n项/比值/根值/莱布尼茨/p-级数 逐法定名判定)、反常积分、微分方程(一阶可分离变量/一阶线性积分因子/恰当方程势函数, 以及二阶常系数齐次特征方程与非齐次常数变易法逐步求解; 其余回退 dsolve)、数值积分(梯形/辛普森)、中值定理/罗尔定理、幂级数收敛半径与收敛域(端点判定)+逐项求导/积分、复数化简(a+bi)/极坐标·指数形式/复数方程求根、柱壳法体积、复数高次幂(棣莫弗)
 - 万能输入框：新增“自动识别(微积分+线性代数)”默认题型，一个框内写完整算式即可，程序按算子/结构分派到全部计算功能——结构式 d/dx、∫、∮、lim、Σ、矩阵字面量(A+B/A*B/单矩阵行最简)、\det 等裸式；函数式 det/rank/inverse/rref/eigenvals/svd/lu/diagonalize/orthogonalize/dependence/project/transpose、diff/int/limit/sum/taylor/tangent/linearization/critical/newton/meanvalue/arclength/volume/shell/surface/implicit/parametric/ode/numerical/complex/demoivre/msimplify/simplify、矩阵运算 add/subtract/multiply(A,B) 等；无算子的普通表达式则化简，无需先选类型（类似 Maple）

@@ -15,6 +15,9 @@ HANDLERS = {
     'linearization': applications.linearization,
     'critical_points': applications.critical_points,
     'newton': applications.newton,
+    'bisection': applications.bisection,
+    'secant': applications.secant,
+    'fixed_point': applications.fixed_point,
     'mean_value': applications.mean_value,
     # integral applications
     'arc_length': integral_apps.arc_length,

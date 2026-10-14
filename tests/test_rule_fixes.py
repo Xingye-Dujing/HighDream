@@ -88,3 +88,18 @@ def test_numerical_ivp_methods():
 def test_ivp_table_not_scalar_composable():
     ok, res = _dispatch_auto('2*euler(x+y,x,0,1,1,4)')
     assert not ok  # a trajectory table can't be embedded in scalar arithmetic
+
+
+def test_root_finding_methods():
+    # root of x^2-2 near sqrt(2)=1.41421
+    ok, res = _dispatch_auto('bisection(x^2-2,x,1,2,8)')
+    assert ok and '1.414' in res and '根的近似' in res
+    ok, res = _dispatch_auto('secant(x^2-2,x,1,2,8)')
+    assert ok and '1.41421' in res
+    ok, res = _dispatch_auto('fixedpoint(sqrt(x+2),x,1,10)')
+    assert ok and '不动点近似' in res
+
+
+def test_bisection_requires_sign_change():
+    ok, res = _dispatch_auto('bisection(x^2+1,x,0,1,5)')  # always positive -> no bracket
+    assert not ok and '异号' in res
