@@ -1,6 +1,7 @@
 from typing import List, Optional, Tuple
 
-from sympy import Add, Expr, Integral, Symbol, latex, limit, oo, simplify
+from sympy import (Add, Eq, Integer, S, Symbol, Expr, Integral, fraction, latex,
+                   limit, log, oo, preorder_traversal, simplify, solveset)
 
 from core import BaseCalculator, SelectRuleCalculator
 from core.cached_calculator import DBCachedCalculator
@@ -128,6 +129,87 @@ def create_integral_calculator(base_class):
                 return val, True
             return direct, False
 
+        def _integrand_of(self) -> Optional[Expr]:
+            """The original integrand, taken from the first Integral step (for pole scans)."""
+            steps = self.step_generator.steps
+            first = steps[0] if steps else None
+            if isinstance(first, Integral) and first.args:
+                return first.args[0]
+            return None
+
+        def _one_sided(self, F: Expr, var: Symbol, pt, side: str):
+            """One-sided limit of the antiderivative at ``pt`` ('right' = +, 'left' = -)."""
+            try:
+                return limit(F, var, pt, dir='+' if side == 'right' else '-')
+            except Exception:  # pylint: disable=broad-exception-caught
+                return F.subs(var, pt)
+
+        def _interior_poles(self, f: Expr, var: Symbol, a, b) -> list:
+            """Points strictly inside (a, b) where the integrand blows up (interior poles).
+
+            Candidates come from denominator roots and logarithm-argument zeros; each is
+            confirmed by checking a one-sided limit of the integrand is infinite, so
+            removable singularities are not mis-flagged."""
+            cands = set()
+            try:
+                den = fraction(simplify(f))[1]
+                for r in solveset(Eq(den, 0), var, domain=S.Reals):
+                    if getattr(r, 'is_number', False) and getattr(r, 'is_finite', False):
+                        cands.add(r)
+                for e in preorder_traversal(f):
+                    if isinstance(e, log):
+                        g = e.args[0]
+                        for r in solveset(Eq(g, 0), var, domain=S.Reals):
+                            if getattr(r, 'is_number', False) and getattr(r, 'is_finite', False):
+                                cands.add(r)
+            except Exception:  # pylint: disable=broad-exception-caught
+                return []
+            lo, hi = (a, b) if (a <= b) else (b, a)
+            inside = []
+            for c in cands:
+                try:
+                    if not (lo < c < hi):
+                        continue
+                    lp = limit(f, var, c, dir='+')
+                    lm = limit(f, var, c, dir='-')
+                except Exception:  # pylint: disable=broad-exception-caught
+                    continue
+                blows = (getattr(lp, 'is_infinite', False) or getattr(lm, 'is_infinite', False)
+                         or lp in (S.ComplexInfinity,) or lm in (S.ComplexInfinity,))
+                if blows:
+                    inside.append(c)
+            return sorted(set(inside), key=float)
+
+        def _append_split_evaluation(self, F: Expr, var: Symbol, a, b, poles: list) -> None:
+            """Evaluate the definite integral by splitting at interior poles; each side must converge."""
+            a, b = (a, b) if (a <= b) else (b, a)
+            pts = [a] + list(poles) + [b]
+            pole_set = set(poles)
+            total = Integer(0)
+            dv: Optional[Tuple] = None
+            for p, q in zip(pts[:-1], pts[1:]):
+                vp = self._one_sided(F, var, p, 'right') if p in pole_set else F.subs(var, p)
+                vq = self._one_sided(F, var, q, 'left') if q in pole_set else F.subs(var, q)
+                if not (getattr(vp, 'is_finite', False) and getattr(vq, 'is_finite', False)):
+                    dv = (p, q)
+                    break
+                total = total + (vq - vp)
+
+            poles_tex = ", ".join(latex(c) for c in poles)
+            if dv is not None:
+                self.step_generator.add_step(
+                    S.NaN,
+                    rf"被积函数在区间内部有瑕点 $x = {poles_tex}$, 拆出的子区间 "
+                    rf"$[{latex(dv[0])}, {latex(dv[1])}]$ 上的反常积分发散, 不能用牛顿-莱布尼茨公式, "
+                    rf"故原反常积分发散")
+                return
+
+            result = simplify(total)
+            self.step_generator.add_step(
+                None, rf"被积函数在区间内部有瑕点 $x = {poles_tex}$, 按瑕点拆分为若干反常积分")
+            self.step_generator.add_step(
+                result, rf"各子区间反常积分均收敛, 求和得 $\int_{{{latex(a)}}}^{{{latex(b)}}} = {latex(result)}$")
+
         def _append_definite_evaluation(self, antiderivative: Expr) -> None:
             """Append the Newton-Leibniz steps; use endpoint limits for improper cases."""
 
@@ -136,6 +218,16 @@ def create_integral_calculator(base_class):
             lower = 0 if lower is None else lower
 
             F = self._resolve_antiderivative(antiderivative)
+
+            # Interior poles invalidate Newton-Leibniz across a discontinuity
+            # (e.g. PV-like 0 for int(1/x,-1,1) or the spurious -2 for int(1/x^2,-1,1));
+            # split the interval and treat each side as an improper integral.
+            f = self._integrand_of()
+            if f is not None:
+                poles = self._interior_poles(f, var, lower, upper)
+                if poles:
+                    self._append_split_evaluation(F, var, lower, upper, poles)
+                    return
 
             fu, imp_u = self._eval_at_bound(F, var, upper, 'upper')
             fl, imp_l = self._eval_at_bound(F, var, lower, 'lower')

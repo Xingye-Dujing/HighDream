@@ -196,3 +196,22 @@ def test_improper_rational_integral_no_crash():
     # a mixed improper fraction: polynomial part + arctan part, must also succeed
     ok2, res2 = _dispatch_auto('int((2*x^2+3)/(x^2+1),x)')
     assert ok2 and 'atan' in res2
+
+
+def test_interior_pole_definite_integral_diverges():
+    # Newton-Leibniz across an interior pole is invalid. These must be reported as
+    # divergent (split into improper sub-integrals), NOT a spurious finite number.
+    for e in [r'int(1/x,x,-1,1)', r'int(1/x^2,x,-1,1)', r'int(1/(x-0.5),x,0,1)']:
+        ok, res = _dispatch_auto(e)
+        assert ok and '发散' in res, (e, res)
+    # a pole exactly at 0 for 1/x^2 must not return the blind value -2
+    _, res2 = _dispatch_auto(r'int(1/x^2,x,-1,1)')
+    assert '= -2' not in res2 and 'NaN' in res2
+
+
+def test_no_false_pole_on_smooth_definite_integral():
+    # smooth integrands with no interior pole are unaffected (still finite values)
+    ok, res = _dispatch_auto(r'int(1/(1+x^2),x,-1,1)')
+    assert ok and '\\pi' in res and '发散' not in res
+    ok2, res2 = _dispatch_auto(r'int(x^2,x,-2,2)')
+    assert ok2 and '16' in res2 and '发散' not in res2
