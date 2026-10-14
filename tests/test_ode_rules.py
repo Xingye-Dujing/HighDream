@@ -5,7 +5,7 @@ Each checks two things: (a) the equation is solved by the *rule* engine (``handl
 True, i.e. it does not fall back to ``dsolve`` — the project's no-black-box rule), and
 (b) the produced general solution actually satisfies the ODE (residual is zero)."""
 
-from sympy import Abs, Derivative, Eq, Function, Symbol, diff, simplify
+from sympy import Abs, Derivative, Eq, Function, N, Symbol, diff, simplify
 
 from domains.applied._odesolver import solve_ode_rule
 from domains.applied.ode import solve_ode
@@ -108,3 +108,29 @@ def test_applied_align_no_none_sentinel_leak():
     # embeds an integrating-factor integral that triggers those sub-steps.
     ok, res = solve_ode({"expression": "f'(x)+f(x)-x*f(x)**3", "variable": "x"})
     assert ok and "\\begin{align}" in res and "None" not in res
+
+
+def _numeric_residual(eq, order, points):
+    """Solve via dispatch; return the max |ODE residual| over concrete (x, C1, C2)."""
+    rows, handled = solve_ode_rule(eq, x, F)
+    assert handled, "fell back to dsolve"
+    yc = rows[-1][0].rhs.replace(Abs, lambda a: a)   # branch-local (constant absorbs sign)
+    subs = {F: yc}
+    for k in range(1, order + 1):
+        subs[Derivative(F, (x, k))] = diff(yc, x, k)
+    lhs = eq.lhs.subs(subs)
+    rhs = eq.rhs.subs({F: yc})
+    worst = 0.0
+    for xv, c1v, c2v in points:
+        d = {x: xv, Symbol('C1'): c1v, Symbol('C2'): c2v, Symbol('C'): c1v}
+        worst = max(worst, abs(float(N((lhs - rhs).subs(d)))))
+    return worst
+
+
+def test_reduction_of_order_missing_y():
+    # y'' = (y')^2 -> p' = p^2 -> y = C2 - log(C1 + x)  (reached only by the reducer)
+    assert _numeric_residual(Eq(Derivative(F, (x, 2)) - Derivative(F, x) ** 2, 0), 2,
+                             [(2.3, 0.5, 1.1), (4.0, -0.3, 0.0), (1.5, 2.0, -2.0)]) < 1e-6
+    # y'' = y'/x (variable coefficient) -> y = C2 + k x^2
+    assert _numeric_residual(Eq(Derivative(F, (x, 2)) - Derivative(F, x) / x, 0), 2,
+                             [(2.3, 0.5, 1.1), (4.0, -0.3, 0.0)]) < 1e-6

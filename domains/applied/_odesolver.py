@@ -6,8 +6,8 @@ integral through the core IntegralCalculator so the working is genuine. Returns
 ``handled=False`` for any other form so the caller can fall back to ``dsolve``.
 """
 
-from sympy import (Add, Derivative, Eq, I, Integral, Mul, Symbol, cos, degree,
-                   diff, exp, factor_list, latex, log, simplify, sin, solve, sqrt)
+from sympy import (Add, Derivative, Eq, Function, I, Integral, Mul, Symbol, Abs,
+                   cos, degree, diff, exp, factor_list, latex, log, simplify, sin, solve, sqrt)
 
 from domains.applied._common import (integral_steps, integral_value,
                                      render_note as note)
@@ -494,29 +494,104 @@ def _higher_order_homogeneous(alg, x, f, order):
     return rows
 
 
+def _isolate_dependency(rows, dep):
+    """Explicit solution ``dep = rhs`` from a rows list, or None if it stays implicit.
+
+    Falls back to stripping ``Abs`` (a separable integral yields log(Abs(dep)), and the
+    +/- branch is absorbed by the integration constant), so the result can be re-integrated."""
+    last = rows[-1][0]
+    if not isinstance(last, Eq):
+        return None
+    if last.lhs == dep and dep not in last.rhs.free_symbols:
+        return last.rhs
+    for cand in (last, last.replace(Abs, lambda a: a)):
+        try:
+            sols = solve(cand, dep)
+        except (NotImplementedError, ValueError):  # e.g. solving Abs of a complex symbol
+            continue
+        for s in sols:
+            if dep not in s.free_symbols:
+                return s
+    return None
+
+
+def _reduce_missing_y(alg, x, f):
+    """Reduce a second-order equation missing ``y`` (y'' = G(x, y')) to first order.
+
+    Substitutes p = y' (so y'' = p'), solves the resulting first-order ODE for p(x) by
+    reusing the whole first-order dispatcher, then integrates p once more to obtain y."""
+    p = Symbol('p')
+    q = Symbol('q')
+    expr = simplify((alg.lhs - alg.rhs) if isinstance(alg, Eq) else alg)
+    d2 = Derivative(f, (x, 2))
+    d1 = Derivative(f, x)
+    if d2 not in expr.atoms(Derivative):
+        return None
+    e2 = expr.subs({d2: q, d1: p})
+    if f in e2.free_symbols:
+        return None                               # y actually appears -> not this form
+    sols = solve(e2, q)
+    if not sols:
+        return None
+    G = simplify(sols[0])                         # p' = G(p, x)
+    P = Function('p')(x)  # pylint: disable=not-callable
+    sub_rows, handled = solve_ode_rule(Eq(Derivative(P, x), G.subs(p, P)), x, P)
+    if not handled:
+        return None
+    p_sol = _isolate_dependency(sub_rows, P)
+    if p_sol is None:
+        return None                               # implicit in p -> cannot integrate for y
+    c1, c2 = Symbol('C1'), Symbol('C2')
+    p_sol = p_sol.subs(Symbol('C'), c1)
+    y_part = integral_value(p_sol, x, allow_multi=True)
+    if y_part.has(Integral):
+        return None
+    rows = [
+        (Eq(Derivative(P, x), G.subs(p, P)),
+         note("缺 $y$: 令 $p=y'$, 则 $y''=p'$, 化为关于 $p$ 的一阶方程")),
+    ]
+    rows += sub_rows
+    rows += integral_steps(p_sol, x, allow_multi=True)
+    rows.append((Eq(f, simplify(y_part + c2)), note("再积分 $y=\\int p\\,dx + C_2$, 得通解")))
+    return rows
+
+
+def _try(fn, *args):
+    """Call a rule method, returning None (not raising) on any internal failure, so one
+    form that chokes cannot prevent the other forms from being attempted."""
+    try:
+        return fn(*args)
+    except Exception:  # pylint: disable=broad-exception-caught
+        return None
+
+
 def solve_ode_rule(eq, x, f):
     """Dispatch to the applicable rule method (2nd-order, exact, separable, linear)."""
     try:
         order = _max_deriv_order(eq, x, f)
         if order >= 2:
             if order == 2:
-                rows = _second_order_rows(eq, x, f)
+                rows = _try(_second_order_rows, eq, x, f)
                 if rows is not None:
                     return rows, True
-                rows = _cauchy_euler_rows(eq, x, f)
+                rows = _try(_cauchy_euler_rows, eq, x, f)
                 if rows is not None:
                     return rows, True
-            rows = _higher_order_homogeneous(eq, x, f, order)
+            rows = _try(_higher_order_homogeneous, eq, x, f, order)
             if rows is not None:
                 return rows, True
+            if order == 2:
+                rows = _try(_reduce_missing_y, eq, x, f)
+                if rows is not None:
+                    return rows, True
             return None, False
         y = Symbol('y')
         c = Symbol('C')
         alg = eq.subs({f: y, Derivative(f, x): Symbol('p')})
-        rows = _exact_rows(alg, x, y, c, f)
+        rows = _try(_exact_rows, alg, x, y, c, f)
         if rows is not None:
             return rows, True
-        rows = _exact_factor_rows(alg, x, y, c, f)
+        rows = _try(_exact_factor_rows, alg, x, y, c, f)
         if rows is not None:
             return rows, True
         return first_order_ode(eq, x, f)
