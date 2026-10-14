@@ -29,8 +29,8 @@ const OP_PLACEHOLDER = {
 };
 
 // A 2x2 fillable matrix seeded into single-matrix ops when the editor is empty.
-// Empty groups {} are MathLive's editable placeholders (rendered as □).
-const MATRIX_SKELETON = "\\begin{bmatrix}{}&{}\\\\{}&{}\\end{bmatrix}";
+// Uses \square so each cell shows a visible placeholder box.
+const MATRIX_SKELETON = "\\begin{bmatrix}\\square&\\square\\\\\\square&\\square\\end{bmatrix}";
 
 // Natural variable / summation index per operation (avoids the series index
 // colliding with the power-series argument, which broke convergence checks).
@@ -379,18 +379,15 @@ function bindEvents() {
       const field = getMathField(activeCell);
       const textarea = getMathSource(activeCell);
       if (field && field.style.display !== "none") {
-        // Insert a LaTeX template with editable {} placeholders into the editor.
+        // Insert a LaTeX template with visible \square placeholder boxes.
         field.focus();
         if (typeof field.insert === "function") {
           field.insert(latex);
         } else {
           field.value = (field.value || "") + latex;
         }
-        // Jump the caret into the first placeholder so the user can type right away
-        // (MathLive leaves it at the end after insert).
-        if (latex.indexOf("{}") !== -1 && typeof field.executeCommand === "function") {
-          try { field.executeCommand("moveToNextPlaceholder"); } catch (e) { /* ignore */ }
-        }
+        // Put the caret just after the first placeholder so the user can type into it.
+        focusFirstSquare(field);
         if (textarea) textarea.value = field.value;
       } else if (textarea) {
         const cursorPos = textarea.selectionStart || textarea.value.length;
@@ -450,10 +447,12 @@ function setupCellEvents(cell) {
     if (mathField) {
       mathField.addEventListener("change", function () { readExpr(cell); });
       mathField.addEventListener("click", function () { setActiveCell(cell); });
+      installSquareFill(mathField);
     }
     if (mathFieldB) {
       mathFieldB.addEventListener("change", function () { readExpr(cell); });
       mathFieldB.addEventListener("click", function () { setActiveCell(cell); });
+      installSquareFill(mathFieldB);
     }
     applyInputMode(cell);
 
@@ -1319,6 +1318,66 @@ function displayLatex(raw) {
     else out += ch;
   }
   return out;
+}
+
+// ---- Make \square placeholder boxes fillable: type right after one to replace it.
+// MathLive caret offsets count atoms only: each \command or plain char = 1, while
+// braces and spaces are transparent (not positions). Return the offsets that sit
+// just after a \square (i.e. where the caret should be to fill that box).
+function squareCaretOffsets(value) {
+  const offs = [];
+  let atom = 0;
+  let i = 0;
+  while (i < value.length) {
+    let tok;
+    if (value[i] === "\\") {
+      const m = /^\\([a-zA-Z]+|.)/.exec(value.slice(i));
+      tok = m ? m[0] : value[i];
+    } else if (value[i] === " " || value[i] === "{" || value[i] === "}") {
+      i += 1;
+      continue;
+    } else {
+      tok = value[i];
+    }
+    atom += 1;
+    if (tok === "\\square") offs.push(atom);
+    i += tok.length;
+  }
+  return offs;
+}
+
+function caretAfterSquare(field) {
+  const sel = field.selection;
+  if (!sel || !sel.ranges || !sel.ranges.length) return false;
+  return squareCaretOffsets(field.value).indexOf(sel.ranges[0][0]) !== -1;
+}
+
+// Move the caret to just after the first \square so the next keystroke fills it.
+function focusFirstSquare(field) {
+  const offs = squareCaretOffsets(field.value);
+  if (!offs.length) return;
+  try {
+    field.selection = { ranges: [[offs[0], offs[0]]], direction: "none" };
+  } catch (e) { /* selection not settable; leave caret where MathLive put it */ }
+}
+
+// A printable key typed while the caret sits right after a \square deletes that
+// square first, so the character takes its place (click-after-box, then type).
+function installSquareFill(field) {
+  if (!field || field.__sqFill) return;
+  field.__sqFill = true;
+  field.addEventListener("keydown", function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!e.key || e.key.length !== 1) return;
+    if (!caretAfterSquare(field)) return;
+    e.preventDefault();
+    try {
+      field.executeCommand("deleteBackward");
+      field.executeCommand(["insert", e.key]);
+    } catch (err) { /* ignore */ }
+    const cell = field.closest(".cell");
+    if (cell) readExpr(cell);
+  });
 }
 
 function typesetKeyboard() {

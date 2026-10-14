@@ -258,9 +258,9 @@ def _dispatch_auto(expression: str):
     import re  # pylint: disable=import-outside-toplevel
     from sympy import Derivative, Integral, Limit, Sum  # pylint: disable=import-outside-toplevel
 
-    # Any unfilled placeholder (empty group {} or \square) -> one clear message,
-    # checked on the raw input before conversion so latex_to_nested never sees them.
-    if re.search(r'\\square\b|\\Box\b|\\bigbox\b|\{\s*\}', expression):
+    # Any unfilled placeholder box -> one clear message, checked on the raw input
+    # before conversion so latex_to_nested never trips over the empty slots.
+    if re.search(r'\\square\b|\\Box\b|\\bigbox\b', expression):
         return False, '请先填写输入框中的占位（□）后再计算'
     text = latex_to_nested(expression)  # bmatrix blocks -> [[...]] (no-op otherwise)
 

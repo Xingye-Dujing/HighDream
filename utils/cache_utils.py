@@ -41,7 +41,6 @@ _LN_RE = re.compile(r'(?<![A-Za-z])\\ln\b')
 _EPOW_BRACE_RE = re.compile(r'(?<![A-Za-z\\])e\^\{([^{}]*)\}')
 _EPOW_CHAR_RE = re.compile(r'(?<![A-Za-z\\])e\^([A-Za-z0-9])')
 _UNFILLED_RES = (
-    re.compile(r'\{\s*\}'),                       # any empty group = unfilled MathLive placeholder
     re.compile(r'\\square\b|\\Box\b|\\bigbox\b'),
     re.compile(r'\\frac\s*\{\s*\}\s*\{\s*\}'),
     re.compile(r'\\sqrt\s*(?:\[\s*\])?\s*\{\s*\}'),
