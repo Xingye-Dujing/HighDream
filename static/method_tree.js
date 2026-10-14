@@ -21,6 +21,8 @@
   var limitFields;
   var elInteractive, elDecisionPanel, elDecisionRuleName, elDecisionParentLatex, elDecisionPreviewLatex;
   var elDecisionAccept, elDecisionSkip;
+  var elPathPanel, elPathTitle, elPathLatex, elPathSteps, elPathClose;
+  var selectedNodeId = null;
   var isInteractive = false;
 
   // Tree state
@@ -78,6 +80,11 @@
     elDecisionPreviewLatex = document.getElementById('mt-decision-preview-latex');
     elDecisionAccept = document.getElementById('mt-decision-accept');
     elDecisionSkip = document.getElementById('mt-decision-skip');
+    elPathPanel = document.getElementById('mt-path-panel');
+    elPathTitle = document.getElementById('mt-path-title');
+    elPathLatex = document.getElementById('mt-path-latex');
+    elPathSteps = document.getElementById('mt-path-steps');
+    elPathClose = document.getElementById('mt-path-close');
     limitFields = document.querySelectorAll('.mt-limit-only');
 
     readQueryParams();
@@ -94,12 +101,14 @@
     });
     elDecisionAccept.addEventListener('click', function () { respondDecision(true); });
     elDecisionSkip.addEventListener('click', function () { respondDecision(false); });
+    if (elPathClose) elPathClose.addEventListener('click', hideLinearPath);
     window.addEventListener('resize', function () {
       if (renderedTree) renderEdges();
     });
 
     setupPanZoom();
     setupPortConnecting();
+    setupNodeSelection();
     waitForMathJax();
 
     var qs = new URLSearchParams(window.location.search);
@@ -334,6 +343,111 @@
     if (elDecisionPanel) elDecisionPanel.style.display = 'none';
   }
 
+  // --------------------------------------------------- node selection + linear path
+
+  function setupNodeSelection() {
+    // Double-click a node (zero conflict with the drag / pan / port-mousedown stack,
+    // all of which use left-button down/move/up) to view that branch as one linear
+    // derivation. Ports and the resize handle are excluded.
+    elNodesContainer.addEventListener('dblclick', function (e) {
+      if (connectingPort) return;
+      if (e.target.closest('.mt-port') || e.target.closest('.mt-node-resizer')) return;
+      var nodeEl = e.target.closest('.mt-node');
+      if (!nodeEl) return;
+      e.preventDefault();
+      var nodeId = (nodeEl.id || '').replace('mt-node-', '');
+      if (nodeId) selectNode(nodeId);
+    });
+  }
+
+  function selectNode(nodeId) {
+    document.querySelectorAll('.mt-node.mt-selected').forEach(function (el) {
+      el.classList.remove('mt-selected');
+    });
+    selectedNodeId = nodeId;
+    var el = document.getElementById('mt-node-' + nodeId);
+    if (el) el.classList.add('mt-selected');
+    showLinearPath(nodeId);
+  }
+
+  // Walk the parent chain to the root, collecting rule_applied; reverse to root->node
+  // order and drop the root (null) and the synthetic 'back_subs' pseudo-rule.
+  function buildRulePath(nodeId) {
+    var chain = [];
+    var id = nodeId;
+    var guard = 0;
+    while (id && nodeData[id] && guard < 512) {
+      var r = nodeData[id].rule_applied;
+      if (r && r !== 'back_subs') chain.push(r);
+      id = nodeData[id].parent;
+      guard += 1;
+    }
+    return chain.reverse();
+  }
+
+  function showLinearPath(nodeId) {
+    if (!elPathPanel || !elPathLatex || !elPathSteps) return;
+    var node = nodeData[nodeId];
+    if (!node) return;
+    if (elPathTitle) {
+      elPathTitle.textContent = '线性推导 · 路径到「' +
+        (node.rule_display || node.rule_applied || '此节点') + '」';
+    }
+    elPathSteps.innerHTML = '';
+    elPathLatex.innerHTML = '<em class="mt-path-loading">生成中…</em>';
+    elPathPanel.style.display = '';
+
+    var body = {
+      domain: elDomain.value,
+      expression: elExpr.value,
+      variable: elVar.value || 'x',
+      point: elPoint.value || '0',
+      direction: elDir.value || '+',
+      node_id: nodeId,
+      rule_path: buildRulePath(nodeId),
+    };
+    fetch('/api/method_tree_path', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data || !data.success) {
+          elPathLatex.innerHTML = '<em class="mt-error">' +
+            escapeHtml((data && data.error) || '生成失败') + '</em>';
+          return;
+        }
+        // The result is already a full \begin{align} block (notebook-identical).
+        elPathLatex.innerHTML = '';
+        elPathLatex.textContent = '$$' + data.result + '$$';
+        // Per-step cards reuse the rule_select .rs-step markup (CSS already loaded).
+        var html = '';
+        (data.steps || []).forEach(function (st, i) {
+          var expl = (i === 0) ? '初始表达式'
+            : (st.explanation ? st.explanation : '');
+          expl = expl.replace(/\$([^$]+)\$/g, '\\(' + '$1' + '\\)');
+          html += '<div class="rs-step' + (i === data.steps.length - 1 ? ' active' : '') + '">' +
+            '<div class="rs-step-explanation">' + expl + '</div>' +
+            '<div class="rs-step-latex">$$' + st.latex + '$$</div></div>';
+        });
+        elPathSteps.innerHTML = html;
+        safeTypeset([elPathPanel]);
+      })
+      .catch(function (err) {
+        elPathLatex.innerHTML = '<em class="mt-error">请求失败: ' +
+          escapeHtml(String(err)) + '</em>';
+      });
+  }
+
+  function hideLinearPath() {
+    if (elPathPanel) elPathPanel.style.display = 'none';
+    selectedNodeId = null;
+    document.querySelectorAll('.mt-node.mt-selected').forEach(function (el) {
+      el.classList.remove('mt-selected');
+    });
+  }
+
   function respondDecision(accepted) {
     if (!currentTaskId) return;
     hideDecision();
@@ -373,6 +487,7 @@
     clearEdgesSvg();
     elStats.innerHTML = '';
     hideDecision();
+    hideLinearPath();
     panX = 0; panY = 0; scale = 1;
     applyTransform();
   }

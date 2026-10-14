@@ -121,7 +121,7 @@ As mentioned above, this idea originated from my high school days `(The Dream of
 - Extensible architecture: easy to add new calculation rules and operation types
 - Two ways to use: Python code calls in Jupyter Notebook; graphical web interface
 - Manual rule selection: via `/rule_select` page, users can manually choose which rule to apply at each derivation step for differentiation, integration, and limits; a new "Undo" button rolls back the last chosen rule (undo is per whole user action via a snapshot stack, since one rule application can produce several derivation steps; the history is bounded)
-- Exhaustive rule-enumeration method tree: via `/method_tree` page, all applicable rule branches at each step can be enumerated and displayed as a blueprint canvas, making the full solving space easy to inspect
+- Exhaustive rule-enumeration method tree: via `/method_tree` page, all applicable rule branches at each step can be enumerated and displayed as a blueprint canvas, making the full solving space easy to inspect; double-clicking any node expands THAT branch (node-to-root) into a single linear step-by-step derivation in a docked panel, reusing the exact notebook align rendering and without re-running the whole search
 
 ## Development Tech Stack
 

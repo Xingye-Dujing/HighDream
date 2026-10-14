@@ -503,6 +503,52 @@
   border-bottom: 1px solid var(--jp-border-color1, var(--border-dim));
 }
 
+/* Linear-derivation panel: a docked card (not a modal) so it stays clear of the
+   hd-menu z-index band; z-index 30 clears every canvas-local layer. */
+.mt-path-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 30;
+  width: min(560px, 42vw);
+  max-height: calc(100vh - 180px);
+  overflow: auto;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(30, 60, 110, 0.25);
+  padding: 12px 16px;
+  color: var(--text);
+}
+.mt-path-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: calc(14px * var(--fscale));
+  font-weight: 600;
+  color: var(--jp-brand-color0, var(--text));
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border-dim);
+}
+.mt-path-close {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: calc(14px * var(--fscale));
+}
+.mt-path-hint {
+  font-size: calc(12px * var(--fscale));
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+.mt-path-panel .math-output { max-height: none; overflow: visible; }
+.mt-path-loading { color: var(--text-faint); }
+
+.mt-node.mt-selected { outline: 3px solid var(--jp-brand-color0, var(--text)); outline-offset: 1px; }
+
 .mt-decision-rule {
   display: flex;
   align-items: center;

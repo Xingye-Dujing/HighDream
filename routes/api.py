@@ -858,3 +858,21 @@ def method_tree_respond():
     accepted = data.get('accepted', False)
     responded = respond_method_tree(task_id, bool(accepted))
     return jsonify({'success': True, 'responded': responded})
+
+
+@api.route('/method_tree_path', methods=['POST'])
+def method_tree_path():
+    """Render one method-tree branch (a root->node rule path) as a linear derivation.
+
+    Expected JSON input:
+        domain, expression, variable, point, direction: the original problem
+        rule_path (list[str]): rule names from the root to the chosen node
+        node_id (str, optional): echoed back for the client's convenience
+
+    Returns:
+        JSON with success, result (a \\begin{align} block), steps, applied/requested, done.
+    """
+    from routes.method_tree_service import linear_path_method_tree  # pylint: disable=import-outside-toplevel
+
+    data = request.json or {}
+    return jsonify(linear_path_method_tree(data))

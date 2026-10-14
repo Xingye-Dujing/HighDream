@@ -16,6 +16,7 @@ still lives in TaskManager.
 import threading
 from typing import Any, Dict, Optional, Tuple
 
+import config
 from core.method_tree_enumerator import MethodTreeEnumerator
 
 
@@ -91,3 +92,54 @@ def respond_method_tree(task_id: str, accepted: bool) -> bool:
     if enumerator is None:
         return False
     return enumerator.respond_decision(accepted)
+
+
+def linear_path_method_tree(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Replay one root->node rule path as a single linear derivation (no re-search).
+
+    The finished tree keeps only per-node LaTeX (its ``explanation`` is empty and its
+    enumerator is dropped once the run completes), so we rebuild a fresh solver with the
+    ORIGINAL problem config and re-apply just the chosen rule sequence — the same
+    primitives ``_replay_solver`` used to build that branch — then emit the notebook-
+    identical ``\\begin{align}`` block plus per-step ``{latex, explanation}``.
+    """
+    from core.manual_step_solver import ManualStepSolver  # pylint: disable=import-outside-toplevel
+
+    kwargs = _extract_kwargs(data)
+    rule_path = data.get('rule_path') or []
+    if not isinstance(rule_path, list):
+        return {'success': False, 'error': 'rule_path 必须是规则名数组'}
+    # 'back_subs' is a synthetic node the enumerator invents, not a registry rule; the
+    # back-substitution happens automatically in finish()/final_postprocess.
+    steps_path = [r for r in rule_path if isinstance(r, str) and r != 'back_subs']
+    steps_path = steps_path[:config.METHOD_TREE_HARD_MAX_DEPTH]
+
+    try:
+        solver = ManualStepSolver(
+            domain=kwargs['domain'], expression=kwargs['expression'],
+            variable=kwargs['variable'], point=kwargs['point'],
+            direction=kwargs['direction'])
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        return {'success': False, 'error': f'初始化失败: {e}'}
+
+    applied = 0
+    for rule_name in steps_path:
+        if solver.done:
+            break
+        try:
+            state = solver.apply_rule(rule_name)
+        except Exception:  # pylint: disable=broad-exception-caught
+            break
+        if state.get('error'):
+            break
+        applied += 1
+
+    try:
+        latex_block = solver.calculator.step_generator.to_latex()
+        steps = solver.state()['steps']
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        return {'success': False, 'error': f'重放失败: {e}'}
+
+    return {'success': True, 'domain': kwargs['domain'], 'node_id': data.get('node_id'),
+            'applied': applied, 'requested': len(steps_path), 'done': solver.done,
+            'result': latex_block, 'steps': steps}
