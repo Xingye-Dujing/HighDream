@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple
 
-from sympy import Add, Expr, Integral, Symbol, latex, simplify
+from sympy import Add, Expr, Integral, Symbol, latex, limit, oo, simplify
 
 from core import BaseCalculator, SelectRuleCalculator
 from core.cached_calculator import DBCachedCalculator
@@ -103,8 +103,27 @@ def create_integral_calculator(base_class):
                 return value.doit()
             return value
 
+        def _eval_at_bound(self, F: Expr, var: Symbol, bound, direction: str):
+            """Value of the antiderivative at a bound, via a one-sided limit when the
+            bound is infinite or the direct substitution is non-finite (improper case).
+
+            Returns ``(value, is_improper)``.
+            """
+            direct = F.subs(var, bound)
+            infinite = bound in (oo, -oo) or getattr(bound, 'is_infinite', False)
+            bad = (direct.has(Integral, Symbol('Limit'))
+                   or getattr(direct, 'is_finite', None) is False
+                   or getattr(direct, 'is_nan', None) is True)
+            if infinite or bad:
+                try:
+                    val = limit(F, var, bound, dir='-' if direction == 'upper' else '+')
+                except Exception:  # pylint: disable=broad-exception-caught
+                    val = direct
+                return val, True
+            return direct, False
+
         def _append_definite_evaluation(self, antiderivative: Expr) -> None:
-            """Append the Newton-Leibniz steps using the computed antiderivative."""
+            """Append the Newton-Leibniz steps; use endpoint limits for improper cases."""
 
             var, upper = self._var, self._upper
             lower = self._lower if self._lower is not None else 0
@@ -112,14 +131,26 @@ def create_integral_calculator(base_class):
 
             F = self._resolve_antiderivative(antiderivative)
 
-            diff_expr = F.subs(var, upper) - F.subs(var, lower)
-            result = simplify(diff_expr)
+            fu, imp_u = self._eval_at_bound(F, var, upper, 'upper')
+            fl, imp_l = self._eval_at_bound(F, var, lower, 'lower')
 
             lb, ub = latex(lower), latex(upper)
+            if imp_u or imp_l:
+                self.step_generator.add_step(
+                    None,
+                    r"端点为无穷或瑕点, 按反常积分取单侧极限: $\lim_{} F\bigr|_{"
+                    + lb + r"}^{" + ub + r"}$"
+                )
+
+            diff_expr = fu - fl
+            result = simplify(diff_expr)
+
+            finite = (getattr(result, 'is_finite', None) is True)
+            concl = "" if finite else r", 该反常积分发散(或不存在)"
             self.step_generator.add_step(
                 result,
                 rf"应用牛顿-莱布尼茨公式: $\left. {latex(F)} \right|_{{{lb}}}^{{{ub}}} "
-                rf"= {latex(diff_expr)} = {latex(result)}$"
+                rf"= {latex(diff_expr)} = {latex(result)}$" + concl
             )
 
         def compute_list(self, expr: str, var: Symbol,
