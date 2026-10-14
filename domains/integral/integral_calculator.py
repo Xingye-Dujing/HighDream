@@ -73,7 +73,13 @@ def create_integral_calculator(base_class):
             super().final_postprocess(final_expr)
 
             if self._is_definite:
-                self._append_definite_evaluation(final_expr)
+                # Use the back-substituted antiderivative (super() added a "回代" step
+                # in terms of the original variable when a substitution was used); using
+                # the raw final_expr would leave a stray substitution symbol and break
+                # the Newton-Leibniz evaluation.
+                steps = self.step_generator.steps
+                antiderivative = steps[-1] if steps and steps[-1] is not None else final_expr
+                self._append_definite_evaluation(antiderivative)
                 return
 
             self._append_constant_of_integration()
@@ -145,7 +151,7 @@ def create_integral_calculator(base_class):
             diff_expr = fu - fl
             result = simplify(diff_expr)
 
-            finite = (getattr(result, 'is_finite', None) is True)
+            finite = getattr(result, 'is_finite', None) is True
             concl = "" if finite else r", 该反常积分发散(或不存在)"
             self.step_generator.add_step(
                 result,

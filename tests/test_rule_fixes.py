@@ -169,3 +169,19 @@ def test_gradient_multivariable():
     # grad(f) shows each partial (other symbols held constant) then the gradient vector
     ok, res = _dispatch_auto('grad(x^2*y + y*z, x)')
     assert ok and '标量场' in res and '求偏导' in res and '梯度' in res
+
+
+def test_definite_integral_with_substitution_uses_backsub_form():
+    # 1/x^2 integrates via substitution to -1/x (back-substituted); Newton-Leibniz on
+    # that gives 1. Using the pre-back-sub (u-form) would wrongly evaluate to 0.
+    ok, res = _dispatch_auto('int(1/x^2,x,1,oo)')
+    assert ok, res
+    assert r'- \frac{1}{x}' in res   # back-substituted antiderivative used
+    assert '= 1 = 1' in res          # final value is 1, not 0
+
+
+def test_definite_integral_ordinary_and_improper():
+    ok, res = _dispatch_auto('int(x^2,x,0,1)')
+    assert ok and '\\frac{1}{3}' in res
+    ok2, res2 = _dispatch_auto('int(1/(1+x^2),x,0,oo)')
+    assert ok2 and '\\pi' in res2
