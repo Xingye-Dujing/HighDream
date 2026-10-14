@@ -73,3 +73,29 @@ def test_cauchy_euler_repeated_and_complex():
     eq_c = Eq(xp ** 2 * Derivative(fp, (xp, 2)) + fp, 0)
     rows_c, handled_c = solve_ode_rule(eq_c, xp, fp)
     assert handled_c and 'log' in str(rows_c[-1][0].rhs)
+
+
+def _resid_2nd_or_higher(eq, order):
+    """Solve and substitute back; returns the residual (must simplify to 0)."""
+    rows, handled = solve_ode_rule(eq, x, F)
+    assert handled, "fell back to dsolve"
+    yc = rows[-1][0].rhs
+    subs = {F: yc}
+    for k in range(1, order + 1):
+        subs[Derivative(F, (x, k))] = diff(yc, x, k)
+    return simplify(eq.lhs.subs(subs) - eq.rhs.subs({F: yc}))
+
+
+def test_higher_order_constant_coeff_homogeneous():
+    # y''' - y' = 0 -> roots 0, 1, -1 -> span {1, e^x, e^-x}
+    assert _resid_2nd_or_higher(
+        Eq(Derivative(F, (x, 3)) - Derivative(F, x), 0), 3) == 0
+    # triple root (r=1): (r-1)^3 -> (C1 + C2 x + C3 x^2) e^x
+    assert _resid_2nd_or_higher(
+        Eq(Derivative(F, (x, 3)) - 3 * Derivative(F, (x, 2)) + 3 * Derivative(F, x) - F, 0), 3) == 0
+    # 4th order, two conjugate pairs: y'''' + 5 y'' + 4 y = 0
+    assert _resid_2nd_or_higher(
+        Eq(Derivative(F, (x, 4)) + 5 * Derivative(F, (x, 2)) + 4 * F, 0), 4) == 0
+    # mixed real + complex: y''' + y'' + y' + y = 0
+    assert _resid_2nd_or_higher(
+        Eq(Derivative(F, (x, 3)) + Derivative(F, (x, 2)) + Derivative(F, x) + F, 0), 3) == 0

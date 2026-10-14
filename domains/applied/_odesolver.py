@@ -6,8 +6,8 @@ integral through the core IntegralCalculator so the working is genuine. Returns
 ``handled=False`` for any other form so the caller can fall back to ``dsolve``.
 """
 
-from sympy import (Add, Derivative, Eq, I, Integral, Mul, Symbol, cos, diff,
-                   exp, latex, log, simplify, sin, solve, sqrt)
+from sympy import (Add, Derivative, Eq, I, Integral, Mul, Symbol, cos, degree,
+                   diff, exp, factor_list, latex, log, simplify, sin, solve, sqrt)
 
 from domains.applied._common import (integral_steps, integral_value,
                                      render_note as note)
@@ -403,15 +403,110 @@ def _cauchy_euler_rows(alg, x, f):
     return rows
 
 
+def _max_deriv_order(eq, x, f):
+    """Highest derivative order of ``f`` wrt ``x`` appearing in the equation."""
+    best = 0
+    for d in _derivs_of(eq):
+        if d.expr == f and d.variables and all(v == x for v in d.variables):
+            best = max(best, d.variables.count(x))
+    return best
+
+
+def _factor_basis(fi, mi, r, x):
+    """Rows + solution basis from one characteristic factor ``fi`` of multiplicity ``mi``.
+
+    Returns ``(rows, basis)`` or ``(None, None)`` if the factor is irreducible of degree >= 3
+    (not solvable by the standard real/complex root table)."""
+    deg = degree(fi, r)
+    if deg == 0:
+        return [], []
+    if deg >= 3:
+        return None, None
+    if deg == 1:
+        r0 = simplify(solve(fi, r)[0])
+        rows = [(r0, note("实根 $r = " + latex(r0) + "$, 重数 " + str(mi)))]
+        basis = [x ** j * exp(r0 * x) for j in range(mi)]
+        return rows, basis
+    a = simplify(fi.coeff(r, 2))
+    b = simplify(fi.coeff(r, 1))
+    c = simplify(fi.coeff(r, 0))
+    disc = simplify(b ** 2 - 4 * a * c)
+    if disc.is_real and disc > 0:
+        r1 = simplify((-b - sqrt(disc)) / (2 * a))
+        r2 = simplify((-b + sqrt(disc)) / (2 * a))
+        rows = [(r1, note("实根 $r_1$")), (r2, note("实根 $r_2$"))]
+        basis = []
+        for j in range(mi):
+            basis += [x ** j * exp(r1 * x), x ** j * exp(r2 * x)]
+        return rows, basis
+    alpha = simplify(-b / (2 * a))
+    beta = simplify(sqrt(-disc) / (2 * a))
+    beta = simplify(beta.as_real_imag()[0]) if beta.has(I) else beta
+    rows = [(alpha, note("复根实部 $\\alpha$")), (beta, note("复根虚部 $\\beta$"))]
+    basis = []
+    for j in range(mi):
+        basis += [x ** j * exp(alpha * x) * cos(beta * x),
+                  x ** j * exp(alpha * x) * sin(beta * x)]
+    return rows, basis
+
+
+def _higher_order_homogeneous(alg, x, f, order):
+    """Solve a linear constant-coefficient homogeneous ODE of any order.
+
+    Builds the characteristic polynomial, factors it over the rationals, and maps each
+    (real root / conjugate pair) with its multiplicity to the standard solution basis."""
+    if order < 2:
+        return None
+    expr = simplify((alg.lhs - alg.rhs) if isinstance(alg, Eq) else alg)
+    running = expr
+    coeffs = {}
+    for k in range(order, 0, -1):
+        dk = Derivative(f, (x, k))
+        ck = simplify(running.coeff(dk, 1))
+        if x in ck.free_symbols or f in ck.free_symbols:
+            return None                       # coefficient not constant
+        coeffs[k] = ck
+        running = simplify(running - ck * dk)
+    c0 = simplify(running.coeff(f, 1))
+    if x in c0.free_symbols or simplify(running - c0 * f) != 0:
+        return None                           # non-homogeneous / nonlinear leftover
+    if coeffs.get(order, 0) == 0:
+        return None
+    r = Symbol('r')
+    poly_expr = simplify(c0 + sum(coeffs[k] * r ** k for k in range(1, order + 1)))
+    try:
+        _, facs = factor_list(poly_expr)
+    except Exception:  # pylint: disable=broad-exception-caught
+        return None
+    rows = [(poly_expr, note("特征方程 $P(r) = 0$"))]
+    basis = []
+    for fi, mi in facs:
+        frows, fbasis = _factor_basis(simplify(fi), mi, r, x)
+        if frows is None:
+            return None                       # irreducible degree >= 3 -> fall back
+        rows += frows
+        basis += fbasis
+    if len(basis) != order:
+        return None
+    cs = [Symbol('C%d' % (i + 1)) for i in range(len(basis))]
+    yc = sum(c * b for c, b in zip(cs, basis))
+    rows.append((Eq(f, yc), note("常系数高阶齐次通解")))
+    return rows
+
+
 def solve_ode_rule(eq, x, f):
     """Dispatch to the applicable rule method (2nd-order, exact, separable, linear)."""
     try:
-        has_second = Derivative(f, (x, 2)) in _derivs_of(eq)
-        if has_second:
-            rows = _second_order_rows(eq, x, f)
-            if rows is not None:
-                return rows, True
-            rows = _cauchy_euler_rows(eq, x, f)
+        order = _max_deriv_order(eq, x, f)
+        if order >= 2:
+            if order == 2:
+                rows = _second_order_rows(eq, x, f)
+                if rows is not None:
+                    return rows, True
+                rows = _cauchy_euler_rows(eq, x, f)
+                if rows is not None:
+                    return rows, True
+            rows = _higher_order_homogeneous(eq, x, f, order)
             if rows is not None:
                 return rows, True
             return None, False
