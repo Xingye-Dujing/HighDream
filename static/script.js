@@ -231,9 +231,16 @@ function addMathOutputControls() {
       fullscreenBtn.title = '全屏显示';
       fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
 
+      // Create per-cell export button
+      const exportBtn = document.createElement('button');
+      exportBtn.className = 'math-control-btn';
+      exportBtn.title = '导出此单元格为 Markdown';
+      exportBtn.innerHTML = '<i class="fas fa-file-export"></i>';
+
       // Add buttons to container
       controls.appendChild(collapseBtn);
       controls.appendChild(fullscreenBtn);
+      controls.appendChild(exportBtn);
 
       // Add container to math-output
       output.appendChild(controls);
@@ -258,6 +265,11 @@ function addMathOutputControls() {
       // Add fullscreen functionality
       fullscreenBtn.addEventListener('click', function () {
         openFullscreen(output);
+      });
+
+      // Export this cell (input + result) to Markdown.
+      exportBtn.addEventListener('click', function () {
+        exportCellMarkdown(output.closest('.cell'));
       });
     }
   });
@@ -347,6 +359,10 @@ function bindEvents() {
   if (_themeBtn) _themeBtn.addEventListener("click", toggleTheme);
   document.getElementById("saveNotebookBtn").addEventListener("click", saveNotebook);
   document.getElementById("loadNotebookBtn").addEventListener("click", loadNotebook);
+  const _exportMdBtn = document.getElementById("exportMdBtn");
+  if (_exportMdBtn) _exportMdBtn.addEventListener("click", () => exportNotebook("md"));
+  const _exportTexBtn = document.getElementById("exportTexBtn");
+  if (_exportTexBtn) _exportTexBtn.addEventListener("click", () => exportNotebook("tex"));
 
   // Cancel active cell when clicking on other areas of the document
   document.addEventListener("click", function (e) {
@@ -1116,6 +1132,7 @@ function runCell(cell) {
     outputArea = outputDiv;
   }
 
+  outputArea.dataset.latexSource = "";
   outputArea.innerHTML = '<div class="loading">计算中...</div>';
   updateKernelStatus('busy');
 
@@ -1216,6 +1233,7 @@ function runCell(cell) {
   }
 
   // Display computing status
+  outputArea.dataset.latexSource = "";
   outputArea.innerHTML = `<div class="computing">
     <div class="loading-spinner"></div>
     <div class="loading-text">正在计算中，请稍候...</div>
@@ -1275,6 +1293,7 @@ function renderExpressionResult(outputArea, data) {
 
   html += `</> `;
   outputArea.innerHTML = html;
+  outputArea.dataset.latexSource = JSON.stringify(expressions.map((it) => it.latex));
 
   // Add control buttons
   addMathOutputControls();
@@ -1482,6 +1501,129 @@ function deleteActiveCell() {
   }
 }
 
+// Reusable Blob -> download -> revoke dance (also used by saveNotebook / export).
+function downloadText(filename, mime, text) {
+  const blob = new Blob([text], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Unfilled MathLive placeholder slots -> a visible box for the exported source.
+function scrubPlaceholders(latex) {
+  return String(latex)
+    .replace(/\\placeholder\s*\{\s*\}/g, "\\square")
+    .replace(/\\placeholder\b/g, "\\square");
+}
+
+function escapeLatexText(s) {
+  return String(s).replace(/([&#%_$])/g, "\\$1");
+}
+
+// Parse a cell's stashed result snippets (JSON array of LaTeX blocks set at render
+// time) — the raw derivation is otherwise lost once MathJax replaces the DOM.
+function cellResultSnippets(cell) {
+  const outputArea = cell.querySelector(".cell-output");
+  if (!outputArea || !outputArea.dataset.latexSource) return [];
+  try {
+    const arr = JSON.parse(outputArea.dataset.latexSource);
+    return Array.isArray(arr) ? arr : [String(outputArea.dataset.latexSource)];
+  } catch (_) {
+    return [String(outputArea.dataset.latexSource)];
+  }
+}
+
+// (label, input, result-snippets) for every cell in document order.
+function collectCellsForExport() {
+  const out = [];
+  document.querySelectorAll(".cell").forEach((cell) => {
+    if (cell.dataset.cellType === "markdown") {
+      const ta = cell.querySelector("textarea.markdown-input") || cell.querySelector("textarea");
+      out.push({ kind: "markdown", text: ta ? ta.value : "" });
+      return;
+    }
+    const sel = cell.querySelector(".operation-type");
+    const label = (sel && sel.selectedIndex >= 0) ? sel.options[sel.selectedIndex].text : "计算";
+    out.push({
+      kind: "code",
+      label,
+      input: scrubPlaceholders(readExpr(cell)),
+      snippets: cellResultSnippets(cell),
+    });
+  });
+  return out;
+}
+
+function notebookToMarkdown(cells) {
+  let md = "# HighDream 笔记本\n\n";
+  cells.forEach((c) => {
+    if (c.kind === "markdown") { md += (c.text.trim() + "\n\n"); return; }
+    md += "### " + c.label + "\n\n";
+    if (c.input) md += "**输入**\n\n$$" + c.input + "$$\n\n";
+    if (c.snippets.length) {
+      md += "**结果**\n\n";
+      c.snippets.forEach((s) => { md += "$$\n" + s + "\n$$\n\n"; });
+    }
+  });
+  return md;
+}
+
+function notebookToLatex(cells) {
+  const parts = [
+    "% 需 XeLaTeX 编译 (含中文, 使用 ctexart)。",
+    "\\documentclass[12pt]{ctexart}",
+    "\\usepackage{amsmath,amssymb}",
+    "\\usepackage{geometry}\\geometry{margin=2.5cm}",
+    "\\begin{document}",
+    "\\title{HighDream 笔记本}\\maketitle",
+  ];
+  cells.forEach((c) => {
+    if (c.kind === "markdown") { parts.push(c.text.trim(), ""); return; }
+    parts.push("\\section*{" + escapeLatexText(c.label) + "}");
+    if (c.input) parts.push("\\textbf{输入：}\\[\n" + c.input + "\n\\]");
+    if (c.snippets.length) {
+      parts.push("\\textbf{结果：}\\par");
+      c.snippets.forEach((s) => {
+        parts.push(s.indexOf("\\begin") === 0 ? (s + "\\par") : ("\\[\n" + s + "\n\\]"));
+      });
+    }
+  });
+  parts.push("\\end{document}");
+  return parts.join("\n") + "\n";
+}
+
+function exportNotebook(format) {
+  const cells = collectCellsForExport();
+  if (!cells.length) { showNotification("没有可导出的内容", "error"); return; }
+  if (format === "tex") {
+    downloadText("highdream-notebook.tex", "application/x-tex", notebookToLatex(cells));
+    showNotification("已导出 LaTeX 文件", "success");
+  } else {
+    downloadText("highdream-notebook.md", "text/markdown;charset=utf-8", notebookToMarkdown(cells));
+    showNotification("已导出 Markdown 文件", "success");
+  }
+}
+
+// Export just the clicked cell (input + result) to Markdown.
+function exportCellMarkdown(cell) {
+  if (!cell) return;
+  const sel = cell.querySelector(".operation-type");
+  const label = (sel && sel.selectedIndex >= 0) ? sel.options[sel.selectedIndex].text : "计算";
+  const input = scrubPlaceholders(readExpr(cell));
+  const snippets = cellResultSnippets(cell);
+  if (!input && !snippets.length) { showNotification("此单元格尚无结果", "error"); return; }
+  let md = "### " + label + "\n\n";
+  if (input) md += "**输入**\n\n$$" + input + "$$\n\n";
+  snippets.forEach((s) => { md += "$$\n" + s + "\n$$\n\n"; });
+  downloadText("highdream-cell.md", "text/markdown;charset=utf-8", md);
+  showNotification("已导出该单元格", "success");
+}
+
 // Save notebook with improved data capture
 function saveNotebook() {
   const cells = [];
@@ -1557,15 +1699,7 @@ function saveNotebook() {
   });
 
   const notebookData = JSON.stringify(cells, null, 2);
-  const blob = new Blob([notebookData], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "highdream-notebook.json";
-  a.click();
-
-  URL.revokeObjectURL(url);
+  downloadText("highdream-notebook.json", "application/json", notebookData);
   showNotification("笔记本已保存", "success");
 }
 
@@ -1805,6 +1939,7 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
       });
     } else {
       outputArea.innerHTML = `<div class="math-output">${task.result}</div>`;
+      outputArea.dataset.latexSource = JSON.stringify([task.result]);
 
       addMathOutputControls();
 
