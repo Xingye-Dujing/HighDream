@@ -1,6 +1,6 @@
-"""Numerical integration: trapezoidal and Simpson rules over [a, b]."""
+"""Numerical methods: definite-integration rules and IVP solvers (Euler/Heun/RK4)."""
 
-from sympy import N
+from sympy import N, Symbol
 
 from utils.cache_utils import cached_sympify as sympify
 
@@ -26,3 +26,60 @@ def numerical_integration(data):
         items.append((simp, note(f"辛普森法, n={n}")))
         data['_auto_value'] = simp  # prefer the higher-accuracy estimate
     return True, align(items)
+
+
+def _ivp_setup(data):
+    """Shared parsing for IVP solvers: y' = f(x,y), y(x0)=y0, integrate to x_end by n steps."""
+    x = get_var(data)
+    y = Symbol(data.get('yname') or 'y')
+    f = sympify(expr_text(data))
+    x0 = to_num(data.get('point'), 0)
+    y0 = to_num(data.get('yvalue') or data.get('upper'), 1)
+    x_end = to_num(data.get('target'), 1)
+    steps = int(str(data.get('steps') or data.get('order') or data.get('expr-depth') or 4))
+    if steps <= 0:
+        return None
+    h = (x_end - x0) / steps
+    return x, y, f, x0, y0, x_end, steps, h
+
+
+def solve_ivp(data, method='euler'):
+    """Advance y' = f(x,y) from (x0,y0) with a fixed step, showing every step."""
+    ctx = _ivp_setup(data)
+    if ctx is None:
+        return False, '数值 ODE 需要正的步数'
+    x, y, f, x0, y0, x_end, steps, h = ctx
+    xi, yi = x0, y0
+    items = [(f, note("y' = f(x, y)"))]
+    items.append((note(f"初值 y({x0})={y0}, 步长 h = ({x_end}-{x0})/{steps} = {N(h,6)}"), None))
+    for k in range(steps):
+        fx = f.subs({x: xi, y: yi})
+        if method == 'euler':
+            yi = yi + h * fx
+        elif method == 'heun':
+            fx2 = f.subs({x: xi + h, y: yi + h * fx})
+            yi = yi + h / 2 * (fx + fx2)
+        else:  # rk4
+            k1 = fx
+            k2 = f.subs({x: xi + h / 2, y: yi + h / 2 * k1})
+            k3 = f.subs({x: xi + h / 2, y: yi + h / 2 * k2})
+            k4 = f.subs({x: xi + h, y: yi + h * k3})
+            yi = yi + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+        xi = xi + h
+        label = {'euler': '欧拉法', 'heun': '改进欧拉(Heun)', 'rk4': '四阶 Runge-Kutta'}[method]
+        items.append((N(yi, 6), note(f"第 {k+1} 步: x_{k+1} = {N(xi,6)}, {label} 得 y_{k+1}")))
+    items.append((N(yi, 6), note(f"数值解 y({x_end}) ≈")))
+    data['_auto_value'] = None  # a trajectory/table is not a scalar to embed in arithmetic
+    return True, align(items)
+
+
+def euler(data):
+    return solve_ivp(data, 'euler')
+
+
+def heun(data):
+    return solve_ivp(data, 'heun')
+
+
+def rk4(data):
+    return solve_ivp(data, 'rk4')

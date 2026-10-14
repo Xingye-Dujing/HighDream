@@ -72,3 +72,19 @@ def test_matrix_nullspace_colspace_rowspace():
     assert ok and '列空间' in res
     ok, res = _dispatch_auto('rowspace([[1,2],[3,4]])')
     assert ok and '行空间' in res
+
+
+def test_numerical_ivp_methods():
+    # y'=x+y, y(0)=1 on [0,1], n=4. RK4 is the most accurate; order euler<heun<rk4.
+    ok_e, res_e = _dispatch_auto('euler(x+y,x,0,1,1,4)')
+    ok_h, res_h = _dispatch_auto('heun(x+y,x,0,1,1,4)')
+    ok_r, res_r = _dispatch_auto('rk4(x+y,x,0,1,1,4)')
+    assert ok_e and ok_h and ok_r
+    assert '欧拉法' in res_e and 'Runge-Kutta' in res_r
+    # RK4 y(1) ~ 3.436 (exact 2e-2=3.4366)
+    assert '3.436' in res_r
+
+
+def test_ivp_table_not_scalar_composable():
+    ok, res = _dispatch_auto('2*euler(x+y,x,0,1,1,4)')
+    assert not ok  # a trajectory table can't be embedded in scalar arithmetic

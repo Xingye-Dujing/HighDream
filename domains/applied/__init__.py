@@ -44,4 +44,7 @@ HANDLERS = {
     'de_moivre': complex_numbers.de_moivre_power,
     # numerical
     'numerical_integration': numerical.numerical_integration,
+    'euler': numerical.euler,
+    'heun': numerical.heun,
+    'rk4': numerical.rk4,
 }

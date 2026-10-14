@@ -283,6 +283,12 @@ _AUTO_FUNCS = {
     'numericalintegration': ('numerical_integration', ['expression', 'variable', 'lower', 'upper', 'order']),
     'simpson': ('numerical_integration', ['expression', 'variable', 'lower', 'upper', 'order']),
     'trapezoid': ('numerical_integration', ['expression', 'variable', 'lower', 'upper', 'order']),
+    # numerical IVP solvers: euler(rhs, x, x0, y0, x_end, steps)
+    'euler': ('euler', ['expression', 'variable', 'point', 'yvalue', 'target', 'steps']),
+    'heun': ('heun', ['expression', 'variable', 'point', 'yvalue', 'target', 'steps']),
+    'improvedeuler': ('heun', ['expression', 'variable', 'point', 'yvalue', 'target', 'steps']),
+    'rk4': ('rk4', ['expression', 'variable', 'point', 'yvalue', 'target', 'steps']),
+    'rungekutta': ('rk4', ['expression', 'variable', 'point', 'yvalue', 'target', 'steps']),
     # complex
     'complex': ('complex_simplify', ['expression']),
     'complexsimplify': ('complex_simplify', ['expression']),
@@ -362,7 +368,7 @@ _MATRIX_OP_NAMES = {
 # ---------------------------------------------------------------------------
 
 _COMPOUND_MAX_STEPS = 64
-_OP_CALL_RX = re.compile(r'(?<![A-Za-z_\\])([A-Za-z]+)\s*\(')
+_OP_CALL_RX = re.compile(r'(?<![A-Za-z_\\])([A-Za-z][A-Za-z0-9]*)\s*\(')
 
 
 def _paren_close_index(text, open_idx):
@@ -809,7 +815,7 @@ def _dispatch_auto(expression: str):
         return _dispatch_compound(expression, norm)
 
     # 1) function-style operator: name(args); bare \name<matrix> only for matrix ops
-    fm = re.match(r'\s*\\?([A-Za-z]+)\s*(\()?', text)
+    fm = re.match(r'\s*\\?([A-Za-z][A-Za-z0-9]*)\s*(\()?', text)
     if fm:
         name = fm.group(1).lower()
         spec = _AUTO_FUNCS.get(name)
