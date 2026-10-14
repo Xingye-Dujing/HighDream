@@ -1,6 +1,6 @@
 """Tests for MathLive LaTeX matrix -> nested-list conversion and matrix ops."""
 
-from routes.compute_service import start_compute
+from routes.compute_service import start_compute, _dispatch_auto
 from utils.matrix_latex import latex_to_nested
 
 
@@ -34,3 +34,15 @@ def test_det_accepts_bmatrix_latex():
     s = r'\begin{bmatrix}1&2\\3&4\end{bmatrix}'
     ok, res = start_compute('det', {'operation_type': 'det', 'expression': s, 'type': '1'})
     assert ok and '-2' in str(res)
+
+
+def test_det_symbolic_pivot_no_crash():
+    # det with a symbolic pivot: the row-op *description* used to compare `factor_ < 0`,
+    # which raises "cannot determine truth value" on a symbolic factor (e.g. 1/a).
+    # det must still compute the symbolic value instead of erroring.
+    ok, res = _dispatch_auto(r'det([[a,1],[1,a]])')
+    assert ok, res
+    s = res if isinstance(res, str) else str(res)
+    assert 'a^{2} - 1' in s
+    ok2, _ = _dispatch_auto(r'det([[1,a],[a,1]])')
+    assert ok2

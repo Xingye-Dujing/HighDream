@@ -403,7 +403,7 @@ class DeterminantCalculator:
                 elif factor_ == -1:
                     self.step_generator.add_step(
                         M.copy(), f"$R_{{{r + 1}}} + R_{{{pivot_row + 1}}} \\to R_{{{r + 1}}}$")
-                elif factor_ < 0:
+                elif factor_.is_negative:
                     self.step_generator.add_step(
                         M.copy(),
                         f"$R_{{{r + 1}}} + \\left({latex(-factor_)}\\right) \\cdot R_{{{pivot_row + 1}}}"
