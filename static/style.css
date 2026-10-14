@@ -639,20 +639,35 @@ a {
 }
 
 #math-keyboard {
+  /* Maple-style palette: a fixed rail docked to the right edge that slides in
+     horizontally, instead of covering the page from the bottom. */
   position: fixed;
-  bottom: 0;
-  left: 0;
+  top: 0;
   right: 0;
+  bottom: 0;
+  width: 320px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
   background-color: var(--jp-layout-color1);
-  border-top: 1px solid var(--jp-border-color1);
+  border-left: 1px solid var(--jp-border-color1);
   z-index: 1000;
   transition: transform 0.3s var(--animation-timing);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
-  transform: translateY(100%);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  transform: translateX(100%);
 }
 
 #math-keyboard.keyboard-visible {
-  transform: translateY(0);
+  transform: translateX(0);
+}
+
+/* While the rail is open, reserve its width on the main content so nothing is
+   hidden behind it (the rail itself is fixed and does not scroll with them). */
+body.keyboard-open #toolbar,
+body.keyboard-open #notebook-container,
+body.keyboard-open #content {
+  padding-right: 320px;
+  transition: padding-right 0.3s var(--animation-timing);
 }
 
 .keyboard-header {
@@ -705,14 +720,17 @@ a {
 }
 
 .keyboard-content {
+  flex: 1;
+  min-height: 0;
   padding: 16px;
-  overflow-x: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .keyboard-row {
   display: flex;
   margin-bottom: 12px;
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 8px;
 }
@@ -765,7 +783,7 @@ a {
   font-size: 12px;
   color: var(--jp-ui-font-color1);
   margin: 4px 0 2px;
-  text-align: center;
+  text-align: left;
   letter-spacing: 0.5px;
 }
 

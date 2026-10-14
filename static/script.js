@@ -1281,20 +1281,11 @@ function showNotification(message, type = "success") {
 
 function toggleKeyboard() {
   const keyboard = document.getElementById("math-keyboard");
-  const helpfulArea = document.getElementById("helpful-area");
-
-  if (isKeyboardVisible) {
-    // Hide keyboard
-    keyboard.classList.remove("keyboard-visible");
-    isKeyboardVisible = false;
-    helpfulArea.style.display = "none";
-  } else {
-    // Show keyboard
-    keyboard.classList.add("keyboard-visible");
-    isKeyboardVisible = true;
-    // Used to occupy the bottom of the page, when the keyboard is open, extend the page downward to prevent the keyboard from blocking the cell
-    helpfulArea.style.display = "flex";
-  }
+  if (!keyboard) return;
+  isKeyboardVisible = !isKeyboardVisible;
+  keyboard.classList.toggle("keyboard-visible", isKeyboardVisible);
+  // Reserve the rail's width on the main content while it is open.
+  document.body.classList.toggle("keyboard-open", isKeyboardVisible);
 }
 
 // Apply theme settings
