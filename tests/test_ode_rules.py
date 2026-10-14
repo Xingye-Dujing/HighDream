@@ -1,0 +1,49 @@
+# -*- coding: utf-8 -*-
+"""Regression tests for the added first-order ODE rule methods.
+
+Each checks two things: (a) the equation is solved by the *rule* engine (``handled`` is
+True, i.e. it does not fall back to ``dsolve`` — the project's no-black-box rule), and
+(b) the produced general solution actually satisfies the ODE (residual is zero)."""
+
+from sympy import Abs, Derivative, Eq, Function, Symbol, diff, simplify
+
+from domains.applied._odesolver import solve_ode_rule
+
+x = Symbol('x')
+y = Symbol('y')
+F = Function('f')(x)  # pylint: disable=not-callable
+
+
+def _implicit_residual(eq, phi):
+    """Residual of an implicit solution: y' from the level set vs the ODE right side."""
+    rows, handled = solve_ode_rule(eq, x, F)
+    assert handled, "fell back to dsolve"
+    last = rows[-1][0]
+    g = (last.lhs - last.rhs).subs(F, y).replace(Abs, lambda a: a)
+    yp = simplify(-diff(g, x) / diff(g, y))
+    return simplify(yp - phi)
+
+
+def test_homogeneous_ode_y_over_x():
+    # y' = (x + y)/(x - y) is homogeneous degree 0 (not separable/linear/exact)
+    eq = Eq(Derivative(F, x), (x + F) / (x - F))
+    assert _implicit_residual(eq, (x + y) / (x - y)) == 0
+
+
+def test_exact_integrating_factor_ode():
+    # (y^2 - 3x^2) y' + 2xy = 0 needs a mu(y) = y^-4 integrating factor
+    eq = Eq((F ** 2 - 3 * x ** 2) * Derivative(F, x) + 2 * x * F, 0)
+    phi = -2 * x * y / (y ** 2 - 3 * x ** 2)
+    assert _implicit_residual(eq, phi) == 0
+
+
+def test_bernoulli_ode():
+    # y' + y = x y^3 (Bernoulli n=3), solved via u = y^(1-n)
+    eq = Eq(Derivative(F, x) + F, x * F ** 3)
+    rows, handled = solve_ode_rule(eq, x, F)
+    assert handled, "fell back to dsolve"
+    ysol = rows[-1][0].rhs
+    dy = diff(ysol, x)
+    resid = simplify(eq.lhs.subs({F: ysol, Derivative(F, x): dy})
+                     - eq.rhs.subs({F: ysol}))
+    assert resid == 0

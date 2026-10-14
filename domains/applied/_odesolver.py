@@ -6,8 +6,8 @@ integral through the core IntegralCalculator so the working is genuine. Returns
 ``handled=False`` for any other form so the caller can fall back to ``dsolve``.
 """
 
-from sympy import (Derivative, Eq, I, Integral, Mul, Symbol, cos, diff, exp,
-                   simplify, sin, solve, sqrt)
+from sympy import (Add, Derivative, Eq, I, Integral, Mul, Symbol, cos, diff,
+                   exp, latex, simplify, sin, solve, sqrt)
 
 from domains.applied._common import (integral_steps, integral_value,
                                      render_note as note)
@@ -47,6 +47,34 @@ def _separable_rows(phi, x, y, c, f):
     return rows
 
 
+def _linear_standard_rows(p_std, q_std, x, dep, c, dep_tex='y'):
+    """Rows + solution for the standard linear form ``dep' + p_std(x) dep = q_std(x)``.
+
+    Carried out by the integrating factor, with every integral produced by the core
+    rule engine. Shared by the direct linear solver and Bernoulli (after substitution).
+    Returns ``(rows, sol)`` or ``(None, None)`` if the integrating-factor integrals fail.
+    """
+    mu = exp(integral_value(p_std, x))
+    if mu.has(Integral):
+        return None, None
+    muq = mu * q_std
+    rhs_int = integral_value(muq, x)
+    if rhs_int.has(Integral):
+        return None, None
+    rows = [
+        (p_std, note("标准形式 $%s' + p(x) %s = q(x)$ 中的 $p(x)$" % (dep_tex, dep_tex))),
+        (q_std, note("$q(x)$")),
+        (p_std, note("积分因子指数 $\\int p(x)\\,dx$ 的被积式")),
+    ]
+    rows += integral_steps(p_std, x)
+    rows.append((mu, note("积分因子 $\\mu=e^{\\int p\\,dx}$")))
+    rows.append((muq, note("右端 $\\mu\\, q(x)$")))
+    rows += integral_steps(muq, x)
+    sol = simplify((rhs_int + c) / mu)
+    rows.append((Eq(dep, sol), note("通解 $%s=\\frac{1}{\\mu}\\int \\mu q\\,dx + \\frac{C}{\\mu}$" % dep_tex)))
+    return rows, sol
+
+
 def _linear_rows(phi, x, y, c, f):
     """If phi is affine in y (y' = P(x) y + Q(x)), solve via integrating factor."""
     expr = simplify(phi)
@@ -56,21 +84,98 @@ def _linear_rows(phi, x, y, c, f):
     residual = simplify(expr - p * y)
     if y in residual.free_symbols:
         return None               # not linear in y
-    q = residual
     p_std = simplify(-p)          # standard form y' + p_std(x) y = q(x)
-    mu_integrand = p_std
-    mu = exp(integral_value(mu_integrand, x))
+    rows, _sol = _linear_standard_rows(p_std, residual, x, f, c)
+    return rows
+
+
+def _homogeneous_rows(phi, x, y, c, f):
+    """Solve y' = phi(x, y) when phi is homogeneous of degree 0 (a function of y/x).
+
+    Substitutes y = v x so that y' = v + x v', reducing to a separable equation in
+    (v, x); every integral is carried out by the core rule engine."""
+    expr = simplify(phi)
+    if y not in expr.free_symbols or x not in expr.free_symbols:
+        return None
+    t = Symbol('t', positive=True)
+    if t in simplify(expr.subs({x: t * x, y: t * y})).free_symbols:
+        return None                               # not homogeneous of degree 0
+    v = Symbol('v')
+    h = simplify(expr.subs({y: v * x}).subs(x, 1))
+    denom = simplify(h - v)
     rows = [
-        (p_std, note("标准形式 $y' + p(x) y = q(x)$ 中的 $p(x)$")),
-        (q, note("$q(x)$")),
-        (mu_integrand, note("积分因子指数 $\\int p(x)\\,dx$ 的被积式")),
+        (expr, note("右端 $f(x,y)$")),
+        (h, note("齐次方程: 右端仅依赖 $v=y/x$, 记 $\\varphi(v)=f(1,v)$")),
     ]
-    rows += integral_steps(mu_integrand, x)
-    rows.append((mu, note("积分因子 $\\mu=e^{\\int p\\,dx}$")))
-    rows.append((mu * q, note("右端 $\\mu\\, q(x)$")))
-    rows += integral_steps(mu * q, x)
-    rhs = integral_value(mu * q, x) + c
-    rows.append((Eq(f, simplify(rhs / mu)), note("通解 $y=\\frac{1}{\\mu}\\int \\mu q\\,dx + \\frac{C}{\\mu}$")))
+    if denom == 0:
+        rows.append((Eq(f, c * x), note("$\\varphi(v)=v$, 故 $v'=0$, 通解 $y=Cx$")))
+        return rows
+    left = simplify(1 / denom)
+    lv = integral_value(left, v)
+    rx = integral_value(1 / x, x)
+    if lv.has(Integral):
+        return None                               # the v-integral is not doable by the engine
+    rows += [
+        (Eq(Derivative(y, x), simplify(v + x * Derivative(v, x))),
+         note("令 $y=vx$, 则 $y'=v+x\\,v'$")),
+        (Eq(x * Derivative(v, x), denom), note("代入化简: $x\\,v'=\\varphi(v)-v$")),
+        (left, note("分离变量: $\\frac{1}{\\varphi(v)-v}\\,dv=\\frac{1}{x}\\,dx$")),
+    ]
+    rows += integral_steps(left, v)
+    rows += integral_steps(1 / x, x)
+    rows.append((Eq(lv, rx + c), note("两边积分并加常数")))
+    rows.append((Eq(lv.subs(v, y / x), rx + c), note("回代 $v=y/x$, 得隐式通解")))
+    return rows
+
+
+def _term_y_power(term, y):
+    """Split term into (x-only coeff, exponent of y) when term is coeff*y**k, else (None, None)."""
+    coeff, ypart = term.as_independent(y, as_Add=False)
+    if ypart == 1:
+        return coeff, 0
+    base, expo = ypart.as_base_exp()
+    if base != y or not expo.is_number:
+        return None, None
+    return coeff, expo
+
+
+def _bernoulli_rows(phi, x, y, c, f):
+    """Solve Bernoulli y' = A(x) y + B(x) y^n (n not 0 or 1) via u = y^{1-n}.
+
+    The substitution linearises it in u; the resulting linear equation is solved by the
+    shared integrating-factor helper, then back-substituted."""
+    expr = simplify(phi)
+    if not isinstance(expr, Add) or len(expr.args) != 2:
+        return None
+    parsed = []
+    for term in expr.args:
+        coeff, expo = _term_y_power(term, y)
+        if coeff is None or y in coeff.free_symbols:
+            return None
+        parsed.append((expo, coeff))
+    powers = sorted(p for p, _ in parsed)
+    if 1 not in powers or len(powers) != 2:
+        return None
+    n = next(p for p in powers if p != 1)
+    if n in (0, 1):
+        return None
+    a_lin = next(cf for pw, cf in parsed if pw == 1)          # A(x)
+    b_pow = next(cf for pw, cf in parsed if pw == n)          # B(x)
+    u = Symbol('u')
+    p_std = simplify((n - 1) * a_lin)                         # u' + p_std u = q_std
+    q_std = simplify((1 - n) * b_pow)
+    lin_rows, u_sol = _linear_standard_rows(p_std, q_std, x, u, c, dep_tex='u')
+    if lin_rows is None:
+        return None
+    rows = [
+        (expr, note("右端 $f(x,y)$")),
+        (Eq(Derivative(y, x) - a_lin * y, b_pow * y ** n),
+         note("伯努利方程 $y' + P(x)\\,y = Q(x)\\,y^{n}$, 其中 $n=" + latex(n) + "$")),
+        (Eq(Derivative(u, x) + p_std * u, q_std), note("令 $u=y^{1-n}$, 化为一阶线性方程")),
+    ]
+    rows += lin_rows
+    rows.append((Eq(y ** (1 - n), u_sol), note("回代 $u=y^{1-n}$")))
+    rows.append((Eq(f, simplify(u_sol ** (1 / (1 - n)))), note("伯努利方程的通解")))
     return rows
 
 
@@ -85,12 +190,11 @@ def first_order_ode(eq, x, f):
             return None, False
         phi = simplify(sols[0])
         c = Symbol('C')
-        rows = _separable_rows(phi, x, y, c, f)
-        if rows is None:
-            rows = _linear_rows(phi, x, y, c, f)
-        if rows is None:
-            return None, False
-        return rows, True
+        for maker in (_separable_rows, _homogeneous_rows, _linear_rows, _bernoulli_rows):
+            rows = maker(phi, x, y, c, f)
+            if rows is not None:
+                return rows, True
+        return None, False
     except Exception:  # pylint: disable=broad-exception-caught
         return None, False
 
@@ -120,6 +224,38 @@ def _exact_rows(alg, x, y, c, f):
     psi_final = simplify(psi + g)
     rows.append((Eq(psi_final.subs(y, f), c), note("势函数 $\\psi(x,y)=C$ 即通解")))
     return rows
+
+
+def _exact_factor_rows(alg, x, y, c, f):
+    """Make a non-exact M + N y' = 0 exact via an integrating factor mu(x) or mu(y).
+
+    mu(x) exists when (My - Nx)/N depends only on x; mu(y) when (Nx - My)/M depends
+    only on y. After multiplying, the exact-equation machinery solves it."""
+    expr = simplify(alg.lhs - alg.rhs) if isinstance(alg, Eq) else simplify(alg)
+    p = Symbol('p')
+    expr = expr.subs(Derivative(y, x), p)
+    n = expr.coeff(p, 1)
+    m = simplify(expr - n * p)
+    if n == 0 or m == 0:
+        return None
+    if simplify(diff(m, y) - diff(n, x)) == 0:
+        return None                               # already exact -> the plain path handles it
+    my, nx = simplify(diff(m, y)), simplify(diff(n, x))
+    mu = None
+    kind = ''
+    rx = simplify((my - nx) / n)
+    if y not in rx.free_symbols:
+        mu, kind = exp(integral_value(rx, x)), "只依赖 $x$: $\\mu(x)=e^{\\int (M_y-N_x)/N\\,dx}$"
+    else:
+        ry = simplify((nx - my) / m)
+        if x not in ry.free_symbols:
+            mu, kind = exp(integral_value(ry, y)), "只依赖 $y$: $\\mu(y)=e^{\\int (N_x-M_y)/M\\,dy}$"
+    if mu is None or mu.has(Integral):
+        return None
+    sub = _exact_rows(simplify(mu * m) + simplify(mu * n) * p, x, y, c, f)
+    if sub is None:
+        return None
+    return [(mu, note("积分因子 " + kind))] + sub
 
 
 def _complementary(a2, a1, a0, x, f):
@@ -226,6 +362,9 @@ def solve_ode_rule(eq, x, f):
         c = Symbol('C')
         alg = eq.subs({f: y, Derivative(f, x): Symbol('p')})
         rows = _exact_rows(alg, x, y, c, f)
+        if rows is not None:
+            return rows, True
+        rows = _exact_factor_rows(alg, x, y, c, f)
         if rows is not None:
             return rows, True
         return first_order_ode(eq, x, f)
