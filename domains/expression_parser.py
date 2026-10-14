@@ -2,9 +2,9 @@ from collections import deque
 from typing import Callable, List, Optional, Set, Tuple
 
 from sympy import (
-    Basic, Expr, preorder_traversal, srepr, sympify, expand, factor,
+    Basic, Expr, Symbol, preorder_traversal, srepr, sympify, expand, factor,
     expand_trig, logcombine, expand_log, apart, cancel, radsimp, tan, sin, cos,
-    powsimp, trigsimp
+    powsimp, trigsimp, collect, ratsimp
 )
 
 
@@ -63,6 +63,9 @@ class ExpressionParser:  # pylint: disable=too-few-public-methods
             ("有理化", self._radsimp_transform),
             ("幂化简", self._powsimp_transform),
             ("三角化简", self._reciprocal_trig_transform),
+            ("同类项合并", self._collect_transform),
+            ("根式去嵌套", self._sqrtdenest_transform),
+            ("有理式通分", self._ratsimp_transform),
         ])
 
     def parse(self, expression: str) -> List[Tuple[Expr, str]]:
@@ -214,6 +217,19 @@ class ExpressionParser:  # pylint: disable=too-few-public-methods
 
     def _reciprocal_trig_transform(self, expr: Expr) -> List[Expr]:
         return self._try_transform(expr, trigsimp, reciprocal=True)
+
+    def _collect_transform(self, expr: Expr) -> List[Expr]:
+        syms = sorted(expr.atoms(Symbol), key=str)
+        if not syms:
+            return []
+        return self._try_transform(expr, collect, syms)
+
+    def _sqrtdenest_transform(self, expr: Expr) -> List[Expr]:
+        from sympy import sqrtdenest  # pylint: disable=import-outside-toplevel
+        return self._try_transform(expr, sqrtdenest)
+
+    def _ratsimp_transform(self, expr: Expr) -> List[Expr]:
+        return self._try_transform(expr, ratsimp)
 
     @staticmethod
     def _tan_to_sin_cos_transform(expr: Expr) -> List[Expr]:

@@ -26,6 +26,20 @@ def test_product_to_sum_skips_non_products():
     assert parser._product_to_sum_transform(x * y) == []
 
 
+def test_new_transforms_are_equivalent():
+    parser = _parser()
+    from sympy import sqrt
+    # collect groups powers of x
+    collected = parser._collect_transform(x**3 + x**2 + x*y + x)
+    assert len(collected) == 1 and simplify(collected[0] - (x**3 + x**2 + x*y + x)) == 0
+    # sqrtdenest denests a nested radical
+    denested = parser._sqrtdenest_transform(sqrt(2 + sqrt(3)))
+    assert len(denested) == 1 and simplify(denested[0]**2 - (2 + sqrt(3))) == 0
+    # ratsimp combines a sum of fractions
+    combined = parser._ratsimp_transform(1/x + 1/y)
+    assert len(combined) == 1 and simplify(combined[0] - (1/x + 1/y)) == 0
+
+
 def test_parse_returns_equivalent_derivations():
     results = _parser().parse('sin(x)*cos(x)')
     assert results
