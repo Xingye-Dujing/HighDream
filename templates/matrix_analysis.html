@@ -6,6 +6,8 @@
     <title>Matrix Analysis</title>
     <link rel="stylesheet" href="../static/fontawesome/css/all.min.css"/>
     <link rel="stylesheet" href="/static/matrix_analysis.css"/>
+    <link rel="stylesheet" href="/static/hd-theme.css"/>
+    <link rel="stylesheet" href="/static/hd-select.css"/>
     <script
             id="MathJax-script"
             async
@@ -24,16 +26,6 @@
     <div class="math-bg-element" style="bottom: 15%; right: 5%">∇</div>
 </div>
 
-<div id="header">
-    <h1><i></i>Matrix Analysis</h1>
-    <div id="header-controls">
-        <a href="/">
-            <button class="header-btn" id="matrixLabBtn" title="首页">
-                <i class="fas fa-circle"></i>
-            </button>
-        </a>
-    </div>
-</div>
 
 <div id="content">
     {% if expression %}
@@ -118,7 +110,11 @@
     {% else %}
     <div class="result-section">
         <h2>未提供矩阵表达式</h2>
-        <p>请通过后端传递 <code>expression</code> 变量.</p>
+        <p>
+            本页分析一个具体矩阵。请到
+            <a href="/matrix_panel">矩阵面板</a>
+            填入表达式后运行，或带 <code>expression</code> 参数直接访问本页。
+        </p>
     </div>
     {% endif %}
 </div>
@@ -134,5 +130,7 @@
         <div class="math-fullscreen-body"></div>
     </div>
 </div>
+<script src="/static/hd-menu.js"></script>
+<script src="/static/hd-select.js"></script>
 </body>
 </html>

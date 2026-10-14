@@ -131,53 +131,6 @@ function applyInputMode(cell) {
   if (varInput) varInput.value = VAR_DEFAULT[op] || "x";
 }
 
-// Reflect the hidden <select class="operation-type"> in a custom, styled dropdown.
-function syncOpSelectLabel(cell) {
-  const sel = cell.querySelector(".operation-type");
-  const label = cell.querySelector(".op-select-label");
-  if (!sel || !label) return;
-  const opt = sel.querySelector(`option[value="${CSS.escape(sel.value)}"]`);
-  label.textContent = opt ? opt.textContent : sel.value;
-  const panel = cell.querySelector(".op-select-panel");
-  if (panel) {
-    panel.querySelectorAll(".op-select-option").forEach((o) => {
-      o.classList.toggle("selected", o.dataset.value === sel.value);
-    });
-  }
-}
-
-function buildOpSelect(cell) {
-  const sel = cell.querySelector(".operation-type");
-  const trigger = cell.querySelector(".op-select-trigger");
-  const panel = cell.querySelector(".op-select-panel");
-  if (!sel || !trigger || !panel) return;
-  if (!panel.dataset.built) {
-    let html = "";
-    sel.querySelectorAll("optgroup").forEach((g) => {
-      html += `<div class="op-select-group">${g.label}</div>`;
-      g.querySelectorAll("option").forEach((o) => {
-        html += `<div class="op-select-option" role="option" data-value="${o.value}">${o.textContent}</div>`;
-      });
-    });
-    panel.innerHTML = html;
-    panel.dataset.built = "1";
-    panel.querySelectorAll(".op-select-option").forEach((opt) => {
-      opt.addEventListener("click", function () {
-        sel.value = this.dataset.value;
-        sel.dispatchEvent(new Event("change"));
-        panel.classList.remove("open");
-        trigger.setAttribute("aria-expanded", "false");
-      });
-    });
-  }
-  trigger.addEventListener("click", function (e) {
-    e.stopPropagation();
-    const open = panel.classList.toggle("open");
-    trigger.setAttribute("aria-expanded", open ? "true" : "false");
-  });
-  syncOpSelectLabel(cell);
-}
-
 let activeCellId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
 let isKeyboardVisible = false;
@@ -190,7 +143,7 @@ const pollTimers = new Map();
 
 // Initialize after page loads
 document.addEventListener("DOMContentLoaded", function () {
-  // applyTheme(isDarkTheme);
+  applyTheme(isDarkTheme);
   addNewCell();
   bindEvents();
   animateMathBackground();
@@ -331,13 +284,14 @@ function bindEvents() {
   document.getElementById("deleteCellBtn").addEventListener("click", deleteActiveCell);
   document.getElementById("toggleKeyboardBtn").addEventListener("click", toggleKeyboard);
   document.getElementById("closeKeyboardBtn").addEventListener("click", toggleKeyboard);
-  // document.getElementById("toggleThemeBtn").addEventListener("click", toggleTheme);
+    const _themeBtn = document.getElementById("toggleThemeBtn");
+  if (_themeBtn) _themeBtn.addEventListener("click", toggleTheme);
   document.getElementById("saveNotebookBtn").addEventListener("click", saveNotebook);
   document.getElementById("loadNotebookBtn").addEventListener("click", loadNotebook);
 
   // Cancel active cell when clicking on other areas of the document
   document.addEventListener("click", function (e) {
-    if (!e.target.closest(".cell") && !e.target.closest("#math-keyboard") && !e.target.closest("#header") && !e.target.closest("#toolbar")) {
+    if (!e.target.closest(".cell") && !e.target.closest("#math-keyboard") && !e.target.closest("#hd-top-menu") && !e.target.closest("#toolbar")) {
       document.querySelectorAll(".cell").forEach((cell) => {
         cell.classList.remove("cell-active");
         if (cell.dataset.cellType === "code" && !foreverVisible) {
@@ -443,17 +397,6 @@ function bindEvents() {
     });
   }
 
-  // Close any open custom operation dropdown when clicking elsewhere.
-  document.addEventListener('click', function (e) {
-    document.querySelectorAll('.op-select-panel.open').forEach((panel) => {
-      if (!panel.parentElement.contains(e.target)) {
-        panel.classList.remove('open');
-        const trig = panel.parentElement.querySelector('.op-select-trigger');
-        if (trig) trig.setAttribute('aria-expanded', 'false');
-      }
-    });
-  });
-
   // ESC key to close fullscreen
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
@@ -488,13 +431,11 @@ function setupCellEvents(cell) {
       mathFieldB.addEventListener("click", function () { setActiveCell(cell); });
     }
     applyInputMode(cell);
-    buildOpSelect(cell);
 
     // Operation type change event
     operationSelector.addEventListener("change", function () {
       // Switch editor/textarea visibility and set the per-op template hint.
       applyInputMode(cell);
-      syncOpSelectLabel(cell);
 
 
       // If diff, integral, limit is selected, show variable input box
@@ -765,13 +706,6 @@ function createCellElement(id, type) {
                   <option value="de_moivre">复数高次幂(棣莫弗)</option>
                 </optgroup>
               </select>
-              <div class="op-select">
-                <button type="button" class="op-select-trigger" aria-haspopup="listbox" aria-expanded="false">
-                  <span class="op-select-label"></span>
-                  <i class="fas fa-chevron-down op-select-caret"></i>
-                </button>
-                <div class="op-select-panel" role="listbox"></div>
-              </div>
               <!-- 变量输入框 -->
               <!--
               <span class="var-input" style="display: flex;">
@@ -1313,39 +1247,16 @@ function toggleKeyboard() {
 }
 
 // Apply theme settings
-// TO BE DONE: The color settings for the dark mode still have some issues.
-// Note: remove the comments after done:
-//     "index.html" line 61
-//     "script.js" line 15 and line 156
 function applyTheme(isDark) {
+  // The whole product is themed from one place: /static/hd-theme.css reads
+  // the body.theme-dark class and re-points every design token.
+  document.body.classList.toggle("theme-dark", !!isDark);
   const themeBtn = document.getElementById("toggleThemeBtn");
-  if (isDark) {
-    document.documentElement.style.setProperty("--jp-ui-font-color0", "rgba(255, 255, 255, 0.87)");
-    document.documentElement.style.setProperty("--jp-ui-font-color1", "rgba(255, 255, 255, 0.6)");
-    document.documentElement.style.setProperty("--jp-layout-color0", "#1e1e1e");
-    document.documentElement.style.setProperty("--jp-layout-color1", "#2d2d30");
-    document.documentElement.style.setProperty("--jp-layout-color2", "#252526");
-    document.documentElement.style.setProperty("--jp-layout-color3", "#3e3e42");
-    document.documentElement.style.setProperty("--jp-border-color0", "#454545");
-    document.documentElement.style.setProperty("--jp-border-color1", "#606060");
-    document.documentElement.style.setProperty("--jp-border-color2", "#808080");
-    themeBtn.innerHTML = '<i class="fas fa-sun"></i>';
-    isDarkTheme = true;
-  } else {
-    document.documentElement.style.setProperty("--jp-ui-font-color0", "rgba(0, 0, 0, 0.87)");
-    document.documentElement.style.setProperty("--jp-ui-font-color1", "rgba(0, 0, 0, 0.54)");
-    document.documentElement.style.setProperty("--jp-layout-color0", "white");
-    document.documentElement.style.setProperty("--jp-layout-color1", "#f7f7f7");
-    document.documentElement.style.setProperty("--jp-layout-color2", "#e7e7e7");
-    document.documentElement.style.setProperty("--jp-layout-color3", "#d7d7d7");
-    document.documentElement.style.setProperty("--jp-border-color0", "#e0e0e0");
-    document.documentElement.style.setProperty("--jp-border-color1", "#bdbdbd");
-    document.documentElement.style.setProperty("--jp-border-color2", "#9e9e9e");
-    themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
-    isDarkTheme = false;
+  if (themeBtn) {
+    themeBtn.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
   }
-
-  localStorage.setItem('darkTheme', isDarkTheme);
+  isDarkTheme = !!isDark;
+  localStorage.setItem("darkTheme", isDarkTheme);
 }
 
 // Toggle theme

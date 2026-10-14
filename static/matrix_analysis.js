@@ -242,8 +242,8 @@ function showLoadingState() {
     const style = document.createElement('style');
     style.textContent = `
             .spinner {
-                border: 4px solid #f3f3f3;
-                border-top: 4px solid #3498db;
+                border: 4px solid var(--border-dim);
+                border-top: 4px solid var(--text);
                 border-radius: 50%;
                 width: 30px;
                 height: 30px;

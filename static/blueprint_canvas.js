@@ -1411,7 +1411,7 @@ class BlueprintCanvas {
           refY="3.5"
           orient="auto"
         >
-          <polygon points="0 0, 10 3.5, 0 7" fill="#5b89cd" />
+          <polygon points="0 0, 10 3.5, 0 7" fill="currentColor" />
         </marker>
       </defs>
     `;

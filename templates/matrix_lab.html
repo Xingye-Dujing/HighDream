@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="../static/fontawesome/css/all.min.css"/>
     <link rel="stylesheet" href="/static/style.css"/>
     <link rel="stylesheet" href="/static/matrix_lab.css"/>
+    <link rel="stylesheet" href="/static/hd-theme.css"/>
+    <link rel="stylesheet" href="/static/hd-select.css"/>
     <script
             id="MathJax-script"
             async
@@ -25,30 +27,13 @@
     <div class="math-bg-element" style="bottom: 15%; right: 5%">∇</div>
 </div>
 
-<div id="header">
-    <h1><i></i>Matrix Lab</h1>
-    <div id="header-controls">
-        <a href="/">
-            <button class="header-btn" id="matrixLabBtn" title="首页">
-                <i class="fas fa-circle"></i>
-            </button>
-        </a>
-
-        <button class="header-btn" id="saveNotebookBtn" title="保存笔记本">
-            <i class="fas fa-save"></i>
-        </button>
-        <button class="header-btn" id="loadNotebookBtn" title="加载笔记本">
-            <i class="fas fa-folder-open"></i>
-        </button>
-        <button class="header-btn" id="toggleKeyboardBtn" title="切换虚拟键盘">
-            <i class="fas fa-keyboard"></i>
-        </button>
-        <button class="header-btn" id="toggleThemeBtn" title="切换主题">
-            <i class="fas fa-moon"></i>
-        </button>
-    </div>
-</div>
-
+<!-- Page actions. There is no per-page title bar and no wrapper
+     div: /static/hd-menu.js moves these buttons into the product
+     menu bar. `hidden` keeps them out of the layout until then,
+     and their ids stay resolvable for the page scripts. -->
+<button class="header-btn" data-hd-action hidden id="saveNotebookBtn" title="保存笔记本"> <i class="fas fa-save"></i> </button> 
+<button class="header-btn" data-hd-action hidden id="loadNotebookBtn" title="加载笔记本"> <i class="fas fa-folder-open"></i> </button> 
+<button class="header-btn" data-hd-action hidden id="toggleKeyboardBtn" title="切换虚拟键盘"> <i class="fas fa-keyboard"></i> </button> 
 <div id="toolbar">
     <button class="toolbar-button" id="addCellBtn">
         <i class="fas fa-plus"></i><span>添加计算单元格</span>
@@ -148,5 +133,7 @@
         id="helpful-area"
         style="display: none; width: 100%; height: 320px"
 ></div>
+<script src="/static/hd-menu.js"></script>
+<script src="/static/hd-select.js"></script>
 </body>
 </html>

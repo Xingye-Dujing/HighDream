@@ -5,8 +5,8 @@
   --bp-node-header-height: 36px;
   --bp-node-padding: 12px;
   --bp-node-bg: var(--jp-layout-color0, #ffffff);
-  --bp-node-border: var(--jp-border-color1, #c9d6ea);
-  --bp-connection-color: #5b89cd;
+  --bp-node-border: var(--jp-border-color1, var(--border-dim));
+  --bp-connection-color: var(--text);
   --bp-grid-color: rgba(0, 0, 0, 0.05);
   --bp-grid-size: 20px;
 }
@@ -18,11 +18,11 @@
   flex-wrap: wrap;
   height: auto;
   min-height: 48px;
-  background-color: var(--jp-layout-color0, #fff);
+  background-color: var(--jp-layout-color0, var(--bg));
   padding: 6px 16px;
-  border-bottom: 1px solid var(--jp-toolbar-border-color, #ddd);
+  border-bottom: 1px solid var(--jp-toolbar-border-color, var(--border-dim));
   position: sticky;
-  top: 48px;
+  top: 0;
   z-index: 99;
   gap: 8px;
 }
@@ -31,12 +31,12 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 12px;
+  font-size: var(--font-sub);
   color: var(--jp-ui-font-color1, #333);
 }
 
 .mt-field label {
-  font-weight: 600;
+  font-weight: 500;
   opacity: 0.8;
 }
 
@@ -44,20 +44,15 @@
 .mt-field select {
   padding: 5px 9px;
   border: 1px solid var(--jp-border-color1, #ccc);
-  border-radius: 4px;
-  background: var(--jp-layout-color0, #fff);
+  border-radius: var(--radius);
+  background: var(--jp-layout-color0, var(--bg));
   color: var(--jp-ui-font-color0, #222);
-  font-size: 13px;
+  font-size: var(--font-body);
   min-width: 70px;
   font-family: var(--font-family, inherit);
   transition: border-color 0.2s;
 }
 
-.mt-field input:focus,
-.mt-field select:focus {
-  border-color: var(--jp-brand-color1, #3a6fb5);
-  outline: none;
-}
 
 .mt-field input[type="number"] {
   min-width: 60px;
@@ -83,11 +78,11 @@
 .mt-field.mt-buttons button {
   background: none;
   border: 1px solid transparent;
-  font-size: 13px;
+  font-size: var(--font-body);
   padding: 8px 12px;
   cursor: pointer;
   color: var(--jp-ui-font-color0, #222);
-  border-radius: 6px;
+  border-radius: var(--radius);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -107,11 +102,11 @@
 }
 
 .mt-field.mt-buttons button i {
-  font-size: 12px;
+  font-size: var(--font-sub);
 }
 
-#mt-start-btn { color: var(--jp-brand-color0, #1976d2); }
-#mt-cancel-btn { color: #e65100; }
+#mt-start-btn { color: var(--text); }
+#mt-cancel-btn { color: var(--accent-red); }
 
 /* Viewport: the fixed-size window into the infinite world */
 #mt-viewport {
@@ -169,7 +164,7 @@
 }
 
 .mt-connection-path:hover {
-  stroke: var(--jp-brand-color0, #1976d2);
+  stroke: var(--jp-brand-color0, var(--text));
   stroke-width: 3;
 }
 
@@ -195,14 +190,14 @@
 }
 
 .mt-port:hover {
-  background-color: var(--jp-brand-color1, #5b89cd);
-  border-color: var(--jp-brand-color0, #1976d2);
+  background-color: var(--jp-brand-color1, var(--text));
+  border-color: var(--jp-brand-color0, var(--text));
   transform: translate(-50%, -50%) scale(1.3);
 }
 
 .mt-port.mt-port-connecting {
-  background-color: var(--jp-brand-color0, #1976d2);
-  border-color: var(--jp-brand-color1, #5b89cd);
+  background-color: var(--jp-brand-color0, var(--text));
+  border-color: var(--jp-brand-color1, var(--text));
   box-shadow: 0 0 8px rgba(91, 137, 205, 0.6);
 }
 
@@ -233,7 +228,7 @@
   bottom: -6px;
   background-color: var(--jp-layout-color2, #ececec);
   border: 1px solid var(--bp-node-border);
-  border-radius: 2px;
+  border-radius: var(--radius);
   cursor: nwse-resize;
   z-index: 4;
   transition: background-color 0.15s, transform 0.15s;
@@ -252,13 +247,13 @@
 }
 
 .mt-node-resizer:hover {
-  background-color: var(--jp-brand-color1, #5b89cd);
+  background-color: var(--jp-brand-color1, var(--text));
   transform: scale(1.1);
 }
 
 .mt-node-resizer:hover::after {
-  border-right-color: #fff;
-  border-bottom-color: #fff;
+  border-right-color: var(--text);
+  border-bottom-color: var(--text);
   opacity: 1;
 }
 
@@ -268,7 +263,7 @@
   width: var(--bp-node-width);
   background-color: var(--bp-node-bg);
   border: 1px solid var(--bp-node-border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   pointer-events: auto;
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
@@ -290,22 +285,22 @@
 }
 
 .mt-node-title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--font-body);
+  font-weight: 500;
   color: var(--jp-ui-font-color0, #222);
   margin-right: auto;
-  white-space: nowrap;
+  var(--bg)-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .mt-node-type {
-  font-size: 10px;
+  font-size: var(--font-meta);
   color: var(--jp-ui-font-color1, #555);
-  background-color: var(--jp-layout-color1, #f5f5f5);
+  background-color: var(--jp-layout-color1, var(--surface));
   padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 600;
+  border-radius: var(--radius);
+  font-weight: 500;
   letter-spacing: 0.04em;
 }
 
@@ -314,7 +309,7 @@
   overflow-x: auto;
   line-height: 1.4;
   color: var(--jp-ui-font-color0, #222);
-  font-size: 14px;
+  font-size: calc(14px * var(--fscale));
 }
 
 .mt-node-content .MathJax {
@@ -324,16 +319,16 @@
 /* State variants */
 .mt-node.mt-root {
   border-width: 2px;
-  border-color: var(--jp-brand-color0, #3a6fb5);
+  border-color: var(--jp-brand-color0, var(--text));
 }
 
 .mt-node.mt-root > .mt-node-header {
-  background-color: var(--jp-brand-color1, #5b89cd);
+  background-color: var(--jp-brand-color1, var(--text));
 }
 
 .mt-node.mt-root > .mt-node-header .mt-node-title,
 .mt-node.mt-root > .mt-node-header .mt-node-type {
-  color: #fff;
+  color: var(--text);
 }
 
 .mt-node.mt-root > .mt-node-header .mt-node-type {
@@ -341,49 +336,50 @@
 }
 
 .mt-node.mt-done {
-  border-color: #2e7d32;
+  border-color: var(--accent-green);
 }
 
 .mt-node.mt-done > .mt-node-header {
-  background-color: #e8f5e9;
+  background-color: var(--surface);
 }
 
 .mt-node.mt-done > .mt-node-header .mt-node-type {
-  background-color: #2e7d32;
-  color: #fff;
+  background-color: var(--accent-green);
+  color: var(--text);
 }
 
 .mt-node.mt-truncated {
   border-style: dashed;
-  border-color: #ef6c00;
+  border-color: var(--text-dim);
 }
 
 .mt-node.mt-truncated > .mt-node-header {
-  background-color: #fff3e0;
+  background-color: var(--surface);
 }
 
 .mt-node.mt-truncated > .mt-node-header .mt-node-type {
-  background-color: #ef6c00;
-  color: #fff;
+  background-color: var(--surface-2);
+  color: var(--text);
+  border-color: var(--text-dim);
 }
 
 /* Footer labels (final result / truncation) */
 .mt-node-footer {
   padding: 6px 12px;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--font-menu);
+  font-weight: 500;
   border-top: 1px dashed var(--bp-node-border);
-  background-color: var(--jp-layout-color1, #f5f5f5);
+  background-color: var(--jp-layout-color1, var(--surface));
 }
 
 .mt-node-footer.mt-final {
-  color: #2e7d32;
-  background-color: #e8f5e9;
+  color: var(--accent-green);
+  background-color: var(--surface);
 }
 
 .mt-node-footer.mt-trunc {
-  color: #ef6c00;
-  background-color: #fff3e0;
+  color: var(--text-dim);
+  background-color: var(--surface);
 }
 
 /* Loading overlay (pure CSS spinner on main thread) */
@@ -396,10 +392,10 @@
   gap: 12px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--bp-node-border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 10px 16px;
   box-shadow: 0 4px 14px rgba(30, 60, 110, 0.18);
-  font-size: 13px;
+  font-size: var(--font-body);
   color: var(--jp-ui-font-color0, #222);
   z-index: 10;
 }
@@ -408,8 +404,8 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 3px solid #c9d6ea;
-  border-top-color: var(--jp-brand-color0, #3a6fb5);
+  border: 3px solid var(--border-dim);
+  border-top-color: var(--jp-brand-color0, var(--text));
   animation: mt-spin 0.9s linear infinite;
 }
 
@@ -424,9 +420,9 @@
   top: 20px;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid var(--bp-node-border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 8px 14px;
-  font-size: 12px;
+  font-size: var(--font-sub);
   color: var(--jp-ui-font-color0, #222);
   z-index: 9;
   max-width: 340px;
@@ -436,16 +432,16 @@
 #mt-stats:empty { display: none; }
 
 #mt-stats .mt-stat-line {
-  white-space: nowrap;
+  var(--bg)-space: nowrap;
 }
 
 #mt-stats .mt-reason {
-  font-weight: 700;
-  color: var(--jp-brand-color0, #3a6fb5);
+  font-weight: 500;
+  color: var(--jp-brand-color0, var(--text));
 }
 
-#mt-stats .mt-reason.mt-truncated { color: #ef6c00; }
-#mt-stats .mt-reason.mt-error { color: var(--jp-error-color, #c62828); }
+#mt-stats .mt-reason.mt-truncated { color: var(--text-dim); }
+#mt-stats .mt-reason.mt-error { color: var(--jp-error-color, var(--accent-red)); }
 
 #mt-error {
   margin: 6px 20px 0;
@@ -461,19 +457,20 @@
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
+  font-weight: 500;
+  font-size: var(--font-body);
   color: var(--jp-ui-font-color0, #222);
   user-select: none;
-  white-space: nowrap;
+  var(--bg)-space: nowrap;
   padding: 4px 0;
 }
 
 .mt-checkbox-label input[type="checkbox"] {
   width: 16px;
   height: 16px;
+  min-width: 16px;
   cursor: pointer;
-  accent-color: var(--jp-brand-color0, #1976d2);
+  accent-color: var(--text);
   margin-right: -20px;
 }
 
@@ -485,8 +482,8 @@
   transform: translateX(-50%);
   z-index: 20;
   background: rgba(255, 255, 255, 0.97);
-  border: 2px solid var(--jp-brand-color0, #1976d2);
-  border-radius: 12px;
+  border: 2px solid var(--jp-brand-color0, var(--text));
+  border-radius: var(--radius);
   box-shadow: 0 8px 32px rgba(30, 60, 110, 0.25);
   padding: 16px 24px;
   min-width: 360px;
@@ -498,23 +495,23 @@
 }
 
 .mt-decision-header {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--jp-brand-color0, #1976d2);
+  font-size: calc(14px * var(--fscale));
+  font-weight: 500;
+  color: var(--jp-brand-color0, var(--text));
   text-align: center;
   padding-bottom: 6px;
-  border-bottom: 1px solid var(--jp-border-color1, #c9d6ea);
+  border-bottom: 1px solid var(--jp-border-color1, var(--border-dim));
 }
 
 .mt-decision-rule {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: calc(14px * var(--fscale));
 }
 
 .mt-decision-value {
-  font-weight: 700;
+  font-weight: 500;
   color: var(--jp-ui-font-color0, #222);
 }
 
@@ -525,19 +522,19 @@
 }
 
 .mt-decision-label {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--font-menu);
+  font-weight: 500;
   color: var(--jp-ui-font-color1, #555);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .mt-decision-latex {
-  font-size: 14px;
+  font-size: calc(14px * var(--fscale));
   color: var(--jp-ui-font-color0, #222);
   padding: 6px 10px;
-  background: var(--jp-layout-color1, #f5f5f5);
-  border-radius: 6px;
+  background: var(--jp-layout-color1, var(--surface));
+  border-radius: var(--radius);
   border: 1px solid var(--jp-border-color1, #e0e0e0);
   overflow-x: auto;
   min-height: 28px;
@@ -553,10 +550,10 @@
 .mt-btn-accept,
 .mt-btn-skip {
   border: none;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--font-body);
+  font-weight: 500;
   padding: 8px 20px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -566,22 +563,24 @@
 }
 
 .mt-btn-accept {
-  background-color: #2e7d32;
-  color: #fff;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .mt-btn-accept:hover {
-  background-color: #1b5e20;
+  background-color: var(--hover);
   transform: translateY(-1px);
 }
 
 .mt-btn-skip {
-  background-color: #841a02;
-  color: #fff;
+  background: transparent;
+  color: var(--accent-red);
+  border: 1px solid var(--accent-red);
 }
 
 .mt-btn-skip:hover {
-  background-color: #570e01;
+  background-color: var(--accent-red);
   transform: translateY(-1px);
 }
 

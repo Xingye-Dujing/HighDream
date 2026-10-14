@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Applicable rules
     if (state.done) {
       hideLoading();
-      $rulesList.innerHTML = '<p class="rs-placeholder"><i class="fas fa-check-circle" style="color:#789262"></i> 推导完成</p>';
+      $rulesList.innerHTML = '<p class="rs-placeholder"><i class="fas fa-check-circle" style="color:var(--accent-green)"></i> 推导完成</p>';
       $actions.style.display = 'none';
       renderStatus(state);
       return;
@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
     lines.push('<div>步骤数: <strong>' + state.steps.length + '</strong></div>');
     lines.push('<div>域: <strong>' + state.domain + '</strong></div>');
     if (state.done) {
-      lines.push('<div style="margin-top:6px;color:#789262"><i class="fas fa-check-circle"></i> 推导完成</div>');
+      lines.push('<div style="margin-top:6px;color:var(--accent-green)"><i class="fas fa-check-circle"></i> 推导完成</div>');
     }
     $statusContent.innerHTML = lines.join('');
   }
@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function () {
       currentState.done = true;
     }
     hideLoading();
-    $rulesList.innerHTML = '<p class="rs-placeholder"><i class="fas fa-check-circle" style="color:#789262"></i> 推导完成</p>';
+    $rulesList.innerHTML = '<p class="rs-placeholder"><i class="fas fa-check-circle" style="color:var(--accent-green)"></i> 推导完成</p>';
     $actions.style.display = 'none';
     renderStatus(currentState || {steps: [], domain: $domain.value, done: true});
     // Keep session alive for status review

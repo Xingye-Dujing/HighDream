@@ -22,15 +22,15 @@
   padding: var(--jp-cell-padding);
   border: var(--jp-border-width) solid var(--jp-cell-editor-border-color);
   background-color: var(--jp-cell-editor-background);
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 
 .matrix-preview {
   padding: 16px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   min-height: 52px;
   border: 1px dashed var(--jp-border-color1);
-  font-size: 15px;
+  font-size: calc(15px * var(--fscale));
   transition: all var(--transition-speed);
 }
 
@@ -38,14 +38,14 @@
   border: var(--jp-border-width) solid var(--jp-cell-editor-border-color);
   background-color: var(--jp-cell-editor-background);
   padding: var(--jp-cell-padding);
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 
 .record-toggle {
   display: inline-flex;
   align-items: center;
   margin-left: 10px;
-  font-size: 12px;
+  font-size: var(--font-sub);
   color: var(--jp-ui-font-color1);
 }
 
@@ -54,5 +54,5 @@
 }
 
 .record-toggle span {
-  white-space: nowrap;
+  var(--bg)-space: nowrap;
 }
