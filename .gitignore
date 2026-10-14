@@ -19,6 +19,7 @@ __pycache__/
 
 # Ignore Qoder configuration files
 .qoder/settings.local.json
+.qoder/sessions
 
 # Help documentation: help_docs/src/*.md is the source of truth; the
 # templates/help/*.html files are generated from them by pandoc via
