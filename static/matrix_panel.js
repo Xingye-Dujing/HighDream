@@ -2,7 +2,6 @@
 let cellCounter = 0;
 let activeCellId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
-let isKeyboardVisible = false;
 let kernelStatus = 'idle';
 
 // Initialize after page loads
@@ -30,8 +29,6 @@ function bindEvents() {
   document.getElementById("moveCellUpBtn").addEventListener("click", moveActiveCellUp);
   document.getElementById("moveCellDownBtn").addEventListener("click", moveActiveCellDown);
   document.getElementById("deleteCellBtn").addEventListener("click", deleteActiveCell);
-  document.getElementById("toggleKeyboardBtn").addEventListener("click", toggleKeyboard);
-  document.getElementById("closeKeyboardBtn").addEventListener("click", toggleKeyboard);
   const _themeBtn = document.getElementById("toggleThemeBtn");
   if (_themeBtn) _themeBtn.addEventListener("click", toggleTheme);
   document.getElementById("saveNotebookBtn").addEventListener("click", saveNotebook);
@@ -93,10 +90,6 @@ function bindEvents() {
       if (activeCell) deleteActiveCell();
     }
 
-    if (e.key === "k" && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      toggleKeyboard();
-    }
   });
 
   // Bind virtual keyboard buttons
@@ -135,7 +128,6 @@ function setupCellEvents(cell) {
   const textarea = cell.querySelector("textarea");
   const runButton = cell.querySelector(".run-cell-button");
   const opretationButton = cell.querySelector(".operation-button");
-  const keyboardButton = cell.querySelector(".keyboard-button");
   const addCellButton = cell.querySelector(".add-cell-button");
 
   const cellType = cell.dataset.cellType;
@@ -156,11 +148,6 @@ function setupCellEvents(cell) {
       debounce(() => {
         renderMathPreview(cell);
       }, 500)();
-    });
-
-    // Virtual keyboard button
-    keyboardButton.addEventListener("click", function () {
-      toggleKeyboard();
     });
   }
 
@@ -480,15 +467,6 @@ function showNotification(message, type = "success") {
       }
     }, 300);
   }, 3000);
-}
-
-function toggleKeyboard() {
-  const keyboard = document.getElementById("math-keyboard");
-  if (!keyboard) return;
-  isKeyboardVisible = !isKeyboardVisible;
-  keyboard.classList.toggle("keyboard-visible", isKeyboardVisible);
-  // Reserve the rail's width on the main content while it is open.
-  document.body.classList.toggle("keyboard-open", isKeyboardVisible);
 }
 
 // Apply theme settings

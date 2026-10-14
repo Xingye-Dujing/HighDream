@@ -192,7 +192,6 @@ function applyInputMode(cell) {
 
 let activeCellId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
-let isKeyboardVisible = false;
 let kernelStatus = 'idle';
 
 let foreverVisible = true;
@@ -353,9 +352,7 @@ function bindEvents() {
   document.getElementById("moveCellUpBtn").addEventListener("click", moveActiveCellUp);
   document.getElementById("moveCellDownBtn").addEventListener("click", moveActiveCellDown);
   document.getElementById("deleteCellBtn").addEventListener("click", deleteActiveCell);
-  document.getElementById("toggleKeyboardBtn").addEventListener("click", toggleKeyboard);
-  document.getElementById("closeKeyboardBtn").addEventListener("click", toggleKeyboard);
-    const _themeBtn = document.getElementById("toggleThemeBtn");
+  const _themeBtn = document.getElementById("toggleThemeBtn");
   if (_themeBtn) _themeBtn.addEventListener("click", toggleTheme);
   document.getElementById("saveNotebookBtn").addEventListener("click", saveNotebook);
   document.getElementById("loadNotebookBtn").addEventListener("click", loadNotebook);
@@ -420,11 +417,6 @@ function bindEvents() {
       e.preventDefault();
       const activeCell = document.querySelector(".cell-active");
       if (activeCell) deleteActiveCell();
-    }
-
-    if (e.key === "k" && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      toggleKeyboard();
     }
   });
 
@@ -506,7 +498,6 @@ function setupCellEvents(cell) {
   const operationSelector = cell.querySelector(".operation-type");
   const mathField = cell.querySelector("math-field");
   const runButton = cell.querySelector(".run-cell-button");
-  const keyboardButton = cell.querySelector(".keyboard-button");
   const addCellButton = cell.querySelector(".add-cell-button");
 
   const cellType = cell.dataset.cellType;
@@ -638,11 +629,6 @@ function setupCellEvents(cell) {
           evaluateAndAdvance();
         }
       });
-    });
-
-    // Virtual keyboard button
-    keyboardButton.addEventListener("click", function () {
-      toggleKeyboard();
     });
   }
 
@@ -996,10 +982,6 @@ function createCellElement(id, type) {
                 <input type="checkbox" class="record-cache-checkbox" checked>
                 <span>记录</span>
               </label>
-
-              <button class="keyboard-button" title="打开虚拟键盘">
-                <i class="fas fa-keyboard"></i>
-              </button>
             </div>
             <math-field class="math-editor" virtual-keyboard-mode="manual" toolbar="hide" style="display:none;"></math-field>
             <textarea placeholder="输入数学表达式..." class="math-input"></textarea>
@@ -1426,15 +1408,6 @@ function decorateKeyboardKeys() {
     key.textContent = "\\(" + displayLatex(raw) + "\\)";
   });
   typesetKeyboard();
-}
-
-function toggleKeyboard() {
-  const keyboard = document.getElementById("math-keyboard");
-  if (!keyboard) return;
-  isKeyboardVisible = !isKeyboardVisible;
-  keyboard.classList.toggle("keyboard-visible", isKeyboardVisible);
-  // Reserve the rail's width on the main content while it is open.
-  document.body.classList.toggle("keyboard-open", isKeyboardVisible);
 }
 
 // Apply theme settings

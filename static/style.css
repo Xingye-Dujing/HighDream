@@ -638,36 +638,33 @@ a {
   border-left-color: var(--text);
 }
 
+/* 数学符号 / 模板工具区：固定停靠在页面右侧、始终可见的面板（不再是可切换弹窗）。
+   主内容始终预留其宽度，宽度由一个变量统一控制，窄屏自适应收窄以保持可用。 */
+:root { --kb-rail-w: 320px; }
+@media (max-width: 900px) { :root { --kb-rail-w: 260px; } }
+@media (max-width: 640px) { :root { --kb-rail-w: 200px; } }
+
 #math-keyboard {
-  /* Maple-style palette: a fixed rail docked to the right edge that slides in
-     horizontally, instead of covering the page from the bottom. */
   position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
-  width: 320px;
-  max-width: 90vw;
+  width: var(--kb-rail-w);
+  max-width: 45vw;
   display: flex;
   flex-direction: column;
   background-color: var(--jp-layout-color1);
   border-left: 1px solid var(--jp-border-color1);
   z-index: 1000;
-  transition: transform 0.3s var(--animation-timing);
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-  transform: translateX(100%);
+  overflow: hidden;
 }
 
-#math-keyboard.keyboard-visible {
-  transform: translateX(0);
-}
-
-/* While the rail is open, reserve its width on the main content so nothing is
-   hidden behind it (the rail itself is fixed and does not scroll with them). */
-body.keyboard-open #toolbar,
-body.keyboard-open #notebook-container,
-body.keyboard-open #content {
-  padding-right: 320px;
-  transition: padding-right 0.3s var(--animation-timing);
+/* 主内容始终为常驻侧栏让出右侧空间，避免被遮挡（侧栏本身固定、不随正文滚动）。 */
+#toolbar,
+#notebook-container,
+#content {
+  padding-right: var(--kb-rail-w);
 }
 
 .keyboard-header {

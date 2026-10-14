@@ -32,7 +32,6 @@
      and their ids stay resolvable for the page scripts. -->
 <button class="header-btn" data-hd-action hidden id="saveNotebookBtn" title="保存笔记本"> <i class="fas fa-save"></i> </button> 
 <button class="header-btn" data-hd-action hidden id="loadNotebookBtn" title="加载笔记本"> <i class="fas fa-folder-open"></i> </button> 
-<button class="header-btn" data-hd-action hidden id="toggleKeyboardBtn" title="切换虚拟键盘"> <i class="fas fa-keyboard"></i> </button> 
 <div id="toolbar">
     <button class="toolbar-button" id="addCellBtn">
         <i class="fas fa-plus"></i><span>添加计算单元格</span>
@@ -58,12 +57,9 @@
     </div>
 </div>
 
-<div id="math-keyboard" class="keyboard-hidden">
+<div id="math-keyboard">
     <div class="keyboard-header">
-        <span>数学符号键盘</span>
-        <button id="closeKeyboardBtn" class="keyboard-close-btn">
-            <i class="fas fa-times"></i>
-        </button>
+        <span>数学符号 / 模板工具</span>
     </div>
     <div class="keyboard-content">
         <div class="keyboard-row">
