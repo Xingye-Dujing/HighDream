@@ -260,7 +260,7 @@ def _dispatch_auto(expression: str):
 
     # Any unfilled placeholder box -> one clear message, checked on the raw input
     # before conversion so latex_to_nested never trips over the empty slots.
-    if re.search(r'\\square\b|\\Box\b|\\bigbox\b', expression):
+    if re.search(r'\\square\b|\\Box\b|\\bigbox\b|\\placeholder\b', expression):
         return False, '请先填写输入框中的占位（□）后再计算'
     text = latex_to_nested(expression)  # bmatrix blocks -> [[...]] (no-op otherwise)
 
