@@ -148,6 +148,26 @@ def get_steps():
     return jsonify(structured_solve(op_type, data))
 
 
+@api.route('/plot', methods=['POST'])
+def plot_curve():
+    """Sample a single-variable scalar function for client-side SVG plotting.
+
+    Expected JSON input:
+        expression (str), variable (str): the function y=f(x)
+        xmin/xmax or lower/upper (number, optional): sample window (default +/-10)
+        samples (int, optional): grid size (clamped)
+        tangent_at (number, optional): also emit a tangent-line overlay
+
+    Returns:
+        JSON with success and points:[[x, y|null], ...] (null = asymptote/break),
+        plus ymin/ymax and an optional tangent object; plain numbers only.
+    """
+    from utils.plot_data import sample_curve  # pylint: disable=import-outside-toplevel
+
+    data = request.json or {}
+    return jsonify(sample_curve(data))
+
+
 @api.route('/stream')
 def task_stream():
     """SSE endpoint that pushes task status updates in real time.

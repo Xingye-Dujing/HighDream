@@ -37,3 +37,12 @@ METHOD_TREE_TASK_TIMEOUT_SECONDS = METHOD_TREE_HARD_MAX_TIME_SECONDS + 10
 # Interactive (step-by-step) mode: effectively no time limit, but bounded
 # to 2 hours so the worker thread doesn't live forever if the user walks away.
 METHOD_TREE_INTERACTIVE_TASK_TIMEOUT_SECONDS = 7200
+
+# Function-plot sampling (SVG curve via /api/plot). The endpoint is synchronous,
+# so the grid is clamped hard to bound CPU/memory; y is rejected beyond PLOT_MAX_ABS_Y
+# (asymptotes become null holes the client breaks the polyline at).
+PLOT_DEFAULT_SAMPLES = 200
+PLOT_MAX_SAMPLES = 1200
+PLOT_DEFAULT_WINDOW = 10.0        # x in [-W, W] when the cell gives no bounds
+PLOT_MAX_ABS_Y = 1e12
+PLOT_COORD_DIGITS = 6

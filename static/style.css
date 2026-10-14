@@ -667,6 +667,23 @@ a {
   padding-right: var(--kb-rail-w);
 }
 
+/* 函数图像（SVG 曲线）：折叠的 <details> 内嵌于 .math-output, 仅用主题变量描色。 */
+.cell-plot { margin-top: 8px; }
+.cell-plot > summary {
+  cursor: pointer;
+  font-size: calc(12px * var(--fscale));
+  color: var(--text-faint);
+}
+.hd-plot-body { margin-top: 6px; }
+.hd-plot-loading { font-size: calc(12px * var(--fscale)); color: var(--text-faint); }
+.hd-plot-svg { display: block; width: 100%; max-width: 520px; height: auto; }
+.hd-plot-axis { stroke: var(--border-dim); stroke-width: 1; }
+.hd-plot-zero { stroke: var(--border); stroke-width: 1; }
+.hd-plot-curve { fill: none; stroke: var(--jp-brand-color0, var(--text)); stroke-width: 2; }
+.hd-plot-tangent { fill: none; stroke: var(--selected-line, var(--text)); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.hd-plot-marker { fill: var(--jp-brand-color0, var(--text)); }
+.hd-plot-tick { fill: var(--text-faint); font-size: 10px; }
+
 .keyboard-header {
   display: flex;
   align-items: center;

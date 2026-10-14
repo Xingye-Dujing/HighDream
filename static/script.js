@@ -2,6 +2,10 @@
 let cellCounter = 0;
 const APPLIED_OPS = ["tangent", "linearization", "critical_points", "newton", "arc_length", "volume_disk", "surface_area", "implicit_diff", "parametric_diff", "polar_area", "polar_slope", "taylor", "series_convergence", "improper_integral", "ode", "numerical_integration", "mean_value", "radius_of_convergence", "taylor_error", "complex_simplify", "complex_polar", "complex_roots", "volume_shell", "de_moivre", "iterated_integral", "power_series"];
 
+// Cells whose expression is a single-variable scalar function y=f(x), so a curve plot
+// is meaningful. Matrix / multivar / complex / discrete-index ops are excluded.
+const PLOT_OPS = ["diff", "integral", "limit", "tangent", "linearization", "critical_points", "newton", "arc_length", "volume_disk", "volume_shell", "surface_area", "mean_value"];
+
 // Operations whose input is structured text (matrices / vectors), not a rendered
 // math expression: these keep the plain <textarea> instead of the MathLive editor.
 // Ops whose input is plain multi-line text: equation lists (linear-system) and
@@ -1898,6 +1902,112 @@ function makeStepCards(steps) {
   return count > 0 ? wrap : null;
 }
 
+// -------------------------------------------------------------- function plotting
+
+function collectPlotPayload(cell) {
+  const varEl = cell.querySelector('.var-input input');
+  const payload = {
+    expression: readExpr(cell),
+    variable: (varEl && varEl.value.trim()) || 'x',
+  };
+  // A definite-integral window is a natural x-range.
+  const lo = cell.querySelector('.integral-lower');
+  const hi = cell.querySelector('.integral-upper');
+  if (lo && hi && String(hi.value).trim() !== '') {
+    const a = parseFloat(lo.value);
+    const b = parseFloat(hi.value);
+    if (isFinite(a) && isFinite(b) && b > a) { payload.xmin = a; payload.xmax = b; }
+  }
+  if (getOp(cell) === 'tangent') {
+    const p = cell.querySelector('.applied-point');
+    if (p) { const t = parseFloat(p.value); if (isFinite(t)) payload.tangent_at = t; }
+  }
+  return payload;
+}
+
+function _plotSvgEl(name, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', name);
+  Object.keys(attrs).forEach((k) => el.setAttribute(k, attrs[k]));
+  return el;
+}
+
+function renderPlotSvg(data) {
+  const W = 320; const H = 220; const P = 30;
+  const pts = data.points || [];
+  const xs = pts.map((p) => p[0]);
+  let xmin = Math.min.apply(null, xs); let xmax = Math.max.apply(null, xs);
+  if (!(xmax > xmin)) xmax = xmin + 1;
+  let ymin = (typeof data.ymin === 'number') ? data.ymin : -1;
+  let ymax = (typeof data.ymax === 'number') ? data.ymax : 1;
+  if (!(ymax > ymin)) ymax = ymin + 1;
+  const sx = (x) => P + (x - xmin) / (xmax - xmin) * (W - 2 * P);
+  const sy = (y) => H - P - (y - ymin) / (ymax - ymin) * (H - 2 * P);
+  const svg = _plotSvgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'hd-plot-svg', preserveAspectRatio: 'xMidYMid meet' });
+  svg.appendChild(_plotSvgEl('line', { x1: P, y1: H - P, x2: W - P, y2: H - P, class: 'hd-plot-axis' }));
+  svg.appendChild(_plotSvgEl('line', { x1: P, y1: P, x2: P, y2: H - P, class: 'hd-plot-axis' }));
+  if (ymin <= 0 && 0 <= ymax) svg.appendChild(_plotSvgEl('line', { x1: P, y1: sy(0), x2: W - P, y2: sy(0), class: 'hd-plot-zero' }));
+  if (xmin <= 0 && 0 <= xmax) svg.appendChild(_plotSvgEl('line', { x1: sx(0), y1: P, x2: sx(0), y2: H - P, class: 'hd-plot-zero' }));
+  // Curve as runs split at null holes (asymptotes).
+  let run = [];
+  const flush = () => {
+    if (run.length > 1) {
+      const d = run.map((p, i) => (i === 0 ? 'M' : 'L') + sx(p[0]).toFixed(1) + ' ' + sy(p[1]).toFixed(1)).join(' ');
+      svg.appendChild(_plotSvgEl('path', { d, class: 'hd-plot-curve' }));
+    }
+    run = [];
+  };
+  pts.forEach((p) => { if (p[1] === null || p[1] === undefined) flush(); else run.push(p); });
+  flush();
+  if (data.tangent) {
+    const t = data.tangent;
+    svg.appendChild(_plotSvgEl('line', { x1: sx(xmin), y1: sy(t.y1), x2: sx(xmax), y2: sy(t.y2), class: 'hd-plot-tangent' }));
+    svg.appendChild(_plotSvgEl('circle', { cx: sx(t.x), cy: sy(t.y), r: 3, class: 'hd-plot-marker' }));
+  }
+  const label = (str, x, y) => { const e = _plotSvgEl('text', { x, y, class: 'hd-plot-tick' }); e.textContent = str; svg.appendChild(e); };
+  const r2 = (v) => String(Math.round(v * 100) / 100);
+  label(r2(xmin), P, H - P + 12);
+  label(r2(xmax), W - P, H - P + 12);
+  return svg;
+}
+
+function attachPlot(outputArea, cell) {
+  if (!outputArea || !cell) return;
+  const target = outputArea.querySelector('.math-output') || outputArea;
+  if (target.querySelector('.cell-plot')) return;   // idempotent
+  const det = document.createElement('details');
+  det.className = 'cell-plot';
+  const sum = document.createElement('summary');
+  sum.textContent = '绘制函数图像 y=f(x)';
+  const body = document.createElement('div');
+  body.className = 'hd-plot-body';
+  det.appendChild(sum);
+  det.appendChild(body);
+  target.appendChild(det);
+  let loaded = false;
+  det.addEventListener('toggle', () => {
+    if (!det.open || loaded) return;
+    loaded = true;
+    body.innerHTML = '<span class="hd-plot-loading">生成图像中…</span>';
+    fetch('/api/plot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(collectPlotPayload(cell)),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        body.innerHTML = '';
+        if (!data || !data.success || !(data.points || []).length) {
+          loaded = false;
+          const msg = (data && data.error) || '此表达式暂不支持作图';
+          body.innerHTML = '<span class="hd-plot-loading">' + msg + '</span>';
+          return;
+        }
+        body.appendChild(renderPlotSvg(data));
+      })
+      .catch(() => { loaded = false; body.innerHTML = '<span class="hd-plot-loading">图像请求失败</span>'; });
+  });
+}
+
 function attachStepLinks(outputArea, cell) {
   if (!cell) return;
   let payload;
@@ -1992,6 +2102,9 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
 
       if (["diff", "integral", "limit"].includes(operationType)) {
         attachStepLinks(outputArea, outputArea.closest(".cell"));
+      }
+      if (PLOT_OPS.includes(operationType)) {
+        attachPlot(outputArea, outputArea.closest(".cell"));
       }
     }
   });
