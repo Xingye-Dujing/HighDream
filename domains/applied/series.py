@@ -7,7 +7,7 @@ explicit steps.
 """
 # pylint: disable=duplicate-code
 
-from sympy import (Abs, Eq, Integral, Symbol, expand, factorial, latex, limit,
+from sympy import (Abs, Eq, Integral, Order, Symbol, expand, factorial, latex, limit,
                    oo, simplify, summation, Sum)
 
 from utils.cache_utils import cached_sympify as sympify
@@ -32,12 +32,16 @@ def taylor(data):
     for k in range(order + 1):
         dk = derivs[k]
         coef = simplify(dk.subs(x, x0) / factorial(k))
+        if coef.is_finite is False:  # non-analytic / undefined at x0 (e.g. log(x) at 0)
+            return False, f'函数在 x={x0} 处第 {k} 阶导数发散/无定义, 不能作泰勒展开'
         terms.append(coef * (x - x0) ** k)
         if k > 0:
             items.append((simplify(dk), note(f"第 {k} 阶导数 (规则引擎)")))
         items.append((coef, note(f"第 {k} 阶系数 a_{k}")))
     poly = expand(sum(terms))
     items.append((poly, note(f"泰勒/麦克劳林多项式 (到 {order} 阶)")))
+    items.append((poly + Order((x - x0) ** (order + 1), x),
+                  note(f"带皮亚诺余项 $+O((x-{latex(x0)})^{{{order+1}}})$")))
     data['_auto_value'] = poly
     return True, align(items)
 

@@ -133,3 +133,13 @@ def test_power_series_endpoint_conditional_still_included():
     ok, res = _dispatch_compute('power_series', {
         'operation_type': 'power_series', 'expression': '1/n', 'variable': 'n', 'point': '0'})
     assert ok and r'[-1' in res and 'R=1' in res
+
+
+def test_taylor_shows_order_remainder_term():
+    ok, res = _dispatch_auto('taylor(e^x,x,0,3)')
+    assert ok and 'O(' in res  # Peano remainder term displayed
+
+
+def test_taylor_rejects_non_analytic_point():
+    ok, res = _dispatch_auto('taylor(log(x),x,0,3)')
+    assert not ok and '不能作泰勒展开' in res
