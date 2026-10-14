@@ -6,7 +6,7 @@ IntegralCalculator; implicit differentiation shows the differentiated equation
 then solves for y'.
 """
 
-from sympy import Eq, Function, Symbol, cos, sin, solve, simplify, Integral
+from sympy import Eq, Function, Matrix, Symbol, cos, sin, solve, simplify, Integral
 
 from utils.cache_utils import cached_sympify as sympify
 
@@ -93,4 +93,23 @@ def polar_slope(data):
     items += dy_steps
     dydx = simplify(dy_dt / dx_dt)
     items.append((Eq(Symbol('slope'), dydx), note("极坐标斜率 dy/dx")))
+    return True, align(items)
+
+
+def gradient(data):
+    """Gradient ∇f of a scalar field: one partial derivative (rule-engine steps) per free symbol."""
+    x = get_var(data)
+    f_str = expr_text(data)
+    f = sympify(f_str)
+    syms = sorted(f.free_symbols, key=str) or [x]
+    items = [(f, note("标量场 f"))]
+    comps = []
+    for s in syms:
+        steps = derivative_steps(f_str, s)
+        items.append((None, note(f"对 {s} 求偏导(其余视为常数)")))
+        items += steps
+        comps.append(_last_value(steps))
+    if any(c is None for c in comps):
+        return False, '某方向偏导未能完成求解'
+    items.append((Matrix(comps), note("梯度 ∇f = (∂f/∂x_1, ..., ∂f/∂x_n)")))
     return True, align(items)

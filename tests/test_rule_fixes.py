@@ -163,3 +163,9 @@ def test_matrix_charpoly():
     # det(A - lambda I): rotation-like [[0,-1],[1,0]] -> lambda^2 + 1
     ok, res = _dispatch_auto('charpoly([[0,-1],[1,0]])')
     assert ok and 'p(' in res and '\\lambda' in res and '因式分解' in res
+
+
+def test_gradient_multivariable():
+    # grad(f) shows each partial (other symbols held constant) then the gradient vector
+    ok, res = _dispatch_auto('grad(x^2*y + y*z, x)')
+    assert ok and '标量场' in res and '求偏导' in res and '梯度' in res

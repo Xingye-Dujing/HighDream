@@ -375,6 +375,8 @@ _AUTO_FUNCS = {
     'parametric': ('parametric_diff', ['expression', 'variable']),
     'polararea': ('polar_area', ['expression', 'variable', 'lower', 'upper']),
     'polarslope': ('polar_slope', ['expression', 'variable']),
+    'grad': ('gradient', ['expression', 'variable']),
+    'gradient': ('gradient', ['expression', 'variable']),
     'ode': ('ode', ['expression', 'variable']),
     'dsolve': ('ode', ['expression', 'variable']),
     'numerical': ('numerical_integration', ['expression', 'variable', 'lower', 'upper', 'order']),

@@ -38,6 +38,7 @@ HANDLERS = {
     'parametric_diff': multivar.parametric_diff,
     'polar_area': multivar.polar_area,
     'polar_slope': multivar.polar_slope,
+    'gradient': multivar.gradient,
     # ODE
     'ode': ode.solve_ode,
     # complex numbers
