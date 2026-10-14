@@ -523,6 +523,32 @@ function setupCellEvents(cell) {
       runCell(cell);
     });
 
+    // Maple-style evaluation: Enter in the math editor runs the cell and then
+    // advances to a fresh implicit input; Ctrl/Cmd+Enter does the same from the
+    // plain textarea (where Enter must stay a newline for multi-line inputs).
+    function evaluateAndAdvance() {
+      runCell(cell);
+      advanceToNewInput(cell);
+    }
+    [mathField, mathFieldB].forEach((field) => {
+      if (!field) return;
+      field.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          evaluateAndAdvance();
+        }
+      });
+    });
+    [getMathSource(cell), getMathSourceB(cell)].forEach((area) => {
+      if (!area) return;
+      area.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          evaluateAndAdvance();
+        }
+      });
+    });
+
     // Virtual keyboard button
     keyboardButton.addEventListener("click", function () {
       toggleKeyboard();
@@ -623,6 +649,31 @@ function addNewCell(type = "code") {
     newCell.style.opacity = "1";
     newCell.style.transform = "translateY(0)";
   }, 10);
+}
+
+// After evaluating, move the cursor to a fresh implicit input below (only when
+// the current cell is the last one), mirroring Maple's document flow.
+function advanceToNewInput(cell) {
+  const notebook = document.getElementById("notebook");
+  if (notebook && notebook.lastElementChild === cell) {
+    addNewCell("code");
+  }
+}
+
+// Keep the document ending with an editable implicit input (Maple behavior):
+// if the last cell already holds an expression, append an empty one.
+function ensureTrailingInput() {
+  const notebook = document.getElementById("notebook");
+  if (!notebook) return;
+  const last = notebook.lastElementChild;
+  if (!last || last.dataset.cellType !== "code") {
+    addNewCell("code");
+    return;
+  }
+  const src = getMathSource(last);
+  const field = getMathField(last);
+  const value = (field && field.value) || (src && src.value) || "";
+  if (value.trim() !== "") addNewCell("code");
 }
 
 // Create cell element
@@ -1508,6 +1559,7 @@ function loadNotebook() {
         if (cells.length > 0) {
           setActiveCell(document.querySelector(".cell"));
         }
+        ensureTrailingInput();
 
         showNotification("笔记本已加载", "success");
       } catch (err) {

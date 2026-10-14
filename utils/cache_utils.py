@@ -23,8 +23,16 @@ def _has_huge_power_literal(expr_str: str) -> bool:
 
 
 def _is_latex(expr_str: str) -> bool:
-    """Heuristic: a backslash command or a ``^``/``_`` (MathLive power/subscript) marks LaTeX."""
-    return bool(_LATEX_COMMAND_RE.search(expr_str) or _LATEX_MARK_RE.search(expr_str))
+    """Heuristic: a backslash command or a caret/braced-subscript marks LaTeX input.
+
+    A bare ``^`` (e.g. MathLive's ``x^2+3x``) is also treated as LaTeX because
+    raw ``sympify`` rejects both ``^`` and implicit multiplication, whereas
+    ``parse_latex`` handles them. ``_`` is deliberately excluded (common in
+    plain identifiers); MathLive subscripts always emit the braced ``_{`` form.
+    """
+    return bool(_LATEX_COMMAND_RE.search(expr_str)
+                or _LATEX_MARK_RE.search(expr_str)
+                or '^' in expr_str)
 
 
 # MathLive emits LaTeX that parse_latex mis-handles; normalize it first.
@@ -75,6 +83,13 @@ def cached_sympify(expr_str: str) -> Expr:
     # pre-sympifies); sympify is then idempotent and the regex guard must not run.
     if not isinstance(expr_str, str):
         return sympify(expr_str)  # type: ignore
+    if _has_huge_power_literal(expr_str):
+        # Parse without evaluation so a huge integer power stays symbolic instead
+        # of being computed (which wastes memory and breaks int -> str rendering).
+        # Checked before the LaTeX branch because a bare ``^`` now marks LaTeX and
+        # parse_latex would otherwise materialize the huge value.
+        with evaluate(False):
+            return sympify(expr_str)
     if _is_latex(expr_str):
         # The interactive WYSIWYG cell input emits LaTeX; normalize MathLive quirks
         # (raising a friendly error on unfilled placeholders) then parse.
@@ -84,11 +99,6 @@ def cached_sympify(expr_str: str) -> Expr:
             return parse_latex(normalized)
         except Exception:  # pylint: disable=broad-exception-caught
             return sympify(expr_str)  # type: ignore
-    if _has_huge_power_literal(expr_str):
-        # Parse without evaluation so a huge integer power stays symbolic instead
-        # of being computed (which wastes memory and breaks int -> str rendering).
-        with evaluate(False):
-            return sympify(expr_str)
     return sympify(expr_str)  # type: ignore
 
 

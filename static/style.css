@@ -226,6 +226,9 @@ a {
 }
 
 .cell-prompt {
+  /* Maple-style implicit cells: the per-cell "Calculator:" gutter is hidden so
+     the document reads as a continuous flow of typed math and results. */
+  display: none;
   width: var(--jp-cell-prompt-width);
   padding: var(--jp-cell-padding);
   text-align: right;
@@ -250,16 +253,23 @@ a {
 }
 
 .cell-content {
-  border: var(--jp-border-width) solid var(--jp-cell-editor-border-color);
-  background-color: var(--jp-cell-editor-background);
-  padding: 0;
-  border-radius: var(--radius);
-  overflow: hidden;
+  /* Implicit cell: no box or fill at rest -- just the typed math on the page. */
+  border: none;
+  background-color: transparent;
+  padding: 0 0 0 14px;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  overflow: visible;
   width: 100%;
+  transition: border-color var(--transition-speed);
+}
+
+.cell:hover .cell-content {
+  border-left-color: var(--jp-border-color2);
 }
 
 .cell-active .cell-content {
-  border: 2px dashed var(--jp-cell-editor-active-border-color);
+  border-left-color: var(--jp-brand-color0);
 }
 
 .cell-input {
@@ -267,13 +277,20 @@ a {
 }
 
 .cell-controls {
-  display: flex;
+  /* Hidden until the cell is hovered or focused, so the resting document shows
+     only math + results (Maple-style). All controls remain fully usable. */
+  display: none;
   align-items: center;
   margin-bottom: 12px;
   padding: 4px 0;
   gap: 8px;
   flex-wrap: wrap;
   font-family: var(--font-family);
+}
+
+.cell:hover .cell-controls,
+.cell-active .cell-controls {
+  display: flex;
 }
 
 /* The real <select class="operation-type"> stays as the data model but is
@@ -618,7 +635,7 @@ a {
 }
 
 .cell.markdown-cell.cell-active .cell-content {
-  border: 2px dashed var(--text);
+  border-left-color: var(--text);
 }
 
 #math-keyboard {
