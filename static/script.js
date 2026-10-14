@@ -16,6 +16,9 @@ const MATRIX_SINGLE_OPS = new Set(["ref", "det", "invert", "rank", "LU", "diag",
 const MULTI_INPUT_OPS = new Set(["operations", "linear-solver", "projection", "transform-1", "transform-2"]);
 
 // Per-operation LaTeX hint shown as the editor placeholder ("预设题的形式").
+// This is a non-editable guide, so it uses \square (a visible □) to show the form.
+// The fillable slots come from keyboard-inserted templates, which use {} (MathLive
+// editable placeholders).
 const OP_PLACEHOLDER = {
   auto: "\\frac{d}{d\\square}\\square\\ \\ \\int\\square\\, d\\square\\ \\ \\det\\begin{bmatrix}\\square&\\square\\\\\\square&\\square\\end{bmatrix}\\ \\ \\cdots",
   calculus: "\\frac{d}{d\\square}\\left[\\square\\right]\\ \\text{或}\\ \\int_{\\square}^{\\square}\\square\\, d\\square\\ \\text{或}\\ \\lim_{\\square\\to\\square}\\square",
@@ -26,7 +29,8 @@ const OP_PLACEHOLDER = {
 };
 
 // A 2x2 fillable matrix seeded into single-matrix ops when the editor is empty.
-const MATRIX_SKELETON = "\\begin{bmatrix}\\square&\\square\\\\\\square&\\square\\end{bmatrix}";
+// Empty groups {} are MathLive's editable placeholders (rendered as □).
+const MATRIX_SKELETON = "\\begin{bmatrix}{}&{}\\\\{}&{}\\end{bmatrix}";
 
 // Natural variable / summation index per operation (avoids the series index
 // colliding with the power-series argument, which broke convergence checks).
@@ -375,12 +379,17 @@ function bindEvents() {
       const field = getMathField(activeCell);
       const textarea = getMathSource(activeCell);
       if (field && field.style.display !== "none") {
-        // Insert a LaTeX template with editable \square placeholders into the editor.
+        // Insert a LaTeX template with editable {} placeholders into the editor.
         field.focus();
         if (typeof field.insert === "function") {
           field.insert(latex);
         } else {
           field.value = (field.value || "") + latex;
+        }
+        // Jump the caret into the first placeholder so the user can type right away
+        // (MathLive leaves it at the end after insert).
+        if (latex.indexOf("{}") !== -1 && typeof field.executeCommand === "function") {
+          try { field.executeCommand("moveToNextPlaceholder"); } catch (e) { /* ignore */ }
         }
         if (textarea) textarea.value = field.value;
       } else if (textarea) {
