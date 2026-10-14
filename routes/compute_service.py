@@ -15,6 +15,7 @@ from sympy import Symbol, preorder_traversal, latex, sympify
 from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
 from utils.cache_utils import cached_sympify
 from utils.matrix_latex import latex_to_nested
+from utils.assumptions import parse_assumption_flags
 from domains import (
     CachedDiffCalculator, CachedIntegralCalculator, CachedLimitCalculator,
     DiffCalculator, IntegralCalculator, LimitCalculator, ExpressionParser,
@@ -1046,6 +1047,15 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
         use_cache = data.get('use_cache', False) == 'True'
         record_cache = data.get('record_cache', False) == 'True'
 
+        # Optional user assumptions (e.g. "x>0, y real"). Applied as a final honest
+        # simplify step on the calculators below. The result cache key (db_cache.
+        # build_hash) carries no assumptions column, so any run WITH assumptions must
+        # bypass the cache to avoid serving a derivation computed under other hypotheses.
+        raw_assumptions = str(data.get('assumptions', '')).strip()
+        assum_flags = parse_assumption_flags(raw_assumptions) if raw_assumptions else {}
+        if assum_flags:
+            use_cache = record_cache = False
+
         if operation_type == 'diff':
             order = int(str(data.get('order', '1') or '1'))
             if order > 1:  # higher derivative: run the engine once per order, feeding back
@@ -1053,9 +1063,14 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
                 return True, align
             if use_cache or record_cache:
                 calc = _cached_calculators['diff']()
+                calc.assum_flags = assum_flags
+                calc.assumption_note = raw_assumptions
                 return True, calc.compute_latex(expression, Symbol(variable),
                                                 use_cache=use_cache, record_cache=record_cache)
-            return True, _calculators['diff']().compute_latex(expression, Symbol(variable))
+            calc = _calculators['diff']()
+            calc.assum_flags = assum_flags
+            calc.assumption_note = raw_assumptions
+            return True, calc.compute_latex(expression, Symbol(variable))
 
         if operation_type == 'integral':
             include_special_matchers = data.get('include_special_matchers', True) == 'True'
@@ -1070,10 +1085,14 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
             # indefinite integrals; definite integrals bypass it to avoid collisions.
             if (use_cache or record_cache) and not bounds:
                 calc = _cached_calculators['integral'](include_special_matchers)
+                calc.assum_flags = assum_flags
+                calc.assumption_note = raw_assumptions
                 return True, calc.compute_latex(expression, Symbol(variable),
                                                 use_cache=use_cache, record_cache=record_cache)
-            return True, _calculators['integral'](include_special_matchers). \
-                compute_latex(expression, Symbol(variable), **bounds)
+            calc = _calculators['integral'](include_special_matchers)
+            calc.assum_flags = assum_flags
+            calc.assumption_note = raw_assumptions
+            return True, calc.compute_latex(expression, Symbol(variable), **bounds)
 
         if operation_type == 'limit':
             point = cached_sympify(data.get('point', '0'))
@@ -1081,9 +1100,13 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
             max_lhopital = int(data.get('max_lhopital_count', DEFAULT_LHOPITAL_MAX_COUNT))
             if use_cache or record_cache:
                 limiter = _cached_calculators['limit'](max_lhopital=max_lhopital)
+                limiter.assum_flags = assum_flags
+                limiter.assumption_note = raw_assumptions
                 return True, limiter.compute_latex(expression, Symbol(variable), point, direction,
                                                    use_cache=use_cache, record_cache=record_cache)
             limiter = LimitCalculator(max_lhopital=max_lhopital)
+            limiter.assum_flags = assum_flags
+            limiter.assumption_note = raw_assumptions
             return True, limiter.compute_latex(expression, Symbol(variable), point, direction)
 
         if operation_type == 'calculus':

@@ -13,6 +13,7 @@ from utils.cache_utils import (
     cached_doit, cached_latex, cached_simplify,
     cached_simplify_radsimp, cached_sympify,
 )
+from utils.assumptions import refine_with_flags
 from .base_step_generator import BaseStepGenerator
 from .rule_registry import RuleRegistry
 
@@ -54,6 +55,11 @@ class BaseCalculator(ABC):
         # Only limit require rationalization of the denominator,
         # Because rationalizing the denominator facilitates solving limit.
         self.is_radsimp: bool = False
+        # Optional user assumptions (e.g. x>0) applied as a final, honest simplify
+        # step in final_postprocess; set from the outside (per calculator instance)
+        # so no compute_latex/compute_list signature has to change.
+        self.assum_flags: dict = {}
+        self.assumption_note: str = ''
         self._validate_properties()
         self._initialize_rules()
 
@@ -195,14 +201,18 @@ class BaseCalculator(ABC):
         # 1. Back substitute
         self._back_subs(final_expr)
 
-        # # 2. Assume the variable are positive real numbers and simplify final expression
-        # var = final_expr.free_symbols.pop()
-
-        # _t = Symbol('t', real=True, positive=True)
-        # simplified_expr = simplify(final_expr.subs(var, _t).subs(_t, var).replace(
-        #     Abs, lambda arg: arg))
-        # if simplified_expr != final_expr:
-        #     self.step_generator.add_step(simplified_expr, "直接去掉所有绝对值, 再次化简表达式")
+        # 2. Apply user assumptions (e.g. x>0) as an explicit, honest final step so
+        #    sqrt(x^2)->x, log(x^2)/2->log(x), etc. Soundly confined: only symbols the
+        #    user constrained are simplified; others are left untouched.
+        if self.assum_flags:
+            steps = self.step_generator.steps
+            base = steps[-1] if steps and steps[-1] is not None else final_expr
+            refined = refine_with_flags(base, self.assum_flags)
+            if refined != base:
+                note = "依假设化简最终结果"
+                if self.assumption_note:
+                    note += f": {self.assumption_note}"
+                self.step_generator.add_step(refined, note)
 
     def _sympify(self, expr: str) -> Expr:
         """Convert the input expression to a SymPy expression."""

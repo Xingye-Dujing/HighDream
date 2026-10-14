@@ -979,6 +979,11 @@ function createCellElement(id, type) {
                 <input class="iterated-upper2" value="1" style="width:60px;">
               </div>
 
+              <span class="assumptions-controls controls" style="display:inline-flex; gap:4px; margin-left:8px; align-items:center;">
+                <label style="font-size:12px;">假设:</label>
+                <input class="assumptions-input" placeholder="x&gt;0, y real" style="width:150px; text-align:left;" title="化简假设, 例如 x>0 使 sqrt(x^2)=x; 多个用逗号分隔">
+              </span>
+
               <span class="var-input" style="display:inline-flex; align-items:center; gap:4px; margin-left:8px;">
                 <label style="font-size:12px;">变量/指标:</label>
                 <input value="x" style="width:50px;" title="求导/积分/极限变量, 级数指标等">
@@ -1231,6 +1236,11 @@ function runCell(cell) {
     payload.sort_strategy = sort;
     // payload.is_draw_tree = is_draw_tree;
   }
+
+  // Simplification assumptions (optional; omit when blank to keep payloads identical)
+  const assumptionsInput = cell.querySelector(".assumptions-input");
+  const assumptionsText = assumptionsInput ? assumptionsInput.value.trim() : "";
+  if (assumptionsText) payload.assumptions = assumptionsText;
 
   // Display computing status
   outputArea.dataset.latexSource = "";
@@ -1646,6 +1656,12 @@ function saveNotebook() {
         variable: variable,
       };
 
+      // Always capture assumptions (like variable); omitted from JSON when blank.
+      const assumptionsInput = cell.querySelector(".assumptions-input");
+      if (assumptionsInput && assumptionsInput.value.trim()) {
+        cellData.assumptions = assumptionsInput.value.trim();
+      }
+
       // Save additional parameters based on operation type
       if (operationType === "limit") {
         cellData.point = cell.querySelector(".point").value || "0";
@@ -1731,6 +1747,10 @@ function loadNotebook() {
             if (textarea) textarea.value = cellData.content || "";
             if (operationTypeSelect) operationTypeSelect.value = cellData.operationType || "diff";
             if (varInputField) varInputField.value = cellData.variable || "x";
+
+            // Restore assumptions (unconditional; older notebooks omit the key -> "").
+            const assumptionsField = cell.querySelector(".assumptions-input");
+            if (assumptionsField) assumptionsField.value = cellData.assumptions || "";
 
             // Restore additional parameters based on operation type
             if (cellData.operationType === "limit") {
