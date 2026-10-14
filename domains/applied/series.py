@@ -175,7 +175,8 @@ def _endpoint_converges(coef, n, radius, sign):
         return None
     term = coef * (sign * radius) ** n
     _rows, verdict = convergence_rows(term, n)
-    return {'converge': True, 'diverge': False}.get(verdict)
+    # conditional convergence still makes the endpoint part of the interval
+    return {'converge': True, 'conditional': True, 'diverge': False}.get(verdict)
 
 
 def power_series(data):

@@ -117,3 +117,19 @@ def test_complex_nth_roots_all_branches():
     # De Moivre: n-th roots of w, all n branches shown
     ok, res = _dispatch_auto('nthroots(1+I,2)')
     assert ok and 'n 次根' in res and '第 0 个根' in res and '第 1 个根' in res
+
+
+def test_series_absolute_vs_conditional():
+    # Σ(-1)^n/n^2 absolutely convergent; Σ(-1)^n/n conditionally convergent
+    ok, res = _dispatch_auto('sum((-1)^{n}/n^{2}, n)')
+    assert ok and '绝对收敛' in res
+    ok, res = _dispatch_auto('sum((-1)^{n}/n, n)')
+    assert ok and '条件收敛' in res
+
+
+def test_power_series_endpoint_conditional_still_included():
+    # Σ x^n/n : at x=-1 it's the alternating harmonic (conditional) -> left endpoint kept -> [-1, 1)
+    from routes.compute_service import _dispatch_compute
+    ok, res = _dispatch_compute('power_series', {
+        'operation_type': 'power_series', 'expression': '1/n', 'variable': 'n', 'point': '0'})
+    assert ok and r'[-1' in res and 'R=1' in res

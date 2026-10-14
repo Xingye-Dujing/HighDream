@@ -766,34 +766,32 @@ def _dispatch_compound(original_display, text):
             return False, f'{name}(...) 的结果目前不能作为子表达式代入外层运算'
         if hasattr(value, 'cols'):  # sympy Matrix result cannot enter scalar arithmetic
             return False, f'{name}(...) 的结果是矩阵,不能代入标量加减乘除;矩阵之间请用 add/subtract/multiply 运算'
-        text = text[:loc['start']] + '(' + str(value) + ')' + text[loc['end']:]
+        # splice the value as LaTeX so the working string stays uniformly LaTeX and
+        # parse_latex handles it (str() would emit '**' that clashes with '^'/'\frac').
+        text = text[:loc['start']] + r'\left(' + latex(value) + r'\right)' + text[loc['end']:]
         text = _normalize_latex_ops(text)
         if text in seen:
             return False, '计算未推进（可能存在循环定义）'
         seen.add(text)
-        blocks.append((loc['raw'], steps, value, text))
+        blocks.append((loc['raw'], steps, value))
 
     try:
         pre = cached_sympify(text)
     except Exception as exc:  # pylint: disable=broad-exception-caught
         return False, f'初等合并失败: {exc}'
     final = pre.doit() if hasattr(pre, 'doit') else pre
-    return True, _render_compound(original_display, blocks, final)
+    return True, _render_compound(original_display, blocks, pre, final)
 
 
-def _render_compound(original_display, blocks, final_value):
+def _render_compound(original_display, blocks, substituted, final_value):
     """One combined ``align``: original -> each operator's nested sub-steps ->
-    the values substituted in -> final elementary merge. ``blocks`` are tuples
-    ``(raw_call, steps_aligned, value, substituted_so_far_text)``."""
+    the values substituted in -> final elementary merge."""
     lines = ['& ' + original_display]
-    for call_raw, steps_latex, _value, _snap in blocks:
+    for call_raw, steps_latex, _value in blocks:
         if steps_latex:
             note = rf'\text{{算子 {call_raw} 的分步}}'
             lines.append(r'& \quad ' + note + r'\; ' + steps_latex)
-    # the expression with every operator replaced by its computed value (verbatim)
-    last_snap = blocks[-1][3] if blocks else ''
-    if last_snap:
-        lines.append(r'&= \text{' + last_snap + r'} \quad \text{代入各算子结果}')
+    lines.append(r'&= ' + latex(substituted) + r' \quad \text{代入各算子结果}')
     lines.append(r'&= \boxed{' + latex(final_value) + '}')
     return r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
 

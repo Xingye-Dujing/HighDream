@@ -23,8 +23,10 @@ def _lim(expr, n, at=oo):
         return None
 
 
-def convergence_rows(a, n):
-    """Return (rows, verdict) where verdict is 'converge' | 'diverge' | 'unknown'."""
+def convergence_rows(a, n, absolute=False):
+    """Return (rows, verdict) where verdict is 'converge' | 'diverge' | 'conditional'
+    | 'unknown'. When ``absolute`` is True the alternating branch is skipped (used to
+    test the convergence of $\\sum|a_n|$ for the absolute-vs-conditional distinction)."""
     rows = [(a, note("一般项 $a_n$"))]
 
     # 1) n-th term test (necessary condition for convergence)
@@ -62,12 +64,20 @@ def convergence_rows(a, n):
         rows.append((None, note("$\\sigma=1$, 根值判别失效, 继续")))
 
     # 4) alternating / Leibniz
-    if _is_alternating(a):
+    if _is_alternating(a) and not absolute:
         b = Abs(a)
         lb = _lim(b, n)
         rows.append((Eq(Symbol('lim_b_n'), lb), note("交错级数莱布尼茨: $b_n=|a_n|\\to 0$ 且单调递减")))
         if lb == 0:
-            rows.append((None, note("满足莱布尼茨条件, 级数收敛")))
+            # classify absolute vs conditional via the positive series $\\sum|a_n|$
+            _abs_rows, abs_v = convergence_rows(b, n, absolute=True)
+            if abs_v == 'converge':
+                rows.append((None, note("满足莱布尼茨条件且 $\\sum|a_n|$ 收敛, 级数绝对收敛")))
+                return rows, 'converge'
+            if abs_v == 'diverge':
+                rows.append((None, note("莱布尼茨判别收敛, 但 $\\sum|a_n|$ 发散, 故为条件收敛")))
+                return rows, 'conditional'
+            rows.append((None, note("满足莱布尼茨条件, 级数收敛($\\sum|a_n|$ 敛散性未定)")))
             return rows, 'converge'
 
     # 5) p-series recognition: a == 1/n**p
