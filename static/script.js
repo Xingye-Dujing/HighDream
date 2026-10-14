@@ -32,6 +32,61 @@ const OP_PLACEHOLDER = {
 // \placeholder{} is MathLive's native fillable box (dotted, type-to-fill).
 const MATRIX_SKELETON = "\\begin{bmatrix}\\placeholder{}&\\placeholder{}\\\\\\placeholder{}&\\placeholder{}\\end{bmatrix}";
 
+// MathLive replaces a \placeholder{} atom with the typed content and does NOT put
+// the box back when that content is later deleted — it leaves an empty group/delimiter.
+// Re-materialize those emptied slots so the dotted box reappears for the user to refill.
+function restoreMatrixCells(s) {
+  const re = /(\\begin\{([pbvPBV]?matrix)\})([\s\S]*?)(\\end\{\2\})/g;
+  return s.replace(re, (whole, open, env, body, close) => {
+    const rows = body.split("\\\\").map((row) => {
+      const cells = row.split("&").map((c) => (c.trim() === "" ? "\\placeholder{}" : c));
+      return cells.join("&");
+    });
+    return open + rows.join("\\\\") + close;
+  });
+}
+
+function restorePlaceholders(raw) {
+  let s = raw;
+  // Protect existing \placeholder{} so its own braces are never re-processed.
+  const PH = "";
+  s = s.replace(/\\placeholder\s*\{\s*\}/g, PH);
+  s = s.replace(/\{\s*\}/g, "{\\placeholder{}}");
+  s = s.replace(/\(\s*\)/g, "(\\placeholder{})");
+  s = s.replace(/\(\s*,/g, "(\\placeholder{},");
+  s = s.replace(/,\s*\)/g, ",\\placeholder{})");
+  s = s.replace(/\\left\[\s*\\right\]/g, "\\left[\\placeholder{}\\right]");
+  s = s.replace(/(_\{\s*)\\to/g, "$1\\placeholder{}\\to");
+  s = s.replace(/(\\to\s*)(?=\})/g, "$1\\placeholder{}");
+  s = restoreMatrixCells(s);
+  return s.split(PH).join("\\placeholder{}");
+}
+
+function isDeletion(inputType) {
+  return !!inputType && (inputType.indexOf("delete") === 0 || inputType === "historyUndo");
+}
+
+// Bind a MathLive editor: when a deletion empties a placeholder slot, re-materialize
+// the dotted box (MathLive does not restore it on its own), and mirror the value into
+// the canonical textarea. `input` fires right after each edit and carries inputType;
+// `change` is debounced to blur, so the box must be restored from `input`.
+function bindEditorField(field, cell) {
+  field.addEventListener("input", function (e) {
+    if (isDeletion(e.inputType) && !field.__restoring) {
+      const restored = restorePlaceholders(field.value);
+      if (restored !== field.value) {
+        field.__restoring = true;
+        field.value = restored;
+        field.__restoring = false;
+      }
+    }
+    readExpr(cell);
+  });
+  field.addEventListener("change", function () { readExpr(cell); });
+  field.addEventListener("click", function () { setActiveCell(cell); });
+}
+
+
 // Natural variable / summation index per operation (avoids the series index
 // colliding with the power-series argument, which broke convergence checks).
 const VAR_DEFAULT = {
@@ -445,12 +500,10 @@ function setupCellEvents(cell) {
     // stays the canonical value every other path reads (readExpr commits them).
     const mathFieldB = cell.querySelector("math-field.math-editor-b");
     if (mathField) {
-      mathField.addEventListener("change", function () { readExpr(cell); });
-      mathField.addEventListener("click", function () { setActiveCell(cell); });
+      bindEditorField(mathField, cell);
     }
     if (mathFieldB) {
-      mathFieldB.addEventListener("change", function () { readExpr(cell); });
-      mathFieldB.addEventListener("click", function () { setActiveCell(cell); });
+      bindEditorField(mathFieldB, cell);
     }
     applyInputMode(cell);
 
