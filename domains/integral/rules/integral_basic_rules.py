@@ -20,6 +20,12 @@ def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr | None, str | Non
             and (isinstance(expr_apart, Add) or isinstance(den, Add) and isinstance(expr_apart, Pow))):
         return expr_apart, "(有理分式)化为真分式或部分分式分解", False
 
+    # Improper fractions that divide exactly reduce to a polynomial (apart() returns a
+    # bare polynomial, which the Add/Pow guard above misses); e.g. (x^3+x)/(x^2+1) -> x.
+    qpoly, rrem = div(num, den)
+    if rrem == 0:
+        return qpoly, "(有理分式)可整除, 约分为多项式", False
+
     # If the rational fraction is not reducible:
     # 1. Irreducible linear poly:
     if degree(den).equals(1):

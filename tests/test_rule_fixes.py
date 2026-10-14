@@ -185,3 +185,14 @@ def test_definite_integral_ordinary_and_improper():
     assert ok and '\\frac{1}{3}' in res
     ok2, res2 = _dispatch_auto('int(1/(1+x^2),x,0,oo)')
     assert ok2 and '\\pi' in res2
+
+
+def test_improper_rational_integral_no_crash():
+    # (x^3+x)/(x^2+1) divides exactly to the polynomial x; handle_poly must reduce it
+    # instead of crashing in the irreducible-quadratic branch.
+    ok, res = _dispatch_auto('int((x^3+x)/(x^2+1),x)')
+    assert ok, res
+    assert 'x^{2}}{2}' in res or '\\frac{x^{2}}{2}' in res
+    # a mixed improper fraction: polynomial part + arctan part, must also succeed
+    ok2, res2 = _dispatch_auto('int((2*x^2+3)/(x^2+1),x)')
+    assert ok2 and 'atan' in res2
