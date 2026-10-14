@@ -24,6 +24,14 @@ def expr_text(data):
     return data.get('expression', '')
 
 
+def steps_value(steps):
+    """The resolved value = the last concrete expression of a ``[(expr, note), ...]``
+    step list. Applied handlers use it to record a composable result (via the same
+    rule-engine rows they display) so the universal box can substitute it back."""
+    concrete = [e for (e, _n) in steps if e is not None]
+    return concrete[-1] if concrete else None
+
+
 def render_note(text) -> str:
     """Prose -> ``\\textrm{}``, ``$...$`` -> live LaTeX (MathJax-safe, no literal $)."""
     parts = str(text).split('$')

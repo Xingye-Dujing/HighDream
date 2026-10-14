@@ -84,6 +84,7 @@ def mean_value(data):
     a = to_num(data.get('lower'), 0)
     b = to_num(data.get('upper'), 1)
     secant = simplify((f.subs(x, b) - f.subs(x, a)) / (b - a))
+    data['_auto_value'] = secant
     items = [(f, note("f(x)"))] + derivative_steps(f_str, x)
     items.append((Eq(Symbol('k'), secant), note("割线斜率 (f(b)-f(a))/(b-a)")))
     try:

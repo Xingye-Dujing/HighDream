@@ -10,7 +10,7 @@ from sympy import Integral, Symbol, pi, simplify, sqrt
 from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import (align, derivative_steps, expr_text, get_var,
-                                     integral_steps, render_note as note, to_num)
+                                     integral_steps, render_note as note, steps_value, to_num)
 
 
 def _setup(data):
@@ -28,7 +28,9 @@ def arc_length(data):
     items = [(f, note("f(x)"))] + derivative_steps(f_str, x)
     items.append((integrand, note("弧长被积函数 sqrt(1+(f')^2)")))
     items.append((Integral(integrand, (x, a, b)), note("建立弧长积分")))
-    items += integral_steps(integrand, x, a, b)
+    rows = integral_steps(integrand, x, a, b)
+    items += rows
+    data['_auto_value'] = steps_value(rows)
     return True, align(items)
 
 
@@ -38,7 +40,9 @@ def volume_disk(data):
     items = [(f, note("f(x)"))]
     items.append((integrand, note("圆盘截面 (绕 x 轴)")))
     items.append((Integral(integrand, (x, a, b)), note("建立体积积分")))
-    items += integral_steps(integrand, x, a, b)
+    rows = integral_steps(integrand, x, a, b)
+    items += rows
+    data['_auto_value'] = steps_value(rows)
     return True, align(items)
 
 
@@ -48,7 +52,9 @@ def volume_shell(data):
     items = [(f, note("f(x)"))]
     items.append((integrand, note("柱壳 (绕 y 轴)")))
     items.append((Integral(integrand, (x, a, b)), note("建立柱壳体积积分")))
-    items += integral_steps(integrand, x, a, b)
+    rows = integral_steps(integrand, x, a, b)
+    items += rows
+    data['_auto_value'] = steps_value(rows)
     return True, align(items)
 
 
@@ -58,7 +64,9 @@ def surface_area(data):
     items = [(f, note("f(x)"))] + derivative_steps(f_str, x)
     items.append((integrand, note("旋转曲面被积函数 2π f sqrt(1+(f')^2)")))
     items.append((Integral(integrand, (x, a, b)), note("建立面积积分")))
-    items += integral_steps(integrand, x, a, b)
+    rows = integral_steps(integrand, x, a, b)
+    items += rows
+    data['_auto_value'] = steps_value(rows)
     return True, align(items)
 
 
@@ -83,5 +91,7 @@ def iterated_integral(data):
     items += inner
     inner_val = simplify([e for (e, _n) in inner][-1]) if inner else f
     items.append((Integral(inner_val, (y, c, d)), note("再对 y 积分")))
-    items += integral_steps(inner_val, y, c, d)
+    rows = integral_steps(inner_val, y, c, d)
+    items += rows
+    data['_auto_value'] = steps_value(rows)
     return True, align(items)

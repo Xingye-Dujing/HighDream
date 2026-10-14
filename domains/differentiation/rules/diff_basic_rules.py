@@ -169,8 +169,8 @@ def mul_div_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
         return None
 
     _, den = expr.as_numer_denom()
-    # If the denominator is 1, it is a pure product
-    return 'mul' if den == 1 or den.is_constant else 'div'
+    # If the denominator is 1 or a constant, it is a pure product; otherwise a quotient.
+    return 'mul' if den == 1 or den.is_constant() else 'div'
 
 
 def chain_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:

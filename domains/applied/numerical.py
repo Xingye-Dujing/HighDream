@@ -19,8 +19,10 @@ def numerical_integration(data):
     ff = [f.subs(x, a + k * h) for k in range(n + 1)]
     trap = N((h / 2) * (ff[0] + 2 * sum(ff[1:-1]) + ff[-1]), 8)
     items = [(f, note("f(x)")), (trap, note(f"梯形法, n={n}"))]
+    data['_auto_value'] = trap
     if n % 2 == 0:
         simp = N((h / 3) * (ff[0] + 4 * sum(ff[i] for i in range(1, n, 2))
                             + 2 * sum(ff[i] for i in range(2, n, 2)) + ff[-1]), 8)
         items.append((simp, note(f"辛普森法, n={n}")))
+        data['_auto_value'] = simp  # prefer the higher-accuracy estimate
     return True, align(items)

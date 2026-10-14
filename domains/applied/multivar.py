@@ -11,7 +11,7 @@ from sympy import Eq, Function, Symbol, cos, sin, solve, simplify, Integral
 from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import (align, derivative_steps, expr_text, get_var,
-                                     integral_steps, render_note as note, to_num)
+                                     integral_steps, render_note as note, steps_value, to_num)
 
 
 def _last_value(steps):
@@ -72,7 +72,9 @@ def polar_area(data):
     integrand = r ** 2 / 2
     items = [(r, note("半径函数")), (integrand, note("面积被积函数 (1/2)r^2")),
              (Integral(integrand, (theta, a, b)), note("建立极坐标面积积分"))]
-    items += integral_steps(integrand, theta, a, b)
+    rows = integral_steps(integrand, theta, a, b)
+    items += rows
+    data['_auto_value'] = steps_value(rows)
     return True, align(items)
 
 

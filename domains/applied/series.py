@@ -13,7 +13,7 @@ from sympy import (Abs, Eq, Integral, Symbol, expand, factorial, latex, limit,
 from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import (align, derivative_value, expr_text, get_var,
-                                     integral_steps, render_note as note, to_num)
+                                     integral_steps, render_note as note, steps_value, to_num)
 from domains.applied._convergence import convergence_rows
 
 
@@ -36,7 +36,9 @@ def taylor(data):
         if k > 0:
             items.append((simplify(dk), note(f"第 {k} 阶导数 (规则引擎)")))
         items.append((coef, note(f"第 {k} 阶系数 a_{k}")))
-    items.append((expand(sum(terms)), note(f"泰勒/麦克劳林多项式 (到 {order} 阶)")))
+    poly = expand(sum(terms))
+    items.append((poly, note(f"泰勒/麦克劳林多项式 (到 {order} 阶)")))
+    data['_auto_value'] = poly
     return True, align(items)
 
 
@@ -70,20 +72,63 @@ def series_convergence(data):
     return True, align(items)
 
 
+def finite_sum(data):
+    """Finite sum \\sum_{var=lower}^{upper} term. With no upper bound it falls back
+    to the convergence analysis (an infinite series)."""
+    var = Symbol(data.get('variable', 'n') or 'n')
+    term = sympify(expr_text(data))
+    up = str(data.get('upper', '')).strip()
+    if up == '':
+        return series_convergence(data)  # no finite bound -> treat as infinite series
+    low = to_num(data.get('lower'), 0)
+    high = to_num(data.get('upper'), 0)
+    items = [(Sum(term, (var, low, high)), note("有限和 Σ (逐项闭式求和)"))]
+    try:
+        closed = simplify(summation(term, (var, low, high)))
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        return False, f'有限求和失败: {exc}'
+    items.append((closed, note("闭式求和结果 (Faulhaber / 等比 / 裂项)")))
+    data['_auto_value'] = closed
+    return True, align(items)
+
+
 def radius_of_convergence(data):
-    n = Symbol('n')
+    n = Symbol(data.get('variable', 'n') or 'n')
     coef = sympify(expr_text(data))
-    l_val = simplify(limit(Abs(coef.subs(n, n + 1) / coef), n, oo))
-    if l_val == 0:
-        radius = oo
-    elif l_val == oo:
-        radius = 0
-    else:
-        radius = 1 / l_val if l_val.is_number else Symbol('invL')
+
+    def _invert(lim):
+        if lim == 0:
+            return oo
+        if lim == oo:
+            return 0
+        return 1 / lim if getattr(lim, 'is_number', False) else None
+
+    radius, method = None, ''
+    # ratio test L = lim |c_{n+1}/c_n|
+    try:
+        l_ratio = simplify(limit(Abs(coef.subs(n, n + 1) / coef), n, oo))
+        radius = _invert(l_ratio)
+        if radius is not None:
+            method = "比值法 R = 1/lim|c_{n+1}/c_n|"
+    except Exception:  # pylint: disable=broad-exception-caught
+        radius = None
+    # Cauchy-Hadamard root test fallback when the ratio limit is undecidable/oscillates
+    if radius is None:
+        try:
+            l_root = simplify(limit(Abs(coef) ** (1 / n), n, oo))
+            radius = _invert(l_root)
+            if radius is not None:
+                method = "柯西-阿达马 R = 1/limsup|c_n|^{1/n}"
+        except Exception:  # pylint: disable=broad-exception-caught
+            radius = None
+    if radius is None:
+        radius = Symbol('invL')  # undecidable by the standard tests
+
+    if not (hasattr(radius, 'name') and radius.name == 'invL'):
+        data['_auto_value'] = radius
     return True, align([
         (coef, note("幂级数系数")),
-        (Eq(Symbol('L'), l_val), note("比值极限")),
-        (Eq(Symbol('R'), radius), note("收敛半径 R=1/L")),
+        (Eq(Symbol('R'), radius), note(method or "标准判别法未能确定收敛半径")),
     ])
 
 
@@ -95,10 +140,12 @@ def improper_integral(data):
     items = [(Integral(f, (x, a, b)), note("反常积分 (先求原函数, 再代入上下限)"))]
     steps = integral_steps(f, x, a, b)
     items += steps
-    real = [e for (e, _n) in steps]
-    if real:
-        last = real[-1]
-        verdict = ('收敛' if (hasattr(last, 'is_finite') and last.is_finite) else '发散(或不存在)')
+    last = steps_value(steps)
+    if last is not None:
+        finite = bool(getattr(last, 'is_finite', False))
+        if finite:
+            data['_auto_value'] = last  # composable only when the improper integral converges
+        verdict = ('收敛' if finite else '发散(或不存在)')
         items.append((None, note(f"结论: 该反常积分{verdict}")))
     return True, align(items)
 

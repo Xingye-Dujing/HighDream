@@ -26,6 +26,7 @@ HANDLERS = {
     'taylor': series.taylor,
     'taylor_error': series.taylor_error,
     'series_convergence': series.series_convergence,
+    'finite_sum': series.finite_sum,
     'radius_of_convergence': series.radius_of_convergence,
     'power_series': series.power_series,
     'improper_integral': series.improper_integral,
