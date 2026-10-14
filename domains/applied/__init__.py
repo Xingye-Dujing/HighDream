@@ -44,6 +44,7 @@ HANDLERS = {
     'complex_simplify': complex_numbers.complex_simplify,
     'complex_polar': complex_numbers.complex_polar,
     'complex_roots': complex_numbers.complex_roots,
+    'complex_nth_roots': complex_numbers.complex_nth_roots,
     'de_moivre': complex_numbers.de_moivre_power,
     # numerical
     'numerical_integration': numerical.numerical_integration,

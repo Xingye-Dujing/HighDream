@@ -325,6 +325,9 @@ _AUTO_FUNCS = {
     'complexsimplify': ('complex_simplify', ['expression']),
     'complexpolar': ('complex_polar', ['expression']),
     'complexroots': ('complex_roots', ['expression', 'variable']),
+    'nthroots': ('complex_nth_roots', ['expression', 'order']),
+    'complexnthroots': ('complex_nth_roots', ['expression', 'order']),
+    'rootsunity': ('complex_nth_roots', ['expression', 'order']),
     'demoivre': ('de_moivre', ['expression', 'order']),
     # linear algebra
     'det': ('det', ['expression']), 'determinant': ('det', ['expression']),

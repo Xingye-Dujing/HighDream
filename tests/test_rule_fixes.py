@@ -111,3 +111,9 @@ def test_matrix_pinv():
     assert ok and '列满秩' in res and '\\boxed' in res
     ok2, _ = _dispatch_auto('2*pinv([[1,2],[3,4],[5,6]])')
     assert not ok2  # matrix result can't enter scalar arithmetic
+
+
+def test_complex_nth_roots_all_branches():
+    # De Moivre: n-th roots of w, all n branches shown
+    ok, res = _dispatch_auto('nthroots(1+I,2)')
+    assert ok and 'n 次根' in res and '第 0 个根' in res and '第 1 个根' in res

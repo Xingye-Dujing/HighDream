@@ -1,6 +1,6 @@
 """Complex-number operations: a+bi simplification, polar form, solving z^n = w."""
 
-from sympy import Abs, Eq, I, arg, expand, exp, im, re, simplify, solve
+from sympy import Abs, Eq, I, S, Symbol, arg, expand, exp, im, pi, re, root, simplify, solve
 
 from utils.cache_utils import cached_sympify as sympify
 
@@ -33,6 +33,24 @@ def de_moivre_power(data):
     return True, align([
         (z, note("z")), (simplify(powered), note("棣莫弗/二项式展开 z^n")),
     ])
+
+
+def complex_nth_roots(data):
+    """All n-th roots of a complex number w via De Moivre (polar form + 2*pi*k/n)."""
+    w = sympify(expr_text(data))
+    n = int(str(data.get('order') or data.get('point') or 2))
+    if n <= 0:
+        return False, '开方阶数 n 需为正整数'
+    r = simplify(Abs(w))
+    theta = arg(w)
+    modulus = root(r, n) if r.is_number else r ** (S(1) / n)
+    items = [(w, note("被开方数 w")), (r, note("模 |w|")), (theta, note("辐角 θ = arg(w)"))]
+    items.append((note(f"n 次根: z_k = |w|^{{1/n}}·exp(i·(θ + 2πk)/n), k = 0..{n-1}"), None))
+    for k in range(n):
+        angle = (theta + 2 * pi * k) / n
+        zk = simplify(expand(modulus * exp(I * angle), complex=True))
+        items.append((Eq(Symbol('z_%d' % k), zk), note(f"第 {k} 个根 (k={k})")))
+    return True, align(items)
 
 
 def complex_roots(data):
