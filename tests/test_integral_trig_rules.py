@@ -1,6 +1,6 @@
 """Regression tests for the added sec/csc/cot power & product integral rules."""
 
-from sympy import Symbol, cos, cot, csc, diff, sec, simplify, sin, tan
+from sympy import Symbol, cos, cot, csc, diff, log, sec, simplify, sin, tan
 
 from domains import IntegralCalculator
 
@@ -16,6 +16,17 @@ def _antiderivative(expr):
 
 def test_sec_squared_is_tan():
     assert simplify(_antiderivative('sec(x)**2') - tan(x)) == 0
+
+
+def test_plain_sec_uses_textbook_log_form():
+    # ∫sec must be the textbook ln|sec+tan| (a real rule), not a doit() log-sum blob
+    res = _antiderivative('sec(x)')
+    assert res.has(sec(x)) and res.has(tan(x)) and res.has(log)
+
+
+def test_plain_csc_csch_use_log_forms():
+    assert _antiderivative('csc(x)').has(log)
+    assert _antiderivative('csch(x)').has(log)
 
 
 def test_csc_squared_is_neg_cot():

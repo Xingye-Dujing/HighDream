@@ -14,19 +14,14 @@ def _create_rule(func_name):
     return RuleRegistry.create_common_rule(Integral, func_name)
 
 
-# Generate log rules using the factory function
+# Generate the trivial closed-form rules via the factory; the non-obvious ones
+# (tan/cot/sec/csc/sech/csch/log) are hand-written below so they show the method
+# and a textbook antiderivative instead of an opaque doit() blob.
 log_rule = _create_rule("对数")
-# Generate all trigonometric and hyperbolic rules using the factory function
 sin_rule = _create_rule("正弦")
 cos_rule = _create_rule("余弦")
-tan_rule = _create_rule("正切")
-sec_rule = _create_rule("正割")
-csc_rule = _create_rule("余割")
-cot_rule = _create_rule("余切")
 sinh_rule = _create_rule("双曲正弦")
 cosh_rule = _create_rule("双曲余弦")
-csch_rule = _create_rule("双曲余割")
-sech_rule = _create_rule("双曲正割")
 
 
 def const_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
@@ -158,6 +153,68 @@ def inverse_tangent_linear_rule(expr: Expr, context: RuleContext) -> RuleFunctio
     return res, (f"使用递推公式: $\\int \\frac{{1}}{{(x^2 - b^2)^n}} \\, dx = "
                  f"\\frac{{1}}{{2(n-1)b^2}} \\left[ (3 - 2n) \\int \\frac{{1}}{{(x^2 - b^2)^{{n-1}}}} \\, dx - "
                  f"\\frac{{x}}{{(x^2 - b^2)^{{n-1}}}} \\right]$")
+
+
+def tan_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """∫tan x dx = -ln|cos x| + C (= ln|sec x|)."""
+    var = context['variable']
+    result = -log(Abs(cos(var)))
+    vl = latex(var)
+    return result, f"正切积分: $\\int\\tan({vl})\\,d{vl} = -\\ln|\\cos({vl})| + C$ (因 $(\\cos)\'=-\\sin$)"
+
+
+def cot_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """∫cot x dx = ln|sin x| + C."""
+    var = context['variable']
+    result = log(Abs(sin(var)))
+    vl = latex(var)
+    return result, f"余切积分: $\\int\\cot({vl})\\,d{vl} = \\ln|\\sin({vl})| + C$ (因 $(\\sin)\'=\\cos$)"
+
+
+def sec_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """∫sec x dx = ln|sec x + tan x| + C (分子分母同乘 sec+tan)."""
+    var = context['variable']
+    result = log(Abs(sec(var) + tan(var)))
+    vl = latex(var)
+    return result, (
+        f"正割积分: 分子分母同乘 $\\sec+\\tan$, 令 $u=\\sec({vl})+\\tan({vl})$, "
+        f"$du=(\\sec\\tan+\\sec^2)d{vl}$ 恰为分子, $\\int du/u=\\ln|u|$; "
+        f"$\\int\\sec({vl})\\,d{vl} = \\ln|\\sec({vl})+\\tan({vl})| + C$"
+    )
+
+
+def csc_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """∫csc x dx = -ln|csc x + cot x| + C."""
+    var = context['variable']
+    result = -log(Abs(csc(var) + cot(var)))
+    vl = latex(var)
+    return result, (
+        f"余割积分: 同乘 $\\csc+\\cot$, 得 $\\int\\csc({vl})\\,d{vl} = "
+        f"-\\ln|\\csc({vl})+\\cot({vl})| + C$"
+    )
+
+
+def sech_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """∫sech x dx = arctan(sinh x) + C."""
+    var = context['variable']
+    result = atan(sinh(var))
+    vl = latex(var)
+    return result, (
+        f"双曲正割积分: 因 $\\frac{{d}}{{d{vl}}}\\arctan(\\sinh) = "
+        f"\\frac{{\\cosh}}{{1+\\sinh^2}} = \\frac{{\\cosh}}{{\\cosh^2}} = \\operatorname{{sech}}$; "
+        f"$\\int\\operatorname{{sech}}({vl})\\,d{vl} = \\arctan(\\sinh({vl})) + C$"
+    )
+
+
+def csch_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """∫csch x dx = ln|tanh(x/2)| + C."""
+    var = context['variable']
+    result = log(Abs(tanh(var / 2)))
+    vl = latex(var)
+    return result, (
+        f"双曲余割积分: 半角化简得 $\\int\\operatorname{{csch}}({vl})\\,d{vl} = "
+        f"\\ln\\left|\\tanh\\frac{{{vl}}}{{2}}\\right| + C$"
+    )
 
 
 def tanh_rule(_expr: Expr, context: RuleContext) -> RuleFunctionReturn:
