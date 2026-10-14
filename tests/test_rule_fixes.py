@@ -103,3 +103,11 @@ def test_root_finding_methods():
 def test_bisection_requires_sign_change():
     ok, res = _dispatch_auto('bisection(x^2+1,x,0,1,5)')  # always positive -> no bracket
     assert not ok and '异号' in res
+
+
+def test_matrix_pinv():
+    # full column rank uses (A^T A)^-1 A^T ; result shown boxed, matrix not scalar-composable
+    ok, res = _dispatch_auto('pinv([[1,2],[3,4],[5,6]])')
+    assert ok and '列满秩' in res and '\\boxed' in res
+    ok2, _ = _dispatch_auto('2*pinv([[1,2],[3,4],[5,6]])')
+    assert not ok2  # matrix result can't enter scalar arithmetic

@@ -31,7 +31,7 @@ _MATRIX_LATEX_OPS = {
     'ref', 'operations', 'invert', 'rank', 'LU', 'diag', 'svd', 'singular',
     'eigen', 'schur', 'det', 'orthogonal', 'projection', 'dependence',
     'linear-system', 'linear-solver', 'transform-1', 'transform-2', 'matrix_symbolic',
-    'trace', 'nullspace', 'colspace', 'rowspace',
+    'trace', 'nullspace', 'colspace', 'rowspace', 'pinv',
 }
 
 # Cached calculator variants used when use_cache or record_cache is set
@@ -159,6 +159,33 @@ def _matrix_subspace(expression, kind):
         lines.append(r'&\rightarrow\ ' + latex(vec))
     lines.append(r'&\quad \text{' + title + ' 的一组基如上' +
                  (f', 维数 = {len(basis)}' if basis else ', 维数 = 0') + '}')
+    return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
+
+
+def _matrix_pinv(expression):
+    """Moore-Penrose pseudoinverse, via the full-rank normal-equation formulas when
+    applicable (shown step by step) or the general ``Matrix.pinv()`` when rank-deficient."""
+    from sympy import simplify  # pylint: disable=import-outside-toplevel
+    try:
+        mat = _matrix_of(expression)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        return False, f'矩阵解析失败: {exc}'
+    rank, rows, cols = mat.rank(), mat.rows, mat.cols
+    lines = ['& ' + latex(mat)]
+    if rank == cols and cols <= rows:  # full column rank
+        ata = simplify(mat.T * mat)
+        lines.append(r'&\Rightarrow A^{T}A = ' + latex(ata)
+                     + r' \quad \text{列满秩: } A^{+}=(A^{T}A)^{-1}A^{T}')
+        pinv_mat = simplify(ata.inv() * mat.T)
+    elif rank == rows and rows <= cols:  # full row rank
+        aat = simplify(mat * mat.T)
+        lines.append(r'&\Rightarrow AA^{T} = ' + latex(aat)
+                     + r' \quad \text{行满秩: } A^{+}=A^{T}(AA^{T})^{-1}')
+        pinv_mat = simplify(mat.T * aat.inv())
+    else:
+        pinv_mat = mat.pinv()
+        lines.append(r'& \quad \text{秩亏, 由 Moore-Penrose 定义(SVD/降阶)求伪逆}')
+    lines.append(r'&= \boxed{' + latex(pinv_mat) + '}')
     return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
 
 
@@ -303,6 +330,7 @@ _AUTO_FUNCS = {
     'det': ('det', ['expression']), 'determinant': ('det', ['expression']),
     'rank': ('rank', ['expression']),
     'trace': ('trace', ['expression']),
+    'pinv': ('pinv', ['expression']), 'pseudoinverse': ('pinv', ['expression']),
     'nullspace': ('nullspace', ['expression']), 'nullity': ('nullspace', ['expression']),
     'colspace': ('colspace', ['expression']), 'columnspace': ('colspace', ['expression']),
     'rowspace': ('rowspace', ['expression']),
@@ -354,6 +382,7 @@ _MATRIX_OP_NAMES = {
     'diagonalize', 'orthogonal', 'orthogonalize', 'gramschmidt', 'dependent',
     'dependence', 'project', 'projection', 'transpose',
     'trace', 'nullspace', 'nullity', 'colspace', 'columnspace', 'rowspace',
+    'pinv', 'pseudoinverse',
 }
 
 
@@ -669,7 +698,7 @@ def _auto_value(op, data):
         return True, _as_aligned(res), value
 
     # matrix-valued: value is a Matrix (not scalar-composable; guarded by the caller).
-    if op in ('invert', 'ref'):
+    if op in ('invert', 'ref', 'pinv'):
         try:
             ok, res = _dispatch_compute(op, data)
         except Exception as exc:  # pylint: disable=broad-exception-caught
@@ -679,7 +708,12 @@ def _auto_value(op, data):
         try:
             from core.common_matrix_calculator import CommonMatrixCalculator  # pylint: disable=import-outside-toplevel
             mat = CommonMatrixCalculator.parse_matrix_input(data.get('expression', ''))
-            value = mat.inv() if op == 'invert' else mat.rref()[0]
+            if op == 'invert':
+                value = mat.inv()
+            elif op == 'pinv':
+                value = mat.pinv()
+            else:
+                value = mat.rref()[0]
         except Exception as exc:  # pylint: disable=broad-exception-caught
             return False, f'矩阵运算失败: {exc}', None
         return True, _as_aligned(res), value
@@ -988,6 +1022,9 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
 
         if operation_type == 'trace':
             return _matrix_trace(expression)
+
+        if operation_type == 'pinv':
+            return _matrix_pinv(expression)
 
         if operation_type in ('nullspace', 'colspace', 'rowspace'):
             return _matrix_subspace(expression, operation_type)
