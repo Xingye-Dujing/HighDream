@@ -157,3 +157,9 @@ def test_matrix_definiteness_sylvester():
     assert '正定' in _dispatch_auto('definite([[2,0],[0,3]])')[1]
     assert '负定' in _dispatch_auto('definite([[-1,0],[0,-2]])')[1]
     assert '不定' in _dispatch_auto('definite([[1,2],[2,1]])')[1]
+
+
+def test_matrix_charpoly():
+    # det(A - lambda I): rotation-like [[0,-1],[1,0]] -> lambda^2 + 1
+    ok, res = _dispatch_auto('charpoly([[0,-1],[1,0]])')
+    assert ok and 'p(' in res and '\\lambda' in res and '因式分解' in res

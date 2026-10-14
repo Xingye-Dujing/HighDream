@@ -31,7 +31,7 @@ _MATRIX_LATEX_OPS = {
     'ref', 'operations', 'invert', 'rank', 'LU', 'diag', 'svd', 'singular',
     'eigen', 'schur', 'det', 'orthogonal', 'projection', 'dependence',
     'linear-system', 'linear-solver', 'transform-1', 'transform-2', 'matrix_symbolic',
-    'trace', 'nullspace', 'colspace', 'rowspace', 'pinv', 'jordan', 'definiteness',
+    'trace', 'nullspace', 'colspace', 'rowspace', 'pinv', 'jordan', 'definiteness', 'charpoly',
 }
 
 # Cached calculator variants used when use_cache or record_cache is set
@@ -235,6 +235,27 @@ def _matrix_definiteness(expression):
     return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
 
 
+def _matrix_charpoly(expression):
+    """Characteristic polynomial det(A - lambda I), expanded and factored."""
+    from sympy import eye, expand, factor  # pylint: disable=import-outside-toplevel
+    try:
+        mat = _matrix_of(expression)
+        if mat.rows != mat.cols:
+            return False, '特征多项式要求方阵'
+        lam = Symbol('lambda')
+        char = (mat - lam * eye(mat.rows)).det()
+        expanded = expand(char)
+        factored = factor(expanded)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        return False, f'特征多项式失败: {exc}'
+    lines = [
+        '& ' + latex(mat) + r' \quad \text{方阵 } A',
+        r'& p(\lambda)=\det(A-\lambda I) = ' + latex(expanded) + r'\quad \text{按行列式展开}',
+        r'&= ' + latex(factored) + r'\quad \text{因式分解}, \text{ 令 } p(\lambda)=0 \text{ 得特征值}',
+    ]
+    return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
+
+
 def _dispatch_calculus(expression: str):
     """Auto-route a combined calculus expression by its top-level operator.
 
@@ -383,6 +404,7 @@ _AUTO_FUNCS = {
     'jordan': ('jordan', ['expression']), 'jordanform': ('jordan', ['expression']),
     'definite': ('definiteness', ['expression']), 'isdefinite': ('definiteness', ['expression']),
     'sylvestar': ('definiteness', ['expression']),
+    'charpoly': ('charpoly', ['expression']), 'characteristic': ('charpoly', ['expression']),
     'nullspace': ('nullspace', ['expression']), 'nullity': ('nullspace', ['expression']),
     'colspace': ('colspace', ['expression']), 'columnspace': ('colspace', ['expression']),
     'rowspace': ('rowspace', ['expression']),
@@ -436,6 +458,7 @@ _MATRIX_OP_NAMES = {
     'trace', 'nullspace', 'nullity', 'colspace', 'columnspace', 'rowspace',
     'pinv', 'pseudoinverse', 'jordan', 'jordanform',
     'definite', 'isdefinite', 'sylvestar',
+    'charpoly', 'characteristic',
 }
 
 
@@ -1082,6 +1105,9 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
 
         if operation_type == 'definiteness':
             return _matrix_definiteness(expression)
+
+        if operation_type == 'charpoly':
+            return _matrix_charpoly(expression)
 
         if operation_type in ('nullspace', 'colspace', 'rowspace'):
             return _matrix_subspace(expression, operation_type)
