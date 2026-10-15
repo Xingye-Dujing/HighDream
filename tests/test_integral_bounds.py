@@ -2,11 +2,12 @@
 
 import sympy
 
-from sympy import Integral, Rational, Symbol, latex, log, oo, pi, simplify, sqrt
+from sympy import Integral, Rational, Symbol, asin, diff, latex, log, oo, pi, simplify, sqrt
 
 from domains import IntegralCalculator
 from domains.integral.rules.integral_function_rules import inverse_trig_rule
-from routes.compute_service import _dispatch_compute
+from domains.integral.rules.parts_rule_help import select_parts_u_dv
+from routes.compute_service import _dispatch_auto, _dispatch_compute
 from utils.cache_utils import cached_sympify
 
 x = Symbol('x')
@@ -155,3 +156,35 @@ def test_irreducible_biquadratic_quartic_resolves():
     pt = sympy.Float('0.7')
     d = (fin.subs(x, pt + h) - fin.subs(x, pt - h)) / (2 * h)
     assert abs(float(d) - float(integrand.subs(x, pt))) < 1e-3
+
+
+def test_inverse_trig_alias_maps_to_real_sympy_asin():
+    # parse_latex has no \asin entry; the LaTeX branch must route bare ``asin(``
+    # through the arcsin spelling so we get a real SymPy asin, not UndefinedFunction.
+    # Regression for int(asin(x)/sqrt(1-x^2), x) via the universal box.
+    ok, res = _dispatch_auto('int(asin(x)/sqrt(1-x^2), x)')
+    assert ok, res
+    assert 'asin' in res and '无法' not in res
+
+
+def test_repeated_linear_partial_fraction_uses_apart():
+    # (x^2+2)/(x+1)^3 hits sqrt_div_sqrt_rule; its expand() loop used to raise
+    # ``AttributeError: 'Add' object has no attribute 'exp'``. The isinstance(Pow)
+    # guard lets add_rule/apart decompose it, and every term integrates.
+    ok, res = _dispatch_compute(
+        'integral',
+        {'operation_type': 'integral', 'expression': '(x**2+2)/(x+1)**3', 'variable': 'x'})
+    assert ok, res
+    # antiderivative = log|x+1| + 2/(x+1) - 3/(2(x+1)^2) (verified by differentiation)
+    val = log(x + 1) + 2 / (x + 1) - Rational(3, 2) / (x + 1) ** 2
+    assert abs(float(simplify(diff(val, x) - (x**2 + 2) / (x + 1) ** 3))) < 1e-9
+
+
+def test_select_parts_u_dv_skips_var_free_factors_without_evalf():
+    # parts-rule u-selection used to call factor.is_constant(); that hits evalf
+    # sampling on factors like ``1/sqrt(1-x^2)`` and can recurse ~1000 frames deep.
+    # The structural ``not factor.has(var)`` guard avoids that entirely.
+    expr = cached_sympify('asin(x)/sqrt(1-x^2)')
+    u, dv = select_parts_u_dv(expr, x)
+    assert u is not None and dv is not None
+    assert not u.has(x) or u.has(asin)  # picks asin(x) as u
