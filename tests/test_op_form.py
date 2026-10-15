@@ -35,10 +35,16 @@ def test_operator_to_latex_renders_and_computes():
         assert _ok(tex), 'latex form must dispatch: ' + tex
 
 
-def test_sqrt_not_mangled_in_latex():
-    # bare sqrt(...) must render as \sqrt{...}, not the s*q*r*t parse_latex artifact
+def test_bare_functions_round_trip_not_mangled():
+    # The shared parser must read bare exp/sqrt/asin (with carets) as functions,
+    # not the s*q*r*t product that parse_latex would otherwise produce.
+    from utils.cache_utils import cached_sympify
+    assert 'sqrt' in repr(cached_sympify('x^2/sqrt(x^2+1)')).lower()
+    assert 'exp' in repr(cached_sympify('x*exp(x^2)')).lower()
+    assert 'asin' in repr(cached_sympify('asin(x)^2')).lower()
+    # and the wrapped LaTeX form computes
     tex = operator_to_latex('int(x^2/sqrt(x^2+1), x)')
-    assert r'\sqrt' in tex and 's q r t' not in tex
+    assert tex.startswith(r'\int') and _ok(tex)
 
 
 def test_round_trip_latex_operator():

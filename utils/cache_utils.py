@@ -47,6 +47,55 @@ _UNFILLED_RES = (
     re.compile(r'\\(?:int|sum|prod|lim|d?frac)\b[^{}]*\{\s*\}'),
 )
 
+# parse_latex only knows BACKSLASH-prefixed function names; a bare ``sin(...)``,
+# ``exp(...)``, ``asin(...)``, ``sqrt(...)`` is split into a product of symbols
+# (sin -> s*i*n). A bare ``^`` routes input through parse_latex, so sympy-style
+# text like ``x*exp(x^2)`` would otherwise be mangled. Re-prefix known functions.
+_BARE_FUNCS = {'exp', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'cosh',
+               'tanh', 'coth', 'sech', 'csch', 'asin', 'acos', 'atan',
+               'arcsin', 'arccos', 'arctan', 'ln', 'log'}
+_BARE_CALL_RE = re.compile(r'(?<![A-Za-z\\])([A-Za-z]+)\s*\(')
+_BARE_SQRT_RE = re.compile(r'(?<![A-Za-z\\])sqrt\s*\(')
+
+
+def _match_paren(s: str, open_idx: int):
+    """Return (inner_text, index_after_close) for the '(' at open_idx, or (None, ...)."""
+    depth = 0
+    for i in range(open_idx, len(s)):
+        if s[i] == '(':
+            depth += 1
+        elif s[i] == ')':
+            depth -= 1
+            if depth == 0:
+                return s[open_idx + 1:i], i + 1
+    return None, len(s)
+
+
+def _sqrt_to_braces(s: str) -> str:
+    """Rewrite bare ``sqrt(ARG)`` -> ``\\sqrt{ARG}`` (parse_latex rejects ``\\sqrt(``)."""
+    out, i = [], 0
+    while True:
+        m = _BARE_SQRT_RE.search(s, i)
+        if not m:
+            out.append(s[i:])
+            break
+        inner, after = _match_paren(s, m.end() - 1)
+        if inner is None:
+            out.append(s[i:m.end()])
+            i = m.end()
+            continue
+        out.append(s[i:m.start()] + '\\sqrt{' + _sqrt_to_braces(inner) + '}')
+        i = after
+    return ''.join(out)
+
+
+def _prefix_bare_funcs(s: str) -> str:
+    """Prefix ``\\`` to bare known function names before a '(' (sqrt already handled)."""
+    def rep(match):
+        name = match.group(1)
+        return '\\' + name + '(' if name.lower() in _BARE_FUNCS else match.group(0)
+    return _BARE_CALL_RE.sub(rep, s)
+
 
 def _normalize_mathlive_latex(s: str) -> str:
     """Turn MathLive WYSIWYG LaTeX into a form parse_latex handles correctly.
@@ -59,6 +108,10 @@ def _normalize_mathlive_latex(s: str) -> str:
     s = _LN_RE.sub(r'\\log', s)           # \ln -> \lnatural log
     s = _EPOW_BRACE_RE.sub(r'\\exp{\1}', s)   # e^{x} -> \exp{x} (true exponential)
     s = _EPOW_CHAR_RE.sub(r'\\exp{\1}', s)
+    # Re-serialize bare (non-backslash) function names parse_latex would split:
+    # sqrt(...) -> \sqrt{...} (brace-only), and exp/sin/asin/... -> \exp(\...).
+    s = _sqrt_to_braces(s)
+    s = _prefix_bare_funcs(s)
     return s
 
 

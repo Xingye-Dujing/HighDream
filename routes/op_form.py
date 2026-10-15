@@ -65,6 +65,25 @@ def _L(expr):
         return str(expr)
 
 
+def _caret(text):
+    """Display form for an operand: keep its own text, only ``**``->``^``.
+
+    The input parser now round-trips bare function names + carets, so we must NOT
+    re-serialize the operand via sympy.latex (that emits ``\\operatorname{atan}`` and
+    nested ``e^{x^{2}}`` which do NOT parse back). Verbatim keeps it correct."""
+    return re.sub(r'\s*\*\*\s*', '^', str(text))
+
+
+def _pt(text):
+    """Limit point display: oo/-oo -> \\infty/-\\infty, else verbatim caret form."""
+    t = str(text).strip()
+    if t in ('oo', 'inf', 'infinity', '+oo'):
+        return r'\infty'
+    if t in ('-oo', '-inf', '-infinity'):
+        return r'-\infty'
+    return _caret(t)
+
+
 def nested_to_bmatrix(nested):
     """``[[a,b],[c,d]]`` -> ``\\begin{bmatrix}a & b\\\\c & d\\end{bmatrix}``."""
     s = nested.strip()
@@ -101,19 +120,19 @@ def operator_to_latex(expr):
     if name in ('int', 'integrate', 'improper', 'improperintegral'):
         body, var = (a + ['x'] * 2)[:2]
         if len(a) >= 4 and str(a[2]).strip() and str(a[3]).strip():
-            return r'\int_{%s}^{%s} (%s)\, d%s' % (_L(a[2]), _L(a[3]), _L(body), var)
-        return r'\int (%s)\, d%s' % (_L(body), var)
+            return r'\int_{%s}^{%s} (%s)\, d%s' % (_caret(a[2]), _caret(a[3]), _caret(body), var)
+        return r'\int (%s)\, d%s' % (_caret(body), var)
     if name in ('diff', 'derivative', 'd'):
         body, var = (a + ['x'] * 2)[:2]
         if len(a) >= 3 and str(a[2]).strip() not in ('', '1'):
-            return r'\frac{d^{%s}}{d %s^{%s}} (%s)' % (a[2], var, a[2], _L(body))
-        return r'\frac{d}{d %s} (%s)' % (var, _L(body))
+            return r'\frac{d^{%s}}{d %s^{%s}} (%s)' % (a[2], var, a[2], _caret(body))
+        return r'\frac{d}{d %s} (%s)' % (var, _caret(body))
     if name == 'limit':
         if len(a) < 3:
             return expr
         body, var, point = a[0], a[1], a[2]
         side = _LATEX_SIDES.get(a[3].strip(), '') if len(a) >= 4 else ''
-        return r'\lim_{%s \to %s%s} (%s)' % (var, _L(point), side, _L(body))
+        return r'\lim_{%s \to %s%s} (%s)' % (var, _pt(point), side, _caret(body))
     if name in _BIN_OP and len(a) >= 2:
         return '%s %s %s' % (_mat_operand(a[0]), _BIN_OP[name], _mat_operand(a[1]))
     if name in _MAT_PREFIX:
@@ -128,7 +147,7 @@ def operator_to_latex(expr):
             return bm + '^{+}'
         return _MAT_PREFIX[name] + bm
     if name in _EXPR_ONLY and a:
-        return _L(a[0])
+        return _caret(a[0])
     return expr
 
 
