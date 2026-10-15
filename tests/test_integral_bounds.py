@@ -1,6 +1,6 @@
 """Deterministic tests for definite vs indefinite integral handling."""
 
-from sympy import Integral, Rational, Symbol, latex, oo, pi, simplify
+from sympy import Integral, Rational, Symbol, latex, log, oo, pi, simplify
 
 from domains import IntegralCalculator
 from routes.compute_service import _dispatch_compute
@@ -74,3 +74,21 @@ def test_trig_substitution_backsubs_to_closed_form():
         steps, _ = IntegralCalculator().compute_list(expr, x)
         fin = steps[-1]
         assert fin is not None and not fin.has(Integral), expr
+
+
+def test_definite_finite_endpoint_improper_takes_limit():
+    # ln(x) at 0 gives S.NaN (which exposes neither is_nan nor is_finite==False); the
+    # endpoint predicate now routes non-finite values to a one-sided limit -> -1.
+    steps, _ = IntegralCalculator().compute_list('ln(x)', x, lower=0, upper=1)
+    assert simplify(steps[-1] - (-1)) == 0
+
+
+def test_definite_periodic_denominator_does_not_hang():
+    # sin+cos / 1+cos never vanish on (0, pi/2): _interior_poles must not spin over an
+    # infinite Reals ImageSet; confined to the interval it terminates and solves.
+    steps, _ = IntegralCalculator().compute_list(
+        'sin(x)/(sin(x)+cos(x))', x, lower=0, upper=pi / 2)
+    assert simplify(steps[-1] - pi / 4) == 0
+    steps2, _ = IntegralCalculator().compute_list(
+        'sin(x)/(1+cos(x))', x, lower=0, upper=pi / 2)
+    assert simplify(steps2[-1] - log(2)) == 0

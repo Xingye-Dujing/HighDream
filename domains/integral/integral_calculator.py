@@ -1,7 +1,9 @@
 from typing import List, Optional, Tuple
 
-from sympy import (Add, Eq, Integer, S, Symbol, Expr, Integral, fraction, latex,
-                   limit, log, oo, preorder_traversal, simplify, solveset)
+import itertools
+
+from sympy import (Add, Eq, Integer, Interval, S, Symbol, Expr, Integral, fraction,
+                   latex, limit, log, oo, preorder_traversal, simplify, solveset)
 
 from core import BaseCalculator, SelectRuleCalculator
 from core.cached_calculator import DBCachedCalculator
@@ -118,9 +120,11 @@ def create_integral_calculator(base_class):
             """
             direct = F.subs(var, bound)
             infinite = bound in (oo, -oo) or getattr(bound, 'is_infinite', False)
+            # Treat "not a definite finite number" as improper: S.NaN exposes neither
+            # is_nan nor is_finite==False, so a positive is_finite test is what catches
+            # the finite-endpoint blow-up (e.g. log(x) at 0 -> NaN) and triggers a limit.
             bad = (direct.has(Integral, Symbol('Limit'))
-                   or getattr(direct, 'is_finite', None) is False
-                   or getattr(direct, 'is_nan', None) is True)
+                   or getattr(direct, 'is_finite', None) is not True)
             if infinite or bad:
                 try:
                     val = limit(F, var, bound, dir='-' if direction == 'upper' else '+')
@@ -149,22 +153,39 @@ def create_integral_calculator(base_class):
 
             Candidates come from denominator roots and logarithm-argument zeros; each is
             confirmed by checking a one-sided limit of the integrand is infinite, so
-            removable singularities are not mis-flagged."""
-            cands = set()
+            removable singularities are not mis-flagged. A periodic denominator makes
+            solveset return an infinite ImageSet over Reals (iterating it never ends), so
+            for concrete finite bounds the search is confined to Interval.open(a, b);
+            otherwise iteration is capped. Symbolic bounds cannot be compared, so they
+            are skipped rather than crashing on ``a <= b``."""
+            if not (getattr(a, 'is_number', False) and getattr(b, 'is_number', False)):
+                return []
             try:
-                den = fraction(simplify(f))[1]
-                for r in solveset(Eq(den, 0), var, domain=S.Reals):
-                    if getattr(r, 'is_number', False) and getattr(r, 'is_finite', False):
-                        cands.add(r)
-                for e in preorder_traversal(f):
-                    if isinstance(e, log):
-                        g = e.args[0]
-                        for r in solveset(Eq(g, 0), var, domain=S.Reals):
-                            if getattr(r, 'is_number', False) and getattr(r, 'is_finite', False):
-                                cands.add(r)
+                lo, hi = (a, b) if (a <= b) else (b, a)
             except Exception:  # pylint: disable=broad-exception-caught
                 return []
-            lo, hi = (a, b) if (a <= b) else (b, a)
+            finite = getattr(lo, 'is_finite', True) and getattr(hi, 'is_finite', True)
+            dom = Interval.open(lo, hi) if finite else S.Reals
+
+            cands = set()
+
+            def _collect(solutions):
+                try:
+                    for r in itertools.islice(solutions, 0, 128):
+                        if getattr(r, 'is_number', False) and getattr(r, 'is_finite', False):
+                            cands.add(r)
+                except TypeError:
+                    pass  # a non-iterable solveset result (e.g. an unevaluated set)
+
+            try:
+                den = fraction(simplify(f))[1]
+                _collect(solveset(Eq(den, 0), var, domain=dom))
+                for e in preorder_traversal(f):
+                    if isinstance(e, log):
+                        _collect(solveset(Eq(e.args[0], 0), var, domain=dom))
+            except Exception:  # pylint: disable=broad-exception-caught
+                return []
+
             inside = []
             for c in cands:
                 try:
