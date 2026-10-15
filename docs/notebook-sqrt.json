@@ -1,157 +1,157 @@
 [
   {
     "type": "code",
-    "content": "int(sqrt(3+x), x)",
+    "content": "\\int (\\sqrt{x + 3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x*sqrt(x^2-1), x)",
+    "content": "\\int (x \\sqrt{x^{2} - 1})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x*sqrt(x^2+1), x)",
+    "content": "\\int (x \\sqrt{x^{2} + 1})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/sqrt(3+x), x)",
+    "content": "\\int (\\frac{1}{\\sqrt{x + 3}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sqrt(8+x**2), x)",
+    "content": "\\int (\\sqrt{x^{2} + 8})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/sqrt(2+x**2), x)",
+    "content": "\\int (\\frac{1}{\\sqrt{x^{2} + 2}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sqrt(2-x**2), x)",
+    "content": "\\int (\\sqrt{2 - x^{2}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/sqrt(2-x**2), x)",
+    "content": "\\int (\\frac{1}{\\sqrt{2 - x^{2}}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sqrt(x**2-8), x)",
+    "content": "\\int (\\sqrt{x^{2} - 8})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/sqrt(x**2-2), x)",
+    "content": "\\int (\\frac{1}{\\sqrt{x^{2} - 2}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/(x*sqrt(x**2-2)), x)",
+    "content": "\\int (\\frac{1}{x \\sqrt{x^{2} - 2}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "diff(sqrt(2)*acos(sqrt(2)/x)/2, x)",
+    "content": "\\frac{d}{d x} (\\frac{\\sqrt{2} \\operatorname{acos}{\\left(\\frac{\\sqrt{2}}{x} \\right)}}{2})",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x/sqrt(x**2-2), x)",
+    "content": "\\int (\\frac{x}{\\sqrt{x^{2} - 2}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "diff(sqrt(x**2-2), x)",
+    "content": "\\frac{d}{d x} (\\sqrt{x^{2} - 2})",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sqrt((1+x)/(2*x+3)), x)",
+    "content": "\\int (\\sqrt{\\frac{x + 1}{2 x + 3}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sqrt((4+3*x)/(2*x+3)), x)",
+    "content": "\\int (\\sqrt{\\frac{3 x + 4}{2 x + 3}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sqrt((1+x)/(1-x)), x)",
+    "content": "\\int (\\sqrt{\\frac{x + 1}{1 - x}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/sqrt(exp(x)+1), x)",
+    "content": "\\int (\\frac{1}{\\sqrt{e^{x} + 1}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/((2*x^2+1)*sqrt(x^2+1)), x)",
+    "content": "\\int (\\frac{1}{\\sqrt{x^{2} + 1} \\left(2 x^{2} + 1\\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "diff(-atan(1/sqrt(1-1/(x^2+1))), x)",
+    "content": "\\frac{d}{d x} (- \\operatorname{atan}{\\left(\\frac{1}{\\sqrt{1 - \\frac{1}{x^{2} + 1}}} \\right)})",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "diff(-atan(sqrt(x^2+1)/x), x)",
+    "content": "\\frac{d}{d x} (- \\operatorname{atan}{\\left(\\frac{\\sqrt{x^{2} + 1}}{x} \\right)})",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int((sqrt(1+x^2)+sqrt(1-x^2))/sqrt(1-x^4), x)",
+    "content": "\\int (\\frac{\\sqrt{1 - x^{2}} + \\sqrt{x^{2} + 1}}{\\sqrt{1 - x^{4}}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sqrt((1-x^2)/(1-x^4)), x)",
+    "content": "\\int (\\sqrt{\\frac{1 - x^{2}}{1 - x^{4}}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int((sqrt(3+x)+sqrt(1-x))/sqrt(2-x), x)",
+    "content": "\\int (\\frac{\\sqrt{1 - x} + \\sqrt{x + 3}}{\\sqrt{2 - x}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/(1-x^2)^(5/2), x)",
+    "content": "\\int (\\frac{1}{\\left(1 - x^{2}\\right)^{\\frac{5}{2}}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/(x^2+1)^(3/2), x)",
+    "content": "\\int (\\frac{1}{\\left(x^{2} + 1\\right)^{\\frac{3}{2}}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   }

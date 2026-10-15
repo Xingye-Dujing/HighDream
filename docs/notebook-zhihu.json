@@ -1,19 +1,19 @@
 [
   {
     "type": "code",
-    "content": "int(log(x)/(1-x)^2, x)",
+    "content": "\\int (\\frac{\\log{\\left(x \\right)}}{\\left(1 - x\\right)^{2}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(tan(x)^4, x)",
+    "content": "\\int (\\tan^{4}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sqrt(x)*sin(sqrt(x)), x)",
+    "content": "\\int (\\sqrt{x} \\sin{\\left(\\sqrt{x} \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -25,61 +25,61 @@
   },
   {
     "type": "code",
-    "content": "int(sin(x)*cos(x)/(1+sin(x)^4), x)",
+    "content": "\\int (\\frac{\\sin{\\left(x \\right)} \\cos{\\left(x \\right)}}{\\sin^{4}{\\left(x \\right)} + 1})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(log(log(x))/x, x)",
+    "content": "\\int (\\frac{\\log{\\left(\\log{\\left(x \\right)} \\right)}}{x})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int((1+cos(x))/(x+sin(x)), x)",
+    "content": "\\int (\\frac{\\cos{\\left(x \\right)} + 1}{x + \\sin{\\left(x \\right)}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x/(1-x)^3, x)",
+    "content": "\\int (\\frac{x}{\\left(1 - x\\right)^{3}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x^2/(1-x^6), x)",
+    "content": "\\int (\\frac{x^{2}}{1 - x^{6}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/(exp(x)-exp(-x)), x)",
+    "content": "\\int (\\frac{1}{e^{x} - e^{- x}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x*cos(x)^2, x)",
+    "content": "\\int (x \\cos^{2}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/(x^2*sqrt(x^2-1)), x)",
+    "content": "\\int (\\frac{1}{x^{2} \\sqrt{x^{2} - 1}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sin(x)/tan(x), x)",
+    "content": "\\int (\\frac{\\sin{\\left(x \\right)}}{\\tan{\\left(x \\right)}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(log(1+x^2), x)",
+    "content": "\\int (\\log{\\left(x^{2} + 1 \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -91,31 +91,31 @@
   },
   {
     "type": "code",
-    "content": "int(atan(x)/(x^2*(1+x^2)), x)",
+    "content": "\\int (\\frac{\\operatorname{atan}{\\left(x \\right)}}{x^{2} \\left(x^{2} + 1\\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/(x*log(x)^2), x)",
+    "content": "\\int (\\frac{1}{x \\log{\\left(x \\right)}^{2}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sin(x)^2/cos(x)^3, x)",
+    "content": "\\int (\\frac{\\sin^{2}{\\left(x \\right)}}{\\cos^{3}{\\left(x \\right)}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(log(x+sqrt(1+x^2)), x)",
+    "content": "\\int (\\log{\\left(x + \\sqrt{x^{2} + 1} \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(tan(x)/sqrt(cos(x)), x)",
+    "content": "\\int (\\frac{\\tan{\\left(x \\right)}}{\\sqrt{\\cos{\\left(x \\right)}}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -127,73 +127,73 @@
   },
   {
     "type": "code",
-    "content": "int(x*atan(x)/(1+x^2)^(3/2), x)",
+    "content": "\\int (\\frac{x \\operatorname{atan}{\\left(x \\right)}}{\\left(x^{2} + 1\\right)^{\\frac{3}{2}}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int((log(x)-1)/x^2, x)",
+    "content": "\\int (\\frac{\\log{\\left(x \\right)} - 1}{x^{2}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x^3/sqrt(1+x^2), x)",
+    "content": "\\int (\\frac{x^{3}}{\\sqrt{x^{2} + 1}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sqrt(1-x^2)*asin(x), x)",
+    "content": "\\int (\\sqrt{1 - x^{2}} \\operatorname{asin}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x*cos(x)^2, x)",
+    "content": "\\int (x \\cos^{2}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/(3+cos(x)), x)",
+    "content": "\\int (\\frac{1}{\\cos{\\left(x \\right)} + 3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int((2*x+3)/((x-2)*(x+5)), x)",
+    "content": "\\int (\\frac{2 x + 3}{\\left(x - 2\\right) \\left(x + 5\\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/(1+(x+1)^(1/3)), x)",
+    "content": "\\int (\\frac{1}{\\sqrt[3]{x + 1} + 1})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int((sqrt(x)+1)*(sqrt(x^3)-1), x)",
+    "content": "\\int (\\left(\\sqrt{x} + 1\\right) \\left(\\sqrt{x^{3}} - 1\\right))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int((1-x)^2/sqrt(x), x)",
+    "content": "\\int (\\frac{\\left(1 - x\\right)^{2}}{\\sqrt{x}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sqrt(x)+x*sqrt(x)+sqrt(x*sqrt(x)), x)",
+    "content": "\\int (x^{\\frac{3}{2}} + \\sqrt{x} + \\sqrt{x^{\\frac{3}{2}}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/(1+cos(x)), x)",
+    "content": "\\int (\\frac{1}{\\cos{\\left(x \\right)} + 1})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -205,7 +205,7 @@
   },
   {
     "type": "code",
-    "content": "int((exp(3*x)+1)/(exp(x)+1), x)",
+    "content": "\\int (\\frac{e^{3 x} + 1}{e^{x} + 1})\\, dx",
     "operationType": "auto",
     "variable": "x"
   }

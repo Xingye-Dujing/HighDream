@@ -1,145 +1,145 @@
 [
   {
     "type": "code",
-    "content": "int(atan(x)*log((x**2+1))*x, x)",
+    "content": "\\int (x \\log{\\left(x^{2} + 1 \\right)} \\operatorname{atan}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "diff(x**2*log(x**2 + 1)*atan(x)/2 - x**2*atan(x)/2 - x*log(x**2 + 1)/2 + 3*x/2 + log(x**2 + 1)*atan(x)/2 - 3*atan(x)/2, x)",
+    "content": "\\frac{d}{d x} (\\frac{x^{2} \\log{\\left(x^{2} + 1 \\right)} \\operatorname{atan}{\\left(x \\right)}}{2} - \\frac{x^{2} \\operatorname{atan}{\\left(x \\right)}}{2} - \\frac{x \\log{\\left(x^{2} + 1 \\right)}}{2} + \\frac{3 x}{2} + \\frac{\\log{\\left(x^{2} + 1 \\right)} \\operatorname{atan}{\\left(x \\right)}}{2} - \\frac{3 \\operatorname{atan}{\\left(x \\right)}}{2})",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x^2*log(x^2+1)*atan(x)/2-x^2*atan(x)/2-x*log(x^2+1)/2+3*x/2+log(x^2+1)*atan(x)/2-3*atan(x)/2, x)",
+    "content": "\\int (\\frac{x^{2} \\log{\\left(x^{2} + 1 \\right)} \\operatorname{atan}{\\left(x \\right)}}{2} - \\frac{x^{2} \\operatorname{atan}{\\left(x \\right)}}{2} - \\frac{x \\log{\\left(x^{2} + 1 \\right)}}{2} + \\frac{3 x}{2} + \\frac{\\log{\\left(x^{2} + 1 \\right)} \\operatorname{atan}{\\left(x \\right)}}{2} - \\frac{3 \\operatorname{atan}{\\left(x \\right)}}{2})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x*log(x**2+1), x)",
+    "content": "\\int (x \\log{\\left(x^{2} + 1 \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(log(x**2+1), x)",
+    "content": "\\int (\\log{\\left(x^{2} + 1 \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int((2*x+3)/(x**2+3*x), x)",
+    "content": "\\int (\\frac{2 x + 3}{x^{2} + 3 x})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(2*x/(x**2+1), x)",
+    "content": "\\int (\\frac{2 x}{x^{2} + 1})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(3/(x+3), x)",
+    "content": "\\int (\\frac{3}{x + 3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x**2/(x**2+3), x)",
+    "content": "\\int (\\frac{x^{2}}{x^{2} + 3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(2*x/(x**2+3), x)",
+    "content": "\\int (\\frac{2 x}{x^{2} + 3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(cos(x)/sin(x), x)",
+    "content": "\\int (\\frac{\\cos{\\left(x \\right)}}{\\sin{\\left(x \\right)}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x/(2*x+2), x)",
+    "content": "\\int (\\frac{x}{2 x + 2})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(8/(x**2+1), x)",
+    "content": "\\int (\\frac{8}{x^{2} + 1})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(8/(x**2+8), x)",
+    "content": "\\int (\\frac{8}{x^{2} + 8})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/(x^3+1), x)",
+    "content": "\\int (\\frac{1}{x^{3} + 1})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/(exp(x)+exp(-x)), x)",
+    "content": "\\int (\\frac{1}{e^{x} + e^{- x}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "diff(atan(exp(x)), x)",
+    "content": "\\frac{d}{d x} (\\operatorname{atan}{\\left(e^{x} \\right)})",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(-(-log(2-x)+log(x+2))/x^3, x)",
+    "content": "\\int (\\frac{\\log{\\left(2 - x \\right)} - \\log{\\left(x + 2 \\right)}}{x^{3}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "diff((x^2*(log(x-2)-log(x+2))+4*x-4*log(2-x)+4*log(x+2))/(8*x^2), x)",
+    "content": "\\frac{d}{d x} (\\frac{x^{2} \\left(\\log{\\left(x - 2 \\right)} - \\log{\\left(x + 2 \\right)}\\right) + 4 x - 4 \\log{\\left(2 - x \\right)} + 4 \\log{\\left(x + 2 \\right)}}{8 x^{2}})",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x^x*(log(x)+1), x)",
+    "content": "\\int (x^{x} \\left(\\log{\\left(x \\right)} + 1\\right))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x^x*log(x)+x^x, x)",
+    "content": "\\int (x^{x} \\log{\\left(x \\right)} + x^{x})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(asin(x), x)",
+    "content": "\\int (\\operatorname{asin}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(acos(x), x)",
+    "content": "\\int (\\operatorname{acos}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(asin(x)+acos(x), x)",
+    "content": "\\int (\\operatorname{acos}{\\left(x \\right)} + \\operatorname{asin}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   }

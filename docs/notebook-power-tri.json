@@ -1,79 +1,79 @@
 [
   {
     "type": "code",
-    "content": "int(sin(x), x)",
+    "content": "\\int (\\sin{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sin(x)^2, x)",
+    "content": "\\int (\\sin^{2}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sin(x)^3, x)",
+    "content": "\\int (\\sin^{3}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sin(x)^4, x)",
+    "content": "\\int (\\sin^{4}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sin(x)^5, x)",
+    "content": "\\int (\\sin^{5}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(cos(x), x)",
+    "content": "\\int (\\cos{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(cos(x)^5, x)",
+    "content": "\\int (\\cos^{5}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(cos(x)^4, x)",
+    "content": "\\int (\\cos^{4}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(tan(x), x)",
+    "content": "\\int (\\tan{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(tan(x)^2, x)",
+    "content": "\\int (\\tan^{2}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(tan(x)^5, x)",
+    "content": "\\int (\\tan^{5}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(x*cos(x)^2, x)",
+    "content": "\\int (x \\cos^{2}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sqrt(1-x**2)*asin(x), x)",
+    "content": "\\int (\\sqrt{1 - x^{2}} \\operatorname{asin}{\\left(x \\right)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   }

@@ -1,31 +1,31 @@
 [
   {
     "type": "code",
-    "content": "int((2*exp(x)-1)/(exp(x)+3), x)",
+    "content": "\\int (\\frac{2 e^{x} - 1}{e^{x} + 3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(1/(1+exp(x)), x)",
+    "content": "\\int (\\frac{1}{e^{x} + 1})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int((3*sin(x)-2*cos(x))/(cos(x)+2*sin(x)), x)",
+    "content": "\\int (\\frac{3 \\sin{\\left(x \\right)} - 2 \\cos{\\left(x \\right)}}{2 \\sin{\\left(x \\right)} + \\cos{\\left(x \\right)}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int((sin(x)+2*cos(x))/(cos(x)+2*sin(x)), x)",
+    "content": "\\int (\\frac{\\sin{\\left(x \\right)} + 2 \\cos{\\left(x \\right)}}{2 \\sin{\\left(x \\right)} + \\cos{\\left(x \\right)}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int((2*sin(x)+cos(x))/(cos(x)+sin(x))+3, x)",
+    "content": "\\int (3 + \\frac{2 \\sin{\\left(x \\right)} + \\cos{\\left(x \\right)}}{\\sin{\\left(x \\right)} + \\cos{\\left(x \\right)}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   }
