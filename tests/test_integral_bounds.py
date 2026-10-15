@@ -2,9 +2,10 @@
 
 import sympy
 
-from sympy import Integral, Rational, Symbol, latex, log, oo, pi, simplify
+from sympy import Integral, Rational, Symbol, latex, log, oo, pi, simplify, sqrt
 
 from domains import IntegralCalculator
+from domains.integral.rules.integral_function_rules import inverse_trig_rule
 from routes.compute_service import _dispatch_compute
 from utils.cache_utils import cached_sympify
 
@@ -109,3 +110,16 @@ def test_sqrt_quadratic_radical_branch_matches_integrand_for_positive_x():
     h = sympy.Float('1e-5')
     d = (fin.subs(x, pt + h) - fin.subs(x, pt - h)) / (2 * h)
     assert abs(float(d) - float(expr.subs(x, pt))) < 1e-4
+
+
+def test_inverse_trig_arcsec_branch_differentiates_to_integrand():
+    # The 1/sqrt(x^2-1) branch used to return acos(x) (wrong sign/domain); it must now
+    # return the arcsec-type ln|x+sqrt(x^2-1)| whose derivative is the integrand.
+    expr = 1 / sqrt(x ** 2 - 1)
+    res = inverse_trig_rule(expr, {'variable': x})
+    assert res is not None and res[0].has(log)
+    antideriv = res[0]
+    h = sympy.Float('1e-5')
+    pt = sympy.Float('2.0')
+    d = (antideriv.subs(x, pt + h) - antideriv.subs(x, pt - h)) / (2 * h)
+    assert abs(float(d) - float(1 / sqrt(3))) < 1e-4

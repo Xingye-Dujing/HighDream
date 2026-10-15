@@ -1,5 +1,5 @@
 from sympy import (
-    Abs, Expr, Integral, Pow, acos, asin, atan, cos, cosh, cot, csc, exp,
+    Abs, Expr, Integral, Pow, asin, atan, cos, cosh, cot, csc, exp,
     latex, log, sec, sin, sinh, sqrt, tan, tanh, trigsimp, csch, sech, coth
 )
 
@@ -100,8 +100,11 @@ def inverse_trig_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     if expr.equals(1 / sqrt(var ** 2 - 1)):
         var_latex = wrap_latex(var)
-        return acos(
-            var), f"反余弦函数积分: $\\int \\frac{{-1}}{{\\sqrt{{1 - {var}^2}}}}\\,d{var_latex} = \\arccos({var}) + C$"
+        # d/dx ln|x + sqrt(x^2-1)| = 1/sqrt(x^2-1) (the arcsec-type antiderivative).
+        # acos(x) was wrong: its derivative is -1/sqrt(1-x^2) and it is undefined for |x|>1.
+        result = log(Abs(var + sqrt(var ** 2 - 1)))
+        return result, (f"正割型反函数积分: $\\int \\frac{{1}}{{\\sqrt{{{var}^2 - 1}}}}\\,d{var_latex} = "
+                        f"\\ln\\left|{var} + \\sqrt{{{var}^2 - 1}}\\right| + C$")
 
     return None
 
