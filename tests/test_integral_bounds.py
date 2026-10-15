@@ -2,7 +2,7 @@
 
 import sympy
 
-from sympy import Integral, Rational, Symbol, asin, diff, latex, log, oo, pi, simplify, sqrt
+from sympy import Integral, Rational, Symbol, asin, cos, diff, exp, latex, log, oo, pi, simplify, sin, sqrt, together
 
 from domains import IntegralCalculator
 from domains.integral.rules.integral_function_rules import inverse_trig_rule
@@ -188,3 +188,21 @@ def test_select_parts_u_dv_skips_var_free_factors_without_evalf():
     u, dv = select_parts_u_dv(expr, x)
     assert u is not None and dv is not None
     assert not u.has(x) or u.has(asin)  # picks asin(x) as u
+
+
+def test_universal_box_enables_special_integral_matchers():
+    # Regression: _build_op_data omits include_special_matchers, so a bool/absent
+    # value used to fail ``== 'True'`` and silently disable the quotient-diff-form
+    # and f(x)*e^{g(x)} rules, making these integrals abort unresolved.
+    cases = {
+        r'\int ((x*cos(x)-sin(x))/x^2)\, dx': (x * cos(x) - sin(x)) / x ** 2,
+        r'\int ((1+x-1/x)*exp(x+1/x))\, dx': (1 + x - 1 / x) * exp(x + 1 / x),
+    }
+    for cell, integrand in cases.items():
+        ok, res = _dispatch_auto(cell)
+        assert ok and '无法用初等' not in res
+        # the derivation must land on a real antiderivative that differentiates back
+        steps, _ = IntegralCalculator(True).compute_list(integrand, x)
+        anti = steps[-1]
+        assert not anti.has(Integral)
+        assert simplify(together(diff(anti, x) - integrand)) == 0

@@ -1110,7 +1110,11 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
             return True, calc.compute_latex(expression, Symbol(variable))
 
         if operation_type == 'integral':
-            include_special_matchers = data.get('include_special_matchers', True) == 'True'
+            # UI sends the string 'True'/'False'; the universal box (_build_op_data)
+            # omits the key, so a plain bool/absent value must still mean "special
+            # matchers ON" (the documented default). str()-coercion keeps '' False-only
+            # semantics without silently disabling quotient-diff / f*e^g rules.
+            include_special_matchers = str(data.get('include_special_matchers', True)) == 'True'
             bounds = {}
             lower_raw = str(data.get('lower', '')).strip()
             upper_raw = str(data.get('upper', '')).strip()
