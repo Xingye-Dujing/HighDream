@@ -25,7 +25,10 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
     factors = list(expr.args) if expr.is_Mul else [expr]
 
     for factor_ in factors:
-        if not factor_.args or factor_.is_constant() or factor_.equals(var):
+        # Structural "is constant / is the bare variable" test: .is_constant()/.equals()
+        # fall back to numeric evalf, which recurses infinitely on some exprs
+        # (e.g. asin(x)/sqrt(1-x^2)). free_symbols / == answer the same question safely.
+        if not factor_.args or not factor_.free_symbols or factor_ == var:
             continue
 
         # Extract internal factors for subsequent traversal
@@ -44,29 +47,34 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
         term_list += list(preorder_traversal(inner))
 
         for original_term in term_list:
-            # Preventing infinite loops
-            if original_term.equals(var) or original_term.equals(-var) or original_term.is_constant():
+            # Preventing infinite loops (structural: avoids evalf recursion).
+            if (not isinstance(original_term, Expr) or original_term == var
+                    or original_term == -var or not original_term.free_symbols):
                 continue
 
             check_list = [original_term]
             # Introducing sqrt_term is to handle implicit f(x)^2 cases like x/(x**4+1), x**x*(log(x)+1)/(x**(2*x)+1)
-            sqrt_term = sqrt(original_term)
-            # Use a temporary variable with positive real assumptions to aid radical simplification.
-            _t = Dummy('t', real=True, positive=True)
-            sqrt_term = simplify(sqrt_term.subs(var, _t)).subs(_t, var).replace(
-                Abs, lambda arg: arg)
-            if not sqrt_term.has(I) and not sqrt_term.equals(var) and not sqrt_term.equals(-var):
+            try:
+                sqrt_term = sqrt(original_term)
+                # Use a temporary variable with positive real assumptions to aid radical simplification.
+                _t = Dummy('t', real=True, positive=True)
+                sqrt_term = simplify(sqrt_term.subs(var, _t)).subs(_t, var).replace(
+                    Abs, lambda arg: arg)
+            except Exception:  # pylint: disable=broad-exception-caught
+                sqrt_term = None
+            if (sqrt_term is not None and not sqrt_term.has(I)
+                    and sqrt_term != var and sqrt_term != -var):
                 check_list.append(sqrt_term)
 
             for term in check_list:
 
                 gp = simplify(diff(term, var))  # g'(x)
-                if gp.equals(0):  # g'(x) = 0
+                if gp == 0:  # g'(x) = 0
                     continue
 
                 initial_ratio = simplify(expr / gp)
                 # Special case: g'(x) dx, let u = g(x), g'(x) dx = 1 du
-                if initial_ratio.is_constant():
+                if not initial_ratio.free_symbols:
                     # Substitute u = g(x)
                     u = step_gene.get_available_sym(var)
                     step_gene.subs_dict[u] = term
@@ -82,7 +90,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
 
                     # Check if outer_part = k * g'(x) for some constant k.
                     ratio = simplify(outer_part / gp)
-                    if not ratio.is_constant():
+                    if ratio.free_symbols:
                         continue
 
                     # Substitute u = g(x)
