@@ -339,7 +339,7 @@ _AUTO_FUNCS = {
     'd': ('diff', ['expression', 'variable', 'order']),
     'int': ('integral', ['expression', 'variable', 'lower', 'upper']),
     'integrate': ('integral', ['expression', 'variable', 'lower', 'upper']),
-    'limit': ('limit', ['expression', 'variable', 'point']),
+    'limit': ('limit', ['expression', 'variable', 'point', 'direction']),
     'sum': ('finite_sum', ['expression', 'variable', 'lower', 'upper']),
     'fsum': ('finite_sum', ['expression', 'variable', 'lower', 'upper']),
     'series': ('series_convergence', ['expression', 'variable']),
@@ -653,23 +653,51 @@ def _nl_integral(src):
 
 
 def _nl_limit(src):
-    """``\\lim_{X \\to a} (BODY)`` -> ``limit(BODY, X, a)``."""
+    """``\\lim_{X \\to a[\\;^{+|-|\\pm}]\\;} (BODY)`` -> ``limit(BODY, X, a[, dir])``.
+
+    Reads the subscript with a balanced-brace scan (so ``0^{+}`` / ``\\infty`` survive)
+    and maps a trailing ``^{+}``/``^{-}``/``^{\\pm}`` to the direction argument; no
+    marker leaves it unspecified (the engine's default)."""
     out, i = [], 0
-    pat = re.compile(r'\\lim\s*_\{([^{}]*?)\\to([^{}]*?)\}')
+    pat = re.compile(r'\\lim\s*_\{')
     while True:
         match = pat.search(src, i)
         if not match:
             out.append(src[i:])
             break
-        body, after = _grab_balanced_paren(src, match.end())
-        if body is None:
+        start = match.end()
+        j = start
+        depth = 1
+        while j < len(src) and depth:
+            if src[j] == '{':
+                depth += 1
+            elif src[j] == '}':
+                depth -= 1
+            j += 1
+        if depth != 0:                      # unbalanced subscript: leave untouched
             out.append(src[i:match.end()])
             i = match.end()
             continue
+        inner = src[start:j - 1]
+        body, after = _grab_balanced_paren(src, j)
+        if body is None:
+            out.append(src[i:j])
+            i = j
+            continue
         out.append(src[i:match.start()])
-        var = match.group(1).strip() or 'x'
-        point = match.group(2).strip() or '0'
-        out.append(rf'limit({_normalize_latex_ops(body)},{var},{point})')
+        left, _, right = inner.partition('\\to')
+        var = left.strip() or 'x'
+        target = right.strip()
+        direction = ''
+        mdir = (re.search(r'\^\{\s*(\\pm|pm|[+-])\s*\}\s*$', target)
+                or re.search(r'\^\s*([+-])\s*$', target))
+        if mdir:
+            raw = mdir.group(1)
+            direction = {'+': '+', '-': '-', 'pm': '+-', '\\pm': '+-'}.get(raw, '')
+            target = target[:mdir.start()].strip()
+        point = target or '0'
+        extra = f',{direction}' if direction else ''
+        out.append(rf'limit({_normalize_latex_ops(body)},{var},{point}{extra})')
         i = after
     return ''.join(out)
 

@@ -115,3 +115,16 @@ def test_volume_application_composes():
     ok, res = _dispatch_auto('volume(x,x,0,1)*3')
     assert ok, res
     assert '\\boxed{\\pi}' in res
+
+
+def test_auto_limit_carries_one_sided_direction():
+    assert _normalize_latex_ops(r'\lim_{x \to 0^{+}} (x)') == 'limit(x,x,0,+)'
+    assert _normalize_latex_ops(r'\lim_{x \to 0^{-}} (x)') == 'limit(x,x,0,-)'
+    assert _normalize_latex_ops(r'\lim_{x \to 0^{\pm}} (x)') == 'limit(x,x,0,+-)'
+    # no side marker -> direction left unspecified (engine default)
+    assert _normalize_latex_ops(r'\lim_{x \to 0} (x)') == 'limit(x,x,0)'
+
+
+def test_auto_limit_functional_direction_ok():
+    ok, _ = _dispatch_auto('limit((1-1/x)^x, x, 0, +)')
+    assert ok
