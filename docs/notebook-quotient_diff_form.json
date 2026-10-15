@@ -1,43 +1,43 @@
 [
   {
     "type": "code",
-    "content": "\\int (\\frac{x \\cos{\\left(x \\right)} - \\sin{\\left(x \\right)}}{x^{2}})\\, dx",
+    "content": "\\int ((x*cos(x)-sin(x))/x^2)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\frac{d}{d x} (\\frac{\\sin{\\left(x \\right)}}{x})",
+    "content": "\\frac{d}{d x} (sin(x)/x)",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\frac{x \\sin{\\left(x \\right)}}{\\left(x + \\sin{\\left(x \\right)}\\right)^{2}})\\, dx",
+    "content": "\\int (x*sin(x)/(x+sin(x))^2)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\frac{d}{d x} (\\frac{1 - \\cos{\\left(x \\right)}}{x + \\sin{\\left(x \\right)}})",
+    "content": "\\frac{d}{d x} ((1-cos(x))/(x+sin(x)))",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x + \\frac{x \\sin{\\left(x \\right)}}{\\left(x + \\sin{\\left(x \\right)}\\right)^{2}})\\, dx",
+    "content": "\\int (x+x*sin(x)/(x+sin(x))^2)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\frac{1 - \\log{\\left(x \\right)}}{\\left(x - \\log{\\left(x \\right)}\\right)^{2}})\\, dx",
+    "content": "\\int ((1-log(x))/(x-log(x))^2)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\frac{1 - \\log{\\left(x \\right)}}{\\left(x - \\log{\\left(x \\right)}\\right)^{2}} + \\sin{\\left(x \\right)})\\, dx",
+    "content": "\\int ((1-log(x))/(x-log(x))^2+sin(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   }

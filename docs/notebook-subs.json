@@ -1,85 +1,85 @@
 [
   {
     "type": "code",
-    "content": "\\int (\\frac{1}{\\left(x - 1\\right)^{2}})\\, dx",
+    "content": "\\int (1/(x-1)^2)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (3^{\\sin{\\left(x \\right)}} \\cos{\\left(x \\right)})\\, dx",
+    "content": "\\int (3^sin(x)*cos(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\frac{x^{x} \\left(\\log{\\left(x \\right)} + 1\\right)}{x^{2 x} + 1})\\, dx",
+    "content": "\\int (x^x*(log(x)+1)/(x^(2*x)+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\frac{\\log{\\left(x \\right)} + 1}{x^{x} + x^{- x}})\\, dx",
+    "content": "\\int ((log(x)+1)/(x^x+x^(-x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\frac{x^{\\frac{x}{2}} \\left(\\log{\\left(x \\right)} + 1\\right)}{2 x^{x} + 2})\\, dx",
+    "content": "\\int (x^(x/2)*(log(x)+1)/(2*(x^x+1)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\frac{x^{\\frac{x}{2}} \\left(\\log{\\left(x \\right)} + 1\\right)}{x^{x} + 1})\\, dx",
+    "content": "\\int (x^(x/2)*(log(x)+1)/(x^x+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\frac{\\log{\\left(x \\right)} + 1}{x^{\\frac{x}{2}} + x^{- \\frac{x}{2}}})\\, dx",
+    "content": "\\int ((log(x)+1)/(x^(x/2)+x^(-x/2)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\frac{\\cos{\\left(x \\right)}}{\\sqrt{\\sin^{2}{\\left(x \\right)} + 1}})\\, dx",
+    "content": "\\int (cos(x)/sqrt(sin(x)^2+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\frac{1}{x \\sqrt{\\log{\\left(x \\right)}^{2} + 1}})\\, dx",
+    "content": "\\int (1/(x*sqrt(ln(x)^2+1)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "int(sin(x)*exp(cos(x)), x)",
+    "content": "\\int (sin(x)*exp(cos(x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\frac{\\log{\\left(\\log{\\left(x \\right)} \\right)}}{x})\\, dx",
+    "content": "\\int (ln(ln(x))/x)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\frac{\\operatorname{asin}{\\left(x \\right)}}{\\sqrt{1 - x^{2}}})\\, dx",
+    "content": "int(asin(x)/sqrt(1-x^2), x)",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x \\sin{\\left(\\sqrt{x} \\right)})\\, dx",
+    "content": "\\int (sin(sqrt(x))*x)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\frac{1}{\\sqrt{\\tan{\\left(x \\right)}} - 1})\\, dx",
+    "content": "\\int (1/(sqrt(tan(x))-1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   }
