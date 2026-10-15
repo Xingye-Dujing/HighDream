@@ -1654,3 +1654,15 @@ body.hd-menu-pinned #blueprint-canvas-container {
     flex-shrink: 0;
   }
 }
+
+/* ==========================================================================
+   Uniform corner control.
+   One knob -- `--radius`, driven by the 圆角 item in the product menu -- governs
+   every corner in the product.  `:where()` keeps specificity at 0, so any EXPLICIT
+   radius still wins: `50%` stays a circle, `0` stays square, `inherit` follows the
+   parent.  Elements that draw a border but declare no radius now follow the shared
+   control instead of staying hard-edged at any radius.
+   ========================================================================== */
+:where(body *) {
+  border-radius: var(--radius);
+}
