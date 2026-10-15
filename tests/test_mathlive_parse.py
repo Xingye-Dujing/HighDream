@@ -59,3 +59,17 @@ def test_bare_caret_integral_solves_not_truncated():
     ok, res = _dispatch_auto(r'\int (3^sin(x)*cos(x))\, dx')
     assert ok
     assert '无法用初等' not in res
+
+
+def test_parse_latex_muls_are_flattened_for_matching():
+    # parse_latex left an exponent as an unevaluated Mul(1/2, Mul(-1, x)); substitution
+    # compares with == so the non-canonical shape made this integral come back None.
+    from routes.compute_service import _dispatch_auto
+    from domains import IntegralCalculator
+    integrand = cached_sympify('(log(x)+1)/(x^(x/2)+x^(-x/2))')
+    ok, res = _dispatch_auto(r'\int ((log(x)+1)/(x^(x/2)+x^(-x/2)))\, dx')
+    assert ok and '无法用初等' not in res
+    steps, _ = IntegralCalculator(True).compute_list(integrand, x)
+    anti = steps[-1]
+    assert anti is not None and not anti.has(Integral)
+    assert simplify(anti.diff(x) - integrand) == 0

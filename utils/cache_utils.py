@@ -212,6 +212,21 @@ def _drop_unit_factor(node):
     return node
 
 
+def _flatten_mul(node):
+    """Rebuild a ``Mul`` with evaluation on so nested products collapse.
+
+    parse_latex can leave products unevaluated — e.g. an exponent as
+    ``Mul(1/2, Mul(-1, x))`` instead of the canonical ``-x/2``. Structural
+    matching in the substitution rule compares expressions with ``==``/
+    ``free_symbols``, which fails on the non-canonical shape, so an otherwise
+    solvable integral comes back unresolved. ``Mul(*args)`` forces sympy to
+    re-associate and fold the numeric coefficients. Used with ``bottom_up`` so
+    operands (and exponents) are flattened before their parents rebuild."""
+    if node.is_Mul:
+        return Mul(*node.args)
+    return node
+
+
 @lru_cache(maxsize=512)
 def cached_latex(expr) -> str:
     return latex(expr)
@@ -267,7 +282,8 @@ def cached_sympify(expr_str: str) -> Expr:
         normalized = _normalize_mathlive_latex(expr_str)
         try:
             from sympy.parsing.latex import parse_latex  # pylint: disable=import-outside-toplevel
-            return bottom_up(parse_latex(normalized), _drop_unit_factor)
+            parsed = bottom_up(parse_latex(normalized), _drop_unit_factor)
+            return bottom_up(parsed, _flatten_mul)
         except Exception:  # pylint: disable=broad-exception-caught
             return sympify(expr_str)  # type: ignore
     return sympify(expr_str)  # type: ignore
