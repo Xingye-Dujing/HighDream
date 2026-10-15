@@ -412,6 +412,7 @@ _AUTO_FUNCS = {
     'colspace': ('colspace', ['expression']), 'columnspace': ('colspace', ['expression']),
     'rowspace': ('rowspace', ['expression']),
     'inverse': ('invert', ['expression']), 'inv': ('invert', ['expression']),
+    'transpose': ('operations', ['expression']),
     'rref': ('ref', ['expression']), 'ref': ('ref', ['expression']), 'rowreduce': ('ref', ['expression']),
     'eigen': ('eigen', ['expression']), 'eigenvals': ('eigen', ['expression']),
     'eigenvects': ('eigen', ['expression']),
@@ -450,6 +451,7 @@ _AUTO_MULTILINE_OPS = {
 _AUTO_NAME_EXTRAS = {
     'add': {'operations': '+'}, 'subtract': {'operations': '-'}, 'minus': {'operations': '-'},
     'multiply': {'operations': '*'}, 'matmul': {'operations': '*'},
+    'transpose': {'operations': 'transpose'},
 }
 
 # Matrix-function names that may appear bare (e.g. \det [[1,2],[3,4]]).
@@ -947,6 +949,13 @@ def _dispatch_auto(expression: str):
     if re.search(r'\\square\b|\\Box\b|\\bigbox\b|\\placeholder\b', expression):
         return False, '请先填写输入框中的占位（□）后再计算'
     text = latex_to_nested(expression)  # bmatrix blocks -> [[...]] (no-op otherwise)
+
+    # Fold matrix display spellings (M^{T}, M^{-1}, M^{+}, \det M, \mathrm{op} M,
+    # M*M, M+M, M-M) into operator CALLS so the operator fast-path below dispatches the
+    # requested matrix operation. Without this a lone "M^{T}" was treated as a bare
+    # matrix and silently returned rref, dropping the operator entirely.
+    from routes.op_form import _fold_matrix_ops  # pylint: disable=import-outside-toplevel
+    text = _fold_matrix_ops(text)
 
     # 0) compound: an operator call embedded inside a larger elementary expression
     #    (3*diff(x,x), sin(x)+int(x^2,x), diff(int(x^2,x),x)) is resolved recursively

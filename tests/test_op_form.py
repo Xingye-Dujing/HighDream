@@ -73,3 +73,14 @@ def test_toggle_form_flips_both_ways():
     mtex = toggle_form('det([[a,b],[c,d]])')
     assert r'\det' in mtex
     assert _ok(toggle_form(mtex))  # back to operator still dispatches
+
+
+def test_auto_box_dispatches_matrix_display_ops():
+    # LaTeX WYSIWYG matrix forms must run the REQUESTED op, not fall through to rref.
+    from routes.compute_service import _dispatch_auto
+    ok, res = _dispatch_auto(r'\begin{bmatrix}1 & 2\\3 & 4\end{bmatrix}^{T}')
+    assert ok and '转置' in res
+    ok2, res2 = _dispatch_auto(r'\det \begin{bmatrix}1 & 2\\4 & 2\end{bmatrix}')
+    assert ok2 and '-6' in res2
+    ok3, res3 = _dispatch_auto(r'\mathrm{rank} \begin{bmatrix}1 & 2\\4 & 2\end{bmatrix}')
+    assert ok3 and '求秩' in res3
