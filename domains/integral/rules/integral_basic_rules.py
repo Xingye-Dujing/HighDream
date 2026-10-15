@@ -7,11 +7,49 @@ from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn, can_us
 from utils.latex_formatter import wrap_latex
 
 
+def _biquadratic_extension(den: Expr, var: Expr) -> list:
+    """Real-quadratic split field for a biquadratic denominator a*x^4 + b*x^2 + c.
+
+    Uses x^4 + (b/a)x^2 + (c/a) = (x^2 + sqrt(c/a))^2 - (2*sqrt(c/a) - b/a)*x^2, so
+    adjoining sqrt(c/a) and sqrt(2*sqrt(c/a) - b/a) lets apart() split it into two real
+    quadratics that the existing complete-square / atan / log rules already integrate
+    (e.g. 1/(x^4 - 2*x^2 + 2), irreducible over Q, needs sqrt(2 + 2*sqrt(2)))."""
+    try:
+        poly = den.as_poly(var)
+        if poly is None or poly.degree() != 4:
+            return []
+        if poly.coeff_monomial(var ** 3) or poly.coeff_monomial(var):
+            return []  # not biquadratic (has odd powers)
+        lc = poly.coeff_monomial(var ** 4)
+        b = poly.coeff_monomial(var ** 2)
+        c = poly.coeff_monomial(1)
+        if not all(getattr(k, 'is_number', False) for k in (lc, b, c)) or lc == 0:
+            return []
+        c0 = c / lc
+        b0 = b / lc
+        if not getattr(c0, 'is_positive', False):
+            return []
+        disc = 2 * sqrt(c0) - b0
+        if not getattr(disc, 'is_positive', False):
+            return []
+        return [sqrt(c0), sqrt(disc)]
+    except Exception:  # pylint: disable=broad-exception-caught
+        return []
+
+
 def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr | None, str | None, bool | None]:
     """Handle the rational fraction by performing partial fraction decomposition"""
 
     expr_copy = num / den
-    expr_apart = expr_copy.apart(extension=[sqrt(2), sqrt(3), sqrt(5), ])
+    # For a biquadratic x^4 + b x^2 + c (c/a > 0) use ONLY its minimal split field
+    # {sqrt(c/a), sqrt(2*sqrt(c/a)-b/a)} — combining a nested radical with the generic
+    # sqrt(2,3,5) into one extension makes apart() raise (too-large multivariate field).
+    biquad = [e for e in _biquadratic_extension(den, var) if not e.is_Rational]
+    extension = sorted(biquad, key=str) if biquad else [sqrt(2), sqrt(3), sqrt(5)]
+    try:
+        expr_apart = expr_copy.apart(extension=extension)
+    except Exception:  # pylint: disable=broad-exception-caught
+        expr_apart = expr_copy.apart()
 
     # expr_apart != expr_copy: The rational fraction is reducible
     # isinstance(expr_apart, Add): Prevent cases like 2/(2*x^2+2) -> 2/(2*(x^2+1))

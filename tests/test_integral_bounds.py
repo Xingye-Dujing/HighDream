@@ -140,3 +140,18 @@ def test_definite_parity_odd_zero():
     for expr in ('x**3*cos(x)', 'x/(1+x**2)'):
         steps, _ = IntegralCalculator().compute_list(expr, x, lower=-1, upper=1)
         assert simplify(steps[-1]) == 0
+
+
+def test_irreducible_biquadratic_quartic_resolves():
+    # 1/(x^4-2x^2+2) is irreducible over Q but splits over a real quadratic extension;
+    # it must integrate step-by-step (no leftover Integral) and differentiate back.
+    integrand = sympy.sympify('1/(x**4 - 2*x**2 + 2)')
+    steps, _ = IntegralCalculator().compute_list('1/(x**4-2*x**2+2)', x)
+    fin = steps[-1]
+    assert fin is not None and not fin.has(Integral)
+    for s in (fin.free_symbols - {x}):
+        fin = fin.subs(s, 0)
+    h = sympy.Float('1e-5')
+    pt = sympy.Float('0.7')
+    d = (fin.subs(x, pt + h) - fin.subs(x, pt - h)) / (2 * h)
+    assert abs(float(d) - float(integrand.subs(x, pt))) < 1e-3
