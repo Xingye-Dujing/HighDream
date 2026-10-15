@@ -349,10 +349,22 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
             if not sol:
                 continue
             x_of_u = sol[0]
-            # Assume that the variable is always positive.
-            # Fix 1/((2*x^2+1)*sqrt(x^2+1)) dx
-            if x_of_u.has(-1) and -x_of_u in sol:
-                x_of_u = -x_of_u
+            # When inverting a radical with a multi-branch solution (e.g. sqrt of a
+            # quadratic), pick the branch consistent with the "assume variable positive"
+            # convention: the real solution x(u) that grows positive as u -> +oo. This
+            # returns the textbook antiderivative valid on the x>0 region instead of the
+            # sign-flipped other branch (fixes sqrt(x**2+2*x) shipping -integrand for x>0).
+            if len(sol) > 1:
+                probes = []
+                for s in sol:
+                    try:
+                        v = complex(s.subs(u, 10 ** 6).evalf())
+                    except (TypeError, ValueError):
+                        continue
+                    if abs(v.imag) < 1e-9:
+                        probes.append((v.real, s))
+                if probes:
+                    x_of_u = max(probes, key=lambda t: t[0])[1]
         except Exception:
             pass
 

@@ -1,5 +1,7 @@
 """Deterministic tests for definite vs indefinite integral handling."""
 
+import sympy
+
 from sympy import Integral, Rational, Symbol, latex, log, oo, pi, simplify
 
 from domains import IntegralCalculator
@@ -92,3 +94,18 @@ def test_definite_periodic_denominator_does_not_hang():
     steps2, _ = IntegralCalculator().compute_list(
         'sin(x)/(1+cos(x))', x, lower=0, upper=pi / 2)
     assert simplify(steps2[-1] - log(2)) == 0
+
+
+def test_sqrt_quadratic_radical_branch_matches_integrand_for_positive_x():
+    # The radical substitution inverts a quadratic with two x(u) branches; the + branch
+    # (valid for the assumed x>0 region) must be chosen, otherwise the antiderivative's
+    # derivative is the NEGATIVE of the integrand for x>0. Check numerically at x=2.
+    expr = sympy.sympify('sqrt(x**2 + 2*x)')
+    steps, _ = IntegralCalculator().compute_list('sqrt(x**2+2*x)', x)
+    fin = steps[-1]
+    for s in (fin.free_symbols - {x}):
+        fin = fin.subs(s, 0)
+    pt = sympy.Float('2.0')
+    h = sympy.Float('1e-5')
+    d = (fin.subs(x, pt + h) - fin.subs(x, pt - h)) / (2 * h)
+    assert abs(float(d) - float(expr.subs(x, pt))) < 1e-4
