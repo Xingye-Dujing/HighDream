@@ -1,7 +1,8 @@
 import re
 from functools import lru_cache
 
-from sympy import Expr, Mul, S, bottom_up, evaluate, expand_log, latex, log, radsimp, simplify, sympify
+from sympy import (Expr, Mul, S, bottom_up, evaluate, expand_log,
+                   latex, log, radsimp, simplify, sympify)
 
 from config import LARGE_POWER_EXPONENT_DIGITS
 
@@ -54,6 +55,12 @@ _UNFILLED_RES = (
 _BARE_FUNCS = {'exp', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'cosh',
                'tanh', 'coth', 'sech', 'csch', 'asin', 'acos', 'atan',
                'arcsin', 'arccos', 'arctan', 'ln', 'log'}
+# parse_latex has no ``\asin``/``\acos``/``\atan`` entry (they bind to an undefined
+# Function and defeat every real-function rule). Its real inverse-trig spellings are
+# ``\arcsin``/``\arccos``/``\arctan``. Sympy-style input uses the short names, so alias
+# them here before parse_latex sees the string.
+_INVTRIG_ALIAS = {'asin': 'arcsin', 'acos': 'arccos', 'atan': 'arctan'}
+_INVTRIG_BSLASH_RE = re.compile(r'\\(asin|acos|atan)\b')
 _BARE_CALL_RE = re.compile(r'(?<![A-Za-z\\])([A-Za-z]+)\s*\(')
 _BARE_SQRT_RE = re.compile(r'(?<![A-Za-z\\])sqrt\s*\(')
 
@@ -93,7 +100,10 @@ def _prefix_bare_funcs(s: str) -> str:
     """Prefix ``\\`` to bare known function names before a '(' (sqrt already handled)."""
     def rep(match):
         name = match.group(1)
-        return '\\' + name + '(' if name.lower() in _BARE_FUNCS else match.group(0)
+        low = name.lower()
+        if low in _BARE_FUNCS:
+            return '\\' + _INVTRIG_ALIAS.get(low, low) + '('
+        return match.group(0)
     return _BARE_CALL_RE.sub(rep, s)
 
 
@@ -108,6 +118,8 @@ def _normalize_mathlive_latex(s: str) -> str:
     s = _LN_RE.sub(r'\\log', s)           # \ln -> \lnatural log
     s = _EPOW_BRACE_RE.sub(r'\\exp{\1}', s)   # e^{x} -> \exp{x} (true exponential)
     s = _EPOW_CHAR_RE.sub(r'\\exp{\1}', s)
+    # \asin / \acos / \atan (MathLive may emit these) -> parse_latex's real names.
+    s = _INVTRIG_BSLASH_RE.sub(lambda m: '\\' + _INVTRIG_ALIAS[m.group(1)], s)
     # Re-serialize bare (non-backslash) function names parse_latex would split:
     # sqrt(...) -> \sqrt{...} (brace-only), and exp/sin/asin/... -> \exp(\...).
     s = _sqrt_to_braces(s)

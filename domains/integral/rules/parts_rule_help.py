@@ -58,8 +58,13 @@ def select_parts_u_dv(expr: Mul, var: Symbol) -> Tuple[Expr, Expr]:
     u_candidate = None
 
     for factor in factors:
-        # Skip pure constants (they go into dv)
-        if factor.is_number or (factor.is_constant() and not factor.has(var)):
+        # Skip factors that do not mention var (pure numbers or symbols) — those
+        # belong to dv. Do NOT use factor.is_constant(): it samples the factor at
+        # random complex values via evalf, and for integrands whose factors include
+        # ``1/sqrt(1-x^2)`` (a Piecewise-heavy Pow) sympy's evalf enters an
+        # unbounded self-recursion. ``not factor.has(var)`` already captures every
+        # var-free factor without touching evalf.
+        if factor.is_number or not factor.has(var):
             continue
         priority = _classify_factor(factor, var)
         if priority < best_priority:
