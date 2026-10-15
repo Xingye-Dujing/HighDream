@@ -95,7 +95,15 @@ class BaseManualStepSolver:
         """Hook for subclasses to add domain-specific context entries."""
 
     def _current_variable(self, expr: Expr) -> Symbol:
-        """Return the primary free symbol of expr, falling back to self.variable."""
+        """Return the operation's real variable, else the primary free symbol.
+
+        Prefer the variable carried by the stored operation so a substituted dummy
+        (e.g. Symbol(u, real=True, positive=True)) is preserved for constant
+        integrands whose own free_symbols are empty; fall back to self.variable."""
+        op = getattr(self, 'expr_to_operation', {}).get(expr)
+        op_vars = getattr(op, 'variables', None) if op is not None else None
+        if op_vars:
+            return op_vars[0]
         syms = list(expr.free_symbols)
         if syms:
             return syms[0]
@@ -281,9 +289,13 @@ class BaseManualStepSolver:
 
         self._sync_from_generator()
 
-        old_op = self.calculator._get_cached_operation(
-            old_expr, self.calculator.operation,
-            **self._build_context(old_expr))
+        # Use the stored operation (carries the substituted dummy's assumptions) so the
+        # write-back subs() matches; rebuilding it assumption-free would silently no-op.
+        old_op = self.expr_to_operation.get(old_expr)
+        if old_op is None:
+            old_op = self.calculator._get_cached_operation(
+                old_expr, self.calculator.operation,
+                **self._build_context(old_expr))
         for key in list(self.expr_to_operation.keys()):
             self.expr_to_operation[key] = (
                 self.expr_to_operation[key].subs(old_op, new_expr))

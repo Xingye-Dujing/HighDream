@@ -1,6 +1,6 @@
 """Deterministic tests for definite vs indefinite integral handling."""
 
-from sympy import Rational, Symbol, latex, oo, pi, simplify
+from sympy import Integral, Rational, Symbol, latex, oo, pi, simplify
 
 from domains import IntegralCalculator
 from routes.compute_service import _dispatch_compute
@@ -65,3 +65,12 @@ def test_parse_latex_drops_stray_unit_coefficient():
     # a genuine standalone 1 inside a sum is preserved
     assert latex(cached_sympify('1+1/x')) == r'1 + \frac{1}{x}'
 
+
+def test_trig_substitution_backsubs_to_closed_form():
+    # Keystone: the trig-substitution dummy keeps its real/positive assumptions through
+    # the operation write-back, so the transformed integral is completed and back-
+    # substituted instead of shipping a corrupt Integral(f, (u, inverse_of_x)).
+    for expr in ['1/sqrt(1-x**2)', 'sqrt(1-x**2)', '1/sqrt(x**2+1)', 'x**2/sqrt(1-x**2)']:
+        steps, _ = IntegralCalculator().compute_list(expr, x)
+        fin = steps[-1]
+        assert fin is not None and not fin.has(Integral), expr

@@ -165,7 +165,7 @@ def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator)
 
             explanation = (
                 f"三角代换：被积式含 ${latex(matched_sqrt)}$, 令 ${latex(var)} = {latex(x_sub)}$,"
-                f"则 $d{latex(var)} = \\left({latex(dx_dtheta)}\\right)\\,d\\theta$, 积分化为 "
+                f"则 $d{latex(var)} = \\left({latex(dx_dtheta)}\\right)\\,d{latex(theta)}$, 积分化为 "
                 f"${latex(res)}$"
             )
             return res, explanation

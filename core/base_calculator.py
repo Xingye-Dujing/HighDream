@@ -152,10 +152,15 @@ class BaseCalculator(ABC):
         return operation_val, f"需手动计算表达式: ${cached_latex(operation_obj)}$"
 
     def _update_expression(self, current_expr: Expr | Matrix, operation: Operation,
-                           expr_to_operation: Dict[str | Expr, Operation], direct_compute: bool, **context: Context) \
+                           expr_to_operation: Dict[str | Expr, Operation], direct_compute: bool,
+                           stored_operation: Operation = None, **context: Context) \
             -> Tuple[Expr, str, Dict[Expr, Operation]]:
 
-        current_operation = self._get_cached_operation(current_expr, operation, **context)
+        # Use the ACTUAL stored operation (it carries the substituted dummy's assumptions,
+        # e.g. Symbol(u, real=True, positive=True)) so the write-back subs() below matches;
+        # rebuilding it via _get_cached_operation drops those assumptions and silently no-ops.
+        current_operation = stored_operation if stored_operation is not None \
+            else self._get_cached_operation(current_expr, operation, **context)
         if direct_compute:
             new_expr = cached_doit(current_operation)
             if not is_elementary_expression(new_expr):
@@ -263,20 +268,27 @@ class BaseCalculator(ABC):
                 direct_compute = True
             self.processed.add(current_expr)
 
-            # Determine the working variable for this sub-expression. For partial
-            # differentiation it stays fixed; otherwise it is re-derived (needed
-            # after a substitution introduces a new dummy symbol).
+            # Determine the working variable for this sub-expression. Prefer the real
+            # integration/differentiation variable carried by the stored operation (it
+            # preserves the substituted dummy's identity); only re-derive from free
+            # symbols when the operation is unavailable (e.g. matrix path keys by str).
             if not self._allow_multi_symbols:
-                symbol_list = list(current_expr.free_symbols)
-                if symbol_list:
-                    context['variable'] = symbol_list[0]
-                elif self.step_generator.subs_dict:
-                    context['variable'] = list(self.step_generator.subs_dict.keys())[-1]
+                op_vars = getattr(current_operation, 'variables', None) \
+                    if current_operation is not None else None
+                if op_vars:
+                    context['variable'] = op_vars[0]
                 else:
-                    context['variable'] = Symbol("x")
+                    symbol_list = list(current_expr.free_symbols)
+                    if symbol_list:
+                        context['variable'] = symbol_list[0]
+                    elif self.step_generator.subs_dict:
+                        context['variable'] = list(self.step_generator.subs_dict.keys())[-1]
+                    else:
+                        context['variable'] = Symbol("x")
 
             new_expr, explanation, expr_to_operation = self._update_expression(
-                current_expr, operation, expr_to_operation, direct_compute, **context)
+                current_expr, operation, expr_to_operation, direct_compute,
+                stored_operation=current_operation, **context)
 
             current_step = expr_to_operation[expr]
             current_step = self._step_expr_postprocess(current_step)
