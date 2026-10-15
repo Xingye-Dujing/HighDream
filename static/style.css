@@ -466,6 +466,7 @@ a {
 }
 
 .run-cell-button,
+.convert-form-button,
 .operation-button,
 .keyboard-button {
   background: var(--jp-layout-color0);
@@ -489,6 +490,7 @@ a {
 
 .add-cell-button:hover,
 .run-cell-button:hover,
+.convert-form-button:hover,
 .operation-button:hover,
 .keyboard-button:hover {
   background-color: var(--jp-layout-color1);

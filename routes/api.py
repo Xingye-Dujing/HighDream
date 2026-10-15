@@ -126,6 +126,17 @@ def compute():
     return jsonify({'success': True, 'task_id': task_id})
 
 
+@api.route('/convert_form', methods=['POST'])
+def convert_form():
+    """Toggle a cell expression between LaTeX WYSIWYG and universal-box operator form.
+
+    Expected JSON: {expression}. Returns {success, result} with the flipped form
+    (unchanged if the expression is neither a recognisable operator nor LaTeX)."""
+    data = request.json or {}
+    from routes.op_form import toggle_form  # pylint: disable=import-outside-toplevel
+    return jsonify({'success': True, 'result': toggle_form(data.get('expression', ''))})
+
+
 @api.route('/steps', methods=['POST'])
 def get_steps():
     """Return structured, per-step solver output used for step-linking (synchronous).

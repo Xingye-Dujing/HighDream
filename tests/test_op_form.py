@@ -2,7 +2,7 @@
 """Tests for the LaTeX <-> operator bidirectional converter (routes/op_form)."""
 
 from routes.compute_service import _dispatch_auto
-from routes.op_form import latex_to_operator, operator_to_latex
+from routes.op_form import latex_to_operator, operator_to_latex, toggle_form
 
 CALCULUS = [
     'int(1/(x**2+1), x)',
@@ -56,3 +56,14 @@ def test_limit_carries_one_sided_direction_both_ways():
 def test_unknown_expression_is_noop():
     assert operator_to_latex('sin(x)+1') == 'sin(x)+1'
     assert latex_to_operator('') == ''
+
+
+def test_toggle_form_flips_both_ways():
+    # operator -> latex, then latex -> operator
+    tex = toggle_form('int(1/(x**2+1), x)')
+    assert tex.startswith(r'\int')
+    assert toggle_form(tex) == 'int(\frac{1}{x^{2} + 1},x)' or _ok(toggle_form(tex))
+    # matrix operator <-> latex
+    mtex = toggle_form('det([[a,b],[c,d]])')
+    assert r'\det' in mtex
+    assert _ok(toggle_form(mtex))  # back to operator still dispatches

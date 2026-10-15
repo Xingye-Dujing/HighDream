@@ -169,3 +169,18 @@ def _fold_matrix_ops(s):
     s = re.sub(_MAT + r'\s*-\s*' + _MAT, lambda m: 'subtract(%s,%s)' % (m.group(1), m.group(2)), s)
     s = re.sub(_MAT + r'\s*\+\s*' + _MAT, lambda m: 'add(%s,%s)' % (m.group(1), m.group(2)), s)
     return s
+
+
+# Sniff the current representation: any MathLive LaTeX construct means "latex".
+_LATEX_MARK = re.compile(
+    r'\\(?:int|frac\{d|lim|sum|prod|det|mathrm|operatorname|begin\{[bvpBVP]?matrix)')
+
+
+def toggle_form(expr):
+    """Flip one expression between the LaTeX WYSIWYG form and the operator form.
+
+    Idempotent-safe: an already-LaTeX string converts to operator and vice versa;
+    anything unrecognised is returned unchanged."""
+    if not isinstance(expr, str) or not expr.strip():
+        return expr
+    return latex_to_operator(expr) if _LATEX_MARK.search(expr) else operator_to_latex(expr)

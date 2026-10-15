@@ -149,6 +149,40 @@ function readExpr(cell) {
   return src.value.trim();
 }
 
+// Write a canonical expression back into a cell's store and its visible editor(s).
+function writeCellExpr(cell, text) {
+  const src = getMathSource(cell);
+  if (src) src.value = text;
+  const field = getMathField(cell);
+  const fieldB = getMathFieldB(cell);
+  if (field && field.style.display !== "none" && !getMathSourceB(cell)) {
+    field.value = text;
+  } else if (field && field.style.display !== "none") {
+    const parts = (text || "").split("\n");
+    field.value = parts[0] || "";
+    if (fieldB) fieldB.value = parts[1] || "";
+  }
+}
+
+// Toggle this cell between the LaTeX WYSIWYG form and the universal-box operator form.
+function convertCellForm(cell) {
+  const expr = readExpr(cell);
+  if (!expr) return;
+  const btn = cell.querySelector(".convert-form-button");
+  if (btn) btn.disabled = true;
+  fetch("/api/convert_form", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expression: expr }),
+  })
+    .then((r) => r.json())
+    .then((j) => {
+      if (j && j.success && typeof j.result === "string") writeCellExpr(cell, j.result);
+    })
+    .catch(() => { /* network error: leave the cell unchanged */ })
+    .then(() => { if (btn) btn.disabled = false; });
+}
+
 // Show the right input(s) for the operation: two editors (multi), one editor
 // (scalar/single-matrix), or the plain textarea (text ops).
 function applyInputMode(cell) {
@@ -518,6 +552,11 @@ function setupCellEvents(cell) {
     }
     applyInputMode(cell);
 
+    const convertBtn = cell.querySelector(".convert-form-button");
+    if (convertBtn) {
+      convertBtn.addEventListener("click", function () { convertCellForm(cell); });
+    }
+
     // Operation type change event
     operationSelector.addEventListener("change", function () {
       // Switch editor/textarea visibility and set the per-op template hint.
@@ -774,6 +813,9 @@ function createCellElement(id, type) {
             <div class="cell-controls">
               <button class="run-cell-button" title="运行单元格">
                 <i class="fas fa-play"></i>
+              </button>
+              <button class="convert-form-button" title="LaTeX 所见即所得 ⇄ 算子形式 互转">
+                <i class="fas fa-arrow-right-arrow-left"></i>
               </button>
               <select class="operation-type">
                 <optgroup label="万能输入">
