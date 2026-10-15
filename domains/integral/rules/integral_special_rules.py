@@ -353,7 +353,11 @@ def sqrt_div_sqrt_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
             # Expand into a simple form as much as possible to facilitate later rule matching.
             for term in expr.expand().args:
                 term_num, term_den = fraction(term)
-                if isinstance(term_num, Pow) and term_num.exp.equals(term_den.exp):
+                # Both sides must be powers to compare exponents; after expand() the
+                # denominator often collapses to an Add (e.g. (x+1)^3 -> x^3+3x^2+...),
+                # which has no .exp and would raise AttributeError.
+                if (isinstance(term_num, Pow) and isinstance(term_den, Pow)
+                        and term_num.exp.equals(term_den.exp)):
                     term_base = cancel(term_num.base / term_den.base)
                     n, d = fraction(term_base)
                     if n.equals(1):
