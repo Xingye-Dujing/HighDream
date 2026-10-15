@@ -123,3 +123,20 @@ def test_inverse_trig_arcsec_branch_differentiates_to_integrand():
     pt = sympy.Float('2.0')
     d = (antideriv.subs(x, pt + h) - antideriv.subs(x, pt - h)) / (2 * h)
     assert abs(float(d) - float(1 / sqrt(3))) < 1e-4
+
+
+def test_definite_mirror_king_constant_sum():
+    # f + f(a+b-x) is a constant -> I = c(b-a)/2, shown step by step.
+    steps, _ = IntegralCalculator().compute_list(
+        'sin(x)/(sin(x)+cos(x))', x, lower=0, upper=pi / 2)
+    assert simplify(steps[-1] - pi / 4) == 0
+    steps2, _ = IntegralCalculator().compute_list(
+        '1/(1+tan(x)**3)', x, lower=0, upper=pi / 2)
+    assert simplify(steps2[-1] - pi / 4) == 0
+
+
+def test_definite_parity_odd_zero():
+    # Odd integrand on a symmetric interval -> 0 (via the mirror constant-sum = 0).
+    for expr in ('x**3*cos(x)', 'x/(1+x**2)'):
+        steps, _ = IntegralCalculator().compute_list(expr, x, lower=-1, upper=1)
+        assert simplify(steps[-1]) == 0

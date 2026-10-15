@@ -3,7 +3,8 @@ from typing import List, Optional, Tuple
 import itertools
 
 from sympy import (Add, Eq, Integer, Interval, S, Symbol, Expr, Integral, fraction,
-                   latex, limit, log, oo, preorder_traversal, simplify, solveset)
+                   latex, limit, log, oo, preorder_traversal, simplify, solveset, sympify,
+                   trigsimp)
 
 from core import BaseCalculator, SelectRuleCalculator
 from core.cached_calculator import DBCachedCalculator
@@ -36,6 +37,10 @@ def create_integral_calculator(base_class):
 
         >>> display(Math(latex_output))
         """
+
+        # Auto (web/cache) path may apply the mirror/parity definite shortcuts;
+        # the manual /rule_select path must not (a human picks every step there).
+        _definite_symmetry_enabled = base_class is not SelectRuleCalculator
 
         def __init__(self, include_special_matchers: bool = True):
             if include_special_matchers:
@@ -272,11 +277,78 @@ def create_integral_calculator(base_class):
                 rf"= {latex(diff_expr)} = {latex(result)}$" + concl
             )
 
+        def _try_definite_symmetry(self, expr, var, lower, upper):
+            """Mirror/king (constant-sum) and odd-parity definite shortcuts (no recursion).
+
+            Only fires for finite numeric bounds with no interior poles, so it can never
+            mask a divergent integral. Returns (steps, explanations) recorded into the step
+            generator, or None to fall through to the normal Newton-Leibniz path."""
+            a, b = lower, upper
+            a, b = sympify(a), sympify(b)
+            if not (getattr(a, 'is_number', False) and getattr(b, 'is_number', False)
+                    and getattr(a, 'is_finite', True) and getattr(b, 'is_finite', True)):
+                return None
+            if a == b:
+                return None
+            try:
+                f = self._sympify(expr)
+            except Exception:  # pylint: disable=broad-exception-caught
+                return None
+            if self._interior_poles(f, var, a, b):
+                return None
+            ab = a + b
+            fsub = f.subs(var, ab - var)
+            g = simplify(trigsimp(f + fsub))
+            is_const = g.is_number and getattr(g, 'is_finite', True)
+            is_odd = (simplify(ab) == 0
+                      and simplify(trigsimp(f + f.subs(var, -var))) == 0)
+            if not (is_const or is_odd):
+                return None
+
+            v = latex(var)
+            la, lb = latex(a), latex(b)
+            ih = "\\int_{" + la + "}^{" + lb + "}"
+            self.step_generator.reset()
+            if is_const:
+                span = b - a
+                half = simplify(g * span / 2)
+                self.step_generator.add_step(
+                    Integral(f, (var, a, b)),
+                    "记 $I=" + ih + latex(f) + "\\,d" + v + "$")
+                self.step_generator.add_step(
+                    Integral(fsub, (var, a, b)),
+                    "区间再现(镜像): 令 $t=" + latex(ab) + "-" + v + "$, 则 $I=" + ih
+                    + latex(fsub) + "\\,d" + v + "$")
+                self.step_generator.add_step(
+                    Integral(g, (var, a, b)),
+                    "两式相加: $2I=" + ih + "[f(" + v + ")+f(" + latex(ab) + "-" + v
+                    + ")]\\,d" + v + "=\\int_{" + la + "}^{" + lb + "} " + latex(g) + "\\,d" + v + "$")
+                self.step_generator.add_step(
+                    g * span,
+                    "和式为常数 $" + latex(g) + "$: $\\int_{" + la + "}^{" + lb + "} "
+                    + latex(g) + "\\,d" + v + "=" + latex(g * span) + "$")
+                self.step_generator.add_step(
+                    half,
+                    "故 $I=\\dfrac{" + latex(g * span) + "}{2}=" + latex(half) + "$")
+            else:
+                self.step_generator.add_step(
+                    Integral(f, (var, a, b)),
+                    "记 $I=" + ih + latex(f) + "\\,d" + v + "$")
+                self.step_generator.add_step(
+                    Integer(0),
+                    "积分区间 $[" + la + "," + lb + "]$ 关于原点对称, 且 $f(-" + v + ")=-f("
+                    + v + ")$ 为奇函数, 故 $I=0$")
+            return self.step_generator.get_steps()
+
         def compute_list(self, expr: str, var: Symbol,
                          lower: Optional[Expr] = None,
                          upper: Optional[Expr] = None) -> Tuple[List[Expr], List[str]]:
             """Define Integral context, capturing optional definite bounds."""
             self._var, self._lower, self._upper = var, lower, upper
+            if self._definite_symmetry_enabled and lower is not None and upper is not None:
+                fired = self._try_definite_symmetry(expr, var, lower, upper)
+                if fired is not None:
+                    return fired
             return super().compute_list(expr, variable=var)
 
         def compute_latex(self, expr: str, var: Symbol,
@@ -284,6 +356,10 @@ def create_integral_calculator(base_class):
                           upper: Optional[Expr] = None) -> str:
             """Define Integral context, capturing optional definite bounds."""
             self._var, self._lower, self._upper = var, lower, upper
+            if self._definite_symmetry_enabled and lower is not None and upper is not None:
+                fired = self._try_definite_symmetry(expr, var, lower, upper)
+                if fired is not None:
+                    return self.step_generator.to_latex()
             return super().compute_latex(expr, variable=var)
 
     return IntegralCalculatorImpl
