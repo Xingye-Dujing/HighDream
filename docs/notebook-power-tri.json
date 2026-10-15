@@ -1,1 +1,80 @@
-[{"type": "code", "content": "int(sin(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(sin(x)^2, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(sin(x)^3, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(sin(x)^4, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(sin(x)^5, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(cos(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(cos(x)^5, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(cos(x)^4, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(tan(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(tan(x)^2, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(tan(x)^5, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(x*cos(x)^2, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(sqrt(1-x**2)*asin(x), x)", "operationType": "auto", "variable": "x"}]
+[
+  {
+    "type": "code",
+    "content": "int(sin(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(sin(x)^2, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(sin(x)^3, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(sin(x)^4, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(sin(x)^5, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(cos(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(cos(x)^5, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(cos(x)^4, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(tan(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(tan(x)^2, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(tan(x)^5, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(x*cos(x)^2, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(sqrt(1-x**2)*asin(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

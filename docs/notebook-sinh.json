@@ -1,1 +1,50 @@
-[{"type": "code", "content": "int(sinh(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(cosh(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(tanh(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(1/sinh(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(1/cosh(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(1/tanh(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(1/(exp(x)-exp(-x)), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(exp(x)/(exp(x)-exp(-x)), x)", "operationType": "auto", "variable": "x"}]
+[
+  {
+    "type": "code",
+    "content": "int(sinh(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(cosh(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(tanh(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(1/sinh(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(1/cosh(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(1/tanh(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(1/(exp(x)-exp(-x)), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(exp(x)/(exp(x)-exp(-x)), x)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

@@ -1,1 +1,99 @@
-[{"type": "code", "content": "add([[1,b,3],[4,2,1]],[[0,4,5],[6,4,a]])", "operationType": "auto", "variable": "x", "operationSymbol": "+"}, {"type": "code", "content": "subtract([[1,2,3],[4,2,1]],[[0,4,5],[a,4,3]])", "operationType": "auto", "variable": "x", "operationSymbol": "-"}, {"type": "code", "content": "transpose([[1,2,3],[4,a,1]])", "operationType": "auto", "variable": "x", "operationSymbol": "T"}, {"type": "code", "content": "inverse([[a,b],[c,d]])", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "svd([[1,2],[4,2]])", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "schur([[1,2],[4,2]])", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "svd([[1,2],[4,2]])", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "diag([[1,2],[4,2]])", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "orthogonalize([[1,2],[4,2]])", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "lu([[1,2],[4,2]])", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "rank([[1,2],[4,2]])", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "det([[1,2],[4,2]])", "operationType": "auto", "variable": "x", "detType": "1"}, {"type": "code", "content": "det([[1,2],[4,2]])", "operationType": "auto", "variable": "x", "detType": "2"}, {"type": "code", "content": "rref([[1,2],[4,2]])", "operationType": "auto", "variable": "x", "targetForm": "ref"}, {"type": "code", "content": "rref([[1,2],[4,2]])", "operationType": "auto", "variable": "x", "targetForm": "rref"}]
+[
+  {
+    "type": "code",
+    "content": "add([[1,b,3],[4,2,1]],[[0,4,5],[6,4,a]])",
+    "operationType": "auto",
+    "variable": "x",
+    "operationSymbol": "+"
+  },
+  {
+    "type": "code",
+    "content": "subtract([[1,2,3],[4,2,1]],[[0,4,5],[a,4,3]])",
+    "operationType": "auto",
+    "variable": "x",
+    "operationSymbol": "-"
+  },
+  {
+    "type": "code",
+    "content": "transpose([[1,2,3],[4,a,1]])",
+    "operationType": "auto",
+    "variable": "x",
+    "operationSymbol": "T"
+  },
+  {
+    "type": "code",
+    "content": "inverse([[a,b],[c,d]])",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "svd([[1,2],[4,2]])",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "schur([[1,2],[4,2]])",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "svd([[1,2],[4,2]])",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "diag([[1,2],[4,2]])",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "orthogonalize([[1,2],[4,2]])",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "lu([[1,2],[4,2]])",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "rank([[1,2],[4,2]])",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "det([[1,2],[4,2]])",
+    "operationType": "auto",
+    "variable": "x",
+    "detType": "1"
+  },
+  {
+    "type": "code",
+    "content": "det([[1,2],[4,2]])",
+    "operationType": "auto",
+    "variable": "x",
+    "detType": "2"
+  },
+  {
+    "type": "code",
+    "content": "rref([[1,2],[4,2]])",
+    "operationType": "auto",
+    "variable": "x",
+    "targetForm": "ref"
+  },
+  {
+    "type": "code",
+    "content": "rref([[1,2],[4,2]])",
+    "operationType": "auto",
+    "variable": "x",
+    "targetForm": "rref"
+  }
+]

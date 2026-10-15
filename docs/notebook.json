@@ -1,1 +1,146 @@
-[{"type": "code", "content": "int(atan(x)*log((x**2+1))*x, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "diff(x**2*log(x**2 + 1)*atan(x)/2 - x**2*atan(x)/2 - x*log(x**2 + 1)/2 + 3*x/2 + log(x**2 + 1)*atan(x)/2 - 3*atan(x)/2, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(x^2*log(x^2+1)*atan(x)/2-x^2*atan(x)/2-x*log(x^2+1)/2+3*x/2+log(x^2+1)*atan(x)/2-3*atan(x)/2, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(x*log(x**2+1), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(log(x**2+1), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int((2*x+3)/(x**2+3*x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(2*x/(x**2+1), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(3/(x+3), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(x**2/(x**2+3), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(2*x/(x**2+3), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(cos(x)/sin(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(x/(2*x+2), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(8/(x**2+1), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(8/(x**2+8), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(1/(x^3+1), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(1/(exp(x)+exp(-x)), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "diff(atan(exp(x)), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(-(-log(2-x)+log(x+2))/x^3, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "diff((x^2*(log(x-2)-log(x+2))+4*x-4*log(2-x)+4*log(x+2))/(8*x^2), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(x^x*(log(x)+1), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(x^x*log(x)+x^x, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(asin(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(acos(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(asin(x)+acos(x), x)", "operationType": "auto", "variable": "x"}]
+[
+  {
+    "type": "code",
+    "content": "int(atan(x)*log((x**2+1))*x, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "diff(x**2*log(x**2 + 1)*atan(x)/2 - x**2*atan(x)/2 - x*log(x**2 + 1)/2 + 3*x/2 + log(x**2 + 1)*atan(x)/2 - 3*atan(x)/2, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(x^2*log(x^2+1)*atan(x)/2-x^2*atan(x)/2-x*log(x^2+1)/2+3*x/2+log(x^2+1)*atan(x)/2-3*atan(x)/2, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(x*log(x**2+1), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(log(x**2+1), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int((2*x+3)/(x**2+3*x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(2*x/(x**2+1), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(3/(x+3), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(x**2/(x**2+3), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(2*x/(x**2+3), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(cos(x)/sin(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(x/(2*x+2), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(8/(x**2+1), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(8/(x**2+8), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(1/(x^3+1), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(1/(exp(x)+exp(-x)), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "diff(atan(exp(x)), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(-(-log(2-x)+log(x+2))/x^3, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "diff((x^2*(log(x-2)-log(x+2))+4*x-4*log(2-x)+4*log(x+2))/(8*x^2), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(x^x*(log(x)+1), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(x^x*log(x)+x^x, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(asin(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(acos(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(asin(x)+acos(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

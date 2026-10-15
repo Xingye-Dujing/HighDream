@@ -1,1 +1,32 @@
-[{"type": "code", "content": "int((1+x-1/x)*exp(x+1/x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int((1+x-1/x)*exp(x+1/x)+x, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int((1+x-1/x)*exp(x+1/x)+sin(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(exp(cos(x))*(1-x*sin(x)), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(exp(sin(x))*(x*cos(x)^3 - sin(x))/cos(x)^2, x)", "operationType": "auto", "variable": "x"}]
+[
+  {
+    "type": "code",
+    "content": "int((1+x-1/x)*exp(x+1/x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int((1+x-1/x)*exp(x+1/x)+x, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int((1+x-1/x)*exp(x+1/x)+sin(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(exp(cos(x))*(1-x*sin(x)), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(exp(sin(x))*(x*cos(x)^3 - sin(x))/cos(x)^2, x)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

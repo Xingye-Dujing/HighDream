@@ -1,1 +1,110 @@
-[{"type": "code", "content": "int(1/(sin(x)+cos(x)), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(1/(sin(x)+3), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(1/(cos(x)+3), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(1/(tan(x)+3), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(sin(x)/(cos(x)+sin(x)), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int((sin(x)-3*cos(x))/(cos(x)+2*sin(x)), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "diff(-x/5-7/5*log(2*sin(x)+cos(x)), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(x/(1+sin(x)), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(1/(sin(x)+1), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "diff(-2/(tan(x/2)+1), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(cos(x)/(sin(x)+cos(x)), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(1/(3+sin(x)^2), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "diff(sqrt(3)/6*(atan(tan(x/2)/sqrt(3))+atan(sqrt(3)*tan(x/2))), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(1/(4*sin(x)^2+9*cos(x)^2), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "diff((atan(3/2*tan(x/2)-sqrt(5)/2)+atan(3/2*tan(x/2)+sqrt(5)/2))/6, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(1/(4+5*cos(x)^2), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(tan(x)^3/cos(x), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(sin(x)*cos(x)/(sin(x)+cos(x)), x)", "operationType": "auto", "variable": "x"}]
+[
+  {
+    "type": "code",
+    "content": "int(1/(sin(x)+cos(x)), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(1/(sin(x)+3), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(1/(cos(x)+3), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(1/(tan(x)+3), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(sin(x)/(cos(x)+sin(x)), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int((sin(x)-3*cos(x))/(cos(x)+2*sin(x)), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "diff(-x/5-7/5*log(2*sin(x)+cos(x)), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(x/(1+sin(x)), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(1/(sin(x)+1), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "diff(-2/(tan(x/2)+1), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(cos(x)/(sin(x)+cos(x)), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(1/(3+sin(x)^2), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "diff(sqrt(3)/6*(atan(tan(x/2)/sqrt(3))+atan(sqrt(3)*tan(x/2))), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(1/(4*sin(x)^2+9*cos(x)^2), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "diff((atan(3/2*tan(x/2)-sqrt(5)/2)+atan(3/2*tan(x/2)+sqrt(5)/2))/6, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(1/(4+5*cos(x)^2), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(tan(x)^3/cos(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(sin(x)*cos(x)/(sin(x)+cos(x)), x)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

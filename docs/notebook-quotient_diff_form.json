@@ -1,1 +1,44 @@
-[{"type": "code", "content": "int((x*cos(x)-sin(x))/x**2, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "diff(sin(x)/x, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(x*sin(x)/(x+sin(x))**2, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "diff((1-cos(x))/(x+sin(x)), x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int(x+x*sin(x)/(x+sin(x))**2, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int((1-log(x))/(x-log(x))**2, x)", "operationType": "auto", "variable": "x"}, {"type": "code", "content": "int((1-log(x))/(x-log(x))**2+sin(x), x)", "operationType": "auto", "variable": "x"}]
+[
+  {
+    "type": "code",
+    "content": "int((x*cos(x)-sin(x))/x**2, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "diff(sin(x)/x, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(x*sin(x)/(x+sin(x))**2, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "diff((1-cos(x))/(x+sin(x)), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int(x+x*sin(x)/(x+sin(x))**2, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int((1-log(x))/(x-log(x))**2, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "int((1-log(x))/(x-log(x))**2+sin(x), x)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

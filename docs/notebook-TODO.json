@@ -1,1 +1,8 @@
-[{"type": "code", "content": "int(1/(cosh(x)+1), x)", "operationType": "auto", "variable": "x"}]
+[
+  {
+    "type": "code",
+    "content": "int(1/(cosh(x)+1), x)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]
