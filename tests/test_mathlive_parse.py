@@ -1,7 +1,7 @@
 """Tests that WYSIWYG (MathLive) LaTeX is correctly converted to SymPy."""
 
 import pytest
-from sympy import Derivative, Integral, Symbol, exp, log, simplify, sqrt
+from sympy import Derivative, Integral, Symbol, cos, exp, log, sin, simplify, sqrt
 
 from utils.cache_utils import cached_sympify
 
@@ -44,3 +44,18 @@ def test_unfilled_placeholder_raises_friendly():
     for s in [r'\square', r'\frac{}{}', r'\sqrt{}']:
         with pytest.raises(ValueError):
             cached_sympify(s)
+
+
+def test_bare_caret_exponent_not_truncated():
+    # parse_latex silently truncated an unbraced multi-token exponent (3^sin(x)->3).
+    # _brace_bare_powers must keep the whole operand so the integrand survives.
+    assert cached_sympify('3^sin(x)*cos(x)') == 3 ** sin(x) * cos(x)
+    assert simplify(cached_sympify('x^x') - x ** x) == 0
+    assert simplify(cached_sympify('x^(x/2)') - x ** (x / 2)) == 0
+
+
+def test_bare_caret_integral_solves_not_truncated():
+    from routes.compute_service import _dispatch_auto
+    ok, res = _dispatch_auto(r'\int (3^sin(x)*cos(x))\, dx')
+    assert ok
+    assert '无法用初等' not in res

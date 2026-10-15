@@ -78,6 +78,78 @@ def _match_paren(s: str, open_idx: int):
     return None, len(s)
 
 
+_ATOM_NAME_RE = re.compile(r'[A-Za-z]+')
+_CMD_NAME_RE = re.compile(r'\\[A-Za-z]+')
+
+
+def _scan_bare_power_atom(s, j):
+    """Locate the single operand of a bare ``^`` that starts at index j.
+
+    Returns ``(atom_text, index_after)`` or ``(None, j)`` when there is nothing safe
+    to wrap (end of string, or already a braced ``^{...}``). Recognises an optional
+    sign then a ``(...)`` group, a ``\\name``(optionally called), an identifier
+    (optionally followed by a ``(…)`` call), or a number."""
+    n = len(s)
+    if j >= n or s[j] == '{':
+        return None, j
+    k = j
+    if s[k] in '+-':
+        k += 1
+    if k >= n:
+        return None, j
+    if s[k] == '(':
+        inner, after = _match_paren(s, k)
+        return (s[j:after], after) if inner is not None else (None, j)
+    if s[k] == '\\':
+        m = _CMD_NAME_RE.match(s, k)
+        if not m:
+            return None, j
+        after = m.end()
+        if after < n and s[after] == '(':
+            _inner, after2 = _match_paren(s, after)
+            if _inner is not None:
+                after = after2
+        return s[j:after], after
+    m = _ATOM_NAME_RE.match(s, k)
+    if m:
+        after = m.end()
+        if after < n and s[after] == '(':
+            _inner, after2 = _match_paren(s, after)
+            if _inner is not None:
+                after = after2
+        return s[j:after], after
+    if s[k].isdigit() or s[k] == '.':
+        e = k
+        while e < n and (s[e].isdigit() or s[e] == '.'):
+            e += 1
+        return s[j:e], e
+    return None, j
+
+
+def _brace_bare_powers(s: str) -> str:
+    """Wrap a bare ``^`` operand in braces so parse_latex keeps the whole exponent.
+
+    parse_latex silently truncates an unbraced multi-token exponent — ``3^sin(x)``
+    parses to just ``3`` — whereas braced ``3^{sin(x)}`` is correct. MathLive emits
+    ``x^{2}`` already braced, so those are left untouched. Subscripts (``_``) are NOT
+    touched because a bare ``_`` is a common identifier character. Runs before the
+    bare-function re-prefixing so an exponent like ``sin(x)`` is captured intact."""
+    out = []
+    i = 0
+    n = len(s)
+    while i < n:
+        ch = s[i]
+        if ch == '^' and (i == 0 or s[i - 1] != '\\'):
+            atom, after = _scan_bare_power_atom(s, i + 1)
+            if atom:
+                out.append('^{' + atom + '}')
+                i = after
+                continue
+        out.append(ch)
+        i += 1
+    return ''.join(out)
+
+
 def _sqrt_to_braces(s: str) -> str:
     """Rewrite bare ``sqrt(ARG)`` -> ``\\sqrt{ARG}`` (parse_latex rejects ``\\sqrt(``)."""
     out, i = [], 0
@@ -116,6 +188,7 @@ def _normalize_mathlive_latex(s: str) -> str:
         raise ValueError('请先填写输入框中的占位（□）后再计算')
     s = _TEXT_RE.sub('', s)               # drop prose labels
     s = _LN_RE.sub(r'\\log', s)           # \ln -> \lnatural log
+    s = _brace_bare_powers(s)             # 3^sin(x) -> 3^{sin(x)} (parse_latex truncates bare carets)
     s = _EPOW_BRACE_RE.sub(r'\\exp{\1}', s)   # e^{x} -> \exp{x} (true exponential)
     s = _EPOW_CHAR_RE.sub(r'\\exp{\1}', s)
     # \asin / \acos / \atan (MathLive may emit these) -> parse_latex's real names.
