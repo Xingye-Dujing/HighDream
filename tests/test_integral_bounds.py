@@ -206,3 +206,26 @@ def test_universal_box_enables_special_integral_matchers():
         anti = steps[-1]
         assert not anti.has(Integral)
         assert simplify(together(diff(anti, x) - integrand)) == 0
+
+
+def test_rationalizing_substitution_multi_fractional_powers():
+    # Regression: integrands that are rational functions of several distinct
+    # fractional powers of x (e.g. 1/(sqrt x + x**(1/3))) used to spin/abort because
+    # single-radical substitution only removes one radical. The rationalizing
+    # substitution u = x**(1/LCM) turns them into a rational function.
+    # Verified by finite difference (robust to the Abs/log-branch forms SymPy emits).
+    import math
+
+    cases = [
+        1 / (sqrt(x) + x ** Rational(1, 3)),
+        1 / (x ** Rational(1, 2) + x ** Rational(1, 4)),
+        sqrt(x) / (1 + x ** Rational(1, 3)),
+    ]
+    for integrand in cases:
+        steps, _ = IntegralCalculator(True).compute_list(integrand, x)
+        anti = steps[-1]
+        assert anti is not None and not anti.has(Integral)
+        for t in (0.7, 1.7, 3.2):
+            d = float((anti.subs(x, t + 1e-5) - anti.subs(x, t - 1e-5)) / 2e-5)
+            fv = float(integrand.subs(x, t))
+            assert abs(d - fv) < 1e-3 * (1 + abs(fv))

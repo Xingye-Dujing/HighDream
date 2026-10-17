@@ -1,8 +1,9 @@
 from sympy import (
     Add, Abs, Dummy, Eq, Expr, I, Integral, Pow, Rational, Symbol, Wild,
     acos, asin, atan, cancel, diff, fraction, latex, log, preorder_traversal,
-    sec, simplify, sin, solve, sqrt, symbols, tan, together
+    powdenest, sec, simplify, sin, solve, sqrt, symbols, tan, together
 )
+import math
 
 from core import BaseStepGenerator
 from utils import RuleFunctionReturn
@@ -407,3 +408,46 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
             continue
 
     return None
+
+
+def _has_fractional_power(expr: Expr, sym: Symbol) -> bool:
+    """True if any power of ``sym`` (or an expression containing it) has a non-integer
+    rational exponent — i.e. the expression is not yet a rational function of ``sym``."""
+    for atom in expr.atoms(Pow):
+        if atom.base.has(sym) and isinstance(atom.exp, Rational) and not atom.exp.is_integer:
+            return True
+    return False
+
+
+def try_rationalizing_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
+    """Rationalizing substitution for integrands that are rational functions of two or
+    more *distinct* fractional powers of the variable, e.g. 1/(sqrt(x) + x**(1/3)).
+
+    The single-radical case is left to ``try_radical_substitution``; here we set
+    ``u = var**(1/L)`` with ``L`` the LCM of the exponents' denominators, so every
+    fractional power becomes an integer power of ``u`` and the integrand turns into a
+    rational function that the partial-fraction machinery can integrate.
+    """
+    pows = [a for a in expr.atoms(Pow)
+            if isinstance(a.exp, Rational) and not a.exp.is_integer and a.base == var]
+    if len(pows) < 2:
+        return None
+
+    L = math.lcm(*[a.exp.q for a in pows])
+    if L <= 1:
+        return None
+
+    u = step_gene.get_available_sym(var)
+    var_of_u = u ** L
+    dvar_du = diff(var_of_u, u)
+    new_expr = simplify(powdenest(together(expr.subs(var, var_of_u) * dvar_du), force=True))
+    if new_expr.has(var) or _has_fractional_power(new_expr, u):
+        return None
+
+    step_gene.subs_dict[u] = var ** Rational(1, L)
+    explanation = (
+        f"根式有理化代换：被积函数含多个不同分数次幂，令 ${u.name} = {latex(var ** Rational(1, L))}$，"
+        f"则 ${var.name} = {latex(var_of_u)}$，$d{var.name} = {latex(dvar_du)}\\,d{u.name}$，"
+        f"积分化为有理函数 $\\int {latex(new_expr)}\\,d{u.name}$"
+    )
+    return Integral(new_expr, u), explanation

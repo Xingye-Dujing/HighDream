@@ -9,6 +9,7 @@ from domains.integral.rules.f_x_mul_exp_g_x_rule_help import handle_fx_mul_exp_g
 from domains.integral.rules.parts_rule_help import select_parts_u_dv
 from domains.integral.rules.substitution_rule_help import (
     try_radical_substitution,
+    try_rationalizing_substitution,
     try_standard_substitution,
     try_trig_substitution,
     try_undetermined_coeffs_for_radicals
@@ -162,7 +163,14 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     if result:
         return result
 
-    # Strategy 3: Substitutions for nested radicals (e.g., (ax + b)^(1/n))
+    # Strategy 3: Rationalizing substitution for several distinct fractional powers
+    # of x (e.g. 1/(sqrt(x) + x**(1/3))) -> u = x**(1/LCM), turning it rational. Must
+    # run before single-radical substitution, which would only remove one radical.
+    result = try_rationalizing_substitution(expr, var, step_gene)
+    if result:
+        return result
+
+    # Strategy 4: Substitutions for nested radicals (e.g., (ax + b)^(1/n))
     result = try_radical_substitution(expr, var, step_gene)
     if result:
         return result
