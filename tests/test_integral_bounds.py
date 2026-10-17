@@ -255,3 +255,11 @@ def test_exp_product_substitution_xe_x():
         d = float((anti.subs(x, t + 1e-5) - anti.subs(x, t - 1e-5)) / 2e-5)
         fv = float(integrand.subs(x, t))
         assert abs(d - fv) < 1e-3 * (1 + abs(fv))
+
+
+def test_definite_king_property_x_factor():
+    # King property with an x-factor: int_0^pi x*f(sin x)dx = (pi/2)*int_0^pi f(sin x)dx.
+    # The indefinite antiderivative is non-elementary, so only the King shortcut solves it.
+    integrand = x * sin(x) / (1 + cos(x) ** 2)
+    steps, _ = IntegralCalculator(True).compute_list(integrand, x, lower=0, upper=pi)
+    assert simplify(steps[-1] - pi ** 2 / 4) == 0

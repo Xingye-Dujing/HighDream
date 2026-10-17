@@ -303,6 +303,17 @@ def create_integral_calculator(base_class):
             is_odd = (simplify(ab) == 0
                       and simplify(trigsimp(f + f.subs(var, -var))) == 0)
             if not (is_const or is_odd):
+                # King property with an x-factor: f = var*h with h symmetric about
+                # (a+b)/2, e.g. int_0^pi x*f(sin x)dx = (pi/2)*int_0^pi f(sin x)dx.
+                # The reduced integral is solved recursively; the indefinite
+                # antiderivative of such f is often non-elementary even though the
+                # definite value is, so this shortcut is essential (not just faster).
+                h = simplify(f / var)
+                if (h != f and h.free_symbols and h.free_symbols <= {var}
+                        and simplify(trigsimp(h - h.subs(var, ab - var))) == 0):
+                    fired = self._king_xfactor(f, h, var, a, b, ab)
+                    if fired is not None:
+                        return fired
                 return None
 
             v = latex(var)
@@ -338,6 +349,41 @@ def create_integral_calculator(base_class):
                     Integer(0),
                     "积分区间 $[" + la + "," + lb + "]$ 关于原点对称, 且 $f(-" + v + ")=-f("
                     + v + ")$ 为奇函数, 故 $I=0$")
+            return self.step_generator.get_steps()
+
+        def _king_xfactor(self, f, h, var, a, b, ab):
+            """King property with an x-factor: if f = var*h and h is symmetric about
+            (a+b)/2, then I = ∫_a^b f dx = (a+b)/2 · ∫_a^b h dx. Solves the reduced
+            integral recursively (its indefinite form is often non-elementary)."""
+            sub = IntegralCalculator()
+            sub._definite_symmetry_enabled = False
+            try:
+                jsteps, _ = sub.compute_list(h, var, lower=a, upper=b)
+            except Exception:  # pylint: disable=broad-exception-caught
+                return None
+            jval = jsteps[-1] if jsteps else None
+            if jval is None or jval.has(Integral):
+                return None
+            result = simplify(ab / 2 * jval)
+            v = latex(var)
+            la, lb = latex(a), latex(b)
+            ih = "\\int_{" + la + "}^{" + lb + "}"
+            self.step_generator.reset()
+            self.step_generator.add_step(
+                Integral(f, (var, a, b)), "记 $I=" + ih + latex(f) + "\\,d" + v + "$")
+            self.step_generator.add_step(
+                Integral((ab - var) * h, (var, a, b)),
+                "区间再现: 令 $t=" + latex(ab) + "-" + v + "$, 因 $h(" + latex(ab) + "-" + v
+                + ")=h(" + v + ")$, 得 $I=" + ih + latex((ab - var) * h) + "\\,d" + v + "$")
+            self.step_generator.add_step(
+                ab * Integral(h, (var, a, b)) / 2,
+                "两式相加: $2I=" + ih + "\\left(" + v + "+(" + latex(ab) + "-" + v
+                + ")\\right)h\\,d" + v + "=" + latex(ab) + ih + latex(h) + "\\,d" + v + "$")
+            self.step_generator.add_step(
+                result,
+                "于是 $I=\\dfrac{" + latex(ab) + "}{2}" + ih + latex(h) + "\\,d" + v
+                + "=\\dfrac{" + latex(ab) + "}{2}\\cdot\\left(" + latex(jval)
+                + "\\right)=" + latex(result) + "$")
             return self.step_generator.get_steps()
 
         def compute_list(self, expr: str, var: Symbol,
