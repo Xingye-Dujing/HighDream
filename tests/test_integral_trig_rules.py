@@ -1,6 +1,6 @@
 """Regression tests for the added sec/csc/cot power & product integral rules."""
 
-from sympy import Symbol, cos, cot, csc, diff, log, sec, simplify, sin, tan
+from sympy import Symbol, Integral, cos, cot, csc, diff, log, sec, simplify, sin, sqrt, tan
 
 from domains import IntegralCalculator
 
@@ -53,3 +53,24 @@ def test_trig_power_reduce_even_product():
 def test_trig_power_reduce_product_differentiates_back():
     assert simplify(diff(_antiderivative('sin(x)**2*cos(x)**2'), x)
                     - simplify(sin(x) ** 2 * cos(x) ** 2)) == 0
+
+
+def test_sqrt_one_pm_trig_half_angle():
+    # Regression: sqrt(1 ± cos/sin(linear)) used to hit the radical-substitution branch
+    # and return a sign-flipped (wrong) antiderivative. The half-angle rewrite fixes it.
+    # Verified by finite difference on the principal branch (where |.|-dropping is valid).
+    import math
+
+    cases = {
+        'sqrt(1 + cos(x))': (sqrt(1 + cos(x)), (0.5, 1.0, 2.0)),
+        'sqrt(1 - cos(x))': (sqrt(1 - cos(x)), (0.5, 1.0, 2.0)),
+        'sqrt(1 + cos(2*x))': (sqrt(1 + cos(2 * x)), (0.3, 0.6, 1.0)),
+        'sqrt(1 + sin(x))': (sqrt(1 + sin(x)), (0.5, 1.0, 2.0)),
+    }
+    for expr_str, (integrand, pts) in cases.items():
+        anti = _antiderivative(expr_str)
+        assert not anti.has(Integral)
+        for t in pts:
+            d = float((anti.subs(x, t + 1e-5) - anti.subs(x, t - 1e-5)) / 2e-5)
+            fv = float(integrand.subs(x, t))
+            assert abs(d - fv) < 1e-3 * (1 + abs(fv)), (expr_str, t, d, fv)
