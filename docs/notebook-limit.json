@@ -10,7 +10,7 @@
   },
   {
     "type": "code",
-    "content": "\\lim_{x \\to 0} (1+1/x^{2}-1/x^{3}\\cdot \\ln((2+x)/(2-x)))",
+    "content": "\\lim_{x \\to 0}\\left(1 + \\frac{1}{x^{2}} - \\frac{\\log{\\left(\\frac{x + 2}{2 - x} \\right)}}{x^{3}}\\right)",
     "operationType": "auto",
     "variable": "x",
     "point": "0",
@@ -23,7 +23,7 @@
   },
   {
     "type": "code",
-    "content": "\\lim_{x \\to \\infty} (1+1/x^{2}-1/x^{3}\\cdot \\ln((2+x)/(2-x)))",
+    "content": "\\lim_{x \\to \\infty}\\left(1 + \\frac{1}{x^{2}} - \\frac{\\log{\\left(\\frac{x + 2}{2 - x} \\right)}}{x^{3}}\\right)",
     "operationType": "auto",
     "variable": "x",
     "point": "oo",
@@ -32,7 +32,7 @@
   },
   {
     "type": "code",
-    "content": "\\lim_{x \\to 0} ((\\cos(x\\cdot \\exp(x))-\\cos(x\\cdot \\exp(-x)))/x^{3})",
+    "content": "\\lim_{x \\to 0}\\left(\\frac{- \\cos{\\left(x \\exp{\\left(- x\\right)} \\right)} + \\cos{\\left(x \\exp{\\left(x\\right)} \\right)}}{x^{3}}\\right)",
     "operationType": "auto",
     "variable": "x",
     "point": "0",
@@ -41,7 +41,7 @@
   },
   {
     "type": "code",
-    "content": "\\lim_{x \\to 0} ((1-1/x)^x)",
+    "content": "\\lim_{x \\to 0} \\left(1 - \\frac{1}{x}\\right)^{x}",
     "operationType": "auto",
     "variable": "x",
     "point": "0",
@@ -50,7 +50,7 @@
   },
   {
     "type": "code",
-    "content": "\\lim_{x \\to \\infty} ((1-1/n)^n)",
+    "content": "\\lim_{x \\to \\infty} \\left(1 - \\frac{1}{n}\\right)^{n}",
     "operationType": "auto",
     "variable": "x",
     "point": "oo",
@@ -59,7 +59,7 @@
   },
   {
     "type": "code",
-    "content": "\\lim_{x \\to 0} ((\\exp(\\sin(x))-\\exp(\\tan(x))+\\ln(1+x^{3}))/(\\sin(x^{2})))",
+    "content": "\\lim_{x \\to 0}\\left(\\frac{\\exp{\\left(\\sin{\\left(x \\right)}\\right)} - \\exp{\\left(\\tan{\\left(x \\right)}\\right)} + \\log{\\left(x^{3} + 1 \\right)}}{\\sin{\\left(x^{2} \\right)}}\\right)",
     "operationType": "auto",
     "variable": "x",
     "point": "0",
@@ -68,7 +68,7 @@
   },
   {
     "type": "code",
-    "content": "\\lim_{x \\to 0^{+}} (((1+x)^{(3/x)}-\\exp(3))/x)",
+    "content": "\\lim_{x \\to 0^+}\\left(\\frac{\\left(x + 1\\right)^{\\frac{3}{x}} - \\exp{\\left(3\\right)}}{x}\\right)",
     "operationType": "auto",
     "variable": "x",
     "point": "0",
@@ -77,7 +77,7 @@
   },
   {
     "type": "code",
-    "content": "\\lim_{x \\to 0} (\\ln(1+3\\cdot x)\\cdot \\sin(6\\cdot x)\\cdot \\ln(1+x)/(5\\cdot x^{3}\\cdot \\sin(7\\cdot x)\\cdot (\\exp(10\\cdot x)-1)))",
+    "content": "\\lim_{x \\to 0}\\left(\\frac{\\log{\\left(x + 1 \\right)} \\log{\\left(3 x + 1 \\right)} \\sin{\\left(6 x \\right)}}{5 x^{3} \\left(\\exp{\\left(10 x\\right)} - 1\\right) \\sin{\\left(7 x \\right)}}\\right)",
     "operationType": "auto",
     "variable": "x",
     "point": "0",
@@ -86,7 +86,7 @@
   },
   {
     "type": "code",
-    "content": "\\lim_{x \\to 0} ((\\exp(10\\cdot x)-1)\\cdot \\ln(1+3\\cdot x)\\cdot \\sin(6\\cdot x)\\cdot \\ln(1+x)/(5\\cdot x^{3}\\cdot \\sin(7\\cdot x)))",
+    "content": "\\lim_{x \\to 0}\\left(\\frac{\\left(\\exp{\\left(10 x\\right)} - 1\\right) \\log{\\left(x + 1 \\right)} \\log{\\left(3 x + 1 \\right)} \\sin{\\left(6 x \\right)}}{5 x^{3} \\sin{\\left(7 x \\right)}}\\right)",
     "operationType": "auto",
     "variable": "x",
     "point": "0",
@@ -95,7 +95,7 @@
   },
   {
     "type": "code",
-    "content": "\\lim_{x \\to 0} (\\tan(x)/(20\\cdot (3\\cdot \\exp(10\\cdot x)-3)))",
+    "content": "\\lim_{x \\to 0}\\left(\\frac{\\tan{\\left(x \\right)}}{60 \\exp{\\left(10 x\\right)} - 60}\\right)",
     "operationType": "auto",
     "variable": "x",
     "point": "0",
@@ -104,7 +104,7 @@
   },
   {
     "type": "code",
-    "content": "\\lim_{x \\to 0} ((8\\cdot \\exp(10\\cdot x)-8)/\\ln(1+x)\\cdot \\sin(x))",
+    "content": "\\lim_{x \\to 0}\\left(\\frac{\\left(8 \\exp{\\left(10 x\\right)} - 8\\right) \\sin{\\left(x \\right)}}{\\log{\\left(x + 1 \\right)}}\\right)",
     "operationType": "auto",
     "variable": "x",
     "point": "0",

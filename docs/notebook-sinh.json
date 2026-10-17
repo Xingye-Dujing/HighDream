@@ -1,49 +1,49 @@
 [
   {
     "type": "code",
-    "content": "\\int (\\sinh(x))\\, dx",
+    "content": "\\int \\sinh{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\cosh(x))\\, dx",
+    "content": "\\int \\cosh{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\tanh(x))\\, dx",
+    "content": "\\int \\tanh{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/\\sinh(x))\\, dx",
+    "content": "\\int \\frac{1}{\\sinh{\\left(x \\right)}}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/\\cosh(x))\\, dx",
+    "content": "\\int \\frac{1}{\\cosh{\\left(x \\right)}}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/\\tanh(x))\\, dx",
+    "content": "\\int \\frac{1}{\\tanh{\\left(x \\right)}}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(\\exp(x)-\\exp(-x)))\\, dx",
+    "content": "\\int \\frac{1}{\\exp{\\left(x\\right)} - \\exp{\\left(- x\\right)}}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\exp(x)/(\\exp(x)-\\exp(-x)))\\, dx",
+    "content": "\\int \\frac{\\exp{\\left(x\\right)}}{\\exp{\\left(x\\right)} - \\exp{\\left(- x\\right)}}\\, dx",
     "operationType": "auto",
     "variable": "x"
   }

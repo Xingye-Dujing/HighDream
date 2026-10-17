@@ -1,145 +1,145 @@
 [
   {
     "type": "code",
-    "content": "\\int (\\arctan(x)\\cdot \\log((x^{2}+1))\\cdot x)\\, dx",
+    "content": "\\int x \\log{\\left(x^{2} + 1 \\right)} \\arctan{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\frac{d}{d x} (x^{2}\\cdot \\log(x^{2} + 1)\\cdot \\arctan(x)/2 - x^{2}\\cdot \\arctan(x)/2 - x\\cdot \\log(x^{2} + 1)/2 + 3\\cdot x/2 + \\log(x^{2} + 1)\\cdot \\arctan(x)/2 - 3\\cdot \\arctan(x)/2)",
+    "content": "\\frac{d}{d x} \\left(\\frac{x^{2} \\log{\\left(x^{2} + 1 \\right)} \\arctan{\\left(x \\right)}}{2} - \\frac{x^{2} \\arctan{\\left(x \\right)}}{2} - \\frac{x \\log{\\left(x^{2} + 1 \\right)}}{2} + \\frac{3 x}{2} + \\frac{\\log{\\left(x^{2} + 1 \\right)} \\arctan{\\left(x \\right)}}{2} - \\frac{3 \\arctan{\\left(x \\right)}}{2}\\right)",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^{2}\\cdot \\log(x^{2}+1)\\cdot \\arctan(x)/2-x^{2}\\cdot \\arctan(x)/2-x\\cdot \\log(x^{2}+1)/2+3\\cdot x/2+\\log(x^{2}+1)\\cdot \\arctan(x)/2-3\\cdot \\arctan(x)/2)\\, dx",
+    "content": "\\int \\left(\\frac{x^{2} \\log{\\left(x^{2} + 1 \\right)} \\arctan{\\left(x \\right)}}{2} - \\frac{x^{2} \\arctan{\\left(x \\right)}}{2} - \\frac{x \\log{\\left(x^{2} + 1 \\right)}}{2} + \\frac{3 x}{2} + \\frac{\\log{\\left(x^{2} + 1 \\right)} \\arctan{\\left(x \\right)}}{2} - \\frac{3 \\arctan{\\left(x \\right)}}{2}\\right)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x\\cdot \\log(x^{2}+1))\\, dx",
+    "content": "\\int x \\log{\\left(x^{2} + 1 \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\log(x^{2}+1))\\, dx",
+    "content": "\\int \\log{\\left(x^{2} + 1 \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((2\\cdot x+3)/(x^{2}+3\\cdot x))\\, dx",
+    "content": "\\int \\frac{2 x + 3}{x^{2} + 3 x}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (2\\cdot x/(x^{2}+1))\\, dx",
+    "content": "\\int \\frac{2 x}{x^{2} + 1}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (3/(x+3))\\, dx",
+    "content": "\\int \\frac{3}{x + 3}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^2/(x^2+3))\\, dx",
+    "content": "\\int \\frac{x^{2}}{x^{2} + 3}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (2\\cdot x/(x^{2}+3))\\, dx",
+    "content": "\\int \\frac{2 x}{x^{2} + 3}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\cos(x)/\\sin(x))\\, dx",
+    "content": "\\int \\frac{\\cos{\\left(x \\right)}}{\\sin{\\left(x \\right)}}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x/(2\\cdot x+2))\\, dx",
+    "content": "\\int \\frac{x}{2 x + 2}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (8/(x^2+1))\\, dx",
+    "content": "\\int \\frac{8}{x^{2} + 1}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (8/(x^2+8))\\, dx",
+    "content": "\\int \\frac{8}{x^{2} + 8}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(x^3+1))\\, dx",
+    "content": "\\int \\frac{1}{x^{3} + 1}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(\\exp(x)+\\exp(-x)))\\, dx",
+    "content": "\\int \\frac{1}{\\exp{\\left(x\\right)} + \\exp{\\left(- x\\right)}}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\frac{d}{d x} (\\arctan(\\exp(x)))",
+    "content": "\\frac{d}{d x} \\arctan{\\left(\\exp{\\left(x\\right)} \\right)}",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (-(-\\log(2-x)+\\log(x+2))/x^{3})\\, dx",
+    "content": "\\int \\frac{- \\log{\\left(x + 2 \\right)} + \\log{\\left(2 - x \\right)}}{x^{3}}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\frac{d}{d x} ((x^{2}\\cdot (\\log(x-2)-\\log(x+2))+4\\cdot x-4\\cdot \\log(2-x)+4\\cdot \\log(x+2))/(8\\cdot x^{2}))",
+    "content": "\\frac{d}{d x} \\frac{x^{2} \\left(\\log{\\left(x - 2 \\right)} - \\log{\\left(x + 2 \\right)}\\right) + 4 x + 4 \\log{\\left(x + 2 \\right)} - 4 \\log{\\left(2 - x \\right)}}{8 x^{2}}",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^{x}\\cdot (\\log(x)+1))\\, dx",
+    "content": "\\int x^{x} \\left(\\log{\\left(x \\right)} + 1\\right)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^{x}\\cdot \\log(x)+x^{x})\\, dx",
+    "content": "\\int \\left(x^{x} \\log{\\left(x \\right)} + x^{x}\\right)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\arcsin(x))\\, dx",
+    "content": "\\int \\arcsin{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\arccos(x))\\, dx",
+    "content": "\\int \\arccos{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\arcsin(x)+\\arccos(x))\\, dx",
+    "content": "\\int \\left(\\arccos{\\left(x \\right)} + \\arcsin{\\left(x \\right)}\\right)\\, dx",
     "operationType": "auto",
     "variable": "x"
   }

@@ -1,31 +1,31 @@
 [
   {
     "type": "code",
-    "content": "\\int ((1+x-1/x)\\cdot \\exp(x+1/x))\\, dx",
+    "content": "\\int \\left(x + 1 - \\frac{1}{x}\\right) \\exp{\\left(x + \\frac{1}{x}\\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((1+x-1/x)\\cdot \\exp(x+1/x)+x)\\, dx",
+    "content": "\\int \\left(x + \\left(x + 1 - \\frac{1}{x}\\right) \\exp{\\left(x + \\frac{1}{x}\\right)}\\right)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((1+x-1/x)\\cdot \\exp(x+1/x)+\\sin(x))\\, dx",
+    "content": "\\int \\left(\\left(x + 1 - \\frac{1}{x}\\right) \\exp{\\left(x + \\frac{1}{x}\\right)} + \\sin{\\left(x \\right)}\\right)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\exp(\\cos(x))\\cdot (1-x\\cdot \\sin(x)))\\, dx",
+    "content": "\\int \\left(- x \\sin{\\left(x \\right)} + 1\\right) \\exp{\\left(\\cos{\\left(x \\right)}\\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\exp(\\sin(x))\\cdot (x\\cdot \\cos(x)^{3} - \\sin(x))/\\cos(x)^{2})\\, dx",
+    "content": "\\int \\frac{\\left(x \\cos^{3}{\\left(x \\right)} - \\sin{\\left(x \\right)}\\right) \\exp{\\left(\\sin{\\left(x \\right)}\\right)}}{\\cos^{2}{\\left(x \\right)}}\\, dx",
     "operationType": "auto",
     "variable": "x"
   }

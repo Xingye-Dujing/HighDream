@@ -1,79 +1,79 @@
 [
   {
     "type": "code",
-    "content": "\\int (\\sin(x))\\, dx",
+    "content": "\\int \\sin{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\sin(x)^{2})\\, dx",
+    "content": "\\int \\sin^{2}{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\sin(x)^{3})\\, dx",
+    "content": "\\int \\sin^{3}{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\sin(x)^{4})\\, dx",
+    "content": "\\int \\sin^{4}{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\sin(x)^{5})\\, dx",
+    "content": "\\int \\sin^{5}{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\cos(x))\\, dx",
+    "content": "\\int \\cos{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\cos(x)^{5})\\, dx",
+    "content": "\\int \\cos^{5}{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\cos(x)^{4})\\, dx",
+    "content": "\\int \\cos^{4}{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\tan(x))\\, dx",
+    "content": "\\int \\tan{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\tan(x)^{2})\\, dx",
+    "content": "\\int \\tan^{2}{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\tan(x)^{5})\\, dx",
+    "content": "\\int \\tan^{5}{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x\\cdot \\cos(x)^{2})\\, dx",
+    "content": "\\int x \\cos^{2}{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (\\sqrt{1-x^{2}}\\cdot \\arcsin(x))\\, dx",
+    "content": "\\int \\sqrt{1 - x^{2}} \\arcsin{\\left(x \\right)}\\, dx",
     "operationType": "auto",
     "variable": "x"
   }
