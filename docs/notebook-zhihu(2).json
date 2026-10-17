@@ -247,7 +247,7 @@
   },
   {
     "type": "code",
-    "content": "int((x^2+2)/(x+1)^3, x)",
+    "content": "\\int ((x^{2}+2)/(x+1)^{3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },

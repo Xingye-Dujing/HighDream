@@ -59,6 +59,24 @@ def test_limit_carries_one_sided_direction_both_ways():
     assert latex_to_operator(tex).endswith(',x,0,+)')
 
 
+def test_three_arg_limit_keeps_default_right_side():
+    # A 3-arg limit computes one-sided from the right at runtime; the LaTeX form
+    # must mirror it, otherwise the "转换形式" toggle flips lim_{x->0} 1/x from +oo
+    # to complex infinity (a different answer).
+    tex = operator_to_latex('limit(1/x, x, 0)')
+    assert '0^{+}' in tex
+    ok, res = _dispatch_auto(tex)
+    assert ok and '0^+' in res and '\\tilde' not in res
+    # round-trips back to an explicit + direction
+    assert latex_to_operator(tex).endswith(',x,0,+)')
+
+
+def test_infinite_limit_point_gets_no_spurious_side():
+    # At +/-oo one- and two-sided coincide; emitting ^{+} would be ugly and wrong.
+    tex = operator_to_latex('limit((1+1/x)^x, x, oo)')
+    assert '\\infty' in tex and '^{+}' not in tex
+
+
 def test_unknown_expression_is_noop():
     assert operator_to_latex('sin(x)+1') == 'sin(x)+1'
     assert latex_to_operator('') == ''

@@ -68,7 +68,7 @@
   },
   {
     "type": "code",
-    "content": "limit(((1+x)**(3/x)-exp(3))/x, x, 0)",
+    "content": "\\lim_{x \\to 0^{+}} (((1+x)^{(3/x)}-\\exp(3))/x)",
     "operationType": "auto",
     "variable": "x",
     "point": "0",

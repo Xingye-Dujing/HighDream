@@ -127,7 +127,7 @@
   },
   {
     "type": "code",
-    "content": "int(x*atan(x)/(1+x^2)^(3/2), x)",
+    "content": "\\int (x\\cdot \\arctan(x)/(1+x^{2})^{(3/2)})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },

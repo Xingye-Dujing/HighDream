@@ -67,7 +67,7 @@
   },
   {
     "type": "code",
-    "content": "int(asin(x)/sqrt(1-x^2), x)",
+    "content": "\\int (\\arcsin(x)/\\sqrt{1-x^{2}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },

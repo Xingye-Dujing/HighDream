@@ -45,6 +45,8 @@ _BIN_OP = {'add': '+', 'subtract': '-', 'minus': '-', 'multiply': r'\cdot', 'mat
 _EXPR_ONLY = {'simplify', 'expand', 'factor', 'equivalent', 'expr'}
 _LATEX_SIDES = {'+': '^{+}', '-': '^{-}', '+-': '^{\\pm}', 'pm': '^{\\pm}', '\\pm': '^{\\pm}'}
 _OP_SIDES = {'+': '+', '-': '-', '^{+}': '+', '^{-}': '-', '^{\\pm}': '+-', '^+': '+', '^-': '-'}
+# spellings SymPy/the box accept for an infinite limit point (one-sided == two-sided there)
+_INF_POINTS = {'oo', '+oo', '-oo', 'inf', '+inf', '-inf', 'infinity', '+infinity', '-infinity'}
 
 
 def _is_mat(arg):
@@ -131,7 +133,15 @@ def operator_to_latex(expr):
         if len(a) < 3:
             return expr
         body, var, point = a[0], a[1], a[2]
-        side = _LATEX_SIDES.get(a[3].strip(), '') if len(a) >= 4 else ''
+        if len(a) >= 4:
+            side = _LATEX_SIDES.get(a[3].strip(), '')
+        elif str(point).strip().lower() not in _INF_POINTS:
+            # A 3-arg limit computes one-sided from the right at runtime (default '+');
+            # mirror that so the "转换形式" toggle never flips it to a two-sided limit
+            # (e.g. lim_{x->0} 1/x would otherwise change from +oo to complex oo).
+            side = _LATEX_SIDES['+']
+        else:
+            side = ''  # at +/-oo the one- and two-sided limits coincide
         return r'\lim_{%s \to %s%s} (%s)' % (var, _pt(point), side, _caret(body))
     if name in _BIN_OP and len(a) >= 2:
         return '%s %s %s' % (_mat_operand(a[0]), _BIN_OP[name], _mat_operand(a[1]))
