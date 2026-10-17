@@ -66,12 +66,12 @@ Improve the functionality of `expression_parser.py`, as there are currently some
 > 已完成: (a) 修复 `expr`(等价表达式) 对 MathLive LaTeX 输入直接 `SympifyError` 崩溃 (改用 `cached_sympify`); (b) 积化和差 `_product_to_sum_transform` 由"仅两个 sin/cos 且数值系数"扩展为"前两个三角因子变换、其余因子(含符号/更多三角)作乘子保留"。均补回归测试, 全绿。
 > Done: fixed the expr-op LaTeX crash (now via `cached_sympify`); broadened product-to-sum to symbolic coefficients and >2 trig factors. Regression tests added.
 
-11. ⬜ 完善积分部分的规则和匹配器，当前只能处理简单的积分计算，需要扩展更多复杂的积分场景支持。
+11. 🔶 完善积分部分的规则和匹配器，当前只能处理简单的积分计算，需要扩展更多复杂的积分场景支持。
 
 Improve the rules and matcher, as it currently can only handle simple integral calculations and needs to support more complex integration scenarios.
 
-> 待办(功能扩展, 开放): 引擎已能解大量换元/分部/有理/三角积分 (见 docs 笔记本与测试), 但"更多复杂场景"是持续性扩展, 无固定边界, 未做。
-> Pending (open-ended feature expansion).
+> 本轮新增: 根式有理化代换 `try_rationalizing_substitution` (多个不同分数次幂 → u=x^(1/LCM)), 补回归测试。并实测一批"复杂"积分引擎其实已能正确求解: `sec^3 x`、`√(tan x)`(SymPy 反而放弃)、`1/(1±sin x)`、`1/(1+cos x)`、`1/(sin x cos x)`、`ln x/√x`、`x^2 e^{-x}`、`e^x sin x cos x`、`sin x ln(cos x)`、`x ln x`、`arctan x/(1+x^2)`、`1/(x^2+2x+2)`、`1/(cosh x)`、有理式部分分式 `1/(x^3+1)`/`1/(x^4+1)` 等全部通过。仍属开放式的"更复杂场景"仅剩真正非初等的 (如 `ln(1+x)/x`=二对数、`e^{-x^2}`=erf) 与个别特殊技法。
+> This round added the rationalizing substitution (+regression test). A broad battery of "hard" integrals was verified already-solved (incl. √(tan x) where SymPy gives up); remaining open-ended cases are genuinely non-elementary (dilog, erf) or niche techniques.
 
 12. ⬜ 所有 CSS 和 JS 文件都需要进行重构，以提高代码质量和维护性。
 
