@@ -7,6 +7,16 @@ let kernelStatus = 'idle';
 let data_copy = {};
 let is_record_all_steps = 'True';
 
+// Escape untrusted text (server error echoes, JS error messages) before innerHTML.
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // Add control buttons for all math-output areas
 function addMathOutputControls() {
   const mathOutputs = document.querySelectorAll('.math-output');
@@ -505,7 +515,7 @@ function runCell(cell) {
     })
     .catch((error) => {
       runButton.classList.remove("running");
-      outputArea.innerHTML = `<div class="error">请求错误: ${error.message}</div>`;
+      outputArea.innerHTML = `<div class="error">请求错误: ${escapeHtml(error.message)}</div>`;
     });
 }
 
@@ -539,11 +549,11 @@ function renderMathPreview(cell) {
           MathJax.typesetPromise([previewArea]);
         }
       } else {
-        previewArea.innerHTML = `<span class="preview-error">解析错误: ${data.error}</span>`;
+        previewArea.innerHTML = `<span class="preview-error">解析错误: ${escapeHtml(data.error)}</span>`;
       }
     })
     .catch((error) => {
-      previewArea.innerHTML = `<span class="preview-error">请求错误: ${error.message}</span>`;
+      previewArea.innerHTML = `<span class="preview-error">请求错误: ${escapeHtml(error.message)}</span>`;
     });
 }
 
@@ -554,7 +564,7 @@ function showNotification(message, type = "success") {
   notification.innerHTML = `
     <div class="notification-content">
       <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-      <span>${message}</span>
+      <span>${escapeHtml(message)}</span>
     </div>
   `;
 
@@ -751,11 +761,11 @@ function renderMathPreview() {
           MathJax.typesetPromise([previewArea]);
         }
       } else {
-        previewArea.innerHTML = `<span class="preview-error">解析错误: ${data.error}</span>`;
+        previewArea.innerHTML = `<span class="preview-error">解析错误: ${escapeHtml(data.error)}</span>`;
       }
     })
     .catch((error) => {
-      previewArea.innerHTML = `<span class="preview-error">请求错误: ${error.message}</span>`;
+      previewArea.innerHTML = `<span class="preview-error">请求错误: ${escapeHtml(error.message)}</span>`;
     });
 }
 

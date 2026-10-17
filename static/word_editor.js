@@ -2,6 +2,16 @@ let paragraphCounter = 0;
 let activeParagraphId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
 
+// Escape untrusted text (server error echoes, JS error messages) before innerHTML.
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // SymPy auto-completion items
 const sympyCompletions = {
   // Core functions
@@ -732,11 +742,11 @@ function runSymPyCode(paragraph) {
           }, 500);
         }
       } else {
-        output.innerHTML = `<div class="error">${data.error}</div>`;
+        output.innerHTML = `<div class="error">${escapeHtml(data.error)}</div>`;
       }
     })
     .catch((error) => {
-      output.innerHTML = `<div class="error">错误: ${error.message}</div>`;
+      output.innerHTML = `<div class="error">错误: ${escapeHtml(error.message)}</div>`;
     });
 }
 

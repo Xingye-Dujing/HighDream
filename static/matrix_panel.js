@@ -4,6 +4,16 @@ let activeCellId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
 let kernelStatus = 'idle';
 
+// Escape untrusted text (server error echoes, JS error messages) before innerHTML.
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // Initialize after page loads
 document.addEventListener("DOMContentLoaded", function () {
   applyTheme(isDarkTheme);
@@ -433,11 +443,11 @@ function renderMathPreview(cell) {
           MathJax.typesetPromise([previewArea]);
         }
       } else {
-        previewArea.innerHTML = `<span span class="preview-error" > 解析错误: ${data.error}</span > `;
+        previewArea.innerHTML = `<span class="preview-error">解析错误: ${escapeHtml(data.error)}</span>`;
       }
     })
     .catch((error) => {
-      previewArea.innerHTML = `<span span class="preview-error" > Request Error: ${error.message}</span > `;
+      previewArea.innerHTML = `<span class="preview-error">Request Error: ${escapeHtml(error.message)}</span>`;
     });
 }
 
@@ -448,7 +458,7 @@ function showNotification(message, type = "success") {
   notification.innerHTML = `
       <div div class="notification-content" >
       <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-      <span>${message}</span>
+      <span>${escapeHtml(message)}</span>
     </div >
       `;
 

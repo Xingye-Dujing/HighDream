@@ -1,3 +1,13 @@
+// Escape untrusted text (server error echoes) before innerHTML.
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 class BlueprintCanvas {
   constructor() {
     this.nodes = {};
@@ -892,7 +902,7 @@ class BlueprintCanvas {
             window.MathJax.typeset([element]);
           }
         } else {
-          element.innerHTML = `错误: ${data.error}`;
+          element.innerHTML = `错误: ${escapeHtml(data.error)}`;
         }
       })
       .catch(error => {

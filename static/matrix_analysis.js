@@ -1,3 +1,13 @@
+// Escape untrusted text (server error echoes, JS error messages) before innerHTML.
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 let data_copy = {};
 
 // Execute when document is loaded
@@ -300,11 +310,11 @@ function renderMathPreview() {
           MathJax.typesetPromise([previewArea]);
         }
       } else {
-        previewArea.innerHTML = `<span class="preview-error">解析错误: ${data.error}</span>`;
+        previewArea.innerHTML = `<span class="preview-error">解析错误: ${escapeHtml(data.error)}</span>`;
       }
     })
     .catch((error) => {
-      previewArea.innerHTML = `<span class="preview-error">请求错误: ${error.message}</span>`;
+      previewArea.innerHTML = `<span class="preview-error">请求错误: ${escapeHtml(error.message)}</span>`;
     });
 }
 
