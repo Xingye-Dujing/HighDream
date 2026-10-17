@@ -31,6 +31,60 @@ def direct_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionRe
     return res, f"直接代入: ${full_rule}$"
 
 
+def _standard_mul_equivalent(factor: Expr, var, point, direction):
+    """Equivalent to factor out of a product ``factor`` when it matches a standard
+    limit form (sin f/f, ln(1+f)/f, (e^f-1)/f, (1+f)^h), else None. ``factor``'s limit
+    equals the limit of ``factor / returned`` times the returned's own limit.
+
+    Mirrors the original if/elif chain exactly: the sin branches gate on the full
+    condition (fall through when it fails), while the log/exp/Pow branches match on
+    structure alone and stop there even if the inner tends-to-zero check fails.
+    """
+    num, den = factor.as_numer_denom()
+
+    # sin(f(x))/f(x) or f(x)/sin(f(x)), where f(x) to 0
+    if isinstance(num, sin) and num.has(var) and check_function_tends_to_zero(num, var, point, direction):
+        return factor.args[0]  # f(x)
+    if isinstance(den, sin) and den.has(var) and check_function_tends_to_zero(den, var, point, direction):
+        return 1 / factor.args[0].args[0]  # 1/f(x)
+
+    # ln(1+f(x))/f(x) or f(x)/ln(1 + f(x)), where f(x) to 0
+    if isinstance(num, log):
+        if factor.has(var) and check_function_tends_to_zero(factor, var, point, direction):
+            return num.args[0] - 1  # f(x)
+        return None
+    if isinstance(den, log):
+        if factor.has(var) and check_function_tends_to_zero(factor, var, point, direction):
+            return 1 / (den.args[0] - 1)  # 1/(f(x))
+        return None
+
+    # (exp(f(x))-1)/f(x) or f(x)/(exp(f(x))-1), where f(x) to 0
+    if (isinstance(num, Add) and len(num.args) == 2
+            and num.args[0] == -1 and isinstance(num.args[1], exp)):
+        f = num.args[1].args[0]
+        if f.has(var) and check_function_tends_to_zero(f, var, point, direction):
+            return f
+        return None
+    if (isinstance(den, Add) and len(den.args) == 2
+            and den.args[0] == -1 and isinstance(den.args[1], exp)):
+        f = den.args[1].args[0]
+        if f.has(var) and check_function_tends_to_zero(f, var, point, direction):
+            return 1 / f  # type: ignore
+        return None
+
+    # (1+f(x))**h(x) with f(x) to 0 and f(x)*h(x) to constant
+    if isinstance(factor, Pow):
+        base, _exp = factor.as_base_exp()
+        inv_f = base - 1
+        if check_function_tends_to_zero(inv_f, var, point, direction):
+            ratio = simplify(inv_f * _exp)
+            if not ratio.has(var):  # the limit of f*h exists and is constant
+                return 1  # entire factor is a standard exponential limit
+        return None
+
+    return None
+
+
 def mul_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Apply multiplicative splitting rules to decompose a limit expression.
 
@@ -48,48 +102,10 @@ def mul_split_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     expr_limit = Limit(expr, var, point, dir=direction)
     factors = expr.as_ordered_factors()
 
-    # Two for loops to apply the two strategies successively.
+    # Two loops to apply the two strategies successively.
     # Strategy 1: Extract standard limit forms.
     for i, factor in enumerate(factors):
-        new_factor = None
-        num, den = factor.as_numer_denom()
-
-        # Case: sin(f(x))/f(x) or f(x)/sin(f(x)), where f(x) to 0
-        if isinstance(num, sin) and num.has(var) and check_function_tends_to_zero(num, var, point, direction):
-            new_factor = factor.args[0]  # f(x)
-        elif isinstance(den, sin) and den.has(var) and check_function_tends_to_zero(den, var, point, direction):
-            new_factor = 1 / factor.args[0].args[0]  # 1/f(x)
-
-        # Case: ln(1+f(x))/f(x) or f(x)/ln(1 + f(x)), where f(x) to 0
-        elif isinstance(num, log):
-            if factor.has(var) and check_function_tends_to_zero(factor, var, point, direction):
-                new_factor = num.args[0] - 1  # f(x)
-        elif isinstance(den, log):
-            if factor.has(var) and check_function_tends_to_zero(factor, var, point, direction):
-                new_factor = 1 / (den.args[0] - 1)  # 1/(f(x))
-
-        # Case: (exp(f(x))-1)/f(x) or f(x)/(exp(f(x))-1), where f(x) to 0
-        elif (isinstance(num, Add) and len(num.args) == 2
-                and num.args[0] == -1 and isinstance(num.args[1], exp)):
-            f = num.args[1].args[0]
-            if f.has(var) and check_function_tends_to_zero(f, var, point, direction):
-                new_factor = f
-        elif (isinstance(den, Add) and len(den.args) == 2
-                and den.args[0] == -1 and isinstance(den.args[1], exp)):
-            f = den.args[1].args[0]
-            if f.has(var) and check_function_tends_to_zero(f, var, point, direction):
-                new_factor = 1 / f  # type: ignore
-
-        # Case: (1+f(x))**h(x) with f(x) to 0 and f(x)*h(x) to constant
-        elif isinstance(factor, Pow):
-            base, _exp = factor.as_base_exp()
-            inv_f = base - 1
-            if check_function_tends_to_zero(inv_f, var, point, direction):
-                ratio = simplify(inv_f * _exp)
-                if not ratio.has(var):  # the limit of f*h exists and is constant
-                    new_factor = 1  # entire factor is a standard exponential limit
-
-        # Apply transformation if a standard form was matched
+        new_factor = _standard_mul_equivalent(factor, var, point, direction)
         if new_factor is not None:
             rest_factors = factors[:i] + [new_factor] + factors[i + 1:]
             rest_part = Mul(*rest_factors)
