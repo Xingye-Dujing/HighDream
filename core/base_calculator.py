@@ -139,7 +139,13 @@ class BaseCalculator(ABC):
             if not self._check_rule_is_can_apply(rule):
                 continue
 
-            result = rule(expr, rule_context)
+            try:
+                result = rule(expr, rule_context)
+            except Exception:  # noqa
+                # A single rule raising (e.g. a SymPy oracle hitting RecursionError on a
+                # pathological expression) must not abort the whole solve; skip it and let
+                # the next applicable rule (or the doit fallback) handle the expression.
+                continue
             if result:
                 print(f"rule: {rule.__name__}")
                 return result
