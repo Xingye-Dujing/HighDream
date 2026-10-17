@@ -1,91 +1,91 @@
 [
   {
     "type": "code",
-    "content": "\\int (1/(5*x+3))\\, dx",
+    "content": "\\int (1/(5\\cdot x+3))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (exp(2*x+3))\\, dx",
+    "content": "\\int (\\exp(2\\cdot x+3))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x*exp(x^2))\\, dx",
+    "content": "\\int (x\\cdot \\exp(x^{2}))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x*sqrt(1-x^2))\\, dx",
+    "content": "\\int (x\\cdot \\sqrt{1-x^{2}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/x^2*sin(1/x))\\, dx",
+    "content": "\\int (1/x^{2}\\cdot \\sin(1/x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (exp(3*sqrt(x))/sqrt(x))\\, dx",
+    "content": "\\int (\\exp(3\\cdot \\sqrt{x})/\\sqrt{x})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(x*(1+x^6)))\\, dx",
+    "content": "\\int (1/(x\\cdot (1+x^{6})))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (cos(2*x))\\, dx",
+    "content": "\\int (\\cos(2\\cdot x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (sin(x)/(sqrt(5+cos(x))))\\, dx",
+    "content": "\\int (\\sin(x)/(\\sqrt{5+\\cos(x)}))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (tan(x)^4)\\, dx",
+    "content": "\\int (\\tan(x)^{4})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (exp(2*x)/(1+exp(x)))\\, dx",
+    "content": "\\int (\\exp(2\\cdot x)/(1+\\exp(x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(1+exp(x)))\\, dx",
+    "content": "\\int (1/(1+\\exp(x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(x*log(x)^2))\\, dx",
+    "content": "\\int (1/(x\\cdot \\log(x)^{2}))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(x*(1+2*ln(x))))\\, dx",
+    "content": "\\int (1/(x\\cdot (1+2\\cdot \\ln(x))))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(9*cos(x)^2+4*sin(x)^2))\\, dx",
+    "content": "\\int (1/(9\\cdot \\cos(x)^{2}+4\\cdot \\sin(x)^{2}))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -103,67 +103,67 @@
   },
   {
     "type": "code",
-    "content": "\\int (1/sqrt(9-x^2))\\, dx",
+    "content": "\\int (1/\\sqrt{9-x^{2}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (sin(x)^2*cos(x)^5)\\, dx",
+    "content": "\\int (\\sin(x)^{2}\\cdot \\cos(x)^{5})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (ln(tan(x))/(sin(x)*cos(x)))\\, dx",
+    "content": "\\int (\\ln(\\tan(x))/(\\sin(x)\\cdot \\cos(x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (sin(x)/(1+sin(x)))\\, dx",
+    "content": "\\int (\\sin(x)/(1+\\sin(x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(sin(2*x)*cos(x)))\\, dx",
+    "content": "\\int (1/(\\sin(2\\cdot x)\\cdot \\cos(x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (atan(sqrt(x))/(sqrt(x)*(1+x)))\\, dx",
+    "content": "\\int (\\arctan(\\sqrt{x})/(\\sqrt{x}\\cdot (1+x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((1+log(x))/(2+(x*log(x))^2))\\, dx",
+    "content": "\\int ((1+\\log(x))/(2+(x\\cdot \\log(x))^{2}))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((2*x-3)/(x^2-3*x+1))\\, dx",
+    "content": "\\int ((2\\cdot x-3)/(x^{2}-3\\cdot x+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((x+1)/(x^2-3*x+1))\\, dx",
+    "content": "\\int ((x+1)/(x^{2}-3\\cdot x+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((1-log(x))/(x-log(x))^2)\\, dx",
+    "content": "\\int ((1-\\log(x))/(x-\\log(x))^{2})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (sqrt(9-x^2))\\, dx",
+    "content": "\\int (\\sqrt{9-x^{2}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -175,67 +175,67 @@
   },
   {
     "type": "code",
-    "content": "\\int ((3*x+1)/sqrt(x^2+2*x-5))\\, dx",
+    "content": "\\int ((3\\cdot x+1)/\\sqrt{x^{2}+2\\cdot x-5})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(x^2*sqrt(x^2-1)))\\, dx",
+    "content": "\\int (1/(x^{2}\\cdot \\sqrt{x^{2}-1}))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(x^6*(1+x^2)))\\, dx",
+    "content": "\\int (1/(x^{6}\\cdot (1+x^{2})))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (sqrt(1+sqrt(x)))\\, dx",
+    "content": "\\int (\\sqrt{1+\\sqrt{x}})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x*cos(x))\\, dx",
+    "content": "\\int (x\\cdot \\cos(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^2*cos(x))\\, dx",
+    "content": "\\int (x^{2}\\cdot \\cos(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x*exp(x))\\, dx",
+    "content": "\\int (x\\cdot \\exp(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^2*exp(x))\\, dx",
+    "content": "\\int (x^{2}\\cdot \\exp(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^2*cos(x/2)^2)\\, dx",
+    "content": "\\int (x^{2}\\cdot \\cos(x/2)^{2})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x*tan(x)^2)\\, dx",
+    "content": "\\int (x\\cdot \\tan(x)^{2})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x*log(x))\\, dx",
+    "content": "\\int (x\\cdot \\log(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -253,25 +253,25 @@
   },
   {
     "type": "code",
-    "content": "\\int (x^5/(sqrt(1-x^2)))\\, dx",
+    "content": "\\int (x^{5}/(\\sqrt{1-x^{2}}))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((sqrt(x+1)-1)/(sqrt(x+1)+1))\\, dx",
+    "content": "\\int ((\\sqrt{x+1}-1)/(\\sqrt{x+1}+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x*(1-2*x)^3)\\, dx",
+    "content": "\\int (x\\cdot (1-2\\cdot x)^{3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(x*log(x)*log(log(x))))\\, dx",
+    "content": "\\int (1/(x\\cdot \\log(x)\\cdot \\log(\\log(x))))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -283,7 +283,7 @@
   },
   {
     "type": "code",
-    "content": "\\int (asin(x)^2)\\, dx",
+    "content": "\\int (\\arcsin(x)^{2})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -295,7 +295,7 @@
   },
   {
     "type": "code",
-    "content": "\\int (atan(x))\\, dx",
+    "content": "\\int (\\arctan(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },

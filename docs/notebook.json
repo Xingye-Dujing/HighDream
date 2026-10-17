@@ -1,43 +1,43 @@
 [
   {
     "type": "code",
-    "content": "\\int (atan(x)*log((x^2+1))*x)\\, dx",
+    "content": "\\int (\\arctan(x)\\cdot \\log((x^{2}+1))\\cdot x)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\frac{d}{d x} (x^2*log(x^2 + 1)*atan(x)/2 - x^2*atan(x)/2 - x*log(x^2 + 1)/2 + 3*x/2 + log(x^2 + 1)*atan(x)/2 - 3*atan(x)/2)",
+    "content": "\\frac{d}{d x} (x^{2}\\cdot \\log(x^{2} + 1)\\cdot \\arctan(x)/2 - x^{2}\\cdot \\arctan(x)/2 - x\\cdot \\log(x^{2} + 1)/2 + 3\\cdot x/2 + \\log(x^{2} + 1)\\cdot \\arctan(x)/2 - 3\\cdot \\arctan(x)/2)",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^2*log(x^2+1)*atan(x)/2-x^2*atan(x)/2-x*log(x^2+1)/2+3*x/2+log(x^2+1)*atan(x)/2-3*atan(x)/2)\\, dx",
+    "content": "\\int (x^{2}\\cdot \\log(x^{2}+1)\\cdot \\arctan(x)/2-x^{2}\\cdot \\arctan(x)/2-x\\cdot \\log(x^{2}+1)/2+3\\cdot x/2+\\log(x^{2}+1)\\cdot \\arctan(x)/2-3\\cdot \\arctan(x)/2)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x*log(x^2+1))\\, dx",
+    "content": "\\int (x\\cdot \\log(x^{2}+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (log(x^2+1))\\, dx",
+    "content": "\\int (\\log(x^{2}+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((2*x+3)/(x^2+3*x))\\, dx",
+    "content": "\\int ((2\\cdot x+3)/(x^{2}+3\\cdot x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (2*x/(x^2+1))\\, dx",
+    "content": "\\int (2\\cdot x/(x^{2}+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -55,19 +55,19 @@
   },
   {
     "type": "code",
-    "content": "\\int (2*x/(x^2+3))\\, dx",
+    "content": "\\int (2\\cdot x/(x^{2}+3))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (cos(x)/sin(x))\\, dx",
+    "content": "\\int (\\cos(x)/\\sin(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x/(2*x+2))\\, dx",
+    "content": "\\int (x/(2\\cdot x+2))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -91,55 +91,55 @@
   },
   {
     "type": "code",
-    "content": "\\int (1/(exp(x)+exp(-x)))\\, dx",
+    "content": "\\int (1/(\\exp(x)+\\exp(-x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\frac{d}{d x} (atan(exp(x)))",
+    "content": "\\frac{d}{d x} (\\arctan(\\exp(x)))",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (-(-log(2-x)+log(x+2))/x^3)\\, dx",
+    "content": "\\int (-(-\\log(2-x)+\\log(x+2))/x^{3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\frac{d}{d x} ((x^2*(log(x-2)-log(x+2))+4*x-4*log(2-x)+4*log(x+2))/(8*x^2))",
+    "content": "\\frac{d}{d x} ((x^{2}\\cdot (\\log(x-2)-\\log(x+2))+4\\cdot x-4\\cdot \\log(2-x)+4\\cdot \\log(x+2))/(8\\cdot x^{2}))",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^x*(log(x)+1))\\, dx",
+    "content": "\\int (x^{x}\\cdot (\\log(x)+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^x*log(x)+x^x)\\, dx",
+    "content": "\\int (x^{x}\\cdot \\log(x)+x^{x})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (asin(x))\\, dx",
+    "content": "\\int (\\arcsin(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (acos(x))\\, dx",
+    "content": "\\int (\\arccos(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (asin(x)+acos(x))\\, dx",
+    "content": "\\int (\\arcsin(x)+\\arccos(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   }

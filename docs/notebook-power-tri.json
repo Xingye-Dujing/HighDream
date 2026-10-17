@@ -1,79 +1,79 @@
 [
   {
     "type": "code",
-    "content": "\\int (sin(x))\\, dx",
+    "content": "\\int (\\sin(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (sin(x)^2)\\, dx",
+    "content": "\\int (\\sin(x)^{2})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (sin(x)^3)\\, dx",
+    "content": "\\int (\\sin(x)^{3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (sin(x)^4)\\, dx",
+    "content": "\\int (\\sin(x)^{4})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (sin(x)^5)\\, dx",
+    "content": "\\int (\\sin(x)^{5})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (cos(x))\\, dx",
+    "content": "\\int (\\cos(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (cos(x)^5)\\, dx",
+    "content": "\\int (\\cos(x)^{5})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (cos(x)^4)\\, dx",
+    "content": "\\int (\\cos(x)^{4})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (tan(x))\\, dx",
+    "content": "\\int (\\tan(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (tan(x)^2)\\, dx",
+    "content": "\\int (\\tan(x)^{2})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (tan(x)^5)\\, dx",
+    "content": "\\int (\\tan(x)^{5})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x*cos(x)^2)\\, dx",
+    "content": "\\int (x\\cdot \\cos(x)^{2})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (sqrt(1-x^2)*asin(x))\\, dx",
+    "content": "\\int (\\sqrt{1-x^{2}}\\cdot \\arcsin(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   }

@@ -1,31 +1,31 @@
 [
   {
     "type": "code",
-    "content": "\\int ((1+x-1/x)*exp(x+1/x))\\, dx",
+    "content": "\\int ((1+x-1/x)\\cdot \\exp(x+1/x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((1+x-1/x)*exp(x+1/x)+x)\\, dx",
+    "content": "\\int ((1+x-1/x)\\cdot \\exp(x+1/x)+x)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((1+x-1/x)*exp(x+1/x)+sin(x))\\, dx",
+    "content": "\\int ((1+x-1/x)\\cdot \\exp(x+1/x)+\\sin(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (exp(cos(x))*(1-x*sin(x)))\\, dx",
+    "content": "\\int (\\exp(\\cos(x))\\cdot (1-x\\cdot \\sin(x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (exp(sin(x))*(x*cos(x)^3 - sin(x))/cos(x)^2)\\, dx",
+    "content": "\\int (\\exp(\\sin(x))\\cdot (x\\cdot \\cos(x)^{3} - \\sin(x))/\\cos(x)^{2})\\, dx",
     "operationType": "auto",
     "variable": "x"
   }

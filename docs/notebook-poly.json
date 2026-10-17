@@ -7,19 +7,19 @@
   },
   {
     "type": "code",
-    "content": "\\int (1/(x^2+4*x+3))\\, dx",
+    "content": "\\int (1/(x^{2}+4\\cdot x+3))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x/(x^2+4*x+3))\\, dx",
+    "content": "\\int (x/(x^{2}+4\\cdot x+3))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((x^3+x)/(x^2+4*x+3))\\, dx",
+    "content": "\\int ((x^{3}+x)/(x^{2}+4\\cdot x+3))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -43,7 +43,7 @@
   },
   {
     "type": "code",
-    "content": "\\int (1/(x^2+2*x+1))\\, dx",
+    "content": "\\int (1/(x^{2}+2\\cdot x+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -55,37 +55,37 @@
   },
   {
     "type": "code",
-    "content": "\\int (x^2/sqrt(x^2+1))\\, dx",
+    "content": "\\int (x^{2}/\\sqrt{x^{2}+1})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^2/sqrt(x^2+3))\\, dx",
+    "content": "\\int (x^{2}/\\sqrt{x^{2}+3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((x^2+6)/sqrt(x^2+3))\\, dx",
+    "content": "\\int ((x^{2}+6)/\\sqrt{x^{2}+3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((x^2+x)/sqrt(x^2+3))\\, dx",
+    "content": "\\int ((x^{2}+x)/\\sqrt{x^{2}+3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((x^3+x)/sqrt(x^2+3))\\, dx",
+    "content": "\\int ((x^{3}+x)/\\sqrt{x^{2}+3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((x^4+x)/sqrt(x^2+3))\\, dx",
+    "content": "\\int ((x^{4}+x)/\\sqrt{x^{2}+3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -109,19 +109,19 @@
   },
   {
     "type": "code",
-    "content": "\\int (1/sqrt(x^2+3*x+2))\\, dx",
+    "content": "\\int (1/\\sqrt{x^{2}+3\\cdot x+2})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/sqrt(3*x^2+4*x+3))\\, dx",
+    "content": "\\int (1/\\sqrt{3\\cdot x^{2}+4\\cdot x+3})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/sqrt(x^2+4*x+4))\\, dx",
+    "content": "\\int (1/\\sqrt{x^{2}+4\\cdot x+4})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -139,7 +139,7 @@
   },
   {
     "type": "code",
-    "content": "\\int (1/(x^4+2*x^2+1))\\, dx",
+    "content": "\\int (1/(x^{4}+2\\cdot x^{2}+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   }

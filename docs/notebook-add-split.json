@@ -1,31 +1,31 @@
 [
   {
     "type": "code",
-    "content": "\\int ((2*exp(x)-1)/(exp(x)+3))\\, dx",
+    "content": "\\int ((2\\cdot \\exp(x)-1)/(\\exp(x)+3))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(1+exp(x)))\\, dx",
+    "content": "\\int (1/(1+\\exp(x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((3*sin(x)-2*cos(x))/(cos(x)+2*sin(x)))\\, dx",
+    "content": "\\int ((3\\cdot \\sin(x)-2\\cdot \\cos(x))/(\\cos(x)+2\\cdot \\sin(x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((sin(x)+2*cos(x))/(cos(x)+2*sin(x)))\\, dx",
+    "content": "\\int ((\\sin(x)+2\\cdot \\cos(x))/(\\cos(x)+2\\cdot \\sin(x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((2*sin(x)+cos(x))/(cos(x)+sin(x))+3)\\, dx",
+    "content": "\\int ((2\\cdot \\sin(x)+\\cos(x))/(\\cos(x)+\\sin(x))+3)\\, dx",
     "operationType": "auto",
     "variable": "x"
   }

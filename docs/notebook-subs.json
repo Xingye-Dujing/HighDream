@@ -7,61 +7,61 @@
   },
   {
     "type": "code",
-    "content": "\\int (3^sin(x)*cos(x))\\, dx",
+    "content": "\\int (3^{\\sin(x)}\\cdot \\cos(x))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^x*(log(x)+1)/(x^(2*x)+1))\\, dx",
+    "content": "\\int (x^{x}\\cdot (\\log(x)+1)/(x^{(2\\cdot x)}+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((log(x)+1)/(x^x+x^(-x)))\\, dx",
+    "content": "\\int ((\\log(x)+1)/(x^{x}+x^{(-x)}))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^(x/2)*(log(x)+1)/(2*(x^x+1)))\\, dx",
+    "content": "\\int (x^{(x/2)}\\cdot (\\log(x)+1)/(2\\cdot (x^{x}+1)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (x^(x/2)*(log(x)+1)/(x^x+1))\\, dx",
+    "content": "\\int (x^{(x/2)}\\cdot (\\log(x)+1)/(x^{x}+1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int ((log(x)+1)/(x^(x/2)+x^(-x/2)))\\, dx",
+    "content": "\\int ((\\log(x)+1)/(x^{(x/2)}+x^{(-x/2)}))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (cos(x)/sqrt(sin(x)^2+1))\\, dx",
+    "content": "\\int (\\cos(x)/\\sqrt{\\sin(x)^{2}+1})\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(x*sqrt(ln(x)^2+1)))\\, dx",
+    "content": "\\int (1/(x\\cdot \\sqrt{\\ln(x)^{2}+1}))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (sin(x)*exp(cos(x)))\\, dx",
+    "content": "\\int (\\sin(x)\\cdot \\exp(\\cos(x)))\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (ln(ln(x))/x)\\, dx",
+    "content": "\\int (\\ln(\\ln(x))/x)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
@@ -73,13 +73,13 @@
   },
   {
     "type": "code",
-    "content": "\\int (sin(sqrt(x))*x)\\, dx",
+    "content": "\\int (\\sin(\\sqrt{x})\\cdot x)\\, dx",
     "operationType": "auto",
     "variable": "x"
   },
   {
     "type": "code",
-    "content": "\\int (1/(sqrt(tan(x))-1))\\, dx",
+    "content": "\\int (1/(\\sqrt{\\tan(x)}-1))\\, dx",
     "operationType": "auto",
     "variable": "x"
   }
