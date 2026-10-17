@@ -70,8 +70,10 @@ Improve the functionality of `expression_parser.py`, as there are currently some
 
 Improve the rules and matcher, as it currently can only handle simple integral calculations and needs to support more complex integration scenarios.
 
-> 本轮新增: 根式有理化代换 `try_rationalizing_substitution` (多个不同分数次幂 → u=x^(1/LCM)), 补回归测试。并实测一批"复杂"积分引擎其实已能正确求解: `sec^3 x`、`√(tan x)`(SymPy 反而放弃)、`1/(1±sin x)`、`1/(1+cos x)`、`1/(sin x cos x)`、`ln x/√x`、`x^2 e^{-x}`、`e^x sin x cos x`、`sin x ln(cos x)`、`x ln x`、`arctan x/(1+x^2)`、`1/(x^2+2x+2)`、`1/(cosh x)`、有理式部分分式 `1/(x^3+1)`/`1/(x^4+1)` 等全部通过。仍属开放式的"更复杂场景"仅剩真正非初等的 (如 `ln(1+x)/x`=二对数、`e^{-x^2}`=erf) 与个别特殊技法。
-> This round added the rationalizing substitution (+regression test). A broad battery of "hard" integrals was verified already-solved (incl. √(tan x) where SymPy gives up); remaining open-ended cases are genuinely non-elementary (dilog, erf) or niche techniques.
+> 本轮新增: (1) 根式有理化代换 `try_rationalizing_substitution` (多个不同分数次幂 → u=x^(1/LCM)); (2) 半角重写规则 `sqrt_one_pm_trig` 修正 `sqrt(1±cos/sin 线性)` 长期返回**符号错误**答案的 bug (原走根式代换在 acos 反解上取错分支)。并实测一批"复杂"积分引擎其实已能正确求解: `sec^3 x`、`√(tan x)`(SymPy 反而放弃)、`1/(1±sin x)`、`1/(1+cos x)`、`1/(sin x cos x)`、`ln x/√x`、`x^2 e^{-x}`、`e^x sin x cos x`、`sin x ln(cos x)`、`x ln x`、`arctan x/(1+x^2)`、`1/(x^2+2x+2)`、`1/(cosh x)`、有理式部分分式 `1/(x^3+1)`/`1/(x^4+1)`、`1/(x^2(x^2+1))`、`√(x^2+4)/x`、`arcsin x`/`arccos x`/`(arcsin x)^2` 等全部通过。
+> 已知遗留(非规则缺失): `∫√(x^2+1)/x^2 dx` 等个别式在单条规则内调用 SymPy integrate/equals 极慢(>数分钟), 属性能问题; Web 端有 120s 任务超时兜底, 直接调 compute_list 无内部上限。剩余"更复杂场景"多为真非初等(二对数、erf)或病态慢用例。
+> This round added the rationalizing substitution and a half-angle rewrite (fixing a long-standing wrong-sign answer for sqrt(1±cos/sin)). A broad battery of "hard" integrals was verified already-solved. Remaining: a few pathologically-slow cases (single-rule SymPy cost; UI 120s timeout guards them) and genuinely non-elementary ones.
+
 
 12. ⬜ 所有 CSS 和 JS 文件都需要进行重构，以提高代码质量和维护性。
 
