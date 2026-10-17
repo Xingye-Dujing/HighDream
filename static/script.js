@@ -1292,13 +1292,13 @@ function runCell(cell) {
       } else {
         runButton.classList.remove("running");
         updateKernelStatus('idle');
-        outputArea.innerHTML = `<div class="error"> 错误: ${data.error || '未知错误'}</> `;
+        outputArea.innerHTML = `<div class="error"> 错误: ${escapeHtml(data.error || '未知错误')}</div> `;
         updateKernelStatus('error');
       }
     })
     .catch((error) => {
       runButton.classList.remove("running");
-      outputArea.innerHTML = `<div class="error"> 请求错误: ${error.message}</> `;
+      outputArea.innerHTML = `<div class="error"> 请求错误: ${escapeHtml(error.message)}</div> `;
       updateKernelStatus('error');
     });
 }
@@ -1310,7 +1310,7 @@ function renderExpressionResult(outputArea, data) {
 
   let html = `<div class="math-output">`;
   if (expressions.length === 0) {
-    html += `<div class="error"> 未找到等价表达式</> `;
+    html += `<div class="error"> 未找到等价表达式</div> `;
   } else {
     html += `<div class="expr-list"> <h3>等价表达式</h3>`;
     expressions.forEach((it, idx) => {
@@ -1329,7 +1329,7 @@ function renderExpressionResult(outputArea, data) {
   //   html += `<div class="expr-tree"><h3>推导树</h3><div class="note">没有可用的推导树(后端未生成).</div></div>`;
   // }
 
-  html += `</> `;
+  html += `</div> `;
   outputArea.innerHTML = html;
   outputArea.dataset.latexSource = JSON.stringify(expressions.map((it) => it.latex));
 
@@ -1342,13 +1342,33 @@ function renderExpressionResult(outputArea, data) {
 }
 
 // Render Markdown content
+// Escape HTML special chars so untrusted text (markdown cells, server error
+// strings) can never inject tags/scripts via innerHTML. Run BEFORE markdown
+// transforms so the tags we insert stay live while the user's own '<' render
+// literally. Entities decode back to text in the DOM, so MathJax still sees them.
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Only allow non-executing URL schemes for markdown links (block javascript:, etc.).
+function safeUrl(url) {
+  const trimmed = url.trim();
+  return /^(https?:|mailto:|#|\/)/i.test(trimmed) ? trimmed : "#";
+}
+
 function renderMarkdown(cell) {
   const markdownInput = cell.querySelector(".markdown-input");
   const markdownRendered = cell.querySelector(".markdown-render");
 
   if (!markdownInput || !markdownRendered) return;
 
-  const content = markdownInput.value;
+  // Escape first: all raw HTML from the cell is neutralized before we re-add markup.
+  const content = escapeHtml(markdownInput.value);
 
   // Simple Markdown rendering implementation
   let html = content
@@ -1367,8 +1387,8 @@ function renderMarkdown(cell) {
     .replace(/`(.*?)`/gim, '<code>$1</code>')
     // Line breaks
     .replace(/\n/gim, '<br>')
-    // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank">$1</a>')
+    // Links (URL scheme allowlisted to block javascript:)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, (m, text, url) => `<a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer">${text}</a>`)
     // Unordered lists
     .replace(/^\s*[-*] (.*$)/gim, '<li>$1</li>')
     // Handle list wrapping
@@ -1390,8 +1410,8 @@ function showNotification(message, type = "success") {
   notification.innerHTML = `
       <div class="notification-content">
       <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-      <span>${message}</span>
-    </>
+      <span>${escapeHtml(message)}</span>
+      </div>
       `;
 
   document.body.appendChild(notification);
@@ -2164,7 +2184,7 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
       msg = data.error || msg;
     } catch (_) {}
 
-    outputArea.innerHTML = `<div class="error">错误: ${msg}</div>`;
+    outputArea.innerHTML = `<div class="error">错误: ${escapeHtml(msg)}</div>`;
     updateKernelStatus('error');
   });
 
