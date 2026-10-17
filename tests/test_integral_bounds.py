@@ -214,8 +214,6 @@ def test_rationalizing_substitution_multi_fractional_powers():
     # single-radical substitution only removes one radical. The rationalizing
     # substitution u = x**(1/LCM) turns them into a rational function.
     # Verified by finite difference (robust to the Abs/log-branch forms SymPy emits).
-    import math
-
     cases = [
         1 / (sqrt(x) + x ** Rational(1, 3)),
         1 / (x ** Rational(1, 2) + x ** Rational(1, 4)),
@@ -229,3 +227,18 @@ def test_rationalizing_substitution_multi_fractional_powers():
             d = float((anti.subs(x, t + 1e-5) - anti.subs(x, t - 1e-5)) / 2e-5)
             fv = float(integrand.subs(x, t))
             assert abs(d - fv) < 1e-3 * (1 + abs(fv))
+
+
+def test_trig_substitution_collapse_multiple_angle():
+    # Regression: trig sub of sqrt(x^2+1)/x^2 produced 8*cos(t)/(1-cos(4t)), a
+    # multiple-angle form the rule library can't chew -> the BFS spun for minutes.
+    # _collapse_multiple_angle expands it back to single-angle powers so it solves
+    # fast and correctly.
+    integrand = sqrt(x ** 2 + 1) / x ** 2
+    steps, _ = IntegralCalculator(True).compute_list(integrand, x)
+    anti = steps[-1]
+    assert anti is not None and not anti.has(Integral)
+    for t in (0.6, 1.5, 2.5):
+        d = float((anti.subs(x, t + 1e-5) - anti.subs(x, t - 1e-5)) / 2e-5)
+        fv = float(integrand.subs(x, t))
+        assert abs(d - fv) < 1e-3 * (1 + abs(fv))

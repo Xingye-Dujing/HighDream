@@ -1,7 +1,7 @@
 from sympy import (
-    Add, Abs, Dummy, Eq, Expr, I, Integral, Pow, Rational, Symbol, Wild,
-    acos, asin, atan, cancel, diff, fraction, latex, log, preorder_traversal,
-    powdenest, sec, simplify, sin, solve, sqrt, symbols, tan, together
+    Add, Abs, Dummy, Eq, Expr, Function, I, Integral, Pow, Rational, Symbol, Wild,
+    acos, asin, atan, cancel, cos, cot, csc, diff, expand_trig, fraction, latex, log,
+    preorder_traversal, powdenest, sec, simplify, sin, solve, sqrt, symbols, tan, together
 )
 import math
 
@@ -126,6 +126,24 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
     return None
 
 
+def _collapse_multiple_angle(e: Expr, theta: Symbol) -> Expr:
+    """If ``e`` contains a multiple-angle trig term (sin/cos/... of k*theta, |k|>1),
+    expand it back to powers of sin(theta)/cos(theta). The rule library matches
+    single-angle powers; a collapsed form like ``8*cos(t)/(1-cos(4*t))`` (which a
+    trig substitution can produce) otherwise sends the BFS into a runaway search.
+    Returns ``e`` unchanged when there is no multiple angle, so normal substitutions
+    are untouched."""
+    for atom in e.atoms(Function):
+        if atom.func in (sin, cos, tan, cot, sec, csc) and atom.args:
+            coeff = atom.args[0].as_coefficient(theta)
+            if coeff is not None and coeff not in (-1, 1):
+                try:
+                    return cancel(expand_trig(e))
+                except Exception:  # noqa
+                    return e
+    return e
+
+
 def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
     """
     Apply trigonometric substitution for integrals containing:
@@ -169,6 +187,9 @@ def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator)
             # Note: inverse=True is necessary to handle cases like asin(sin(x)) == x
             new_expr = simplify(expr.subs(var, x_sub) * dx_dtheta, inverse=True).replace(
                 Abs, lambda arg: arg)
+            # Collapse any multiple-angle form (e.g. 8*cos(t)/(1-cos(4t))) back to
+            # single-angle powers so the rule library can integrate it quickly.
+            new_expr = _collapse_multiple_angle(new_expr, theta)
             res = Integral(new_expr, theta)
             step_gene.subs_dict[theta] = theta_of_x.subs(a, sqrt(a_val))
 
