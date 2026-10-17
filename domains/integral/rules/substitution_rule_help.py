@@ -1,7 +1,7 @@
 from sympy import (
     Add, Abs, Dummy, Eq, Expr, Function, I, Integral, Pow, Rational, Symbol, Wild,
-    acos, asin, atan, cancel, cos, cot, csc, diff, expand_trig, fraction, latex, log,
-    preorder_traversal, powdenest, sec, simplify, sin, solve, sqrt, symbols, tan, together
+    acos, asin, atan, cancel, cos, cot, csc, diff, expand_trig, exp, fraction, latex,
+    log, preorder_traversal, powdenest, sec, simplify, sin, solve, sqrt, symbols, tan, together
 )
 import math
 
@@ -142,6 +142,33 @@ def _collapse_multiple_angle(e: Expr, theta: Symbol) -> Expr:
                 except Exception:  # noqa
                     return e
     return e
+
+
+def try_exp_product_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
+    """Substitution u = x·eˣ for the classic 考研 trick where the integrand is
+    (x+1)·eˣ · R(x·eˣ) up to the missing eˣ factor, e.g. (x+1)/(x(1+x·eˣ)).
+
+    Deliberately narrow: it only ever tries the single inner function g = var·e^var,
+    so it cannot fire on (or regress) expressions without e^x.
+    """
+    if not expr.has(exp):
+        return None
+    g = var * exp(var)
+    gp = diff(g, var)  # (var + 1)·e^var
+    ratio = simplify(expr / gp)
+    if ratio.has(Integral) or not ratio.has(g):
+        return None
+    u = step_gene.get_available_sym(var)
+    f_u = simplify(ratio.subs(g, u))
+    if (f_u != ratio and not f_u.has(var) and not f_u.has(Integral)
+            and f_u.is_rational_function(u)):
+        step_gene.subs_dict[u] = g
+        explanation = (
+            f"换元法(凑 x·eˣ): 令 ${u.name} = {latex(g)}$, $d{u.name} = {latex(gp)}\\,d{var.name}$, "
+            f"原式$ \\int {latex(expr)}\\,d{var.name}$ 化为 $ \\int {latex(f_u)}\\,d{u.name}$"
+        )
+        return Integral(f_u, u), explanation
+    return None
 
 
 def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:

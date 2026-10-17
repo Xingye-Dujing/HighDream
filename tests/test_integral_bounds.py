@@ -242,3 +242,16 @@ def test_trig_substitution_collapse_multiple_angle():
         d = float((anti.subs(x, t + 1e-5) - anti.subs(x, t - 1e-5)) / 2e-5)
         fv = float(integrand.subs(x, t))
         assert abs(d - fv) < 1e-3 * (1 + abs(fv))
+
+
+def test_exp_product_substitution_xe_x():
+    # Regression: the classic 考研 trick (x+1)/(x(1+x·eˣ)) — multiply by eˣ reveals
+    # u = x·eˣ. try_exp_product_substitution catches it (narrowly, only g=x·eˣ).
+    integrand = (x + 1) / (x * (1 + x * exp(x)))
+    steps, _ = IntegralCalculator(True).compute_list(integrand, x)
+    anti = steps[-1]
+    assert anti is not None and not anti.has(Integral)
+    for t in (0.5, 1.0, 2.0):
+        d = float((anti.subs(x, t + 1e-5) - anti.subs(x, t - 1e-5)) / 2e-5)
+        fv = float(integrand.subs(x, t))
+        assert abs(d - fv) < 1e-3 * (1 + abs(fv))

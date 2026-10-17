@@ -12,7 +12,8 @@ from domains.integral.rules.substitution_rule_help import (
     try_rationalizing_substitution,
     try_standard_substitution,
     try_trig_substitution,
-    try_undetermined_coeffs_for_radicals
+    try_undetermined_coeffs_for_radicals,
+    try_exp_product_substitution,
 )
 from utils import (
     MatcherFunctionReturn, RuleContext, RuleFunctionReturn,
@@ -151,6 +152,11 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     # Strategy 1: Standard chain-rule pattern f(g(x)) * g'(x)
     result = try_standard_substitution(expr, var, step_gene)
+    if result:
+        return result
+
+    # Strategy 1b: the narrow "u = x·eˣ" trick for integrals like (x+1)/(x(1+x·eˣ)).
+    result = try_exp_product_substitution(expr, var, step_gene)
     if result:
         return result
 
