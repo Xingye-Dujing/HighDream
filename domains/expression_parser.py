@@ -2,7 +2,7 @@ from collections import deque
 from typing import Callable, List, Optional, Set, Tuple
 
 from sympy import (
-    Basic, Expr, Symbol, preorder_traversal, srepr, expand, factor,
+    Basic, Expr, Mul, Symbol, preorder_traversal, srepr, expand, factor,
     expand_trig, logcombine, expand_log, apart, cancel, radsimp, tan, sin, cos,
     powsimp, trigsimp, collect, ratsimp
 )
@@ -162,20 +162,19 @@ class ExpressionParser:  # pylint: disable=too-few-public-methods
     def _product_to_sum_transform(self, expr: Expr) -> List[Expr]:
         """Rewrite a product of two trig factors (sin/cos) into an equivalent sum.
 
-        Applies the product-to-sum identities directly and only accepts the result
-        when it differs structurally yet is mathematically equal to the input.
+        Applies the product-to-sum identities to the first two sin/cos factors and
+        keeps any remaining factors (numeric or symbolic) as a multiplier, so it also
+        covers products with more than two trig factors or a non-numeric coefficient.
+        The result is accepted only when it differs structurally yet is mathematically
+        equal to the input.
         """
         try:
             if not expr.is_Mul:
                 return []
             trig = [f for f in expr.args if isinstance(f, (sin, cos))]
-            other = [f for f in expr.args if not isinstance(f, (sin, cos))]
-            if len(trig) != 2 or any(not f.is_number for f in other):
+            if len(trig) < 2:
                 return []
-            coeff = 1
-            for f in other:
-                coeff *= f
-            f1, f2 = trig
+            f1, f2 = trig[0], trig[1]
             a, b = f1.args[0], f2.args[0]
             if isinstance(f1, sin) and isinstance(f2, cos):
                 base = (sin(a + b) + sin(a - b)) / 2
@@ -185,7 +184,8 @@ class ExpressionParser:  # pylint: disable=too-few-public-methods
                 base = (cos(a + b) + cos(a - b)) / 2
             else:  # sin * sin
                 base = (cos(a - b) - cos(a + b)) / 2
-            result = coeff * base
+            rest = [f for f in expr.args if f is not f1 and f is not f2]
+            result = Mul(*rest) * base if rest else base
             if result != expr and result.equals(expr):
                 return [result]
         except Exception:

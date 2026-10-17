@@ -26,6 +26,16 @@ def test_product_to_sum_skips_non_products():
     assert parser._product_to_sum_transform(x * y) == []
 
 
+def test_product_to_sum_handles_symbolic_and_three_factors():
+    parser = _parser()
+    # non-numeric coefficient kept as multiplier
+    out = parser._product_to_sum_transform(x * sin(x) * cos(x))
+    assert len(out) == 1 and simplify(out[0] - x * sin(x) * cos(x)) == 0
+    # three trig factors: first pair converted, third kept
+    out2 = parser._product_to_sum_transform(sin(x) * cos(x) * sin(y))
+    assert len(out2) == 1 and simplify(out2[0] - sin(x) * cos(x) * sin(y)) == 0
+
+
 def test_new_transforms_are_equivalent():
     parser = _parser()
     from sympy import sqrt
