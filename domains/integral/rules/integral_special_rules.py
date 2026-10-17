@@ -423,11 +423,19 @@ def f_x_mul_exp_g_x_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctio
 
 
 def quotient_diff_form_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    if isinstance(expr, Mul):
-        _, den = fraction(expr)
-        if den.equals(1):
-            return None
-        return 'quotient_diff_form'
+    if not isinstance(expr, Mul):
+        return None
+    _, den = fraction(expr)
+    if den.equals(1):
+        return None
+    # The rule reverse-engineers the f(x)/g(x)^2 differential form, but its oracle
+    # (simplify(fu(integrate(expr)))) is expensive. Only run it when a squared
+    # denominator factor (1/g^2, an even negative power) is actually present;
+    # otherwise forms like sin(x)/(1+sin x cos x) burn ~20s and fall through.
+    for factor in expr.args:
+        if (factor.is_Pow and factor.exp.is_number and factor.exp.is_even
+                and factor.exp < 0):
+            return 'quotient_diff_form'
     return None
 
 
