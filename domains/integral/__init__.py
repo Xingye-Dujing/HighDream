@@ -99,8 +99,8 @@ RULE_DICT: RuleDict = {
 
 # Note: Earlier entries have higher priority.
 MATCHER_LIST: MatcherList = [
-    const_matcher, var_matcher, logarithmic_matcher, quadratic_sqrt_reciprocal_matcher,
-    f_x_mul_exp_g_x_matcher, quotient_diff_form_matcher, sqrt_div_sqrt_matcher, sec_power_matcher, csc_power_matcher, tan_sec_matcher, cot_csc_matcher, trig_power_reduce_matcher, sqrt_one_pm_trig_matcher, substitution_matcher,
+    const_matcher, var_matcher, logarithmic_matcher, sqrt_one_pm_trig_matcher, quadratic_sqrt_reciprocal_matcher,
+    f_x_mul_exp_g_x_matcher, quotient_diff_form_matcher, sqrt_div_sqrt_matcher, sec_power_matcher, csc_power_matcher, tan_sec_matcher, cot_csc_matcher, trig_power_reduce_matcher, substitution_matcher,
     inverse_tangent_linear_matcher, add_matcher, mul_const_matcher, pow_matcher, exp_matcher,
     log_matcher, sin_matcher, cos_matcher, tan_matcher, sin_power_matcher, cos_power_matcher,
     tan_power_matcher, sec_matcher, csc_matcher, cot_matcher, exp_matcher, log_matcher,
@@ -109,8 +109,8 @@ MATCHER_LIST: MatcherList = [
 ]
 
 N_MATCHER_LIST: MatcherList = [
-    const_matcher, var_matcher, logarithmic_matcher, quadratic_sqrt_reciprocal_matcher,
-    sqrt_div_sqrt_matcher, sec_power_matcher, csc_power_matcher, tan_sec_matcher, cot_csc_matcher, trig_power_reduce_matcher, sqrt_one_pm_trig_matcher, substitution_matcher, inverse_tangent_linear_matcher, add_matcher,
+    const_matcher, var_matcher, logarithmic_matcher, sqrt_one_pm_trig_matcher, quadratic_sqrt_reciprocal_matcher,
+    sqrt_div_sqrt_matcher, sec_power_matcher, csc_power_matcher, tan_sec_matcher, cot_csc_matcher, trig_power_reduce_matcher, substitution_matcher, inverse_tangent_linear_matcher, add_matcher,
     mul_const_matcher, pow_matcher, exp_matcher, log_matcher, sin_matcher, cos_matcher,
     tan_matcher, sin_power_matcher, cos_power_matcher, tan_power_matcher, sec_matcher,
     csc_matcher, cot_matcher, exp_matcher, log_matcher, sinh_matcher, cosh_matcher, tanh_matcher,

@@ -55,22 +55,40 @@ def test_trig_power_reduce_product_differentiates_back():
                     - simplify(sin(x) ** 2 * cos(x) ** 2)) == 0
 
 
+def _fd_matches(anti, integrand, pts):
+    """Finite-difference check: d/dx(anti) ~= integrand at the given points."""
+    for t in pts:
+        d = float((anti.subs(x, t + 1e-5) - anti.subs(x, t - 1e-5)) / 2e-5)
+        fv = float(integrand.subs(x, t))
+        if abs(d - fv) > 1e-3 * (1 + abs(fv)):
+            return False
+    return True
+
+
 def test_sqrt_one_pm_trig_half_angle():
     # Regression: sqrt(1 ± cos/sin(linear)) used to hit the radical-substitution branch
     # and return a sign-flipped (wrong) antiderivative. The half-angle rewrite fixes it.
     # Verified by finite difference on the principal branch (where |.|-dropping is valid).
-    import math
-
-    cases = {
-        'sqrt(1 + cos(x))': (sqrt(1 + cos(x)), (0.5, 1.0, 2.0)),
-        'sqrt(1 - cos(x))': (sqrt(1 - cos(x)), (0.5, 1.0, 2.0)),
-        'sqrt(1 + cos(2*x))': (sqrt(1 + cos(2 * x)), (0.3, 0.6, 1.0)),
-        'sqrt(1 + sin(x))': (sqrt(1 + sin(x)), (0.5, 1.0, 2.0)),
-    }
-    for expr_str, (integrand, pts) in cases.items():
+    cases = [
+        ('sqrt(1 + cos(x))', sqrt(1 + cos(x)), (0.5, 1.0, 2.0)),
+        ('sqrt(1 - cos(x))', sqrt(1 - cos(x)), (0.5, 1.0, 2.0)),
+        ('sqrt(1 + cos(2*x))', sqrt(1 + cos(2 * x)), (0.3, 0.6, 1.0)),
+        ('sqrt(1 + sin(x))', sqrt(1 + sin(x)), (0.5, 1.0, 2.0)),
+    ]
+    for expr_str, integrand, pts in cases:
         anti = _antiderivative(expr_str)
         assert not anti.has(Integral)
-        for t in pts:
-            d = float((anti.subs(x, t + 1e-5) - anti.subs(x, t - 1e-5)) / 2e-5)
-            fv = float(integrand.subs(x, t))
-            assert abs(d - fv) < 1e-3 * (1 + abs(fv)), (expr_str, t, d, fv)
+        assert _fd_matches(anti, integrand, pts), expr_str
+
+
+def test_sqrt_one_pm_trig_reciprocal_and_subexpression():
+    # The half-angle rewrite must also fire on 1/sqrt(1±trig(linear)) (reciprocal
+    # power) and on such a radical appearing as a SUB-expression of a larger
+    # integrand, e.g. (sin x + cos x)/sqrt(1 + sin 2x) which reduces to 1 -> x.
+    # The matcher runs early (before the SymPy-oracle rules), so these stay fast.
+    anti_recip = _antiderivative('1/sqrt(1 + cos(x))')
+    assert not anti_recip.has(Integral)
+    assert _fd_matches(anti_recip, 1 / sqrt(1 + cos(x)), (0.5, 1.0))
+
+    anti_sub = _antiderivative('(sin(x) + cos(x))/sqrt(1 + sin(2*x))')
+    assert simplify(anti_sub - x) == 0

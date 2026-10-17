@@ -579,14 +579,15 @@ def trig_power_reduce_rule(expr: Expr, context: RuleContext) -> RuleFunctionRetu
 
 
 def _sqrt_one_pm_trig_reduced(expr: Expr, var):
-    """If ``expr`` is ``sqrt(1 ± cos(a*x+b))`` or ``sqrt(1 ± sin(a*x+b))``, return the
-    half-angle linear form (principal branch, |·| dropped as CAS convention), else None.
+    """If ``expr`` is ``sqrt(1 ± cos(a*x+b))``/``sqrt(1 ± sin(a*x+b))`` (or their
+    reciprocals ``1/sqrt(...)``), return the half-angle linear form (principal branch,
+    |·| dropped as CAS convention), else None.
 
     1+cosθ = 2cos²(θ/2), 1−cosθ = 2sin²(θ/2), 1+sinθ = (sin(θ/2)+cos(θ/2))²,
-    1−sinθ = (cos(θ/2)−sin(θ/2))². Rewriting avoids the sign error the radical
+    1−sinθ = (cos(θ/2)−sin(θ/2))². Rewriting avoids the sign error / runaway the radical
     substitution hits when inverting these through acos/arcsin branches.
     """
-    if not (expr.is_Pow and expr.exp == Rational(1, 2)):
+    if not (expr.is_Pow and expr.exp in (Rational(1, 2), Rational(-1, 2))):
         return None
     base = expr.args[0]
     if not base.is_Add:
@@ -601,24 +602,35 @@ def _sqrt_one_pm_trig_reduced(expr: Expr, var):
             continue
         theta = k * var + m[C]
         if fn is cos:
-            return sqrt(2) * cos(theta / 2) if a == 1 else sqrt(2) * sin(theta / 2)
-        return sin(theta / 2) + cos(theta / 2) if a == 1 else cos(theta / 2) - sin(theta / 2)
+            form = sqrt(2) * cos(theta / 2) if a == 1 else sqrt(2) * sin(theta / 2)
+        else:
+            form = sin(theta / 2) + cos(theta / 2) if a == 1 else cos(theta / 2) - sin(theta / 2)
+        return form if expr.exp == Rational(1, 2) else 1 / form
     return None
 
 
+def _rewrite_sqrt_one_pm_trig(expr: Expr, var):
+    """Apply the half-angle rewrite to every sqrt(1 ± cos/sin(linear)) sub-expression
+    of ``expr`` (not just when the whole integrand is such a sqrt), e.g. the radical in
+    (sin x + cos x)/sqrt(1 + sin 2x)."""
+    def _test(e):
+        return _sqrt_one_pm_trig_reduced(e, var) is not None
+    return expr.replace(_test, lambda e: _sqrt_one_pm_trig_reduced(e, var))
+
+
 def sqrt_one_pm_trig_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
-    """Match sqrt(1 ± cos/sin(linear)) so it is rewritten by half-angle identities."""
+    """Match an integrand containing sqrt(1 ± cos/sin(linear)) to rewrite via half-angle."""
     var = context['variable']
-    reduced = _sqrt_one_pm_trig_reduced(expr, var)
-    if reduced is None or reduced == expr:
+    if _rewrite_sqrt_one_pm_trig(expr, var) == expr:
         return None
     return 'sqrt_one_pm_trig'
 
 
 def sqrt_one_pm_trig_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
-    """Rewrite sqrt(1 ± cos/sin(linear)) into a half-angle form the basic rules integrate."""
+    """Rewrite sqrt(1 ± cos/sin(linear)) sub-expressions into a half-angle form the
+    basic rules integrate (avoids the radical-substitution sign hang)."""
     var = context['variable']
-    reduced = _sqrt_one_pm_trig_reduced(expr, var)
+    reduced = _rewrite_sqrt_one_pm_trig(expr, var)
     return Integral(reduced, var), (
         f"半角化: $1\\pm\\cos\\theta=2\\cos^2(\\theta/2)$ / $1\\pm\\sin\\theta=(\\sin(\\theta/2)\\pm\\cos(\\theta/2))^2$，"
         f"$\\int {latex(expr)}\\,d{latex(var)} = \\int {latex(reduced)}\\,d{latex(var)}$"
