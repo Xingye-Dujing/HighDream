@@ -421,7 +421,7 @@ def inverse_tangent_linear_matcher(expr: Expr, context: RuleContext) -> MatcherF
     """Matcher for expressions of the form 1/(x^2 + m)^n"""
     var = context['variable']
 
-    if expr.is_Pow and expr.exp < 0 and expr.exp.is_Integer:
+    if expr.is_Pow and expr.exp.is_Integer and expr.exp < 0:
         terms = expr.base.args
         # SymPy puts the constant term at the front
         if expr.base.is_Add and len(terms) == 2 and terms[1].equals(var ** 2) and terms[0].is_constant():
