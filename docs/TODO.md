@@ -72,7 +72,10 @@ Improve the rules and matcher, as it currently can only handle simple integral c
 
 > 本轮新增: (1) 根式有理化代换 `try_rationalizing_substitution` (多个不同分数次幂 → u=x^(1/LCM)); (2) 半角重写规则 `sqrt_one_pm_trig` 修正 `sqrt(1±cos/sin 线性)` 长期返回**符号错误**答案的 bug (原走根式代换在 acos 反解上取错分支)。并实测一批"复杂"积分引擎其实已能正确求解: `sec^3 x`、`√(tan x)`(SymPy 反而放弃)、`1/(1±sin x)`、`1/(1+cos x)`、`1/(sin x cos x)`、`ln x/√x`、`x^2 e^{-x}`、`e^x sin x cos x`、`sin x ln(cos x)`、`x ln x`、`arctan x/(1+x^2)`、`1/(x^2+2x+2)`、`1/(cosh x)`、有理式部分分式 `1/(x^3+1)`/`1/(x^4+1)`、`1/(x^2(x^2+1))`、`√(x^2+4)/x`、`arcsin x`/`arccos x`/`(arcsin x)^2` 等全部通过。
 > 续(研究生电池 + 提速/防崩): (3) 三角代换 `_collapse_multiple_angle` 把 `8cos/(1-cos4u)` 多倍角毒中间式展回单角幂 → `∫√(x²+1)/x²` 由卡死变 2.9s; (4) 半角重写泛化到 `1/√(...)` 与任意子式 + 匹配器前移 → `(sin+cos)/√(1+sin2x)` 由卡死变 0.5s; (5) `quotient_diff_form` 匹配器收紧(仅真 f/g² 才跑昂贵 oracle) → `sin/(1+sin cos)` 由 43s 降到 19.6s; (6) `_apply_rule` 跳过抛异常的规则(如 oracle 在 `atan(x)/(1+x²)²` 触发 RecursionError)而非整体失败 → 由崩溃变返回结果。
-> 已知遗留: `(x+1)/(x(1+xe^x))` 需"同乘 eˣ 凑 u=xeˣ"特定技巧(规则库暂无该启发式); 个别 Weierstrass 用例 ~15–20s(方法固有成本, 在 120s UI 超时内)。
+> 续(凑 x·eˣ): (7) 新增 `try_exp_product_substitution` 处理考研经典 `(x+1)/(x(1+x·eˣ))`(同乘 eˣ 令 u=x·eˣ), 刻意只试单一内层 g=x·eˣ 故不影响其它积分; 1.4s、6 步、答案 x+ln|x|-ln|1+xeˣ|。
+> 已知遗留: `sin x/(1+sin x cos x)` ~19s(Weierstrass 后 add_rule/logarithmic 对四次有理式反复 simplify 的**分散**成本, 非单一热点; 改 simplify→cancel 实测无改善, 故保留原式; 在 120s UI 超时内)。个别 Weierstrass 用例同属此量级。
+> Added a narrow "u = x·eˣ" substitution for the classic (x+1)/(x(1+x·eˣ)). Remaining: sin x/(1+sin x cos x) ~19s (diffuse downstream simplify cost on the quartic rational; not a single hotspot — cancel-vs-simplify did not help; within the 120s UI timeout).
+
 > This round added the rationalizing substitution and a half-angle rewrite (fixing a long-standing wrong-sign answer for sqrt(1±cos/sin)). Follow-ups: trig-sub multiple-angle collapse, half-angle generalization to reciprocals/sub-expressions + earlier matcher, quotient_diff_form matcher tightening, and _apply_rule now skips a raising rule instead of failing the whole integral. Remaining: a niche multiply-by-eˣ trick and some inherently-slow Weierstrass cases.
 
 
