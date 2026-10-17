@@ -2,10 +2,12 @@ from collections import deque
 from typing import Callable, List, Optional, Set, Tuple
 
 from sympy import (
-    Basic, Expr, Symbol, preorder_traversal, srepr, sympify, expand, factor,
+    Basic, Expr, Symbol, preorder_traversal, srepr, expand, factor,
     expand_trig, logcombine, expand_log, apart, cancel, radsimp, tan, sin, cos,
     powsimp, trigsimp, collect, ratsimp
 )
+
+from utils.cache_utils import cached_sympify
 
 
 class ExpressionParser:  # pylint: disable=too-few-public-methods
@@ -77,7 +79,7 @@ class ExpressionParser:  # pylint: disable=too-few-public-methods
         Returns:
             List of tuples containing derived expressions, and their derivation steps.
         """
-        expr = sympify(expression)
+        expr = cached_sympify(expression)
 
         def canonical_key(e: Basic | Expr) -> str:
             return srepr(e)

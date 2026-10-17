@@ -10,7 +10,7 @@ and handles data processing, error handling, and result formatting.
 import re
 from typing import Any, Dict, Tuple
 
-from sympy import Symbol, preorder_traversal, latex, sympify
+from sympy import Symbol, preorder_traversal, latex
 
 from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
 from utils.cache_utils import cached_sympify
@@ -1301,7 +1301,7 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
                 # Nothing found (or the strategy yielded none): still show a result
                 # instead of an empty "未找到等价表达式".
                 try:
-                    simplified = sympify(expression).simplify()
+                    simplified = cached_sympify(expression).simplify()
                 except Exception:  # pylint: disable=broad-exception-caught
                     simplified = expression
                 expressions_out.append({'latex': latex(simplified), 'reason': '化简'})

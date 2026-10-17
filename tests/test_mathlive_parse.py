@@ -73,3 +73,16 @@ def test_parse_latex_muls_are_flattened_for_matching():
     anti = steps[-1]
     assert anti is not None and not anti.has(Integral)
     assert simplify(anti.diff(x) - integrand) == 0
+
+
+def test_expr_op_accepts_wysiwyg_latex():
+    # The "等价表达式" op fed MathLive LaTeX used to crash on raw sympify (\\sin, ^, \\cdot);
+    # ExpressionParser.parse must go through cached_sympify so the editor's output works.
+    from domains.expression_parser import ExpressionParser
+    from routes.compute_service import _dispatch_compute
+    results = ExpressionParser(max_depth=2).parse(r'\sin{\left(x \right)} + x^{2}')
+    assert isinstance(results, list)
+    ok, res = _dispatch_compute('expr', {
+        'operation_type': 'expr', 'expression': r'x^{2} + 2 x + 1',
+        'max_depth': '2', 'sort_strategy': 'complexity'})
+    assert ok and isinstance(res, tuple) and res and res[0]
