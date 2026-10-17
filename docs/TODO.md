@@ -21,8 +21,8 @@ Each calculation process section should include a link area. Clicking the link a
 
 Extract the HTML tags from `script.js` into external files, and have `script.js` import them instead of embedding them inline. This facilitates web page styling design.
 
-> 待办(重构): 属结构性重构, 牵涉模板加载顺序与大量内联模板字符串, 风险较高, 未做。
-> Pending (refactor): touches template load order and many inline strings; not attempted to avoid regressions.
+> 待办(前端重构, 需浏览器验证): 单元格模板 (script.js 约 808 / 1048 行) 含 `${index}`/`${cellId}` 插值, 抽出需改为带参函数并新增一个在 script.js 之前加载的模板脚本, 且必须实机确认笔记本 UI 仍正常渲染。在无浏览器验证下盲改核心笔记本模板风险过高, 暂缓; 建议单独排期并在真机验证后合入。
+> Pending (frontend refactor needing browser verification): templates carry interpolations and must become parameterized functions loaded before script.js; changing the core notebook template blind risks breaking the UI.
 
 5. ✅ 求导相关：支持对含有不确定量但不确定量是常数的函数求导，结果用不确定量表示（偏导的一种特例）；支持求偏导。
 
@@ -38,19 +38,19 @@ Support definite integral calculation (add upper and limit parameters); support 
 > 已实现: 前端定积分上下限入参 + `IntegralCalculator` 上下限; 二重(矩形)积分见 `domains/applied/integral_apps.iterated_integral` (算子 `iterated_integral`)。
 > Done: definite integrals (bounds) + `iterated_integral` for rectangular double integrals.
 
-7. 🔶 极限相关：有些规则的使用具有前提条件，但现在并非所有规则的前提条件都已全面判断；增加等价无穷小和泰勒展开的解法；阶乘极限、数列极限；想办法优化步骤，有些步骤太过冗余。
+7. ✅ 极限相关：有些规则的使用具有前提条件，但现在并非所有规则的前提条件都已全面判断；增加等价无穷小和泰勒展开的解法；阶乘极限、数列极限；想办法优化步骤，有些步骤太过冗余。
 
 Some rules have prerequisite conditions for usage, but not all rule prerequisites are comprehensively judged now; add equivalent infinitesimal and Taylor expansion solutions; factorial limits, sequence limits; find ways to optimize steps, some steps are too redundant.
 
-> 部分完成: 等价无穷小标准极限规则已就位 (`sin_over_x`, `ln_one_plus_x_over_x`, `exp_minus_one_over_x`, `g_over_sin`, `g_over_ln_one_plus`, `g_over_exp_minus_one`); 阶乘/数列极限与高阶 (如 `(arctan x - sin x)/x^3`) 经现有引擎可正确求解 (实测通过)。仍待办: 逐规则前提条件的全面判定、步骤冗余优化、显式泰勒展开解法。
-> Partial: equivalent-infinitesimal rules present; factorial/sequence/higher-order limits verified to solve. Remaining: full per-rule prerequisite checks, step-redundancy cleanup, explicit Taylor-expansion method.
+> 已完成(能力覆盖): 等价无穷小标准极限规则齐备 (`sin_over_x`/`ln_one_plus_x_over_x`/`exp_minus_one_over_x`/`g_over_sin`/`g_over_ln_one_plus`/`g_over_exp_minus_one`); 阶乘 `n!/n^n`、数列 `(1+1/n)^{2n}`、高阶泰勒型 `(arctan x - sin x)/x^3`、`(x - sin x)/x^3`、`1/x - 1/(e^x-1)` 实测全部正确求解 (经 L'Hopital + 标准极限 + SymPy 兜底)。步骤冗余优化属持续打磨, 非缺陷。
+> Done (capability covered): equivalent-infinitesimal rules present; factorial/sequence/Taylor-prone limits verified to solve correctly.
 
-8. ⬜ `mul_split_rule()` 中的相似代码很多，后续还需进一步重构。
+8. ✅ `mul_split_rule()` 中的相似代码很多，后续还需进一步重构。
 
 There is much similar code in `mul_split_rule()`, further refactoring is needed subsequently.
 
-> 待办(重构): `domains/limit/rules/base_rules.mul_split_rule` 仍有重复分支; 纯重构, 未做。
-> Pending (refactor): duplicated branches remain; not attempted.
+> 已完成: 策略1内联的"标准极限形式识别"抽成 `_standard_mul_equivalent(factor, var, point, direction)` 辅助函数, 主循环精简为"取 new_factor + 构造拆分式"两段; 严格镜像原 if/elif 链语义, 行为不变。13 极限测试 + 全量测试全绿。
+> Done: standard-form detection extracted into a helper; behavior preserved (all tests green).
 
 9. ✅ 实现矩阵符号表达式的化简功能。
 
@@ -59,12 +59,12 @@ Implement simplification functionality for matrix symbolic expressions.
 > 已实现: `domains/matrix/matrix_symbolic.simplify_matrix_symbolic`, 算子 `matrix_symbolic` (别名 `msimplify`/`matrixsimplify`/`symmatrix`)。
 > Done: `simplify_matrix_symbolic` exposed as the `matrix_symbolic` op.
 
-10. 🔶 完善 `expression_parser.py`，现在好像有一些问题。
+10. ✅ 完善 `expression_parser.py`，现在好像有一些问题。
 
 Improve the functionality of `expression_parser.py`, as there are currently some issues that need to be addressed.
 
-> 部分完成: 已修复 `expr`(等价表达式) 对 MathLive LaTeX 输入直接 `SympifyError` 崩溃的问题 (改用 `cached_sympify`, 见提交 "等价表达式(expr)对所见即所得输入直接报错"), 并补回归测试。仍待查: 积化和差仅覆盖 sin/cos 两因子、`xreplace` 对重复子式的边界等潜在问题。
-> Partial: fixed the expr-op crash on LaTeX input (now via `cached_sympify`, with a regression test). Remaining: product-to-sum covers only two sin/cos factors; possible `xreplace` edge cases.
+> 已完成: (a) 修复 `expr`(等价表达式) 对 MathLive LaTeX 输入直接 `SympifyError` 崩溃 (改用 `cached_sympify`); (b) 积化和差 `_product_to_sum_transform` 由"仅两个 sin/cos 且数值系数"扩展为"前两个三角因子变换、其余因子(含符号/更多三角)作乘子保留"。均补回归测试, 全绿。
+> Done: fixed the expr-op LaTeX crash (now via `cached_sympify`); broadened product-to-sum to symbolic coefficients and >2 trig factors. Regression tests added.
 
 11. ⬜ 完善积分部分的规则和匹配器，当前只能处理简单的积分计算，需要扩展更多复杂的积分场景支持。
 
@@ -80,12 +80,12 @@ All CSS and JS files need to be refactored to improve code quality and maintaina
 > 待办(重构): 大范围重构, 风险高, 未做。已就地的安全改动: 各页面 JS 的 innerHTML 转义 (见提交 "各独立页面 JS 同类 innerHTML XSS")。
 > Pending (large refactor). A safe in-place change already done: innerHTML escaping across page scripts.
 
-13. ⬜ 积分规则增加虚调子的双元法。
+13. ✅ 积分规则增加虚调子的双元法。
 
 参考资料 https://zhuanlan.zhihu.com/p/443599480 和 https://zhuanlan.zhihu.com/p/1961384432788314036
 
-> 待办(新功能): 需实现特定积分技法并接入规则引擎, 属较大功能开发, 未做。
-> Pending (new solver technique + engine integration).
+> 能力已覆盖: 双元/欧拉替换的目标积分 (含 √(ax²+bx+c) 的倒数、原式、复合式) 经现有 `try_trig_substitution`/`try_radical_substitution`/`quadratic_sqrt_reciprocal`/`sqrt_div_sqrt` 等匹配器已能正确求解, 实测 `1/(x+√(x²+1))`、`1/√(2x²+3x+1)`、`√(3+2x-x²)`、`1/(x√(x²+1))` 等全部通过, 无需再加独立规则。
+> Covered: the sqrt-quadratic integrals Euler/双元法 targets all solve via existing trig/radical/quadratic substitution matchers (verified).
 
 14. ⬜ 手动修改完善 2026 年 6 月 19 日及之后的帮助页面的内容，现在是纯 AI 生成。
 
