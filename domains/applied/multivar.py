@@ -6,12 +6,12 @@ IntegralCalculator; implicit differentiation shows the differentiated equation
 then solves for y'.
 """
 
-from sympy import Eq, Function, Matrix, Symbol, cos, sin, solve, simplify, Integral
+from sympy import Eq, Function, Matrix, Symbol, cos, sin, solve, simplify, sqrt, Integral
 
 from utils.cache_utils import cached_sympify as sympify
 
-from domains.applied._common import (align, derivative_steps, expr_text, get_var,
-                                     integral_steps, render_note as note, steps_value, to_num)
+from domains.applied._common import (align, derivative_steps, derivative_value, expr_text,
+                                     get_var, integral_steps, render_note as note, steps_value, to_num)
 
 
 def _last_value(steps):
@@ -112,4 +112,102 @@ def gradient(data):
     if any(c is None for c in comps):
         return False, '某方向偏导未能完成求解'
     items.append((Matrix(comps), note("梯度 ∇f = (∂f/∂x_1, ..., ∂f/∂x_n)")))
+    return True, align(items)
+
+
+def _split_pipe(text):
+    """Split a '|'-separated vector/list argument (commas would clash with the
+    auto-dispatcher's top-level arg splitting)."""
+    return [p.strip() for p in str(text).split('|') if p.strip() != '']
+
+
+def hessian(data):
+    """Hessian matrix + second-partial discriminant D = f_xx*f_yy - f_xy^2 for f(x, y).
+
+    Each second partial is a genuine two-pass rule-engine derivation (order-1 then
+    order-1 again for the mixed term), never a black-box ``.diff(2)``.
+    """
+    f_str = expr_text(data)
+    f = sympify(f_str)
+    syms = sorted(f.free_symbols, key=str)
+    if len(syms) < 2:
+        return False, 'Hessian 需要二元及以上函数(至少两个自变量)'
+    x, y = syms[0], syms[1]
+    fx = derivative_value(f, x)
+    fy = derivative_value(f, y)
+    fxx = derivative_value(fx, x)
+    fyy = derivative_value(fy, y)
+    fxy = derivative_value(fx, y)
+    d = simplify(fxx * fyy - fxy ** 2)
+    items = [(f, note("f"))]
+    items.append((fx, note(f"$\\\\partial f/\\\\partial {x}$")))
+    items.append((fy, note(f"$\\\\partial f/\\\\partial {y}$")))
+    items.append((fxx, note("二阶偏导 f_xx")))
+    items.append((fxy, note("混合偏导 f_xy = f_yx")))
+    items.append((fyy, note("二阶偏导 f_yy")))
+    items.append((Matrix([[fxx, fxy], [fxy, fyy]]), note("Hessian 矩阵 H = ∂²f/∂xᵢ∂xⱼ")))
+    items.append((d, note("判别式 D = f_xx·f_yy − f_xy² (临界点处: D>0且f_xx>0极小, D>0且f_xx<0极大, D<0鞍点)")))
+    data['_auto_value'] = None
+    return True, align(items)
+
+
+def jacobian(data):
+    """Jacobian matrix and determinant of a vector map (u|v|...) over (x|y|...).
+
+    Components and independent variables are '|'-separated (commas would be split as
+    separate operator arguments). Every entry is a rule-engine partial derivative.
+    """
+    comps = _split_pipe(expr_text(data))
+    varnames = _split_pipe(data.get('variable', '')) or []
+    if not comps:
+        return False, '雅可比需要至少一个分量函数'
+    fexprs = [sympify(c) for c in comps]
+    if not varnames:
+        allsyms = set()
+        for fe in fexprs:
+            allsyms |= fe.free_symbols
+        varnames = sorted(allsyms, key=str)
+    else:
+        varnames = [sympify(v) for v in varnames]
+    nrows, ncols = len(fexprs), len(varnames)
+    rows, entries = [], []
+    for fe, cstr in zip(fexprs, comps):
+        row = []
+        for v in varnames:
+            row.append(derivative_value(cstr, v))
+        entries.append(row)
+    jac = Matrix(entries)
+    for i, fe in enumerate(fexprs):
+        rows.append((fe, note(f"$u_{i+1}$")))
+    rows.append((jac, note(f"雅可比矩阵 J = ∂(u)/∂({','.join(str(v) for v in varnames)})")))
+    if nrows == ncols:
+        rows.append((simplify(jac.det()), note("雅可比行列式 det(J)")))
+    return True, align(rows)
+
+
+def directional_derivative(data):
+    """Directional derivative ∇f · û in direction (a|b|...) (normalized).
+
+    Uses the rule-engine partials for ∇f, then forms the unit vector and the dot
+    product, all shown step by step.
+    """
+    f_str = expr_text(data)
+    f = sympify(f_str)
+    syms = sorted(f.free_symbols, key=str)
+    if len(syms) < 2:
+        return False, '方向导数需要多元函数(至少两个自变量)'
+    dir_comps = _split_pipe(data.get('direction', ''))
+    if len(dir_comps) != len(syms):
+        return False, '方向向量分量个数需与自变量个数一致(direction=a|b|...)'
+    dir_vec = Matrix([sympify(d) for d in dir_comps])
+    grad = Matrix([derivative_value(f_str, s) for s in syms])
+    norm = simplify(sqrt(sum(c ** 2 for c in dir_vec)))
+    unit = dir_vec / norm
+    result = simplify((grad.T * unit)[0])
+    items = [(f, note("f"))]
+    items.append((grad, note("梯度 ∇f")))
+    items.append((dir_vec, note("方向向量 v")))
+    items.append((norm, note("|v|")))
+    items.append((unit, note("单位方向 v/|v|")))
+    items.append((result, note("方向导数 D_u f = ∇f · (v/|v|)")))
     return True, align(items)

@@ -1,0 +1,32 @@
+[
+  {
+    "type": "code",
+    "content": "directional(x*y*z, 1|2|2)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "directional(x^2*y, 1|1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "directional(x^2+y^2, 3|4)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "directional(x*y + y*z + z*x, 1|1|1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "directional(exp(x*y), 1|1)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

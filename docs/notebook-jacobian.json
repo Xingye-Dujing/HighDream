@@ -1,0 +1,38 @@
+[
+  {
+    "type": "code",
+    "content": "jacobian(x*y|y-x, x|y)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "jacobian(2*x+3*y|x-y, x|y)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "jacobian(x^2+y^2|x*y, x|y)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "jacobian(exp(x)*cos(y)|exp(x)*sin(y), x|y)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "jacobian(x+y+z|y+z|x+z, x|y|z)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "jacobian(sin(x)*y|cos(x)*y, x|y)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

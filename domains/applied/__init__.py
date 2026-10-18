@@ -25,6 +25,7 @@ HANDLERS = {
     'volume_shell': integral_apps.volume_shell,
     'surface_area': integral_apps.surface_area,
     'iterated_integral': integral_apps.iterated_integral,
+    'triple_integral': integral_apps.triple_integral,
     # series / Taylor / improper
     'taylor': series.taylor,
     'taylor_error': series.taylor_error,
@@ -39,6 +40,9 @@ HANDLERS = {
     'polar_area': multivar.polar_area,
     'polar_slope': multivar.polar_slope,
     'gradient': multivar.gradient,
+    'hessian': multivar.hessian,
+    'jacobian': multivar.jacobian,
+    'directional': multivar.directional_derivative,
     # ODE
     'ode': ode.solve_ode,
     # complex numbers

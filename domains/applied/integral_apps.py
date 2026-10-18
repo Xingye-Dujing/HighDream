@@ -95,3 +95,37 @@ def iterated_integral(data):
     items += rows
     data['_auto_value'] = steps_value(rows)
     return True, align(items)
+
+
+def triple_integral(data):
+    """Rectangular triple integral ∫∫∫ f dz dy dx (three nested rule-derived layers).
+
+    Inner two layers are partial integrals (other symbols held constant, like the
+    iterated integral); the outer is a definite integral. Each layer is expanded
+    step-by-step by the core IntegralCalculator. Bounds default to [0,1] per axis.
+    """
+    x = get_var(data)
+    y = Symbol(data.get('variable2', 'y') or 'y')
+    z = Symbol(data.get('variable3', 'z') or 'z')
+    f = sympify(expr_text(data))
+    a, b = to_num(data.get('lower'), 0), to_num(data.get('upper'), 1)
+    c, d = to_num(data.get('lower2'), 0), to_num(data.get('upper2'), 1)
+    e, g = to_num(data.get('lower3'), 0), to_num(data.get('upper3'), 1)
+
+    items = [(Integral(f, (x, a, b), (y, c, d), (z, e, g)), note("三重累次积分(长方体区域)"))]
+    # innermost: over x, y and z held constant
+    items.append((Integral(f, (x, a, b)), note("先对 x 积分, y、z 视为常数")))
+    i1 = integral_steps(f, x, a, b, allow_multi=True)
+    items += i1
+    v1 = simplify([ev for (ev, _n) in i1][-1]) if i1 else f
+    # middle: over y, z held constant
+    items.append((Integral(v1, (y, c, d)), note("再对 y 积分, z 视为常数")))
+    i2 = integral_steps(v1, y, c, d, allow_multi=True)
+    items += i2
+    v2 = simplify([ev for (ev, _n) in i2][-1]) if i2 else v1
+    # outer: over z, definite
+    items.append((Integral(v2, (z, e, g)), note("最后对 z 积分")))
+    rows = integral_steps(v2, z, e, g)
+    items += rows
+    data['_auto_value'] = steps_value(rows)
+    return True, align(items)

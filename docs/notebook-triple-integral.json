@@ -1,0 +1,38 @@
+[
+  {
+    "type": "code",
+    "content": "tripleintegral(x*y*z, x, y, z, 0, 1, 0, 1, 0, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "tripleintegral(1, x, y, z, 0, 2, 0, 3, 0, 4)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "tripleintegral(x+y+z, x, y, z, 0, 1, 0, 1, 0, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "tripleintegral(x**2+y**2+z**2, x, y, z, 0, 1, 0, 1, 0, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "tripleintegral(exp(x+y+z), x, y, z, 0, 1, 0, 1, 0, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "tripleintegral(x*y*z, x, y, z, 0, 1, 0, 2, 0, 3)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]
