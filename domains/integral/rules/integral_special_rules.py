@@ -41,14 +41,13 @@ def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     find = False
     var = context['variable']
+    f_x = None
 
     f_prime = diff(denominator, var)
     ratio = simplify(numerator / f_prime)
 
     if ratio.is_constant():
         find = True
-
-    _, f_x = denominator.primitive()
 
     # Also check if expression can be rearranged to this form
     if not find and expr.is_Mul:
@@ -71,6 +70,12 @@ def logarithmic_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     if not find:
         return None
+
+    # f_x (the log's argument) is only needed once the form matched. The Mul branch above
+    # sets it directly; the plain f'/f branch derives it here. primitive() is an
+    # integration and was previously run on every non-matching node — now only when used.
+    if f_x is None:
+        _, f_x = denominator.primitive()
 
     var_latex, den_latex, f_x_latex = latex(var), latex(denominator), latex(f_x)
 
@@ -307,6 +312,12 @@ def weierstrass_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunct
 
     var = context['variable']
 
+    # This rule is consulted on every BFS node (its matcher is unconditional). Cheap guard:
+    # Weierstrass only applies to rational functions of sin/cos, so bail before the
+    # expensive expand_trig(together(...)) when no trig function is present at all.
+    if not expr.has(sin, cos, tan, cot, sec, csc):
+        return None
+
     # Expand multiple-angle trig (sin(2x) -> 2 sin x cos x, cos(2x) -> 2cos^2 x - 1, ...)
     # to single-angle powers FIRST: the substitution below only replaces sin(var)/cos(var),
     # so an unexpanded sin(2x) would survive into simplify and produce a tangled, high-degree
@@ -352,6 +363,10 @@ def weierstrass_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunct
 
 def quadratic_sqrt_reciprocal_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Handle 1/sqrt(ax^2+bx+c) dx"""
+    # Cheap guard (this rule is consulted on every node): the target has a ±1/2 radical.
+    # Skip the fraction()/equals() work when no half-integer power is present.
+    if not any(p.exp.is_Rational and p.exp.q == 2 for p in expr.atoms(Pow)):
+        return None
     num, den = fraction(expr)
     if not num.equals(1):
         return None
@@ -391,6 +406,12 @@ def quadratic_sqrt_reciprocal_rule(expr: Expr, context: RuleContext) -> RuleFunc
 def sqrt_div_sqrt_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Handle ((ax+b)/(cx+d))^(1/n) dx and (ax+b)^(1/n)/(cx+d)^(1/n) dx."""
     var = context['variable']
+
+    # Cheap guard (matcher fires on any Mul/Pow): this rule is about ratios of *fractional*
+    # powers. If every Pow exponent is an integer there is no radical ratio to combine, so
+    # skip the fraction()/expand()/equals work entirely.
+    if not any(p.exp.is_Rational and p.exp.q != 1 for p in expr.atoms(Pow)):
+        return None
 
     if isinstance(expr, Mul):
         num, den = fraction(expr)
@@ -454,7 +475,11 @@ def substitution_matcher(_expr: Expr, _context: RuleContext) -> MatcherFunctionR
 
 
 def f_x_mul_exp_g_x_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    # To make Add to Mul via together()
+    # Cheap guard first: this matcher runs on every BFS node, and together() is expensive
+    # on large expressions. Without an exp() anywhere it can never match, so skip together.
+    if not expr.has(exp):
+        return None
+    # together() rewrites an Add into a Mul (the rule's required shape).
     expr = together(expr)
     if isinstance(expr, Mul) and expr.has(exp):
         return 'f_x_mul_exp_g_x'
