@@ -337,6 +337,55 @@ def try_tangent_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
         f"化为 $\\int {latex(f_t)}\\,d{t.name}$")
 
 
+def try_tan_sec_power_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
+    """tan^m(x)·sec^n(x) power substitution (cos(x)^(-k) is read as sec(x)^k).
+
+    Classic cases, both reducing to a polynomial:
+      - m odd  -> u = sec x (save sec·tan; tan^(m-1) = (sec^2 - 1)^((m-1)/2))
+      - n even -> u = tan x (save sec^2; sec^(n-2) = (1 + tan^2)^((n-2)/2))
+    Otherwise (m odd & n even both false) there is no single-step reduction -> return None.
+
+    Without this, ∫tan^3(x)/cos(x) dx (= ∫tan^3·sec) is grabbed by Weierstrass and blown up
+    to a degree-8 partial fraction (55 steps, ~8s) instead of one u=sec line.
+    """
+    factors = list(expr.args) if expr.is_Mul else [expr]
+    tan_e = sec_e = 0
+    for f in factors:
+        base, expo = f.as_base_exp()
+        if not expo.is_Integer:
+            return None
+        e = int(expo)
+        if base == tan(var):
+            tan_e += e
+        elif base == sec(var):
+            sec_e += e
+        elif base == cos(var):
+            if e < 0:
+                sec_e += -e  # cos^(-k) == sec^k
+            else:
+                return None  # positive cos power -> not this pattern
+        else:
+            return None
+    if tan_e < 1 or sec_e < 1:
+        return None  # needs both; pure powers belong to tan_power / sec_power matchers
+    t = step_gene.get_available_sym(var)
+    if tan_e % 2 == 1:
+        # u = sec x, du = sec x tan x dx
+        rest = ((t ** 2 - 1) ** ((tan_e - 1) // 2) * t ** (sec_e - 1)).expand()
+        step_gene.subs_dict[t] = sec(var)
+        return Integral(rest, t), (
+            f"正切正割幂换元(正切幂为奇): 令 ${t.name} = \\sec({var.name})$, $d{t.name} = "
+            f"\\sec\\tan\\,d{var.name}$, $\\tan^2 = {t.name}^2 - 1$ 化为 $\\int {latex(rest)}\\,d{t.name}$")
+    if sec_e % 2 == 0:
+        # u = tan x, du = sec^2 x dx
+        rest = (t ** tan_e * (1 + t ** 2) ** ((sec_e - 2) // 2)).expand()
+        step_gene.subs_dict[t] = tan(var)
+        return Integral(rest, t), (
+            f"正切正割幂换元(正割幂为偶): 令 ${t.name} = \\tan({var.name})$, $d{t.name} = "
+            f"\\sec^2\\,d{var.name}$, $\\sec^2 = 1+{t.name}^2$ 化为 $\\int {latex(rest)}\\,d{t.name}$")
+    return None
+
+
 def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
     """
     Apply trigonometric substitution for integrals containing a half-integer power of a

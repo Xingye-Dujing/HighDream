@@ -15,6 +15,7 @@ from domains.integral.rules.substitution_rule_help import (
     try_trig_substitution,
     try_trig_odd_power,
     try_tangent_substitution,
+    try_tan_sec_power_substitution,
     try_hyperbolic_substitution,
     try_undetermined_coeffs_for_radicals,
     try_exp_product_substitution,
@@ -186,6 +187,12 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     # Strategy 1e: proper rational function even in sin & cos (R(sin^2, cos^2)) -> t = tan x.
     # Lower-degree than Weierstrass (e.g. 1/(sin^2 x + 3) -> ∫dt/(4t^2+3) vs degree-6).
     result = try_tangent_substitution(expr, var, step_gene)
+    if result:
+        return result
+
+    # Strategy 1f: tan^m·sec^n product -> u=sec (m odd) or u=tan (n even), a one-line
+    # polynomial. Otherwise these fall to Weierstrass and blow up (tan^3/cos -> degree-8).
+    result = try_tan_sec_power_substitution(expr, var, step_gene)
     if result:
         return result
 
