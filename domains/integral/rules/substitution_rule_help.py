@@ -185,6 +185,15 @@ def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator)
 
     Returns the integrated result and explanation if successful."""
 
+    # Every pattern below is (a ± var^2)^(±1/2) — a radical with exponent ±1/2. cancel()
+    # never produces such an exponent from non-radical input, so if the expression has no
+    # Pow atom with exponent ±1/2 none of the patterns can match. (Note: has(sqrt) is
+    # useless here — SymPy stores sqrt(..) as Pow(.., Rational(1,2)), not a sqrt instance.)
+    # Short-circuit to skip the costly cancel() and the six Wild .find scans on the many
+    # compound (log/atan/polynomial) nodes that reach substitution for every BFS step.
+    if not any(p.exp in (sqrt_pow, minus_sqrt_pow) for p in expr.atoms(Pow)):
+        return None
+
     # Note: cancel() is necessary:
     # Simplify to the lowest terms to enhance matching capability.
     # (e.g., sqrt(x**2-8)/(x**2-8) to 1/sqrt(x**2-8))
@@ -292,7 +301,13 @@ def try_undetermined_coeffs_for_radicals(expr: Expr, var: Symbol) -> RuleFunctio
 
     # Check if expression is of the form P(x)/sqrt(ax^2+bx+c)
     num, den = fraction(expr)
-    if num.equals(1) or not isinstance(den, Pow) or list(den.args)[1] != sqrt_pow:
+    # Cheap structural tests first: the denominator must be sqrt(...) i.e. a Pow with
+    # exponent 1/2. Only then test the (potentially large) numerator with equals().
+    # Same logical condition as before, just reordered so the costly num.equals(1) is
+    # skipped on the many non-radical nodes this rule is consulted for.
+    if not isinstance(den, Pow) or list(den.args)[1] != sqrt_pow:
+        return None
+    if num.equals(1):
         return None
 
     # Extract ax^2 + bx + c from sqrt(ax^2+bx+c)
