@@ -12,6 +12,32 @@ from utils.latex_formatter import wrap_latex
 _create_matcher = RuleRegistry.create_common_matcher
 
 
+# Slack for the structural equality short-circuit below. An expression that equal is
+# asked to match these ATOMIC identity targets (sec, csc, exp, 1/sqrt(1-x^2), ...) is
+# always a small form; allowing this many extra operations keeps plausible rewrites
+# (e.g. cos/sin for cot) checkable while skipping huge compound BFS nodes.
+_IDENTITY_OPS_SLACK = 4
+
+
+def _likely_equals(expr: Expr, *targets: Expr) -> bool:
+    """``expr.equals(t)`` for any t, but only when ``expr`` is not far too complex to
+    structurally equal ``t``.
+
+    Hot identity matchers/rules otherwise run SymPy's numerical ``equals`` on every BFS
+    node; on a large compound integrand that dominates the solve time (a profile of a
+    triple IBP showed ~50% spent in ``equals``) even though the node can never be, say,
+    ``sec(x)``. ``count_ops`` is a cheap structural proxy used to skip the check."""
+    expr_ops = None
+    for target in targets:
+        if expr_ops is None:
+            expr_ops = expr.count_ops()
+        if expr_ops > target.count_ops() + _IDENTITY_OPS_SLACK:
+            continue
+        if expr.equals(target):
+            return True
+    return False
+
+
 def _create_rule(func_name):
     return RuleRegistry.create_common_rule(Integral, func_name)
 
@@ -74,7 +100,7 @@ def exp_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     var = context['variable']
 
-    if expr.equals(exp(var)):
+    if _likely_equals(expr, exp(var)):
         var_latex = wrap_latex(var)
         return expr, f"自然指数函数积分: $\\int e^{{{var_latex}}}\\,d{var_latex} = e^{{{var_latex}}} + C$"
 
@@ -95,12 +121,12 @@ def exp_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 def inverse_trig_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     var = context['variable']
 
-    if expr.equals(1 / sqrt(1 - var ** 2)):
+    if _likely_equals(expr, 1 / sqrt(1 - var ** 2)):
         var_latex = wrap_latex(var)
         return asin(
             var), f"反正弦函数积分: $\\int \\frac{{1}}{{\\sqrt{{1 - {var}^2}}}}\\,d{var_latex} = \\arcsin({var}) + C$"
 
-    if expr.equals(1 / sqrt(var ** 2 - 1)):
+    if _likely_equals(expr, 1 / sqrt(var ** 2 - 1)):
         var_latex = wrap_latex(var)
         # d/dx ln|x + sqrt(x^2-1)| = 1/sqrt(x^2-1) (the arcsec-type antiderivative).
         # acos(x) was wrong: its derivative is -1/sqrt(1-x^2) and it is undefined for |x|>1.
@@ -385,7 +411,7 @@ def sec_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct sec(x) or 1/cos(x)
-    if expr.equals(sec(var)) or expr.equals(1 / cos(var)):
+    if _likely_equals(expr, sec(var), 1 / cos(var)):
         return 'sec'
     return None
 
@@ -398,7 +424,7 @@ def csc_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct csc(x) or 1/sin(x)
-    if expr.equals(csc(var)) or expr.equals(1 / sin(var)):
+    if _likely_equals(expr, csc(var), 1 / sin(var)):
         return 'csc'
     return None
 
@@ -411,7 +437,7 @@ def cot_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct cot(x) or 1/tan(x)
-    if expr.equals(cot(var)) or expr.equals(1 / tan(var)):
+    if _likely_equals(expr, cot(var), 1 / tan(var)):
         return 'cot'
 
     return None
@@ -425,7 +451,7 @@ def csch_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct csch(x) or 1/sinh(x)
-    if expr.equals(csch(var)) or expr.equals(1 / sinh(var)):
+    if _likely_equals(expr, csch(var), 1 / sinh(var)):
         return 'csch'
     return None
 
@@ -438,7 +464,7 @@ def sech_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct sech(x) or 1/cosh(x)
-    if expr.equals(sech(var)) or expr.equals(1 / cosh(var)):
+    if _likely_equals(expr, sech(var), 1 / cosh(var)):
         return 'sech'
     return None
 
@@ -451,7 +477,7 @@ def coth_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct coth(x) or 1/tanh(x)
-    if expr.equals(coth(var)) or expr.equals(1 / tanh(var)):
+    if _likely_equals(expr, coth(var), 1 / tanh(var)):
         return 'coth'
 
     return None
@@ -571,7 +597,7 @@ def csc_power_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 def tan_sec_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matcher for tan(x) * sec(x)."""
     var = context['variable']
-    if expr.equals(tan(var) * sec(var)):
+    if _likely_equals(expr, tan(var) * sec(var)):
         return 'tan_sec'
     return None
 
@@ -587,7 +613,7 @@ def tan_sec_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:  # pyl
 def cot_csc_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matcher for cot(x) * csc(x)."""
     var = context['variable']
-    if expr.equals(cot(var) * csc(var)):
+    if _likely_equals(expr, cot(var) * csc(var)):
         return 'cot_csc'
     return None
 
