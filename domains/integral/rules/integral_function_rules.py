@@ -324,7 +324,12 @@ def var_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
 
 def pow_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
-    if isinstance(expr, Pow) and expr.base == var and expr.exp.is_constant():
+    # Power rule fires whenever the exponent is independent of the integration
+    # variable. For single-variable input ``not expr.exp.has(var)`` is equivalent to
+    # ``expr.exp.is_constant()``; the only difference is a symbolic parameter
+    # exponent (x**n), which previously never matched and sent the BFS wandering
+    # (hang) in parameter mode.
+    if isinstance(expr, Pow) and expr.base == var and not expr.exp.has(var):
         return 'pow'
     return None
 

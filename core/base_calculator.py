@@ -40,6 +40,13 @@ class BaseCalculator(ABC):
     # requested variable fixed and treating all other symbols as constants.
     _allow_multi_symbols: bool = False
 
+    # When True the integral engine honors the requested variable and treats every
+    # other free symbol as a constant parameter (e.g. ``a`` in sqrt(a^2 - x^2)).
+    # Opt-in and instance-level: only the user-facing request path flips it. Internal
+    # callers (ODE reduction, applied ops) keep it False so their >1-symbol integrals
+    # still raise and trigger their own fallbacks, exactly as before.
+    _allow_parameters: bool = False
+
     def __init__(self, operation: List[Operation | None] = None, rule_dict: List[RuleDict | None] = None,
                  matcher_list: List[MatcherList | None] = None) -> None:
         # Note: The following three attributes must be initialized in the subclass.
@@ -246,10 +253,17 @@ class BaseCalculator(ABC):
             else:
                 context['variable'] = Symbol("x")
         else:
-            # Existing single-variable behavior.
+            # Single-variable behavior unless the caller opted into parameters.
             if len(symbol_list) > 1:
-                raise ValueError("仅允许出现一个字母变量.")
-            context['variable'] = symbol_list[0] if symbol_list else Symbol("x")
+                if not self._allow_parameters:
+                    raise ValueError("仅允许出现一个字母变量.")
+                # Honor the requested variable and treat the rest as constants; the
+                # per-node re-derivation below still tracks the working variable
+                # through substitutions via the operation's own variables.
+                context['variable'] = passed_var if isinstance(passed_var, Symbol) \
+                    else symbol_list[0]
+            else:
+                context['variable'] = symbol_list[0] if symbol_list else Symbol("x")
 
         initial_operation = self._get_cached_operation(expr, operation, **context)
         self.step_generator.add_step(initial_operation)

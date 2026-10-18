@@ -89,9 +89,12 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
                     # Compute the “remaining part” = expr / factor
                     outer_part = expr / factor_  # The rest of the integrand
 
-                    # Check if outer_part = k * g'(x) for some constant k.
+                    # Check if outer_part = k * g'(x) for some k independent of the
+                    # integration variable. On single-variable input free_symbols and
+                    # has(var) agree; with a parameter present only has(var) correctly
+                    # treats e.g. -1/a (k for exp(-a*x)) as a valid constant multiple.
                     ratio = simplify(outer_part / gp)
-                    if ratio.free_symbols:
+                    if ratio.has(var):
                         continue
 
                     # Substitute u = g(x)
@@ -189,7 +192,13 @@ def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator)
 
     # Assume a > 0 and theta is real to help SymPy's simplify:
     # These assumptions are necessary for Integral to work correctly !!!
-    a = Wild('a', exclude=[var], properties=[lambda x: x.is_positive])
+    # Textbook convention: the constant in a^2 ± x^2 is assumed positive. Accept a
+    # bound value unless it is *provably* negative/zero, so a parameter like ``a**2``
+    # (whose .is_positive is None) still routes here instead of falling through to the
+    # radical substitution (which picks a sign-inconsistent branch for sqrt(a^2 - x^2)
+    # and ships a wrong antiderivative). Single-variable (numeric-constant) inputs are
+    # unaffected: their .is_positive is already True/False.
+    a = Wild('a', exclude=[var], properties=[lambda x: x.is_positive is not False])
     # Theta is real and positive to help simplify
     theta = step_gene.get_available_sym(var, real=True, positive=True)
 

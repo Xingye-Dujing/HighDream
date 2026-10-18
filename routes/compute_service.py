@@ -1128,11 +1128,13 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
                 calc = _cached_calculators['integral'](include_special_matchers)
                 calc.assum_flags = assum_flags
                 calc.assumption_note = raw_assumptions
+                calc._allow_parameters = True  # user path: allow parameters (a, n, ...)
                 return True, calc.compute_latex(expression, Symbol(variable),
                                                 use_cache=use_cache, record_cache=record_cache)
             calc = _calculators['integral'](include_special_matchers)
             calc.assum_flags = assum_flags
             calc.assumption_note = raw_assumptions
+            calc._allow_parameters = True  # user path: allow parameters (a, n, ...)
             return True, calc.compute_latex(expression, Symbol(variable), **bounds)
 
         if operation_type == 'limit':

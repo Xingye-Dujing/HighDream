@@ -90,7 +90,72 @@ def create_integral_calculator(base_class):
                 self._append_definite_evaluation(antiderivative)
                 return
 
+            steps = self.step_generator.steps
+            # super() recorded the back-substituted antiderivative (in the original
+            # variable) as the last step; final_expr itself may still carry a
+            # substitution dummy, so validate the recorded step.
+            substituted = steps[-1] if steps and steps[-1] is not None else final_expr
+            if self._parametric_result_is_suspect(substituted):
+                # A parametric closed-form antiderivative that fails numeric validation
+                # is reported as UNEVAL (None) rather than shipping a wrong expression.
+                self.step_generator.steps[-1] = None
+                return
+
             self._append_constant_of_integration()
+
+        def _original_integrand(self) -> Optional[Expr]:
+            """Return the integrand of the first (input) Integral step, or None."""
+            for step in self.step_generator.steps:
+                if isinstance(step, Integral):
+                    return step.args[0]
+            return None
+
+        def _parametric_result_is_suspect(self, antiderivative: Expr) -> bool:
+            """True when a parametric closed-form antiderivative fails numeric checks.
+
+            Scope is deliberately narrow: it returns False unless the caller opted into
+            parameters (``_allow_parameters``) *and* the integrand carries a symbol other
+            than the integration variable. Single-variable results — the whole existing
+            regression surface — are therefore never touched. Unevaluated (residual
+            ``Integral``) results are also not touched, leaving the honest UNEVAL flow."""
+            if not getattr(self, '_allow_parameters', False):
+                return False
+            if antiderivative is None or antiderivative.has(Integral):
+                return False
+            integrand = self._original_integrand()
+            if integrand is None:
+                return False
+            var = self._var if self._var in integrand.free_symbols else \
+                (list(integrand.free_symbols)[0] if integrand.free_symbols else self._var)
+            params = [s for s in integrand.free_symbols if s != var]
+            if not params:
+                return False  # single-variable: never suspect (out of guard scope)
+
+            deriv = antiderivative.diff(var)
+            checks = 0
+            # A spread of (parameter, variable) samples. A result is trusted only when
+            # every *clean* (real, finite) sample matches; a single clean mismatch means
+            # it is definitively wrong. If no sample evaluates cleanly we cannot confirm
+            # it, so flag as suspect rather than risk shipping an unverified answer.
+            for pval in (1.7, 2.3, 0.9):
+                assign = {p: pval for p in params}
+                for xv in (0.31, 0.73, 1.19):
+                    sample = dict(assign)
+                    sample[var] = xv
+                    try:
+                        d = complex(deriv.subs(sample).evalf())
+                        f = complex(integrand.subs(sample).evalf())
+                    except (TypeError, ValueError, ZeroDivisionError):
+                        continue
+                    if d.imag or f.imag or abs(d) > 1e12 or abs(f) > 1e12:
+                        continue  # non-real / explosive: skip this sample
+                    checks += 1
+                    if abs(d - f) > 1e-4 * (1.0 + abs(f)):
+                        return True  # a clean mismatch: definitely wrong
+            if checks == 0:
+                return True  # could not confirm on any sample: treat as suspect
+            return False
+
 
         def _append_constant_of_integration(self) -> None:
             """Merge constant terms into ``+C`` across the final steps."""
