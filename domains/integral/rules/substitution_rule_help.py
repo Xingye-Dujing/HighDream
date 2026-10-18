@@ -174,6 +174,51 @@ def try_exp_product_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGen
     return None
 
 
+def try_trig_odd_power(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
+    """Odd-power trig product substitution: ``sin^m(x)·cos^n(x)`` with m,n >= 1 integers
+    and at least one of m,n odd → a polynomial via ``u=sin x`` (n odd) or ``u=cos x`` (m odd).
+
+    This is the standard textbook technique that Weierstrass (t=tan(x/2)) should never
+    preempt: sin^2·cos^5 via Weierstrass explodes to a degree-8 rational (25 steps, ~9s),
+    but u=sin gives the polynomial ``u^2(1-u^2)^2`` integrated in milliseconds.
+
+    Narrow by design: fires only on a pure ``Mul`` of ``sin^m`` and ``cos^n`` (both present,
+    integer exponents >= 1, at least one odd) with no other factor, so it cannot touch a
+    bare ``sin^n``/``cos^n`` (handled by their own matchers) or any mixed expression.
+    """
+    if not expr.is_Mul:
+        return None
+    sin_pow = cos_pow = 0
+    for factor in expr.args:
+        base, expo = factor.as_base_exp()
+        if not (expo.is_Integer and expo > 0):
+            return None
+        if base == sin(var):
+            sin_pow += int(expo)
+        elif base == cos(var):
+            cos_pow += int(expo)
+        else:
+            return None  # an extraneous factor -> not a pure trig power product
+    if sin_pow < 1 or cos_pow < 1:
+        return None  # needs both sin and cos; single powers belong to other matchers
+    u = step_gene.get_available_sym(var)
+    if cos_pow % 2 == 1:
+        # keep one cos·dx = du, cos^(n-1) = (1 - sin^2)^((n-1)/2)
+        poly = (u ** sin_pow * (1 - u ** 2) ** ((cos_pow - 1) // 2)).expand()
+        step_gene.subs_dict[u] = sin(var)
+        return Integral(poly, u), (
+            f"三角奇次幂换元: 余弦幂为奇, 令 ${u.name} = \\sin({latex(var)})$, $d{u.name} = "
+            f"\\cos({latex(var)})\\,d{var.name}$, $\\cos^2 = 1-\\sin^2$ 展开为多项式 $\\int {latex(poly)}\\,d{u.name}$")
+    if sin_pow % 2 == 1:
+        # keep one sin·dx = -du, sin^(m-1) = (1 - cos^2)^((m-1)/2)
+        poly = (-(1 - u ** 2) ** ((sin_pow - 1) // 2) * u ** cos_pow).expand()
+        step_gene.subs_dict[u] = cos(var)
+        return Integral(poly, u), (
+            f"三角奇次幂换元: 正弦幂为奇, 令 ${u.name} = \\cos({latex(var)})$, $d{u.name} = "
+            f"-\\sin({latex(var)})\\,d{var.name}$, $\\sin^2 = 1-\\cos^2$ 展开为多项式 $\\int {latex(poly)}\\,d{u.name}$")
+    return None  # both even -> double-angle reduction, not this rule
+
+
 def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
     """
     Apply trigonometric substitution for integrals containing:
