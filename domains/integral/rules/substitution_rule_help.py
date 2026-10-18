@@ -10,7 +10,6 @@ from core import BaseStepGenerator
 from utils import RuleFunctionReturn
 
 sqrt_pow = Rational(1, 2)
-minus_sqrt_pow = -Rational(1, 2)
 
 
 def _simp(node: Expr) -> Expr:
@@ -165,6 +164,29 @@ def _collapse_multiple_angle(e: Expr, theta: Symbol) -> Expr:
     return e
 
 
+def _flip_neg_trig_powers(e: Expr, theta: Symbol) -> Expr:
+    """Rewrite negative integer trig powers so the rule library's positive-power matchers
+    fire: cos(theta)^(-k) -> sec(theta)^k, sin^-k -> csc^k, tan^-k -> cot^k (k positive int).
+
+    Trig substitution of e.g. (1 - x^2)^(-5/2) yields cos(theta)^(-4); sec_power_matcher
+    expects base sec and cos_power_matcher expects a positive exponent, so the raw form
+    fell through to Weierstrass (~8s). Flipping to sec(theta)^4 lets the fast reduction
+    formula handle it. No effect when there are no negative trig powers (existing +/-1/2,
+    3/2 cases are untouched)."""
+    def _query(node):
+        return (isinstance(node, Pow) and node.exp.is_Integer and node.exp < 0
+                and node.base in (cos(theta), sin(theta), tan(theta)))
+
+    def _value(node):
+        k = int(-node.exp)
+        if node.base == cos(theta):
+            return sec(theta) ** k
+        if node.base == sin(theta):
+            return csc(theta) ** k
+        return cot(theta) ** k  # node.base == tan(theta), guaranteed by _query
+    return e.replace(_query, _value)
+
+
 def try_exp_product_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
     """Substitution u = x·eˣ for the classic 考研 trick where the integrand is
     (x+1)·eˣ · R(x·eˣ) up to the missing eˣ factor, e.g. (x+1)/(x(1+x·eˣ)).
@@ -279,31 +301,33 @@ def try_hyperbolic_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGene
 
 def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
     """
-    Apply trigonometric substitution for integrals containing:
-      - sqrt(a^2 − x^2) to x = a*sin(theta)
-      - sqrt(a^2 + x^2) to x = a*tan(theta)
-      - sqrt(x^2 − a^2) to x = a*sec(theta)
+    Apply trigonometric substitution for integrals containing a half-integer power of a
+    quadratic radical:
+      - (a^2 − x^2)^(k/2)  ->  x = a*sin(theta)
+      - (a^2 + x^2)^(k/2)  ->  x = a*tan(theta)
+      - (x^2 − a^2)^(k/2)  ->  x = a*sec(theta)
+    k any odd integer (±1, ±3, ±5, ...), i.e. exponent ±1/2, ±3/2, ±5/2, ... .
 
-    Uses pattern matching with Wild symbols to extract constant 'a'.
+    Uses pattern matching with Wild symbols to extract constant 'a' and exponent 'p'.
 
     Returns the integrated result and explanation if successful."""
 
-    # Every pattern below is (a ± var^2)^(±1/2) — a radical with exponent ±1/2. cancel()
-    # never produces such an exponent from non-radical input, so if the expression has no
-    # Pow atom with exponent ±1/2 none of the patterns can match. (Note: has(sqrt) is
-    # useless here — SymPy stores sqrt(..) as Pow(.., Rational(1,2)), not a sqrt instance.)
-    # Short-circuit to skip the costly cancel() and the six Wild .find scans on the many
-    # compound (log/atan/polynomial) nodes that reach substitution for every BFS step.
-    if not any(p.exp in (sqrt_pow, minus_sqrt_pow) for p in expr.atoms(Pow)):
+    # The patterns below are (a ± var^2)^(k/2) — a radical whose exponent is a half-integer
+    # (denominator 2): ±1/2, ±3/2, ±5/2, ... . cancel() never creates such an exponent from
+    # non-radical input, so if no Pow atom has a denominator-2 exponent none can match.
+    # Short-circuit to skip the costly cancel() + Wild .find scans on the many compound
+    # (log/atan/polynomial) nodes that reach substitution for every BFS step. (has(sqrt) is
+    # useless — SymPy stores sqrt(..) as Pow(.., Rational(1,2)), not a sqrt instance.)
+    if not any(p.exp.is_Rational and p.exp.q == 2 for p in expr.atoms(Pow)):
         return None
 
-    # If the quadratic radical is trapped *inside a logarithm* (e.g. log(x + sqrt(x^2+1))
+    # If a quadratic radical is trapped *inside a logarithm* (e.g. log(x + sqrt(x^2+1))
     # = asinh(x)), trig substitution cannot rationalize the log argument — it only makes
     # the integrand far harder (x = tan(u) turns it into log(tan u + sec u)/cos^2 u, a 70s
     # detour). Such integrands are handled cleanly by integration by parts, so skip the
     # trig substitution and let parts_rule take over.
-    if any(any(isinstance(p, Pow) and p.exp in (sqrt_pow, minus_sqrt_pow)
-                for p in L.atoms(Pow)) for L in expr.atoms(log)):
+    if any(any(p.exp.is_Rational and p.exp.q == 2 for p in L.atoms(Pow))
+           for L in expr.atoms(log)):
         return None
 
     # Note: cancel() is necessary:
@@ -320,6 +344,9 @@ def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator)
     # and ships a wrong antiderivative). Single-variable (numeric-constant) inputs are
     # unaffected: their .is_positive is already True/False.
     a = Wild('a', exclude=[var], properties=[lambda x: x.is_positive is not False])
+    # Half-integer radical exponent (±1/2, ±3/2, ±5/2, ...); the substitution below is
+    # algebraically identical for any such power (the quadratic becomes cos^k/sec^k etc.).
+    p = Wild('p', exclude=[var], properties=[lambda z: z.is_Rational and z.q == 2])
     # Theta is real and positive to help simplify
     theta = step_gene.get_available_sym(var, real=True, positive=True)
 
@@ -347,6 +374,9 @@ def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator)
             # Collapse any multiple-angle form (e.g. 8*cos(t)/(1-cos(4t))) back to
             # single-angle powers so the rule library can integrate it quickly.
             new_expr = _collapse_multiple_angle(new_expr, theta)
+            # Turn cos/sin/tan negative powers into sec/csc/cot positive powers so the
+            # reduction-formula matchers fire instead of falling through to Weierstrass.
+            new_expr = _flip_neg_trig_powers(new_expr, theta)
             res = Integral(new_expr, theta)
             step_gene.subs_dict[theta] = theta_of_x.subs(a, sqrt(a_val))
 
@@ -361,43 +391,28 @@ def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator)
             print(f"Error in try_trig_substitution: {e}")
             return None
 
-    # Case 1: sqrt(a^2 − x^2) to x = a*sin(theta)
-    pattern1 = (a - var ** 2) ** minus_sqrt_pow
+    # Case 1: (a^2 − x^2)^(k/2)  ->  x = a*sin(theta)
+    pattern1 = (a - var ** 2) ** p
     sub1 = sqrt(a) * sin(theta)
     back1 = asin(var / a)
     result = _apply_trig_sub(pattern1, sub1, back1)
     if result:
         return result
 
-    pattern1_1 = (a - var ** 2) ** sqrt_pow
-    result = _apply_trig_sub(pattern1_1, sub1, back1)
-    if result:
-        return result
-
-    # Case 2: sqrt(a^2 + x^2) to x = a*tan(theta)
-    pattern2 = (a + var ** 2) ** minus_sqrt_pow
+    # Case 2: (a^2 + x^2)^(k/2)  ->  x = a*tan(theta)
+    pattern2 = (a + var ** 2) ** p
     sub2 = sqrt(a) * tan(theta)
     back2 = atan(var / a)
     result = _apply_trig_sub(pattern2, sub2, back2)
     if result:
         return result
 
-    pattern2_1 = (a + var ** 2) ** sqrt_pow
-    result = _apply_trig_sub(pattern2_1, sub2, back2)
-    if result:
-        return result
-
-    # Case 3: sqrt(x^2 − a^2) to x = a*sec(theta)
-    pattern3 = (var ** 2 - a) ** minus_sqrt_pow
+    # Case 3: (x^2 − a^2)^(k/2)  ->  x = a*sec(theta)
+    pattern3 = (var ** 2 - a) ** p
     sub3 = sqrt(a) * sec(theta)
     # Alternative: asec(var/a), but acos(a/x) is more common in textbooks.
     back3 = acos(a / var)
     result = _apply_trig_sub(pattern3, sub3, back3)
-    if result:
-        return result
-
-    pattern3_1 = (var ** 2 - a) ** sqrt_pow
-    result = _apply_trig_sub(pattern3_1, sub3, back3)
     if result:
         return result
 
