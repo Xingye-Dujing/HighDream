@@ -156,6 +156,78 @@ def create_integral_calculator(base_class):
                 return True  # could not confirm on any sample: treat as suspect
             return False
 
+        def _midpoint_integral(self, f_assigned, var, lo, hi, n=1200):
+            """Composite midpoint rule for the (parameter-substituted) integrand.
+
+            Midpoints avoid evaluating at the interval endpoints, which is helpful
+            for integrands with a vertical tangent or removable singularity there
+            (e.g. sqrt(a^2 - x^2) at x = a). Returns None if any sample is non-real."""
+            h = (hi - lo) / n
+            total = 0.0
+            for i in range(n):
+                xv = lo + h * (i + 0.5)
+                try:
+                    val = complex(f_assigned.subs(var, xv).evalf())
+                except (TypeError, ValueError, ZeroDivisionError):
+                    return None
+                if val.imag and abs(val.imag) > 1e-6:
+                    return None
+                total += val.real
+            return total * h
+
+        def _definite_parametric_is_suspect(self, result, var, lower, upper) -> bool:
+            """True when a parametric definite integral's closed value fails numeric check.
+
+            Confines itself to the parameter path (``_allow_parameters``) and to results
+            that actually carry a free symbol, so the large, numeric-only definite test
+            surface is untouched. The closed form is compared to a midpoint-rule numeric
+            integral after substituting concrete positive values for the parameters; a
+            non-finite value (e.g. a stray ``zoo``) or a clear mismatch becomes an honest
+            UNEVAL. When no valid numeric reference can be formed the result is kept."""
+            if not getattr(self, '_allow_parameters', False):
+                return False
+            if result is None:
+                return False
+            lower = sympify(lower)
+            upper = sympify(upper)
+            params = set(result.free_symbols) | set(lower.free_symbols) | set(upper.free_symbols)
+            params.discard(var)
+            if not params:
+                return False  # numeric-valued definite integral: trusted
+            f = self._integrand_of()
+            if f is None:
+                return False
+            for pval in (1.7, 2.3):
+                assign = {p: pval for p in params}
+                try:
+                    rv = result.subs(assign)
+                    # A closed form containing zoo/oo/nan evaluates to a non-finite
+                    # number; plain float comparisons against nan/inf are always False,
+                    # so test is_finite explicitly before any numeric comparison.
+                    if getattr(rv, 'is_finite', None) is not True:
+                        return True
+                    rval = complex(rv.evalf())
+                except (TypeError, ValueError, ZeroDivisionError):
+                    return True  # closed form not evaluable at a sample: suspect
+                lo = complex(lower.subs(assign).evalf())
+                hi = complex(upper.subs(assign).evalf())
+                if lo.imag or hi.imag or abs(lo) > 1e12 or abs(hi) > 1e12 or lo.real >= hi.real:
+                    continue  # interval invalid at this sample: try next
+                if rval.imag and abs(rval.imag) > 1e-6:
+                    return True  # complex value for real data: suspect
+                try:
+                    ref = self._midpoint_integral(f.subs(assign), var, lo.real, hi.real)
+                except (TypeError, ValueError, ZeroDivisionError):
+                    continue
+                if ref is None:
+                    continue
+                # ``<=`` (not ``>``) so a NaN difference evaluates as "not agreeing"
+                # and is flagged, since NaN comparisons are always False.
+                agrees = abs(rval.real - ref) <= 1e-2 * (1.0 + abs(ref))
+                if not agrees:
+                    return True  # clear numeric disagreement (or NaN diff): wrong
+            return False  # matched or no reference available: keep the result
+
 
         def _append_constant_of_integration(self) -> None:
             """Merge constant terms into ``+C`` across the final steps."""
@@ -333,6 +405,15 @@ def create_integral_calculator(base_class):
 
             diff_expr = fu - fl
             result = simplify(diff_expr)
+
+            if self._definite_parametric_is_suspect(result, var, lower, upper):
+                # A parametric definite value that fails numeric validation is reported
+                # as UNEVAL (None) instead of shipping a wrong expression (e.g. one
+                # containing a stray ``zoo`` from an unevaluable symbolic bound).
+                self.step_generator.add_step(
+                    None,
+                    r"参数定积分闭式经数值校验未通过, 按未能求得处理 (UNEVAL), 不输出可能错误的结果。")
+                return
 
             finite = getattr(result, 'is_finite', None) is True
             concl = "" if finite else r", 该反常积分发散(或不存在)"

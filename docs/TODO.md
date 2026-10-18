@@ -78,6 +78,9 @@ Improve the rules and matcher, as it currently can only handle simple integral c
 
 > This round added the rationalizing substitution and a half-angle rewrite (fixing a long-standing wrong-sign answer for sqrt(1±cos/sin)). Follow-ups: trig-sub multiple-angle collapse, half-angle generalization to reciprocals/sub-expressions + earlier matcher, quotient_diff_form matcher tightening, and _apply_rule now skips a raising rule instead of failing the whole integral. Remaining: a niche multiply-by-eˣ trick and some inherently-slow Weierstrass cases.
 
+> 续(参数化不定积分放开, 仅限用户请求路径): 引入实例级开关 `_allow_parameters`(默认 False, 仅 `routes/compute_service` 的 integral 分支置 True), 使含参量(如 `a`、`n`)的被积式按"固定积分变量、其余符号视为常数"求解; ODE 降阶/应用算子等内部调用保持原严格行为(其依赖 ∫-p²x dx 在多符号时抛错触发回退, 故不可全局放开)。规则侧配套: `try_standard_substitution` 常数倍判定改 `has(var)`(线性复合 `∫f(ax)dx=(1/a)F(ax)`)、`try_trig_substitution` 匹配常量放宽为 `is_positive is not False`(参数 a² 走三角代换而非根式代换取错分支)、`pow_matcher` 判据 `not exp.has(var)`(参数指数 xⁿ)、`inverse_tangent_linear` 位置无关匹配 + `_constant_positive` 定符号分支(1/(x²+a²))、`add_rule` 裂项前校验恒等式复原分子(避免 a²/cos³u 塌成 ∫0, 使 √(x²+a²) 可解)。安全网: 不定/定积分闭合式均经有限差分/中点数值验证守卫, 任何错误(含定积分含 `zoo`)一律转诚实 UNEVAL, 绝不输出错误答案。现可正确求解: exp(±ax)、sin/cos(ax)、x·e^{-ax²}、1/(xa)、a·x²+a、xⁿ、√(a²-x²)、√(x²+a²)、1/(x²+a²)、定积分 ∫₀^a x√(a²-x²)=a³/3 等。遗留(诚实 None, 待补规则): √(x²-a²) 参数版、1/(x²+a)²、定积分 ∫₀^a √(a²-x²)。全量 234 通过, 新增 tests/test_integral_param.py 9 项。
+> Parametric indefinite integrals now solved on the user request path only (instance flag `_allow_parameters`); internal callers (ODE reduction, applied ops) keep the strict single-symbol behavior. A numeric-guard backstop converts any wrong parametric closed form (definite included) into honest UNEVAL. Remaining parametric cases still UNEVAL: sqrt(x^2-a^2), 1/(x^2+a)^2, the quarter-circle definite.
+
 
 
 12. ⬜ 所有 CSS 和 JS 文件都需要进行重构，以提高代码质量和维护性。

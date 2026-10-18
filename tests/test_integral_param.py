@@ -83,3 +83,26 @@ def test_unsolved_parametric_radical_is_honest_none():
     # sqrt(x**2 - a**2) has no parametric path yet; the engine returns an honest
     # UNEVAL (None) rather than a wrong expression.
     assert _antiderivative(sqrt(x ** 2 - a ** 2)) is None
+
+
+def _definite(expr, lo, hi):
+    """Parametric definite integral: return the final recorded value (may be None)."""
+    calc = IntegralCalculator(True)
+    calc._allow_parameters = True
+    steps, _expl = calc.compute_list(expr, x, lo, hi)
+    return steps[-1]
+
+
+def test_definite_parametric_verified_correct():
+    # int_0^a x*sqrt(a^2 - x^2) dx = a^3/3 (a>0). The numeric definite guard confirms
+    # the closed form, so it is kept; check it matches a^3/3 at a concrete a.
+    res = _definite(x * sqrt(a ** 2 - x ** 2), 0, a)
+    assert res is not None
+    val = complex(res.subs(a, 1.7).evalf())
+    assert abs(val.real - 1.7 ** 3 / 3) < 1e-6 and abs(val.imag) < 1e-9
+
+
+def test_definite_parametric_rejects_garbage():
+    # int_0^a sqrt(a^2 - x^2) dx currently yields a non-finite closed form (stray zoo);
+    # the numeric definite guard must turn it into an honest UNEVAL, never ship it.
+    assert _definite(sqrt(a ** 2 - x ** 2), 0, a) is None
