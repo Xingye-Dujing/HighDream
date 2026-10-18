@@ -50,9 +50,9 @@
   },
   {
     "type": "code",
-    "content": "\\lim_{x \\to \\infty} \\left(1 - \\frac{1}{n}\\right)^{n}",
+    "content": "\\lim_{n \\to \\infty} \\left(1 - \\frac{1}{n}\\right)^{n}",
     "operationType": "auto",
-    "variable": "x",
+    "variable": "n",
     "point": "oo",
     "direction": "+",
     "maxLhopitalCount": "5"
