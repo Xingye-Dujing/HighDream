@@ -1,4 +1,7 @@
-from sympy import E, Expr, Integer, Pow, exp, latex, log, sin, simplify
+from sympy import (
+    E, Expr, Integer, Limit, Mul, Pow, Symbol, Wild, asin, atan, cos, exp, latex, log,
+    simplify, sin, tan,
+)
 
 from domains.limit.limit_help_func import check_function_tends_to_zero
 from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
@@ -575,4 +578,89 @@ def g_over_exp_minus_one_matcher(expr: Expr, context: RuleContext) -> MatcherFun
     if not ratio.has(var) and check_function_tends_to_zero(f, var, point, direction):
         return "g_over_exp_minus_one"
 
+    return None
+
+
+# --- equivalent-infinitesimal substitution (independent multiplicative factors) ---
+
+_U = Wild('u')
+
+# (pattern whose inner _U -> 0, how to build the equivalent psi from _U)
+#   'u'  : phi(u) ~ u            'u2': phi(u) ~ u**2 / 2
+_EQUIV_TABLE = [
+    (sin(_U), 'u'),
+    (tan(_U), 'u'),
+    (asin(_U), 'u'),
+    (atan(_U), 'u'),
+    (log(1 + _U), 'u'),
+    (exp(_U) - 1, 'u'),
+    (1 - cos(_U), 'u2'),
+]
+
+
+def _match_equiv_factor(factor: Expr, var: Symbol, point: Expr, direction: str):
+    """Return ``(replacement, phi, psi)`` if ``factor`` is an independent product
+    factor equivalent to a simpler infinitesimal (and its argument tends to 0), else
+    ``None``. Handles a ``Pow`` factor so ``sin(u)**2`` and ``1/(1-cos u)`` (i.e.
+    ``(1-cos u)**-1``) are treated as the powered equivalent."""
+    if isinstance(factor, Pow):
+        base, power = factor.args
+        if not (power.is_Rational and power != 0):
+            return None
+    else:
+        base, power = factor, None
+    for pattern, kind in _EQUIV_TABLE:
+        matched = base.match(pattern)
+        if not matched:
+            continue
+        u = matched.get(_U)
+        if u is None or not u.has(var):
+            continue
+        if not check_function_tends_to_zero(u, var, point, direction):
+            continue
+        psi = u if kind == 'u' else u ** 2 / 2
+        repl = psi if power is None else psi ** power
+        return repl, base, psi
+    return None
+
+
+def equivalent_infinitesimal_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
+    """Replace each independent multiplicative/divisive factor by its equivalent
+    infinitesimal (sin u ~ u, 1-cos u ~ u^2/2, e^u-1 ~ u, ln(1+u) ~ u, ...).
+
+    Substitution is applied ONLY to whole factors of a product/quotient whose inner
+    argument tends to 0 — never inside a sum — because that is exactly where equivalent
+    infinitesimal replacement is valid (the classic ``sin x - x`` pitfall is avoided:
+    the difference is not a clean table factor and is left untouched).
+    """
+    var, point, direction, _ = _get_limit_args(context)
+    factors = list(expr.args) if expr.is_Mul else [expr]
+    new_factors, descs = [], []
+    for f in factors:
+        m = _match_equiv_factor(f, var, point, direction)
+        if m is None:
+            new_factors.append(f)
+        else:
+            repl, _phi, _psi = m
+            new_factors.append(repl)
+            descs.append(rf"{latex(f)} \sim {latex(repl)}")
+    if not descs:
+        return None
+    new_expr = Mul(*new_factors) if expr.is_Mul else new_factors[0]
+    body = r", ".join(descs)
+    explanation = (
+        rf"等价无穷小代换(仅对乘除的独立因子, 且 $u \to 0$): ${body}$; "
+        rf"代换后得 $\lim_{{{latex(var)} \to {latex(point)}}} {latex(new_expr)}$"
+    )
+    return Limit(new_expr, var, point, dir=direction), explanation
+
+
+def equivalent_infinitesimal_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    """Fire only when at least one top-level product factor is a table infinitesimal
+    whose argument tends to 0 (so a real substitution will happen)."""
+    var, point, direction, _ = _get_limit_args(context)
+    factors = expr.args if expr.is_Mul else [expr]
+    for f in factors:
+        if _match_equiv_factor(f, var, point, direction) is not None:
+            return 'equivalent_infinitesimal'
     return None

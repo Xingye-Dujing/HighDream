@@ -32,6 +32,7 @@ from .rules.important_rules import (
     g_over_sin_rule, g_over_sin_matcher,
     g_over_ln_one_plus_rule, g_over_ln_one_plus_matcher,
     g_over_exp_minus_one_rule, g_over_exp_minus_one_matcher,
+    equivalent_infinitesimal_rule, equivalent_infinitesimal_matcher,
 )
 from .rules.lhopital_rules import (
     lhopital_direct_matcher, lhopital_direct_rule,
@@ -88,6 +89,7 @@ RULE_DICT: RuleDict = {
     'g_over_sin': g_over_sin_rule,
     'g_over_ln_one_plus': g_over_ln_one_plus_rule,
     'g_over_exp_minus_one': g_over_exp_minus_one_rule,
+    'equivalent_infinitesimal': equivalent_infinitesimal_rule,
     'lhopital_direct': lhopital_direct_rule,
     'lhopital_zero_times_inf': lhopital_zero_times_inf_rule,
     'lhopital_inf_minus_inf': lhopital_inf_minus_inf_rule,
@@ -129,6 +131,10 @@ MATCHER_LIST: MatcherList = [
     g_over_sin_matcher,
     g_over_ln_one_plus_matcher,
     g_over_exp_minus_one_matcher,
+    # Equivalent-infinitesimal substitution of independent product/quotient factors
+    # (only u->0, never inside a sum) — before the generic split rules so a product of
+    # infinitesimals collapses by substitution instead of needing L'Hopital.
+    equivalent_infinitesimal_matcher,
     # Arithmetic splitting: (f+g), (f*g), (f/g)
     bounded_oscillation_infinity_matcher,
     add_split_matcher,

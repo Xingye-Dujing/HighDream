@@ -1,0 +1,46 @@
+[
+  {
+    "type": "markdown",
+    "content": "等价无穷小代换（仅限乘除的独立因子，且内层 u→0）：sin u~u、tan u~u、arcsin u~u、arctan u~u、1-cos u~u²/2、e^u-1~u、ln(1+u)~u。加减项内部一律不代换（规避 sin x - x 陷阱）。"
+  },
+  {
+    "type": "code",
+    "content": "\\lim_{x \\to 0}\\frac{\\tan(x)\\,\\sin(x)}{x^{2}}",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\lim_{x \\to 0}\\frac{1-\\cos(2x)}{x^{2}}",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\lim_{x \\to 0}\\frac{\\sin(x)\\tan(x)}{x(e^{x}-1)}",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\lim_{x \\to 0}\\frac{\\ln(1+3x)\\sin(2x)}{x^{2}}",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\lim_{x \\to 0}\\frac{(e^{x}-1)\\ln(1+2x)}{x^{2}}",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "markdown",
+    "content": "反例（不可代换）：分子是差 sin x - x，属于加减项，引擎不代换、改走洛必达，正确得到 -1/6（若误把 sin x 换成 x 会得 0）。"
+  },
+  {
+    "type": "code",
+    "content": "\\lim_{x \\to 0}\\frac{\\sin(x)-x}{x^{3}}",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]
