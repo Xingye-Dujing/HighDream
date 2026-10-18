@@ -13,6 +13,23 @@ sqrt_pow = Rational(1, 2)
 minus_sqrt_pow = -Rational(1, 2)
 
 
+def _simp(node: Expr) -> Expr:
+    """Cheap canonicalization: ``cancel`` for a pure rational function, else ``simplify``.
+
+    ``simplify`` runs transcendental/trig/exp strategies that are wasted on the many
+    rational ratios in the substitution loop (and dominate their cost — e.g. the degree-6
+    partial-fraction of 1/(x^4+1)). ``cancel`` gives the same reduced-rational result for
+    rational expressions far faster, while the constant/zero tests below (``== 0``,
+    ``.has(var)``, ``.free_symbols``) behave identically on a cancelled form. Falls back to
+    ``simplify`` for anything with non-rational content, so results are unchanged there."""
+    try:
+        if node.is_rational_function():
+            return cancel(node)
+    except (TypeError, AttributeError, NotImplementedError):
+        pass
+    return simplify(node)
+
+
 def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
     """Attempt standard u-substitution for integrals of the form f(g(x)) g'(x) dx.
 
@@ -70,11 +87,11 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
 
             for term in check_list:
 
-                gp = simplify(diff(term, var))  # g'(x)
+                gp = _simp(diff(term, var))  # g'(x)
                 if gp == 0:  # g'(x) = 0
                     continue
 
-                initial_ratio = simplify(expr / gp)
+                initial_ratio = _simp(expr / gp)
                 # Special case: g'(x) dx, let u = g(x), g'(x) dx = 1 du
                 if not initial_ratio.free_symbols:
                     # Substitute u = g(x)
@@ -94,7 +111,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
                     # integration variable. On single-variable input free_symbols and
                     # has(var) agree; with a parameter present only has(var) correctly
                     # treats e.g. -1/a (k for exp(-a*x)) as a valid constant multiple.
-                    ratio = simplify(outer_part / gp)
+                    ratio = _simp(outer_part / gp)
                     if ratio.has(var):
                         continue
 
@@ -102,7 +119,7 @@ def try_standard_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenera
                     u = step_gene.get_available_sym(var)
 
                     # Construct f(u)
-                    f_u = simplify((initial_ratio / ratio).subs(term, u))
+                    f_u = _simp((initial_ratio / ratio).subs(term, u))
 
                     if f_u.has(var):
                         continue
