@@ -14,6 +14,7 @@ from domains.integral.rules.substitution_rule_help import (
     try_standard_substitution,
     try_trig_substitution,
     try_trig_odd_power,
+    try_tangent_substitution,
     try_hyperbolic_substitution,
     try_undetermined_coeffs_for_radicals,
     try_exp_product_substitution,
@@ -174,6 +175,12 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     # the parts fallback, which for these cycles back to the original integral (degenerate,
     # ~10s for 1/(cosh x + 1)); t=e^x turns it into a rational function integrated directly.
     result = try_hyperbolic_substitution(expr, var, step_gene)
+    if result:
+        return result
+
+    # Strategy 1e: proper rational function even in sin & cos (R(sin^2, cos^2)) -> t = tan x.
+    # Lower-degree than Weierstrass (e.g. 1/(sin^2 x + 3) -> ∫dt/(4t^2+3) vs degree-6).
+    result = try_tangent_substitution(expr, var, step_gene)
     if result:
         return result
 

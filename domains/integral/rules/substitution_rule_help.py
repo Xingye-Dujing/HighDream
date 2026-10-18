@@ -299,6 +299,44 @@ def try_hyperbolic_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGene
         f"原式$\\int {latex(expr)}\\,d{var.name}$ 化为 $\\int {latex(f_t)}\\,d{t.name}$")
 
 
+def try_tangent_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
+    """Tangent substitution t = tan(var) for a *proper rational* integrand that is even in
+    both sin and cos — i.e. a rational function R(sin^2, cos^2) (so f(-sin,-cos)=f).
+
+    Then sin^2 = t^2/(1+t^2), cos^2 = 1/(1+t^2), sin*cos = t/(1+t^2), dx = dt/(1+t^2), which
+    gives a plain rational function in t. This is cheaper than Weierstrass (t = tan(x/2)):
+    e.g. 1/(sin^2 x + 3) -> ∫dt/(4 t^2 + 3) (degree 2, instant atan) instead of Weierstrass's
+    degree-6 rational (~5.6s).
+
+    Guarded to avoid regressing fast paths: fires only when (a) there is a genuine
+    denominator involving sin/cos (so bare sin^n/cos^n powers keep their existing
+    double-angle / reduction handling), and (b) the integrand is invariant under
+    sin -> -sin, cos -> -cos. Odd combos like 1/(sin + cos) correctly fail the parity test.
+    """
+    if not (expr.has(sin(var)) or expr.has(cos(var))):
+        return None
+    den = fraction(together(expr))[1]
+    if den == 1 or not den.has(sin(var), cos(var)):
+        return None  # polynomial in sin/cos (or no trig denominator) -> other matchers
+    negated = expr.subs({sin(var): -sin(var), cos(var): -cos(var)})
+    if _simp(expr - negated) != 0:
+        return None  # not even in sin & cos -> not a function of sin^2/cos^2 alone
+    t = step_gene.get_available_sym(var)
+    s2 = t ** 2 / (1 + t ** 2)
+    c2 = 1 / (1 + t ** 2)
+    f_t = expr.subs({sin(var) ** 2: s2, cos(var) ** 2: c2,
+                     sin(var) * cos(var): t / (1 + t ** 2),
+                     tan(var): t, cot(var): 1 / t})
+    f_t = _simp(f_t / (1 + t ** 2))  # * dx/dt
+    if f_t.has(var) or not f_t.is_rational_function(t):
+        return None
+    step_gene.subs_dict[t] = tan(var)
+    return Integral(f_t, t), (
+        f"正切代换(被积式为 sin²/cos² 的有理式): 令 ${t.name} = \\tan({var.name})$, "
+        f"$\\sin^2 = {latex(s2)}$, $\\cos^2 = {latex(c2)}$, $d{var.name} = d{t.name}/(1+{t.name}^2)$, "
+        f"化为 $\\int {latex(f_t)}\\,d{t.name}$")
+
+
 def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
     """
     Apply trigonometric substitution for integrals containing a half-integer power of a
