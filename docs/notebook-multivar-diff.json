@@ -1,0 +1,62 @@
+[
+  {
+    "type": "code",
+    "content": "\\partial_{x}(x^{2} y + x y z + y^{2})",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\partial_{y}(x^{2} y + x y z + y^{2})",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\partial_{z}(x^{2} y z + e^{z})",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\partial_{x}(\\sin(x y))",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\partial_{y}(\\sin(x y))",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\partial_{x}(x^{2}+y^{2})^{n}",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "diff(diff(x**3*y**2*z, x), y)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "diff(diff(x**2*y*z**3, z), x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "grad(x^2*y + y*z + z, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "grad(x^2 + y^2 + z^2, x)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

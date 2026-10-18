@@ -1,0 +1,32 @@
+[
+  {
+    "type": "code",
+    "content": "iterated(x*y, x, y, 0, 1, 0, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "iterated(x+y, x, y, 0, 1, 0, 2)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "iterated(x**2*y, x, y, 0, 2, -1, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "iterated(exp(x)*y, x, y, 0, 1, 0, 2)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "iterated(sin(x)*y, x, y, 0, 1, 0, 2)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

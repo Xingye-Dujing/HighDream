@@ -1,0 +1,38 @@
+[
+  {
+    "type": "code",
+    "content": "implicit(x^2 + y^2 - 1, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "implicit(x^3 + y^3 - 6*x*y, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "implicit(x^2*y + y^3 - 4, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "parametric(t^2\n2*t, t)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "parametric(cos(t)\nsin(t), t)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "parametric(t + 1/t\nt - 1/t, t)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

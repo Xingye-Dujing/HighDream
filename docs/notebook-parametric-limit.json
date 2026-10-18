@@ -1,0 +1,44 @@
+[
+  {
+    "type": "code",
+    "content": "\\lim_{x \\to 0}\\frac{\\sin(a x)}{x}",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\lim_{x \\to 0}\\frac{1-\\cos(a x)}{x^{2}}",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\lim_{x \\to 0}\\frac{e^{a x}-1}{x}",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\lim_{x \\to 0}\\frac{\\tan(a x)}{x}",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\lim_{x \\to 0}\\frac{\\ln(1+a x)}{x}",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\lim_{x \\to \\infty}(1+\\frac{a}{x})^{x}",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\lim_{x \\to 0}\\frac{e^{a x}-e^{b x}}{x}",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

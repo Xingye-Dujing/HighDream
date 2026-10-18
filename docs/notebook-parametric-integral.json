@@ -1,0 +1,80 @@
+[
+  {
+    "type": "code",
+    "content": "\\int x^{n} \\, dx",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\int e^{-a x} \\, dx",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\int e^{a x} \\, dx",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\int \\sin(a x) \\, dx",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\int \\cos(a x) \\, dx",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\int \\frac{1}{x^{2}+a^{2}} \\, dx",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\int \\frac{1}{(x^{2}+a^{2})^{2}} \\, dx",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\int x e^{-a x^{2}} \\, dx",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\int x\\sqrt{a^{2}-x^{2}} \\, dx",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\int \\sqrt{a^{2}-x^{2}} \\, dx",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\int (a x^{2}+a) \\, dx",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\int_{0}^{1} x^{n} \\, dx",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "\\int_{0}^{a} x\\sqrt{a^{2}-x^{2}} \\, dx",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

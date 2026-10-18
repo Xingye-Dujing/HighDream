@@ -282,7 +282,12 @@ def _dispatch_calculus(expression: str):
         kwargs = {}
         if bounds is not None and len(bounds) == 3:
             kwargs['lower'], kwargs['upper'] = bounds[1], bounds[2]
-        return True, _calculators['integral']().compute_latex(str(obj.args[0]), var, **kwargs)
+        # Universal-box integrals may carry parameters (e.g. a, n); honor the
+        # integration variable and treat other symbols as constants (matching the
+        # dedicated ``integral`` operation path).
+        _calc = _calculators['integral']()
+        _calc._allow_parameters = True
+        return True, _calc.compute_latex(str(obj.args[0]), var, **kwargs)
 
     if isinstance(obj, Limit):
         direction = obj.args[3] if len(obj.args) > 3 else '+'
