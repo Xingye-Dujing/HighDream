@@ -13,6 +13,7 @@ from domains.integral.rules.substitution_rule_help import (
     try_standard_substitution,
     try_trig_substitution,
     try_trig_odd_power,
+    try_hyperbolic_substitution,
     try_undetermined_coeffs_for_radicals,
     try_exp_product_substitution,
 )
@@ -165,6 +166,13 @@ def substitution_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     # before the (expensive) trig substitution and Weierstrass, which otherwise turn a
     # textbook-simple integral like sin^2*cos^5 into a degree-8 rational blowup.
     result = try_trig_odd_power(expr, var, step_gene)
+    if result:
+        return result
+
+    # Strategy 1d: rational function of sinh/cosh/tanh -> t = e^x substitution. Fires before
+    # the parts fallback, which for these cycles back to the original integral (degenerate,
+    # ~10s for 1/(cosh x + 1)); t=e^x turns it into a rational function integrated directly.
+    result = try_hyperbolic_substitution(expr, var, step_gene)
     if result:
         return result
 

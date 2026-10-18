@@ -1,7 +1,8 @@
 from sympy import (
     Add, Abs, Dummy, Eq, Expr, Function, I, Integral, Pow, Rational, Symbol, Wild,
-    acos, asin, atan, cancel, cos, cot, csc, diff, expand_trig, exp, fraction, latex,
-    log, preorder_traversal, powdenest, sec, simplify, sin, solve, sqrt, symbols, tan, together
+    acos, asin, atan, cancel, cos, cosh, coth, cot, csc, csch, diff, expand_trig, exp,
+    fraction, latex, log, preorder_traversal, powdenest, sech, sec, simplify, sin, sinh,
+    solve, sqrt, symbols, tan, tanh, together
 )
 import math
 
@@ -217,6 +218,46 @@ def try_trig_odd_power(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) ->
             f"三角奇次幂换元: 正弦幂为奇, 令 ${u.name} = \\cos({latex(var)})$, $d{u.name} = "
             f"-\\sin({latex(var)})\\,d{var.name}$, $\\sin^2 = 1-\\cos^2$ 展开为多项式 $\\int {latex(poly)}\\,d{u.name}$")
     return None  # both even -> double-angle reduction, not this rule
+
+
+_HYPERBOLIC_FUNCS = (sinh, cosh, tanh, coth, sech, csch)
+
+
+def try_hyperbolic_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
+    """Exponential substitution t = e^var for integrands that are a rational function of
+    the hyperbolic functions (sinh/cosh/tanh/...).
+
+    Every hyperbolic function is a rational function of e^x (cosh = (e^x + e^-x)/2, ...),
+    so such integrands reduce to a rational function in t and integrate by partial
+    fractions. This is the textbook method; without it these fall through to a poor
+    integration-by-parts that cycles back to the original integral (e.g. 1/(cosh x + 1)),
+    wasting ~10s and producing a degenerate, non-progressing derivation.
+
+    Narrow by design: fires only when a hyperbolic function is present and the
+    exp-rewritten, combined expression is genuinely a rational function of e^var, so it
+    cannot hijack trig (Weierstrass) or already-rational-in-exp cases handled elsewhere.
+    """
+    if not expr.has(*_HYPERBOLIC_FUNCS):
+        return None
+    rw = together(cancel(expr.rewrite(exp)))
+    if not rw.is_rational_function(exp(var)):
+        return None
+    t = step_gene.get_available_sym(var)
+    # Replace every e^(k*var) (integer k, including negative) by t**k.
+    reps = {}
+    for e in rw.atoms(exp):
+        coef = e.args[0].as_coefficient(var)
+        if coef is not None and coef.is_Integer:
+            reps[e] = t ** int(coef)
+    if not reps:
+        return None
+    f_t = simplify(rw.subs(reps) / t)  # dx = dt/t  (dt = e^x dx = t dx)
+    if f_t.has(var) or not f_t.is_rational_function(t):
+        return None
+    step_gene.subs_dict[t] = exp(var)
+    return Integral(f_t, t), (
+        f"双曲函数化为指数: 令 ${t.name} = e^{{{var.name}}}$, $d{var.name} = d{t.name}/{t.name}$, "
+        f"原式$\\int {latex(expr)}\\,d{var.name}$ 化为 $\\int {latex(f_t)}\\,d{t.name}$")
 
 
 def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator) -> RuleFunctionReturn:
