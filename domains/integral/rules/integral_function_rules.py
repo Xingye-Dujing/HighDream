@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sympy import (
     Abs, Expr, Integral, Pow, Rational, Wild, asin, atan, cos, cosh, cot, csc, exp,
     latex, log, sec, sin, sinh, sqrt, tan, tanh, trigsimp, csch, sech, coth
@@ -109,15 +111,48 @@ def inverse_trig_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     return None
 
 
+def _constant_positive(m: Expr) -> Optional[bool]:
+    """Decide the sign of the variable-independent constant term ``m`` in
+    ``1/(x^2 + m)^n``. Returns True (arctangent branch), False (log/partial-fraction
+    branch) or None when the sign cannot be determined.
+
+    Definite for numeric ``m``. For a symbolic parameter (e.g. ``a**2``) the textbook
+    convention is that the constant is positive; we confirm by probing at positive
+    sample values of its free symbols. A genuine numeric ``is_positive`` always wins,
+    so a negative parameter combination correctly falls to the log branch. The
+    integral engine's parametric numeric-guard backstops any residual misjudgment."""
+    if m.is_positive:
+        return True
+    if m.is_negative or m.is_zero:
+        return False
+    probe = m
+    for sym in m.free_symbols:
+        probe = probe.subs(sym, 1.7)
+    if probe.is_number:
+        try:
+            val = float(probe.evalf())
+        except (TypeError, ValueError):
+            return None
+        if val > 0:
+            return True
+        if val < 0:
+            return False
+    return None
+
+
 def inverse_tangent_linear_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     """Handles integrals of the form 1/(x^2 + m)^n."""
 
     var = context['variable']
     var_latex = wrap_latex(var)
-    # SymPy puts the constant term at the front
-    m = expr.base.args[0]
+    # The constant term m is the base arg that does not involve the variable; SymPy's
+    # arg order is not fixed (x**2 - a**2 vs x**2 + a**2), so select it by role.
+    m = next(arg for arg in expr.base.args if not arg.has(var))
     m_latex = wrap_latex(m)
-    if m > 0:
+    m_positive = _constant_positive(m)
+    if m_positive is None:
+        return None
+    if m_positive:
         sqrt_m = sqrt(m)
         sqrt_m_latex = "" if sqrt_m.equals(1) else wrap_latex(sqrt_m)
 
@@ -423,14 +458,20 @@ def coth_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
 
 
 def inverse_tangent_linear_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
-    """Matcher for expressions of the form 1/(x^2 + m)^n"""
+    """Matcher for expressions of the form 1/(x^2 + m)^n."""
     var = context['variable']
 
     if expr.is_Pow and expr.exp.is_Integer and expr.exp < 0:
         terms = expr.base.args
-        # SymPy puts the constant term at the front
-        if expr.base.is_Add and len(terms) == 2 and terms[1].equals(var ** 2) and terms[0].is_constant():
-            return 'inverse_tangent_linear'
+        # Exactly two Add terms: one is the pure ``var**2`` and the other a term
+        # independent of ``var`` (a numeric or parameter constant such as ``a**2``).
+        # SymPy's arg order is not fixed (x**2 - a**2 -> (x**2, -a**2) but
+        # x**2 + a**2 -> (a**2, x**2)), so detect the roles positionally-independently.
+        if expr.base.is_Add and len(terms) == 2:
+            for idx in (0, 1):
+                other = 1 - idx
+                if terms[idx].equals(var ** 2) and not terms[other].has(var):
+                    return 'inverse_tangent_linear'
 
     return None
 

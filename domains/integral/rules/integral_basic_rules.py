@@ -144,11 +144,20 @@ def add_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
                             (alpha, beta))
                 alpha_val, beta_val = sol[alpha], sol[beta]
                 if alpha_val.is_constant() and beta_val.is_constant():
-                    part1 = radsimp(alpha_val * den_diff / den)
-                    part2 = beta_val
-                    result = Integral(part1, var) + Integral(part2, var)
-                    return result, (f"$构造等式(分子 = \\alpha \\cdot 分母导数 + \\beta \\cdot 分母)进行裂项: "
-                                    f"\\int {expr_latex}\\,d {var_latex} = {latex(result)}$")
+                    # The solver sometimes returns a spurious unique solution
+                    # (e.g. alpha=beta=0) when no real decomposition exists — most
+                    # often for a parameterized constant numerator over a trig
+                    # denominator like a**2/cos(u)**3. Verify the constructed identity
+                    # actually reproduces the numerator before committing; otherwise
+                    # this rule collapses the integrand to \int 0 and loses it, so we
+                    # fall through to the remaining split/expand handling below.
+                    identity = simplify(alpha_val * den_diff + beta_val * den - num)
+                    if identity == 0:
+                        part1 = radsimp(alpha_val * den_diff / den)
+                        part2 = beta_val
+                        result = Integral(part1, var) + Integral(part2, var)
+                        return result, (f"$构造等式(分子 = \\alpha \\cdot 分母导数 + \\beta \\cdot 分母)进行裂项: "
+                                        f"\\int {expr_latex}\\,d {var_latex} = {latex(result)}$")
             except Exception:
                 # print(f"Error in add_rule: {e}")
                 pass

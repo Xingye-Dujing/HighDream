@@ -9,7 +9,7 @@ verification guard turns any *wrong* parametric closed form into an honest UNEVA
 (``None``) instead of shipping it, so the tests below assert either a verified
 antiderivative or ``None`` — never a wrong expression."""
 
-from sympy import Symbol, diff, exp, sin, cos, sqrt, simplify, Integral
+from sympy import Symbol, exp, sin, cos, sqrt, simplify, Integral
 
 from domains import IntegralCalculator
 
@@ -66,8 +66,20 @@ def test_trig_substitution_sqrt_a2_minus_x2():
     assert _finite_diff_ok(_antiderivative(expr), expr)
 
 
-def test_guard_rejects_wrong_parametric_form():
-    # sqrt(x**2 + a**2) mis-reduces downstream; the numeric guard must return None
-    # rather than ship a wrong closed form (previously a bare constant ``C``).
-    anti = _antiderivative(sqrt(x ** 2 + a ** 2))
-    assert anti is None
+def test_trig_substitution_sqrt_x2_plus_a2():
+    # add_rule no longer collapses a**2/cos(u)**3 to \int 0 (it verifies the alpha/beta
+    # identity), so the trig-substitution path for sqrt(x**2 + a**2) reduces correctly.
+    expr = sqrt(x ** 2 + a ** 2)
+    assert _finite_diff_ok(_antiderivative(expr), expr)
+
+
+def test_arctangent_with_parameter():
+    # The inverse-tangent matcher/rule now accept a symbolic constant term.
+    expr = 1 / (x ** 2 + a ** 2)
+    assert _finite_diff_ok(_antiderivative(expr), expr)
+
+
+def test_unsolved_parametric_radical_is_honest_none():
+    # sqrt(x**2 - a**2) has no parametric path yet; the engine returns an honest
+    # UNEVAL (None) rather than a wrong expression.
+    assert _antiderivative(sqrt(x ** 2 - a ** 2)) is None
