@@ -1,13 +1,39 @@
 from typing import List, Tuple
 
 from sympy import (
-    Basic, Expr, Function, Limit, Mul, Pow, S, Symbol, acos, acot, asin, atan, coth,
-    cos, cosh, cot, csc, diff, exp, latex, log, oo, sec, series, simplify,
+    Basic, Expr, Function, Limit, Mul, Pow, S, Symbol, acos, acot, asin, atan, cancel,
+    coth, cos, cosh, cot, csc, diff, expand_trig, exp, latex, log, oo, sec, series, simplify,
     sin, sinh, tan, tanh, together
 )
 
 from domains.limit.limit_help_func import get_limit_args
 from utils import MatcherFunctionReturn, RuleContext, RuleFunctionReturn
+
+
+def _simp(expr: Expr) -> Expr:
+    """Cost-bounded simplify for L'Hopital steps.
+
+    ``sympy.simplify`` invokes ``trigsimp``/``factor``, which dominate the runtime of
+    the repeated L'Hopital derivatives. Try cheap *identity* transforms first (cancel
+    for rationals, together+expand_trig otherwise) and keep the result only when it does
+    NOT grow the expression; otherwise fall back to full ``simplify``. This preserves the
+    exact value and correctness of every displayed step while skipping the expensive
+    collapse when it would not help.
+    """
+    if not isinstance(expr, Expr):
+        return expr
+    try:
+        if expr.is_rational_function():
+            cheap = cancel(expr)
+            if cheap.count_ops() <= expr.count_ops():
+                return cheap
+        else:
+            cheap = together(expand_trig(expr))
+            if cheap.count_ops() <= expr.count_ops():
+                return cheap
+    except Exception:  # pylint: disable=broad-exception-caught
+        pass
+    return simplify(expr)
 
 
 def _is_zero(expr: Expr) -> bool:
@@ -346,8 +372,8 @@ def _estimate_derivative_complexity(numerator: Expr, denominator: Expr, var: Sym
         # Computes derivative of sin(x)/x to approx as cos(x)/1 to moderate score.
     """
     # Compute derivative proxies
-    num_diff = simplify(diff(numerator, var))
-    den_diff = simplify(diff(denominator, var))
+    num_diff = _simp(diff(numerator, var))
+    den_diff = _simp(diff(denominator, var))
     try:
         # Avoid division by zero or undefined forms
         if den_diff == 0:
@@ -360,11 +386,11 @@ def _estimate_derivative_complexity(numerator: Expr, denominator: Expr, var: Sym
 
         # Simplify to reduce artificial complexity from unsimplified forms
         # Use cautious simplification to avoid expensive transformations.
-        result = simplify(derivative_ratio)
+        result = _simp(derivative_ratio)
 
     except Exception:
         # Fallback on the raw ratio if simplification fails (e.g., due to timeouts or singularities)
-        result = simplify(num_diff / den_diff)
+        result = _simp(num_diff / den_diff)
 
     # Aggregate weighted complexity metrics
     complexity = (
@@ -446,10 +472,10 @@ def lhopital_direct_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn
     typ = _get_indeterminate_type(num, den, var, point, direction)
 
     try:
-        num_deriv = simplify(diff(num, var))
-        den_deriv = simplify(diff(den, var))
+        num_deriv = _simp(diff(num, var))
+        den_deriv = _simp(diff(den, var))
 
-        new_expr = Limit(simplify(num_deriv / den_deriv),
+        new_expr = Limit(_simp(num_deriv / den_deriv),
                          var, point, dir=direction)
 
         # Map internal type to display form
@@ -502,10 +528,10 @@ def lhopital_zero_times_inf_rule(expr: Expr, context: RuleContext) -> RuleFuncti
         f"${latex(expr)} = \\frac{{{latex(numerator)}}}{{{latex(denominator)}}}$"
     )
 
-    numerator_diff = simplify(diff(numerator, var))
-    denominator_diff = simplify(diff(denominator, var))
+    numerator_diff = _simp(diff(numerator, var))
+    denominator_diff = _simp(diff(denominator, var))
 
-    diff_expr = simplify(numerator_diff / denominator_diff)
+    diff_expr = _simp(numerator_diff / denominator_diff)
     diff_limit = Limit(diff_expr, var, point, direction)
 
     explanation = conversion_explanation + (
@@ -545,7 +571,7 @@ def lhopital_inf_minus_inf_rule(expr: Expr, context: RuleContext) -> RuleFunctio
         numerator_diff = diff(numerator, var)
         denominator_diff = diff(denominator, var)
 
-        diff_expr = simplify(numerator_diff / denominator_diff)
+        diff_expr = _simp(numerator_diff / denominator_diff)
         diff_limit = Limit(diff_expr, var, point, direction)
         explanation = conversion_explanation + (
             f"应用洛必达法则,分子分母分别求导:"
