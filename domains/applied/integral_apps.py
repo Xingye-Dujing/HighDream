@@ -5,7 +5,7 @@ resulting definite integral is expanded by IntegralCalculator, so both the
 formula setup and the integration show complete steps.
 """
 
-from sympy import Integral, Symbol, pi, simplify, sqrt
+from sympy import Integral, S, Symbol, diff, latex, pi, simplify, sqrt
 
 from utils.cache_utils import cached_sympify as sympify
 
@@ -129,3 +129,101 @@ def triple_integral(data):
     items += rows
     data['_auto_value'] = steps_value(rows)
     return True, align(items)
+
+
+def _edge_x_of_y(p1, p2, y):
+    """Linear function x(y) for a non-horizontal edge through points p1,p2 (tuples),
+    or None if the edge is horizontal. Returns a sympy expression in Symbol y."""
+    x1, y1 = p1
+    x2, y2 = p2
+    if simplify(y1 - y2) == 0:
+        return None
+    slope = simplify((x2 - x1) / (y2 - y1))  # dx/dy
+    return simplify(x1 + slope * (y - y1))
+
+
+def changeorder(data):
+    """Change the order of integration for a linear-bounded (polygon) region.
+
+    Input describes a type-I region: a <= x <= b, g1(x) <= y <= g2(x) with g1, g2
+    constant or affine in x (so the region is a convex polygon). The reversed type-II
+    limits are derived by inverting the polygon's non-horizontal edges (splitting the
+    y-range at vertex heights). The reversed integral is verified equal to the original
+    (exact) before being presented; if it is not, or the bounds are not affine, it
+    declines honestly rather than emitting a wrong swap.
+    """
+    x = get_var(data)
+    y = Symbol(data.get('variable2', 'y') or 'y')
+    f = sympify(expr_text(data))
+    a, b = to_num(data.get('lower'), 0), to_num(data.get('upper'), 1)
+    g1, g2 = sympify(str(data.get('lower2', 0))), sympify(str(data.get('upper2', 0)))
+
+    def affine(expr, sym):
+        """A function is affine (linear or constant) in sym iff its 2nd derivative is 0."""
+        return simplify(diff(expr, sym, 2)) == 0
+    if not (affine(g1, x) and affine(g2, x)):
+        return False, '换序暂仅支持线性/常数边界(凸多边形区域)'
+
+    corners = [(a, simplify(g1.subs(x, a))), (a, simplify(g2.subs(x, a))),
+               (b, simplify(g1.subs(x, b))), (b, simplify(g2.subs(x, b)))]
+    ylevs = sorted({c[1] for c in corners}, key=float)
+    ylo, yhi = ylevs[0], ylevs[-1]
+    if ylo == yhi:
+        return False, '退化区域(面积为 0)'
+    # edges as vertex pairs of the boundary cycle
+    edges = [((a, simplify(g1.subs(x, a))), (b, simplify(g1.subs(x, b)))),   # bottom y=g1
+             ((b, simplify(g2.subs(x, b))), (a, simplify(g2.subs(x, a)))),   # top   y=g2
+             ((a, simplify(g1.subs(x, a))), (a, simplify(g2.subs(x, a)))),   # left  x=a
+             ((b, simplify(g1.subs(x, b))), (b, simplify(g2.subs(x, b))))]   # right x=b
+    nonhor = [e for e in edges if e[0][1] != e[1][1]]
+
+    slabs = []
+    for k in range(len(ylevs) - 1):
+        y0, y1 = ylevs[k], ylevs[k + 1]
+        ymid = (y0 + y1) / 2
+        xs = []
+        for p1, p2 in nonhor:
+            xof = _edge_x_of_y(p1, p2, y)
+            if xof is None:
+                continue
+            if simplify(p1[1] - ymid) and simplify(p2[1] - ymid) and (
+                    min(p1[1], p2[1]) <= ymid <= max(p1[1], p2[1])):
+                xs.append(xof)
+        if not xs:
+            continue
+        vals = [float(xof.subs(y, ymid)) for xof in xs]
+        xl, xr = xs[vals.index(min(vals))], xs[vals.index(max(vals))]
+        if simplify(xl - xr) == 0:
+            continue
+        slabs.append((y0, y1, simplify(xl), simplify(xr)))
+
+    # verify original vs reversed value (exact) before presenting
+    orig = simplify(Integral(Integral(f, (y, g1, g2)), (x, a, b)).doit())
+    rev = _rev_value(f, x, y, slabs)
+    if simplify(orig - rev) != 0:
+        return False, '换序结果与原式不一致, 已拒绝输出'
+
+    items = [(Integral(Integral(f, (y, g1, g2)), (x, a, b)), note("原累次积分(先 y 后 x)"))]
+    items.append((None, note("积分区域顶点: " + ", ".join(f"({latex(c[0])},{latex(c[1])})" for c in corners))))
+    items.append((None, note("交换积分次序(先 x 后 y), 逐条规则求解:")))
+    total = S.Zero
+    for si, (y0, y1, xl, xr) in enumerate(slabs):
+        if len(slabs) > 1:
+            items.append((Integral(Integral(f, (x, xl, xr)), (y, y0, y1)), note(f"第 {si+1} 个 y-分条")))
+        inner = integral_steps(f, x, xl, xr, allow_multi=True)  # integrate over x, y constant
+        items += inner
+        v1 = simplify([ev for (ev, _n) in inner][-1]) if inner else f
+        rows = integral_steps(v1, y, y0, y1)                    # outer over y
+        items += rows
+        total += simplify(steps_value(rows))
+    items.append((total, note("累加各分条 = 原值(换序前后已核验相等)")))
+    data['_auto_value'] = total
+    return True, align(items)
+
+
+def _rev_value(f, x, y, slabs):
+    """Evaluate the reversed-order integral value for verification (exact)."""
+    acc = S.Zero
+    for (y0, y1, xl, xr) in slabs:
+        acc += simplify(Integral(Integral(f, (x, xl, xr)), (y, y0, y1)).doit())
+    return acc

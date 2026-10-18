@@ -26,6 +26,7 @@ HANDLERS = {
     'surface_area': integral_apps.surface_area,
     'iterated_integral': integral_apps.iterated_integral,
     'triple_integral': integral_apps.triple_integral,
+    'changeorder': integral_apps.changeorder,
     # series / Taylor / improper
     'taylor': series.taylor,
     'taylor_error': series.taylor_error,

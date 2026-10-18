@@ -1,0 +1,56 @@
+[
+  {
+    "type": "code",
+    "content": "changeorder(1, x, y, 0, 1, 0, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "changeorder(x*y, x, y, 0, 1, 0, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "changeorder(x, x, y, 0, 1, x, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "changeorder(1, x, y, 0, 2, 0, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "changeorder(sin(x), x, y, 0, 1, 0, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "changeorder(x^2+y^2, x, y, 0, 1, 0, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "changeorder(exp(x), x, y, 0, 1, 0, x)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "changeorder(1, x, y, 0, 1, 0, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "changeorder(x+y, x, y, 0, 1, x, 1+x)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

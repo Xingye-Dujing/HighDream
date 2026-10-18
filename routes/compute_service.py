@@ -363,6 +363,10 @@ _AUTO_FUNCS = {
                                            'lower', 'upper', 'lower2', 'upper2', 'lower3', 'upper3']),
     'triple': ('triple_integral', ['expression', 'variable', 'variable2', 'variable3',
                                    'lower', 'upper', 'lower2', 'upper2', 'lower3', 'upper3']),
+    'changeorder': ('changeorder', ['expression', 'variable', 'variable2',
+                                    'lower', 'upper', 'lower2', 'upper2']),
+    'changeorderofintegration': ('changeorder', ['expression', 'variable', 'variable2',
+                                                  'lower', 'upper', 'lower2', 'upper2']),
     # applications of differentiation / integration
     'tangent': ('tangent', ['expression', 'variable', 'point']),
     'linearization': ('linearization', ['expression', 'variable', 'point']),
