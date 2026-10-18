@@ -1,0 +1,32 @@
+[
+  {
+    "type": "code",
+    "content": "curl(-y|x|0, x|y|z)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "curl(y*z|z*x|x*y, x|y|z)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "curl(2*x*y|x*y*z|-y*z**2, x|y|z)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "curl(y|-x|0, x|y|z)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "curl(x^2*y|y*z|x*z^2, x|y|z)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

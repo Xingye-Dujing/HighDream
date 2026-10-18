@@ -6,7 +6,7 @@ IntegralCalculator; implicit differentiation shows the differentiated equation
 then solves for y'.
 """
 
-from sympy import Eq, Function, Matrix, Symbol, cos, sin, solve, simplify, sqrt, Integral
+from sympy import Eq, Function, Matrix, Symbol, cos, latex, sin, solve, simplify, sqrt, Integral
 
 from utils.cache_utils import cached_sympify as sympify
 
@@ -210,4 +210,83 @@ def directional_derivative(data):
     items.append((norm, note("|v|")))
     items.append((unit, note("单位方向 v/|v|")))
     items.append((result, note("方向导数 D_u f = ∇f · (v/|v|)")))
+    return True, align(items)
+
+
+def _vector_field(data):
+    """Parse '|'-separated components + '|'-separated variables into (exprs, strs, syms)."""
+    comps = _split_pipe(expr_text(data))
+    varnames = [sympify(v) for v in _split_pipe(data.get('variable', ''))]
+    cstrs = comps
+    return [sympify(c) for c in comps], cstrs, varnames
+
+
+def curl(data):
+    """Curl ∇×F of a 3-D vector field (P|Q|R over x|y|z). Component partials are rule-derived."""
+    exprs, cstrs, syms = _vector_field(data)
+    if len(exprs) != 3 or len(syms) != 3:
+        return False, '旋度需三维向量场 curl(P|Q|R, x|y|z)'
+    P, Q, R = exprs
+    ps, qs, rs = cstrs
+    x, y, z = syms
+    def d(fstr, v):
+        return derivative_value(fstr, v)
+    comp = [simplify(d(rs, y) - d(qs, z)), simplify(d(ps, z) - d(rs, x)), simplify(d(qs, x) - d(ps, y))]
+    items = [(Matrix([P, Q, R]), note("向量场 F"))]
+    items.append((None, note("∇×F = (∂R/∂y−∂Q/∂z, ∂P/∂z−∂R/∂x, ∂Q/∂x−∂P/∂y)")))
+    for c, lab in zip(comp, ["∂R/∂y − ∂Q/∂z", "∂P/∂z − ∂R/∂x", "∂Q/∂x − ∂P/∂y"]):
+        items.append((c, note(lab)))
+    items.append((Matrix(comp), note("旋度 ∇×F")))
+    return True, align(items)
+
+
+def divergence(data):
+    """Divergence ∇·F of a vector field (P|Q|R over x|y|z). Partials rule-derived."""
+    exprs, cstrs, syms = _vector_field(data)
+    if len(exprs) != len(syms) or len(exprs) < 2:
+        return False, '散度需分量数与变量数一致, 如 div(P|Q|R, x|y|z)'
+    items = [(Matrix(exprs), note("向量场 F"))]
+    terms = []
+    for cstr, s in zip(cstrs, syms):
+        part = derivative_value(cstr, s)
+        terms.append(part)
+        items.append((part, note(f"$\\partial/\\partial {s}$ 作用于对应分量")))
+    div = simplify(sum(terms))
+    items.append((div, note("散度 ∇·F")))
+    return True, align(items)
+
+
+def lagrange(data):
+    """Lagrange multipliers: extrema of f subject to g = 0.
+
+    Builds ∂f/∂xi = λ ∂g/∂xi (rule-engine partials) plus the constraint g=0, then
+    solves the system for the stationary points and reports f at each."""
+    parts = _split_pipe(expr_text(data))
+    if len(parts) != 2:
+        return False, '拉格朗日乘数需 f|g 两个表达式(lagrange(f|g, x|y))'
+    fstr, gstr = parts
+    f, g = sympify(fstr), sympify(gstr)
+    syms = [sympify(v) for v in _split_pipe(data.get('variable', ''))] or sorted((f.free_symbols | g.free_symbols), key=str)
+    lam = Symbol('lambda')
+    eqs = []
+    items = [(f, note("目标函数 f")), (Eq(g, 0), note("约束 g = 0"))]
+    for s in syms:
+        dfx = derivative_value(fstr, s)
+        dgx = derivative_value(gstr, s)
+        eqs.append(Eq(dfx, lam * dgx))
+        items.append((Eq(dfx, lam * dgx), note(f"∂f/∂{s} = λ·∂g/∂{s}")))
+    eqs.append(g)
+    items.append((None, note("联立求解临界点")))
+    try:
+        sols = solve(eqs, list(syms) + [lam], dict=True)
+    except Exception:  # pylint: disable=broad-exception-caught
+        return False, '拉格朗日方程组求解失败'
+    if not sols:
+        return False, '未求得拉格朗日临界点'
+    rows = []
+    for sol in sols:
+        pt = {s: simplify(sol.get(s, 0)) for s in syms}
+        val = simplify(f.subs(pt))
+        rows.append((simplify(sol.get(lam, 0)), pt, val))
+        items.append((Matrix([pt[s] for s in syms]), note(f"λ={latex(simplify(sol.get(lam, 0)))} 处, f={latex(val)}")))
     return True, align(items)

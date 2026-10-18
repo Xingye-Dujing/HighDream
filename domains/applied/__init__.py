@@ -44,6 +44,9 @@ HANDLERS = {
     'hessian': multivar.hessian,
     'jacobian': multivar.jacobian,
     'directional': multivar.directional_derivative,
+    'curl': multivar.curl,
+    'divergence': multivar.divergence,
+    'lagrange': multivar.lagrange,
     # ODE
     'ode': ode.solve_ode,
     # complex numbers
