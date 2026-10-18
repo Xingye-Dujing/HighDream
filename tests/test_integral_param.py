@@ -79,6 +79,12 @@ def test_arctangent_with_parameter():
     assert _finite_diff_ok(_antiderivative(expr), expr)
 
 
+def test_arctangent_squared_with_parameter():
+    # The n=2 reduction branch works once the constant term is parameter-aware.
+    for expr in (1 / (x ** 2 + a ** 2) ** 2, 1 / (x ** 2 + a) ** 2):
+        assert _finite_diff_ok(_antiderivative(expr), expr)
+
+
 def test_unsolved_parametric_radical_is_honest_none():
     # sqrt(x**2 - a**2) has no parametric path yet; the engine returns an honest
     # UNEVAL (None) rather than a wrong expression.
