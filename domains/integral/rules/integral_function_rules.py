@@ -38,6 +38,19 @@ def _likely_equals(expr: Expr, *targets: Expr) -> bool:
     return False
 
 
+# A trig / hyperbolic identity target (sec, csc, cot, tan*sec, csch, sech, coth, ...)
+# cannot be matched by an expression that contains no trig or hyperbolic function of the
+# variable — such a node lives in a different differential field (no periodic poles, etc.).
+# These identity matchers run on every BFS node, so on log/rational/polynomial integrands
+# (e.g. notebook cell 17) they were burning expr.equals deciding "is log(x+2) == sec(x)?".
+# This cheap structural precondition skips them.
+_TRIG_HYP_FUNCS = (sin, cos, tan, cot, sec, csc, sinh, cosh, tanh, coth, sech, csch)
+
+
+def _has_trig_or_hyp(expr: Expr) -> bool:
+    return expr.has(*_TRIG_HYP_FUNCS)
+
+
 def _create_rule(func_name):
     return RuleRegistry.create_common_rule(Integral, func_name)
 
@@ -100,7 +113,7 @@ def exp_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
     var = context['variable']
 
-    if _likely_equals(expr, exp(var)):
+    if expr.has(exp) and _likely_equals(expr, exp(var)):
         var_latex = wrap_latex(var)
         return expr, f"自然指数函数积分: $\\int e^{{{var_latex}}}\\,d{var_latex} = e^{{{var_latex}}} + C$"
 
@@ -120,6 +133,12 @@ def exp_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 
 def inverse_trig_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
     var = context['variable']
+
+    # Both targets here are reciprocals of a sqrt (a Pow with exponent ±1/2); an
+    # expression with no such radical cannot equal them, so skip the equals checks
+    # (inverse_trig_matcher is unconditional, so this rule runs on every node).
+    if not any(p.exp in (Rational(1, 2), -Rational(1, 2)) for p in expr.atoms(Pow)):
+        return None
 
     if _likely_equals(expr, 1 / sqrt(1 - var ** 2)):
         var_latex = wrap_latex(var)
@@ -411,7 +430,7 @@ def sec_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct sec(x) or 1/cos(x)
-    if _likely_equals(expr, sec(var), 1 / cos(var)):
+    if _has_trig_or_hyp(expr) and _likely_equals(expr, sec(var), 1 / cos(var)):
         return 'sec'
     return None
 
@@ -424,7 +443,7 @@ def csc_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct csc(x) or 1/sin(x)
-    if _likely_equals(expr, csc(var), 1 / sin(var)):
+    if _has_trig_or_hyp(expr) and _likely_equals(expr, csc(var), 1 / sin(var)):
         return 'csc'
     return None
 
@@ -437,7 +456,7 @@ def cot_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct cot(x) or 1/tan(x)
-    if _likely_equals(expr, cot(var), 1 / tan(var)):
+    if _has_trig_or_hyp(expr) and _likely_equals(expr, cot(var), 1 / tan(var)):
         return 'cot'
 
     return None
@@ -451,7 +470,7 @@ def csch_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct csch(x) or 1/sinh(x)
-    if _likely_equals(expr, csch(var), 1 / sinh(var)):
+    if _has_trig_or_hyp(expr) and _likely_equals(expr, csch(var), 1 / sinh(var)):
         return 'csch'
     return None
 
@@ -464,7 +483,7 @@ def sech_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct sech(x) or 1/cosh(x)
-    if _likely_equals(expr, sech(var), 1 / cosh(var)):
+    if _has_trig_or_hyp(expr) and _likely_equals(expr, sech(var), 1 / cosh(var)):
         return 'sech'
     return None
 
@@ -477,7 +496,7 @@ def coth_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     var = context['variable']
 
     # Match direct coth(x) or 1/tanh(x)
-    if _likely_equals(expr, coth(var), 1 / tanh(var)):
+    if _has_trig_or_hyp(expr) and _likely_equals(expr, coth(var), 1 / tanh(var)):
         return 'coth'
 
     return None
@@ -597,7 +616,7 @@ def csc_power_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:
 def tan_sec_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matcher for tan(x) * sec(x)."""
     var = context['variable']
-    if _likely_equals(expr, tan(var) * sec(var)):
+    if _has_trig_or_hyp(expr) and _likely_equals(expr, tan(var) * sec(var)):
         return 'tan_sec'
     return None
 
@@ -613,7 +632,7 @@ def tan_sec_rule(expr: Expr, context: RuleContext) -> RuleFunctionReturn:  # pyl
 def cot_csc_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
     """Matcher for cot(x) * csc(x)."""
     var = context['variable']
-    if _likely_equals(expr, cot(var) * csc(var)):
+    if _has_trig_or_hyp(expr) and _likely_equals(expr, cot(var) * csc(var)):
         return 'cot_csc'
     return None
 
