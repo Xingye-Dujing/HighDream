@@ -1,0 +1,26 @@
+[
+  {
+    "type": "code",
+    "content": "spherical(1, 0, 1, 0, pi, 0, 2*pi)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "spherical(1, 0, 3, 0, pi, 0, 2*pi)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "spherical(x^2+y^2+z^2, 0, 1, 0, pi, 0, 2*pi)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "spherical(1, 0, 2, 0, pi, 0, pi)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

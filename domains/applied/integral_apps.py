@@ -5,7 +5,7 @@ resulting definite integral is expanded by IntegralCalculator, so both the
 formula setup and the integration show complete steps.
 """
 
-from sympy import Integral, S, Symbol, diff, latex, pi, simplify, sqrt
+from sympy import Integral, S, Symbol, cos, diff, latex, pi, simplify, sin, sqrt
 
 from utils.cache_utils import cached_sympify as sympify
 
@@ -227,3 +227,72 @@ def _rev_value(f, x, y, slabs):
     for (y0, y1, xl, xr) in slabs:
         acc += simplify(Integral(Integral(f, (x, xl, xr)), (y, y0, y1)).doit())
     return acc
+
+
+def _triple_axes(items, f, axes):
+    """Integrate f over three nested axes (inner->outer). Inner two layers are partial
+    integrals (allow_multi), the outer is definite; each shown by the core engine.
+    axes = [(var, lo, hi), ...] inner first. Returns the final numeric/symbolic value."""
+    cur = f
+    for idx, (v, lo, hi) in enumerate(axes):
+        innermost = idx == 0
+        if idx == len(axes) - 1:
+            items.append((Integral(cur, (v, lo, hi)), note(f"最后对 {v} 积分")))
+            rows = integral_steps(cur, v, lo, hi)
+        else:
+            items.append((Integral(cur, (v, lo, hi)), note(f"对 {v} 积分(其余视为常数)" if not innermost
+                                                           else f"先对 {v} 积分(其余变量视为常数)")))
+            rows = integral_steps(cur, v, lo, hi, allow_multi=True)
+        items += rows
+        cur = simplify([ev for (ev, _n) in rows][-1]) if rows else cur
+    return cur
+
+
+def cylindrical_integral(data):
+    """Triple integral in cylindrical coordinates: x=r cosθ, y=r sinθ, z=z, dV = r dz dr dθ.
+
+    Integrand f is given in cartesian (x,y,z); it is substituted to (r,theta,z) and the
+    Jacobian r is applied — the setup step that is easy to forget. Bounds (inner->outer)
+    are for r, theta, z via lower/upper, lower2/upper2, lower3/upper3.
+    """
+    x, y, z = Symbol('x'), Symbol('y'), Symbol('z')
+    r, theta = Symbol('r'), Symbol('theta')
+    f = sympify(expr_text(data))
+    rl, ru = to_num(data.get('lower'), 0), to_num(data.get('upper'), 1)
+    tl, tu = to_num(data.get('lower2'), 0), to_num(data.get('upper2'), pi)
+    zl, zu = to_num(data.get('lower3'), 0), to_num(data.get('upper3'), 1)
+    fsub = simplify(f.subs({x: r * cos(theta), y: r * sin(theta)}))
+    items = [(f, note("直角坐标被积函数 f(x,y,z)"))]
+    items.append((None, note("柱坐标代换: x=r cosθ, y=r sinθ, z=z, dV = r dz dr dθ (雅可比 r)")))
+    integrand = simplify(fsub * r)
+    items.append((integrand, note("代入并乘雅可比后的被积式 (对 r,θ,z)")))
+    val = _triple_axes(items, integrand, [(r, rl, ru), (theta, tl, tu), (z, zl, zu)])
+    data['_auto_value'] = val
+    return True, align(items)
+
+
+def spherical_integral(data):
+    """Triple integral in spherical coordinates: x=ρ sinφ cosθ, y=ρ sinφ sinθ, z=ρ cosφ,
+    dV = ρ² sinφ dρ dφ dθ. Cartesian integrand substituted; Jacobian ρ² sinφ applied.
+
+    Bounds (inner->outer) for rho, phi, theta via lower/upper, lower2/upper2, lower3/upper3.
+    """
+    x, y, z = Symbol('x'), Symbol('y'), Symbol('z')
+    rho = Symbol('rho')
+    phi = Symbol('phi')
+    theta = Symbol('theta')
+    f = sympify(expr_text(data))
+    rl, ru = to_num(data.get('lower'), 0), to_num(data.get('upper'), 1)
+    pl, pu = to_num(data.get('lower2'), 0), to_num(data.get('upper2'), pi)
+    tl, tu = to_num(data.get('lower3'), 0), to_num(data.get('upper3'), 2 * pi)
+    fsub = simplify(f.subs({x: rho * sin(phi) * cos(theta),
+                            y: rho * sin(phi) * sin(theta),
+                            z: rho * cos(phi)}))
+    jac = rho ** 2 * sin(phi)
+    items = [(f, note("直角坐标被积函数 f(x,y,z)"))]
+    items.append((None, note("球坐标代换: x=ρ sinφ cosθ, y=ρ sinφ sinθ, z=ρ cosφ, dV = ρ² sinφ dρ dφ dθ")))
+    integrand = simplify(fsub * jac)
+    items.append((integrand, note("代入并乘雅可比后的被积式 (对 ρ,φ,θ)")))
+    val = _triple_axes(items, integrand, [(rho, rl, ru), (phi, pl, pu), (theta, tl, tu)])
+    data['_auto_value'] = val
+    return True, align(items)

@@ -365,6 +365,8 @@ _AUTO_FUNCS = {
                                    'lower', 'upper', 'lower2', 'upper2', 'lower3', 'upper3']),
     'changeorder': ('changeorder', ['expression', 'variable', 'variable2',
                                     'lower', 'upper', 'lower2', 'upper2']),
+    'cylindrical': ('cylindrical', ['expression', 'lower', 'upper', 'lower2', 'upper2', 'lower3', 'upper3']),
+    'spherical': ('spherical', ['expression', 'lower', 'upper', 'lower2', 'upper2', 'lower3', 'upper3']),
     'changeorderofintegration': ('changeorder', ['expression', 'variable', 'variable2',
                                                   'lower', 'upper', 'lower2', 'upper2']),
     # applications of differentiation / integration

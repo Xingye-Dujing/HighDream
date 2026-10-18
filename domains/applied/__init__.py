@@ -26,6 +26,8 @@ HANDLERS = {
     'surface_area': integral_apps.surface_area,
     'iterated_integral': integral_apps.iterated_integral,
     'triple_integral': integral_apps.triple_integral,
+    'cylindrical': integral_apps.cylindrical_integral,
+    'spherical': integral_apps.spherical_integral,
     'changeorder': integral_apps.changeorder,
     # series / Taylor / improper
     'taylor': series.taylor,
