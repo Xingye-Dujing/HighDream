@@ -1,6 +1,6 @@
 from sympy import (
     Abs, Add, Expr, Integer, Integral, Mul, Pow, Poly, PolynomialError, Rational,
-    cancel, diff, exp, fraction, integrate, latex, log, powsimp, simplify, together,
+    cancel, diff, exp, expand_trig, fraction, integrate, latex, log, powsimp, simplify, together,
     sin, cos, tan, cot, sec, csc, sqrt
 )
 from sympy.simplify.fu import fu
@@ -298,6 +298,13 @@ def weierstrass_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunct
         return None
 
     var = context['variable']
+
+    # Expand multiple-angle trig (sin(2x) -> 2 sin x cos x, cos(2x) -> 2cos^2 x - 1, ...)
+    # to single-angle powers FIRST: the substitution below only replaces sin(var)/cos(var),
+    # so an unexpanded sin(2x) would survive into simplify and produce a tangled, high-degree
+    # rational (e.g. 1/(sin(2x) cos x) took ~26s). With everything in sin(var)/cos(var) the
+    # .subs fully rationalizes and the resulting t-integral is low-degree.
+    expr = expand_trig(together(expr))
 
     if not can_use_weierstrass(expr, var):
         return None
