@@ -669,6 +669,46 @@ a {
   padding-right: var(--kb-rail-w);
 }
 
+/* Notebook page: the symbol/template rail is a real sibling COLUMN of the cells,
+   not a fixed overlay. Inside #main-cols the notebook and the rail sit side by
+   side in normal document flow (scroll together), separated by a single vertical
+   hairline. Scoped to #main-cols so matrix_lab / matrix_panel keep their existing
+   fixed rail untouched.                                                        */
+#main-cols {
+  display: flex;
+  align-items: stretch;
+}
+#main-cols > #notebook-container {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-right: 0;                 /* no longer reserving room for a fixed rail */
+}
+#main-cols > #math-keyboard {
+  position: static;                 /* undo the fixed top/right/bottom rail */
+  top: auto;
+  right: auto;
+  bottom: auto;
+  flex: 0 0 var(--kb-rail-w);
+  width: var(--kb-rail-w);
+  max-width: 45vw;
+  overflow: visible;                /* scrolls with the page, no internal clipping */
+  border-left: 1px solid var(--border-dim);
+  box-shadow: none;
+}
+
+/* Very narrow: stack the rail under the cells instead of squeezing both columns. */
+@media (max-width: 640px) {
+  #main-cols {
+    flex-direction: column;
+  }
+  #main-cols > #math-keyboard {
+    width: auto;
+    max-width: none;
+    border-left: none;
+    border-top: 1px solid var(--border-dim);
+  }
+}
+
 /* 函数图像（SVG 曲线）：折叠的 <details> 内嵌于 .math-output, 仅用主题变量描色。 */
 .cell-plot { margin-top: 8px; }
 .cell-plot > summary {
