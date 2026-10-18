@@ -9,6 +9,7 @@ from domains.integral.rules.f_x_mul_exp_g_x_rule_help import handle_fx_mul_exp_g
 from domains.integral.rules.parts_rule_help import select_parts_u_dv
 from domains.integral.rules.substitution_rule_help import (
     try_radical_substitution,
+    _simp,
     try_rationalizing_substitution,
     try_standard_substitution,
     try_trig_substitution,
@@ -329,7 +330,9 @@ def weierstrass_substitution_rule(expr: Expr, context: RuleContext) -> RuleFunct
 
     substituted_expr *= dx_dt
 
-    result = Integral(simplify(substituted_expr), t)
+    # The replaced integrand is a rational function of t (sin/cos/tan -> rational in t),
+    # so cancel() canonicalizes it correctly and far faster than the general simplify().
+    result = Integral(_simp(substituted_expr), t)
 
     var_latex = latex(var)
     explaination = (
