@@ -194,6 +194,15 @@ def try_trig_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerator)
     if not any(p.exp in (sqrt_pow, minus_sqrt_pow) for p in expr.atoms(Pow)):
         return None
 
+    # If the quadratic radical is trapped *inside a logarithm* (e.g. log(x + sqrt(x^2+1))
+    # = asinh(x)), trig substitution cannot rationalize the log argument — it only makes
+    # the integrand far harder (x = tan(u) turns it into log(tan u + sec u)/cos^2 u, a 70s
+    # detour). Such integrands are handled cleanly by integration by parts, so skip the
+    # trig substitution and let parts_rule take over.
+    if any(any(isinstance(p, Pow) and p.exp in (sqrt_pow, minus_sqrt_pow)
+                for p in L.atoms(Pow)) for L in expr.atoms(log)):
+        return None
+
     # Note: cancel() is necessary:
     # Simplify to the lowest terms to enhance matching capability.
     # (e.g., sqrt(x**2-8)/(x**2-8) to 1/sqrt(x**2-8))
