@@ -732,11 +732,19 @@ code {
 }
 
 .math-fullscreen-content,
-.formula-editor-panel,
-#math-keyboard {
+.formula-editor-panel {
   background-color: var(--bg);
   border: 1px solid var(--border-dim);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+/*  The symbol/template rail is part of the page, not a detached floating panel:
+    it sits on the same paper background, casts no shadow, and is separated from
+    the notebook only by a single vertical hairline on its left edge.            */
+#math-keyboard {
+  background-color: var(--bg);
+  border: none;
+  border-left: 1px solid var(--border-dim);
+  box-shadow: none;
 }
 .math-fullscreen-header,
 .formula-editor-header,
@@ -1665,4 +1673,85 @@ body.hd-menu-pinned #blueprint-canvas-container {
    ========================================================================== */
 :where(body *) {
   border-radius: var(--radius);
+}
+
+/* ==========================================================================
+   MathLive editor (the in-cell WYSIWYG formula box)
+   --------------------------------------------------------------------------
+   MathLive renders inside a shadow root, so the global `:where(body *)` radius
+   and the outline reset above reach only the host, never its internal
+   `.ML__container` (part="container"). Without a rule here the focused editor
+   showed MathLive's default hard focus box — a black rectangle that clashes
+   with the monochrome paper theme. Give the host the same resting hairline as
+   the other text fields, drive every corner from the single `--radius` knob,
+   and suppress the focus box: a focused editor stays pixel-identical to a
+   resting one, the caret being the only cue (matching "text entry is static").
+   ========================================================================== */
+.cell-input math-field.math-editor,
+.cell-input math-field.math-editor-b {
+  display: block;
+  width: 100%;
+  min-height: 100px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  text-align: center;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius);
+  outline: none;
+  box-shadow: none;
+  font-family: var(--font-mono);
+  font-size: var(--jp-code-font-size);
+  line-height: var(--jp-code-line-height);
+  cursor: text;
+}
+.cell-input math-field.math-editor:focus,
+.cell-input math-field.math-editor-b:focus,
+.cell-input math-field.math-editor:focus-visible,
+.cell-input math-field.math-editor-b:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-color: var(--border-dim);
+}
+.cell-input math-field.math-editor::part(container),
+.cell-input math-field.math-editor-b::part(container) {
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  caret-color: var(--text);
+}
+.cell-input math-field.math-editor:focus-within::part(container),
+.cell-input math-field.math-editor-b:focus-within::part(container) {
+  outline: none;
+  box-shadow: none;
+}
+
+/*  The optional assumptions entry ("x>0, y real") was created as a bare inline
+    <input> with no theme styling, so it rendered browser-default and sat out of
+    place in the cell toolbar. Give it the same hairline / paper / ink, size and
+    static focus behaviour as the other field controls.                          */
+.assumptions-input {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius);
+  padding: 3px 8px;
+  height: 24px;
+  font-family: var(--font-mono);
+  font-size: calc(var(--font-sub) * var(--fscale));
+  line-height: 1.4;
+  transition: border-color var(--transition-speed);
+}
+.assumptions-input::placeholder {
+  color: var(--text-faint);
+}
+.assumptions-input:hover {
+  border-color: var(--border);
+}
+.assumptions-input:focus {
+  outline: none;
+  border-color: var(--border);
 }

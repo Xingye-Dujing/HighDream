@@ -655,10 +655,10 @@ a {
   max-width: 45vw;
   display: flex;
   flex-direction: column;
-  background-color: var(--jp-layout-color1);
+  background-color: var(--jp-layout-color0);
   border-left: 1px solid var(--jp-border-color1);
   z-index: 1000;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  box-shadow: none;
   overflow: hidden;
 }
 
