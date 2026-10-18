@@ -671,35 +671,48 @@ a {
 
 /* Notebook page: the symbol/template rail is a real sibling COLUMN of the cells,
    not a fixed overlay. Inside #main-cols the notebook and the rail sit side by
-   side in normal document flow (scroll together), separated by a single vertical
-   hairline. Scoped to #main-cols so matrix_lab / matrix_panel keep their existing
-   fixed rail untouched.                                                        */
+   side in normal document flow, separated by a single vertical hairline, and
+   each is its own scroll region (they scroll independently). Scoped to #main-cols
+   so matrix_lab / matrix_panel keep their existing fixed rail untouched.        */
 #main-cols {
   display: flex;
   align-items: stretch;
+  height: calc(100vh - 48px);           /* the viewport below the sticky 48px toolbar */
+}
+body.hd-menu-pinned #main-cols {
+  height: calc(100vh - 96px);           /* extra 48px when the top menu is pinned */
 }
 #main-cols > #notebook-container {
   flex: 1 1 auto;
   min-width: 0;
-  padding-right: 0;                 /* no longer reserving room for a fixed rail */
+  min-height: 0;
+  overflow-y: auto;                     /* cells scroll on their own */
+  padding-right: 0;                     /* no longer reserving room for a fixed rail */
 }
 #main-cols > #math-keyboard {
-  position: static;                 /* undo the fixed top/right/bottom rail */
+  position: static;                     /* undo the fixed top/right/bottom rail */
   top: auto;
   right: auto;
   bottom: auto;
   flex: 0 0 var(--kb-rail-w);
   width: var(--kb-rail-w);
   max-width: 45vw;
-  overflow: visible;                /* scrolls with the page, no internal clipping */
+  min-height: 0;
+  overflow: hidden;                     /* its .keyboard-content is the scroller */
   border-left: 1px solid var(--border-dim);
   box-shadow: none;
 }
 
-/* Very narrow: stack the rail under the cells instead of squeezing both columns. */
+/* Very narrow: stack the rail under the cells (single page scroll), the two
+   independent panes only make sense side by side. */
 @media (max-width: 640px) {
   #main-cols {
     flex-direction: column;
+    height: auto;
+  }
+  #main-cols > #notebook-container,
+  #main-cols > #math-keyboard {
+    overflow: visible;
   }
   #main-cols > #math-keyboard {
     width: auto;

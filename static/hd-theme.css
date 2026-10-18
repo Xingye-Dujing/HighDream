@@ -752,24 +752,24 @@ code {
   border-bottom-color: var(--border-dim);
 }
 .keyboard-key {
-  background: var(--bg);
-  border: 1px solid var(--border-dim);
+  background: transparent;
+  border: 1px solid transparent;
   color: var(--text);
 }
 .keyboard-key:hover,
 .keyboard-key:focus-visible {
-  background: var(--selected-fill);
-  border-color: var(--border);
+  background: var(--hover);
+  border-color: transparent;
   color: var(--text);
-  box-shadow: inset 0 -2px 0 var(--selected-line);
+  box-shadow: none;
   transform: none;
 }
-/*  Pressed: the underline thickens to a full ink frame. */
+/*  Pressed: only a fainter tint — flat, no emboss, matching the plain cells. */
 .keyboard-key:active {
   background: var(--hover-strong);
-  border-color: var(--text);
+  border-color: transparent;
   color: var(--text);
-  box-shadow: inset 0 0 0 1px var(--selected-line);
+  box-shadow: none;
   transform: none;
 }
 .keyboard-key::after {
