@@ -1,0 +1,26 @@
+[
+  {
+    "type": "code",
+    "content": "surfint(1, x+y, x, y, 0, 1, 0, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "surfint(x*y, x+y, x, y, 0, 1, 0, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "flux(x|y|z, 1-x-y, x, y, 0, 1, 0, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "flux(x|y|z, x^2, x, y, 0, 1, 0, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]

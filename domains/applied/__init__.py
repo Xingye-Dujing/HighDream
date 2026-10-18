@@ -7,7 +7,7 @@ shown step by step, matching the main engines.
 """
 
 from domains.applied import (applications, complex_numbers, integral_apps,
-                             multivar, numerical, ode, series)
+                             line_surface, multivar, numerical, ode, series)
 
 HANDLERS = {
     # applications of differentiation
@@ -49,6 +49,11 @@ HANDLERS = {
     'curl': multivar.curl,
     'divergence': multivar.divergence,
     'lagrange': multivar.lagrange,
+    # line / surface integrals
+    'line_integral': line_surface.line_integral,
+    'line_integral2': line_surface.line_integral2,
+    'surface_integral': line_surface.surface_integral,
+    'flux': line_surface.flux,
     # ODE
     'ode': ode.solve_ode,
     # complex numbers

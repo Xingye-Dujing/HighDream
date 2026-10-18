@@ -1,0 +1,32 @@
+[
+  {
+    "type": "code",
+    "content": "lineint(x^2+y^2, cos(t)|sin(t), t, 0, 2*pi)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "lineint(x*y, t|t, t, 0, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "lineint(1, cos(t)|sin(t)|t, t, 0, 2*pi)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "lineint2(y|-x, cos(t)|sin(t), t, 0, 2*pi)",
+    "operationType": "auto",
+    "variable": "x"
+  },
+  {
+    "type": "code",
+    "content": "lineint2(2*x*y|x^2, t|t^2, t, 0, 1)",
+    "operationType": "auto",
+    "variable": "x"
+  }
+]
