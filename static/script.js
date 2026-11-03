@@ -1,4 +1,59 @@
 // Keyboard shortcuts
+// Auto-save functionality
+let autoSaveTimer = null;
+function setupAutoSave() {
+  // Clear any existing timer
+  if (autoSaveTimer) {
+    clearInterval(autoSaveTimer);
+  }
+  // Auto-save every 2 minutes
+  autoSaveTimer = setInterval(function() {
+    if (typeof saveNotebook === 'function') {
+      try {
+        const notebookData = getNotebookData();
+        if (notebookData.cells && notebookData.cells.length > 0) {
+          localStorage.setItem('highdream_autosave', JSON.stringify(notebookData));
+          localStorage.setItem('highdream_autosave_time', new Date().toISOString());
+        }
+      } catch (e) {
+        console.error('Auto-save failed:', e);
+      }
+    }
+  }, 120000); // 2 minutes
+}
+
+function loadAutoSave() {
+  try {
+    const autosaveData = localStorage.getItem('highdream_autosave');
+    const autosaveTime = localStorage.getItem('highdream_autosave_time');
+    if (autosaveData && autosaveTime) {
+      const saveTime = new Date(autosaveTime);
+      const now = new Date();
+      const diffMinutes = (now - saveTime) / 60000;
+      if (diffMinutes < 60) { // Only restore if saved within last hour
+        if (confirm('发现自动保存的笔记本（' + saveTime.toLocaleString() + '），是否恢复？')) {
+          if (typeof loadNotebookData === 'function') {
+            loadNotebookData(JSON.parse(autosaveData));
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load auto-save:', e);
+  }
+}
+
+// Initialize auto-save on page load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    setupAutoSave();
+    setTimeout(loadAutoSave, 1000);
+  });
+} else {
+  setupAutoSave();
+  setTimeout(loadAutoSave, 1000);
+}
+
 document.addEventListener('keydown', function(e) {
   // Ctrl+Enter or Cmd+Enter: Run current cell
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
