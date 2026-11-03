@@ -49,6 +49,14 @@ input:focus {
   outline-offset: -1px;
 }
 
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--jp-brand-color0);
+  outline-offset: 2px;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -83,6 +91,11 @@ input:focus {
 
 ::-webkit-scrollbar-corner {
   background: var(--jp-layout-color1);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--jp-border-color1) var(--jp-layout-color1);
 }
 
 a {
@@ -145,6 +158,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   transition: all var(--transition-speed);
   position: relative;
   overflow: hidden;
@@ -174,7 +188,6 @@ a {
 }
 
 .toolbar-button i {
-  margin-right: 6px;
   font-size: var(--font-sub);
 }
 
@@ -223,6 +236,40 @@ a {
   opacity: 1;
   transform: translateY(0);
   width: 100%;
+}
+
+.cell-drag-handle {
+  position: absolute;
+  left: -18px;
+  top: 6px;
+  width: 16px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--jp-ui-font-color2);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  user-select: none;
+}
+
+.cell:hover .cell-drag-handle {
+  opacity: 0.7;
+}
+
+.cell-drag-handle:active {
+  cursor: grabbing;
+}
+
+.cell.dragging {
+  opacity: 0.4;
+}
+
+.cell.drag-over {
+  border-top: 2px solid var(--jp-brand-color0);
+  margin-top: -2px;
+  padding-top: 2px;
 }
 
 .cell-prompt {
@@ -289,7 +336,8 @@ a {
 }
 
 .cell:hover .cell-controls,
-.cell-active .cell-controls {
+.cell-active .cell-controls,
+.cell:focus-within .cell-controls {
   display: flex;
 }
 
@@ -344,13 +392,13 @@ a {
 .gene-label,
 .limit-label,
 .label {
-  var(--bg)-space: nowrap;
+  white-space: nowrap;
 }
 
 .var-input input,
 .expression-controls input,
 .limit-controls input {
-  width: 36px;
+  width: 48px;
   padding: 4px 6px;
   border: 1px dashed var(--jp-border-color1);
   border-radius: var(--radius);
@@ -441,7 +489,7 @@ a {
   display: block;
   text-align: center;
   outline: none;
-  font-size: 1.2em !important;
+  font-size: calc(1.2em * var(--fscale, 1));
   color: var(--jp-ui-font-color0);
 }
 
@@ -452,13 +500,14 @@ a {
   background: var(--jp-layout-color0);
   border: 1px solid var(--jp-border-color1);
   border-radius: var(--radius);
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   opacity: 0;
+  pointer-events: none;
   transition: all var(--transition-speed);
   z-index: 10;
   color: var(--jp-ui-font-color1);
@@ -472,8 +521,8 @@ a {
   background: var(--jp-layout-color0);
   border: 1px solid var(--jp-border-color1);
   border-radius: var(--radius);
-  width: 28px;
-  height: 28px;
+  min-width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -484,8 +533,11 @@ a {
   font-size: var(--font-sub);
 }
 
-.cell:hover .add-cell-button {
+.cell:hover .add-cell-button,
+.cell-active .add-cell-button,
+.cell:focus-within .add-cell-button {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .add-cell-button:hover,
@@ -496,7 +548,16 @@ a {
   background-color: var(--jp-layout-color1);
   color: var(--bg);
   border-color: var(--jp-brand-color0);
-  transform: scale(1.1);
+  transform: scale(1.05);
+}
+
+.run-cell-button:active,
+.convert-form-button:active,
+.operation-button:active,
+.keyboard-button:active,
+.add-cell-button:active,
+.math-control-btn:active {
+  transform: scale(0.95);
 }
 
 .cell-type-selector {
@@ -677,10 +738,10 @@ a {
 #main-cols {
   display: flex;
   align-items: stretch;
-  height: calc(100vh - 48px);           /* the viewport below the sticky 48px toolbar */
+  height: calc(100dvh - 48px);           /* the viewport below the sticky 48px toolbar */
 }
 body.hd-menu-pinned #main-cols {
-  height: calc(100vh - 96px);           /* extra 48px when the top menu is pinned */
+  height: calc(100dvh - 96px);           /* extra 48px when the top menu is pinned */
 }
 #main-cols > #notebook-container {
   flex: 1 1 auto;
@@ -688,6 +749,8 @@ body.hd-menu-pinned #main-cols {
   min-height: 0;
   overflow-y: auto;                     /* cells scroll on their own */
   padding-right: 0;                     /* no longer reserving room for a fixed rail */
+  scroll-padding-top: 16px;
+  scrollbar-gutter: stable;
 }
 #main-cols > #math-keyboard {
   position: static;                     /* undo the fixed top/right/bottom rail */
@@ -701,6 +764,7 @@ body.hd-menu-pinned #main-cols {
   overflow: hidden;                     /* its .keyboard-content is the scroller */
   border-left: 1px solid var(--border-dim);
   box-shadow: none;
+  scrollbar-gutter: stable;
 }
 
 /* Very narrow: stack the rail under the cells (single page scroll), the two
@@ -714,11 +778,18 @@ body.hd-menu-pinned #main-cols {
   #main-cols > #math-keyboard {
     overflow: visible;
   }
+  #main-cols > #notebook-container {
+    min-height: 50dvh;
+  }
   #main-cols > #math-keyboard {
     width: auto;
     max-width: none;
     border-left: none;
     border-top: 1px solid var(--border-dim);
+  }
+  #main-cols > #math-keyboard .keyboard-content {
+    max-height: 40dvh;
+    overflow-y: auto;
   }
 }
 
@@ -736,6 +807,9 @@ body.hd-menu-pinned #main-cols {
 .hd-plot-zero { stroke: var(--border); stroke-width: 1; }
 .hd-plot-curve { fill: none; stroke: var(--jp-brand-color0, var(--text)); stroke-width: 2; }
 .hd-plot-tangent { fill: none; stroke: var(--selected-line, var(--text)); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.hd-plot-root { fill: #2e7d32; stroke: var(--jp-layout-color0); stroke-width: 1; }
+.hd-plot-root-label { font-size: 9px; fill: var(--jp-ui-font-color0); opacity: 0.8; }
+.hd-plot-roots-info { font-size: 11px; color: var(--jp-ui-font-color1); margin-top: 6px; }
 .hd-plot-marker { fill: var(--jp-brand-color0, var(--text)); }
 .hd-plot-tick { fill: var(--text-faint); font-size: 10px; }
 
@@ -801,7 +875,7 @@ body.hd-menu-pinned #main-cols {
   margin-bottom: 12px;
   justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px 8px;
 }
 
 .keyboard-key {
@@ -813,8 +887,8 @@ body.hd-menu-pinned #main-cols {
   font-size: var(--font-body);
   font-family: var(--font-family);
   color: var(--jp-ui-font-color0);
-  transition: all 0.2s ease;
-  var(--bg)-space: nowrap;
+  transition: all 0.15s ease;
+  white-space: nowrap;
   min-width: 44px;
   display: flex;
   align-items: center;
@@ -866,11 +940,17 @@ body.hd-menu-pinned #main-cols {
 }
 
 .keyboard-group-label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--jp-ui-font-color1);
-  margin: 4px 0 2px;
+  margin: 16px 0 6px;
   text-align: left;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.keyboard-content > .keyboard-group-label:first-child {
+  margin-top: 4px;
 }
 
 /* Hide MathLive's built-in on-screen keyboard and per-field toolbar entirely:
@@ -896,6 +976,21 @@ math-virtual-keyboard,
   transform: translateX(100%);
   opacity: 0.8;
   max-width: 400px;
+}
+
+@media (max-width: 480px) {
+  .notification {
+    left: 16px;
+    right: 16px;
+    max-width: none;
+    top: 16px;
+  }
+  .notification-show {
+    transform: translateX(0);
+  }
+  .notification-hide {
+    transform: translateX(120%);
+  }
 }
 
 .notification-show {
@@ -984,8 +1079,9 @@ body:hover .math-bg-element {
   background: var(--jp-layout-color0);
   border: 1px solid var(--jp-border-color1);
   border-radius: var(--radius);
-  width: 24px;
-  height: 24px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 4px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -994,6 +1090,88 @@ body:hover .math-bg-element {
   color: var(--jp-ui-font-color1);
   font-size: var(--font-meta);
   opacity: 0.7;
+}
+
+.math-control-btn:hover {
+  opacity: 1;
+  background: var(--jp-layout-color1);
+  color: var(--jp-ui-font-color0);
+}
+
+.step-link-btn {
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 8px;
+  border: 1px solid var(--jp-border-color1);
+  border-radius: var(--radius);
+  background: var(--jp-layout-color0);
+  color: var(--jp-ui-font-color0);
+  transition: all 0.15s ease;
+}
+
+.step-link-btn:hover {
+  background: var(--jp-layout-color1);
+  border-color: var(--jp-brand-color0);
+}
+
+.math-control-btn.active {
+  background: var(--jp-brand-color0);
+  color: var(--bg);
+  border-color: var(--jp-brand-color0);
+  opacity: 1;
+}
+
+.math-control-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.subexpr-select mjx-container {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.subexpr-select mjx-container:hover {
+  background: rgba(66, 165, 245, 0.12);
+  border-radius: 4px;
+}
+
+.step-cards {
+  margin-top: 10px;
+}
+
+.hd-subexpr-menu {
+  position: absolute;
+  z-index: 4000;
+  background: var(--jp-layout-color0);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  overflow: hidden;
+}
+
+.hd-subexpr-menu .hd-subexpr-title {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--jp-ui-font-color1);
+  background: var(--jp-layout-color1);
+}
+
+.hd-subexpr-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border: none;
+  background: none;
+  color: var(--jp-ui-font-color0);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.hd-subexpr-menu button:hover {
+  background: var(--jp-layout-color1);
 }
 
 .math-control-btn:hover {
@@ -1007,6 +1185,7 @@ body:hover .math-bg-element {
 .math-output.collapsed {
   max-height: 40px;
   overflow: hidden;
+  transition: max-height 0.2s ease;
 }
 
 .math-fullscreen-overlay {
@@ -1112,7 +1291,7 @@ body:hover .math-bg-element {
   color: var(--jp-ui-font-color1);
   cursor: pointer;
   user-select: none;
-  var(--bg)-space: nowrap;
+  white-space: nowrap;
 }
 
 .cache-toggle input[type="checkbox"] {
