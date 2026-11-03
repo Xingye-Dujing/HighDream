@@ -10,6 +10,37 @@ function escapeHtml(s) {
 
 let data_copy = {};
 
+// The universal input stores LaTeX; the analysis endpoints take operator form.
+function normalizeUniversal(expression) {
+  if (!expression) return Promise.resolve(expression);
+  return fetch('/api/convert_form', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expression: expression }),
+  })
+    .then((response) => response.json())
+    .then((data) => (data && data.success && typeof data.result === 'string' ? data.result : expression))
+    .catch(() => expression);
+}
+
+function setupUniversalInputForm() {
+  const form = document.getElementById('matrix-analysis-form');
+  if (!form) return;
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    const textarea = form.querySelector('textarea');
+    const value = (textarea && textarea.value.trim()) || '';
+    if (/\\(placeholder|square|Box)\b/.test(value)) {
+      alert('请先填写矩阵里的占位框');
+      return;
+    }
+    normalizeUniversal(value).then(function (expression) {
+      if (!expression) return;
+      window.location.href = '/matrix_analysis?expression=' + encodeURIComponent(expression);
+    });
+  });
+}
+
 // Execute when document is loaded
 document.addEventListener('DOMContentLoaded', function () {
   // Get expression
@@ -111,6 +142,7 @@ function openFullscreen(mathOutput) {
 
 // Set up event listeners
 function setupEventListeners() {
+  setupUniversalInputForm();
   // Run Ref
   const runRefElement = document.querySelector('.run-ref');
   if (runRefElement) {

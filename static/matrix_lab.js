@@ -215,29 +215,27 @@ function bindEvents() {
   // Bind virtual keyboard buttons
   document.querySelectorAll(".keyboard-key").forEach((key) => {
     key.addEventListener("click", function () {
-      const value = this.getAttribute("data-value");
+      const latex = this.getAttribute("data-latex");
+      const value = latex || this.getAttribute("data-value");
       const activeCell = document.querySelector(".cell-active");
-      if (activeCell) {
-        const textarea = activeCell.querySelector("textarea");
-        if (textarea) {
-          const cursorPos = textarea.selectionStart;
-          const textBefore = textarea.value.substring(0, cursorPos);
-          const textAfter = textarea.value.substring(cursorPos);
-
-          if (value.includes("{}")) {
-            const parts = value.split("{}");
-            textarea.value = textBefore + parts[0] + textAfter;
-            textarea.selectionStart = cursorPos + parts[0].length;
-            textarea.selectionEnd = cursorPos + parts[0].length;
-          } else {
-            textarea.value = textBefore + value + textAfter;
-            textarea.selectionStart = cursorPos + value.length;
-            textarea.selectionEnd = cursorPos + value.length;
-          }
-
-          textarea.focus();
-          textarea.dispatchEvent(new Event("input"));
-        }
+      if (!activeCell) return;
+      const field = activeCell.querySelector("math-field.hd-universal-field");
+      if (field) {
+        field.focus();
+        if (typeof field.insert === "function") field.insert(value);
+        else field.value = (field.value || "") + value;
+        return;
+      }
+      const textarea = activeCell.querySelector("textarea");
+      if (textarea) {
+        const cursorPos = textarea.selectionStart;
+        const textBefore = textarea.value.substring(0, cursorPos);
+        const textAfter = textarea.value.substring(cursorPos);
+        textarea.value = textBefore + value + textAfter;
+        textarea.selectionStart = cursorPos + value.length;
+        textarea.selectionEnd = cursorPos + value.length;
+        textarea.focus();
+        textarea.dispatchEvent(new Event("input"));
       }
     });
   });
@@ -338,7 +336,9 @@ function setActiveCell(cell) {
   } else {
     const textarea = cell.querySelector("textarea");
     if (textarea) {
-      textarea.focus();
+      const field = cell.querySelector("math-field.hd-universal-field");
+      if (field) field.focus();
+      else textarea.focus();
       cell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }
@@ -390,7 +390,7 @@ function createCellElement(id, type) {
                <span>仅记录最终结果</span>
               </label>
             </div>
-            <textarea placeholder="输入操作表达式..." class="math-input"></textarea>
+            <textarea placeholder="输入矩阵表达式..." class="math-input" data-universal-input></textarea>
           </div>
         </div>
         <div class="cell-output-container">
@@ -465,6 +465,20 @@ function addCellBelow(cell) {
   }, 10);
 }
 
+// The WYSIWYG editor stores LaTeX. Turn it back into operator form before the
+// matrix step engine sees it; unrecognised input is returned unchanged.
+function normalizeUniversal(expression) {
+  if (!expression) return Promise.resolve(expression);
+  return fetch("/api/convert_form", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ expression: expression }),
+  })
+    .then((response) => response.json())
+    .then((data) => (data && data.success && typeof data.result === "string" ? data.result : expression))
+    .catch(() => expression);
+}
+
 // Run
 function runCell(cell) {
   const runButton = cell.querySelector(".run-cell-button");
@@ -477,6 +491,11 @@ function runCell(cell) {
     return;
   }
 
+  if (/\\(placeholder|square|Box)\b/.test(operations)) {
+    showNotification("请先填写矩阵里的占位框", "error");
+    return;
+  }
+
   const radioButtonGroupName = `record-option-${cell.dataset.cellId}`;
   const selectedRadio = cell.querySelector(`input[name="${radioButtonGroupName}"]:checked`).value === "all";
   if (selectedRadio) {
@@ -486,19 +505,21 @@ function runCell(cell) {
     is_record_all_steps = 'False'
   }
 
-  // Send data to backend
-  const payload = {
-    expression: data_copy['expression'],
-    operations: operations,
-    record_all_steps: is_record_all_steps
-  };
+  normalizeUniversal(operations).then(function (normalizedOps) {
+    // Send data to backend
+    const payload = {
+      expression: data_copy['expression'],
+      operations: normalizedOps,
+      record_all_steps: is_record_all_steps
+    };
 
-  fetch("/api/matrix_cal", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
+    return fetch("/api/matrix_cal", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
   })
     .then((response) => response.json())
     .then((data) => {
@@ -519,42 +540,29 @@ function runCell(cell) {
     });
 }
 
-// Render math preview
+// Render the live editor's LaTeX directly (placeholders become \square).
 function renderMathPreview(cell) {
+  if (!cell) return;
+  const field = cell.querySelector("math-field.hd-universal-field");
   const textarea = cell.querySelector("textarea");
-  const content = textarea.value.trim();
+  if (!field && !textarea) return;
+  const content = (field ? field.value : textarea.value).trim();
   const previewArea = cell.querySelector(".math-preview");
-  const operationType = 'matrix';
+  if (!previewArea) return;
 
   if (!content) {
     previewArea.innerHTML = "";
     return;
   }
 
-  fetch("/api/parse", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      expression: content,
-      operation_type: operationType,
-    }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
-        previewArea.innerHTML = `$$${data.result}$$`;
-        if (typeof MathJax !== "undefined") {
-          MathJax.typesetPromise([previewArea]);
-        }
-      } else {
-        previewArea.innerHTML = `<span class="preview-error">解析错误: ${escapeHtml(data.error)}</span>`;
-      }
-    })
-    .catch((error) => {
-      previewArea.innerHTML = `<span class="preview-error">请求错误: ${escapeHtml(error.message)}</span>`;
-    });
+  const latex = content
+    .replace(/\\placeholder\s*\{\s*\}/g, "\\square")
+    .replace(/\\placeholder\b/g, "\\square")
+    .replace(/\{\s*\}/g, "{\\square}");
+  previewArea.innerHTML = `$$${latex}$$`;
+  if (typeof MathJax !== "undefined") {
+    MathJax.typesetPromise([previewArea]);
+  }
 }
 
 // Show notification

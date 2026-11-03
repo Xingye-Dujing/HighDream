@@ -8,11 +8,13 @@
     <link rel="stylesheet" href="/static/matrix_analysis.css"/>
     <link rel="stylesheet" href="/static/hd-theme.css"/>
     <link rel="stylesheet" href="/static/hd-select.css"/>
+    <link rel="stylesheet" href="/static/mathlive/mathlive-fonts.css"/>
     <script
             id="MathJax-script"
             async
             src="../static/mathjax/es5/tex-chtml-full.js"
     ></script>
+    <script src="/static/mathlive/mathlive.min.js"></script>
     <script src="/static/matrix_analysis.js"></script>
 </head>
 
@@ -28,6 +30,10 @@
 
 
 <div id="content">
+    <form id="matrix-analysis-form" class="hd-universal-bar" method="get" action="/matrix_analysis">
+        <textarea class="hd-universal-source" data-universal-input placeholder="输入矩阵表达式，例如 [[1,2],[3,4]]">{{ expression or '' }}</textarea>
+        <button type="submit" class="hd-universal-run"><i class="fas fa-play"></i><span>分析</span></button>
+    </form>
     {% if expression %}
     <div id="matrix-render" class="result-section">
         <div class="matrix-preview">
@@ -130,6 +136,7 @@
         <div class="math-fullscreen-body"></div>
     </div>
 </div>
+<script src="/static/hd-universal-input.js"></script>
 <script src="/static/hd-menu.js"></script>
 <script src="/static/hd-select.js"></script>
 </body>
