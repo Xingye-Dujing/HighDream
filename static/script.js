@@ -1,4 +1,12 @@
 // Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+  // Ctrl+G: Plot grid toggle hint
+  if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+    e.preventDefault();
+    console.log('Plot operations: use mouse wheel to zoom, drag to pan, double-click to reset');
+  }
+});
+
 // Auto-save functionality
 let autoSaveTimer = null;
 function setupAutoSave() {
