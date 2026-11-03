@@ -158,8 +158,36 @@ function renderPlotSvg(data) {
   const sx = (x) => P + (x - xmin) / (xmax - xmin) * (W - 2 * P);
   const sy = (y) => H - P - (y - ymin) / (ymax - ymin) * (H - 2 * P);
 
+  let showGrid = false;
+  let gridGroup = null;
+  
   const redraw = () => {
     while (svg.firstChild) svg.removeChild(svg.firstChild);
+    
+    // Draw grid if enabled
+    if (showGrid) {
+      gridGroup = _plotSvgEl('g', { class: 'hd-plot-grid-group' });
+      // Vertical grid lines
+      const xStep = Math.pow(10, Math.floor(Math.log10((xmax - xmin) / 5)));
+      for (let gx = Math.ceil(xmin / xStep) * xStep; gx <= xmax; gx += xStep) {
+        if (Math.abs(gx) < 1e-10) continue;
+        gridGroup.appendChild(_plotSvgEl('line', { 
+          x1: sx(gx), y1: P, x2: sx(gx), y2: H - P, 
+          class: 'hd-plot-grid' 
+        }));
+      }
+      // Horizontal grid lines
+      const yStep = Math.pow(10, Math.floor(Math.log10((ymax - ymin) / 5)));
+      for (let gy = Math.ceil(ymin / yStep) * yStep; gy <= ymax; gy += yStep) {
+        if (Math.abs(gy) < 1e-10) continue;
+        gridGroup.appendChild(_plotSvgEl('line', { 
+          x1: P, y1: sy(gy), x2: W - P, y2: sy(gy), 
+          class: 'hd-plot-grid' 
+        }));
+      }
+      svg.appendChild(gridGroup);
+    }
+    
     svg.appendChild(_plotSvgEl('line', { x1: P, y1: H - P, x2: W - P, y2: H - P, class: 'hd-plot-axis' }));
     svg.appendChild(_plotSvgEl('line', { x1: P, y1: P, x2: P, y2: H - P, class: 'hd-plot-axis' }));
     if (ymin <= 0 && 0 <= ymax) svg.appendChild(_plotSvgEl('line', { x1: P, y1: sy(0), x2: W - P, y2: sy(0), class: 'hd-plot-zero' }));

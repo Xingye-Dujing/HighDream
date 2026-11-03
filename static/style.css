@@ -805,13 +805,21 @@ body.hd-menu-pinned #main-cols {
 .hd-plot-svg { display: block; width: 100%; max-width: 520px; height: auto; }
 .hd-plot-axis { stroke: var(--border-dim); stroke-width: 1; }
 .hd-plot-zero { stroke: var(--border); stroke-width: 1; }
+.hd-plot-grid { stroke: var(--border-dim); stroke-width: 0.5; opacity: 0.5; }
 .hd-plot-curve { fill: none; stroke: var(--jp-brand-color0, var(--text)); stroke-width: 2; }
+.hd-plot-curve-2 { fill: none; stroke: #e91e63; stroke-width: 2; }
+.hd-plot-curve-3 { fill: none; stroke: #4caf50; stroke-width: 2; }
+.hd-plot-curve-4 { fill: none; stroke: #ff9800; stroke-width: 2; }
 .hd-plot-tangent { fill: none; stroke: var(--selected-line, var(--text)); stroke-width: 1.5; stroke-dasharray: 4 3; }
 .hd-plot-root { fill: #2e7d32; stroke: var(--jp-layout-color0); stroke-width: 1; }
 .hd-plot-root-label { font-size: 9px; fill: var(--jp-ui-font-color0); opacity: 0.8; }
 .hd-plot-roots-info { font-size: 11px; color: var(--jp-ui-font-color1); margin-top: 6px; }
 .hd-plot-marker { fill: var(--jp-brand-color0, var(--text)); }
 .hd-plot-tick { fill: var(--text-faint); font-size: 10px; }
+.hd-plot-legend { font-size: 10px; fill: var(--jp-ui-font-color0); }
+.hd-plot-controls { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.hd-plot-control-btn { padding: 4px 8px; font-size: 11px; border: 1px solid var(--jp-border-color1); background: var(--jp-layout-color0); color: var(--jp-ui-font-color0); border-radius: var(--radius); cursor: pointer; }
+.hd-plot-control-btn:hover { background: var(--jp-layout-color1); }
 
 .keyboard-header {
   display: flex;
