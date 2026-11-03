@@ -285,7 +285,6 @@ th,
 .mt-node-footer,
 .autocomplete-suggestion-name,
 .formula-editor-header span,
-.keyboard-header,
 .splash-logo,
 .ed-label,
 .mt-decision-value {
@@ -757,27 +756,34 @@ code {
   box-shadow: none;
 }
 .math-fullscreen-header,
-.formula-editor-header,
-.keyboard-header {
+.formula-editor-header {
   border-bottom-color: var(--border-dim);
 }
 .keyboard-key {
   background: transparent;
-  border: 1px solid transparent;
+  border: 1px solid var(--border-dim);
   color: var(--text);
+  border-radius: var(--radius);
 }
 .keyboard-key:hover,
 .keyboard-key:focus-visible {
   background: var(--hover);
-  border-color: transparent;
+  border-color: var(--border);
   color: var(--text);
   box-shadow: none;
   transform: none;
 }
+/*  The palette is part of the page body. Every corner here follows the same
+    global radius knob as the rest of the product. */
+#math-keyboard,
+#math-keyboard .keyboard-content,
+#math-keyboard .keyboard-key {
+  border-radius: var(--radius);
+}
 /*  Pressed: only a fainter tint — flat, no emboss, matching the plain cells. */
 .keyboard-key:active {
   background: var(--hover-strong);
-  border-color: transparent;
+  border-color: var(--border);
   color: var(--text);
   box-shadow: none;
   transform: none;
@@ -1671,6 +1677,191 @@ body.hd-menu-pinned #blueprint-canvas-container {
   .hd-menu-group {
     flex-shrink: 0;
   }
+}
+
+/* ==========================================================================
+   Universal WYSIWYG input (matrix pages)
+   ========================================================================== */
+.hd-universal-source {
+  display: none !important;
+}
+.hd-universal-field {
+  display: block;
+  width: 100%;
+  min-height: 84px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius);
+  outline: none;
+  box-shadow: none;
+  font-family: var(--font-mono);
+  font-size: var(--jp-code-font-size);
+  line-height: var(--jp-code-line-height);
+  cursor: text;
+}
+.hd-universal-field::part(container) {
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  caret-color: var(--text);
+}
+.hd-universal-field:focus-within::part(container) {
+  outline: none;
+  box-shadow: none;
+}
+.hd-universal-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.hd-universal-bar .hd-universal-field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.hd-universal-run {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  color: var(--text);
+  font-size: calc(var(--font-menu) * var(--fscale));
+  letter-spacing: var(--ls-menu);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.hd-universal-run:hover {
+  border-color: var(--border);
+  background: var(--hover);
+}
+
+/* ==========================================================================
+   Notebook history snapshots (explicit, database-backed)
+   ========================================================================== */
+.hd-snapshot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.28);
+}
+.hd-snapshot-overlay.hd-open {
+  display: flex;
+}
+.hd-snapshot-panel {
+  width: min(560px, calc(100vw - 32px));
+  max-height: 72vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+}
+.hd-snapshot-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-dim);
+}
+.hd-snapshot-title {
+  font-size: var(--font-label);
+  letter-spacing: var(--ls-section);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.hd-snapshot-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hd-snapshot-new,
+.hd-snapshot-close,
+.hd-snapshot-restore,
+.hd-snapshot-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  color: var(--text-dim);
+  font-size: calc(var(--font-menu) * var(--fscale));
+  letter-spacing: var(--ls-menu);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.hd-snapshot-new:hover,
+.hd-snapshot-restore:hover,
+.hd-snapshot-close:hover {
+  color: var(--text);
+  border-color: var(--border);
+  background: var(--hover);
+}
+.hd-snapshot-delete:hover {
+  color: var(--accent-red);
+  border-color: var(--accent-red);
+  background: var(--hover);
+}
+.hd-snapshot-close {
+  padding: 4px 7px;
+}
+.hd-snapshot-list {
+  min-height: 120px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+.hd-snapshot-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: calc(var(--font-sub) * var(--fscale));
+}
+.hd-snapshot-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border-faint);
+}
+.hd-snapshot-item:last-child {
+  border-bottom: none;
+}
+.hd-snapshot-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+.hd-snapshot-name {
+  color: var(--text);
+  font-size: calc(var(--font-body) * var(--fscale));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hd-snapshot-time {
+  color: var(--text-faint);
+  font-size: calc(var(--font-meta) * var(--fscale));
+  letter-spacing: var(--ls-meta);
+}
+.hd-snapshot-item-actions {
+  display: inline-flex;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 /* ==========================================================================

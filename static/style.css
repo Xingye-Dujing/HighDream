@@ -667,40 +667,25 @@ a {
   border-left-color: var(--text);
 }
 
-/* 数学符号 / 模板工具区：固定停靠在页面右侧、始终可见的面板（不再是可切换弹窗）。
-   主内容始终预留其宽度，宽度由一个变量统一控制，窄屏自适应收窄以保持可用。 */
+/* 数学符号 / 模板工具区：属于页面主体的一块，不再是固定浮层。
+   主体 = 左侧内容列 + 右侧键盘列，两列在同一个容器内并各自独立滚动。
+   键盘宽度由一个变量统一控制，窄屏自适应收窄以保持可用。 */
 :root { --kb-rail-w: 320px; }
 @media (max-width: 900px) { :root { --kb-rail-w: 260px; } }
 @media (max-width: 640px) { :root { --kb-rail-w: 200px; } }
 
 #math-keyboard {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: var(--kb-rail-w);
-  max-width: 45vw;
   display: flex;
   flex-direction: column;
   background-color: var(--jp-layout-color0);
   border-left: 1px solid var(--jp-border-color1);
-  z-index: 1000;
   box-shadow: none;
   overflow: hidden;
+  border-radius: var(--radius);
 }
 
-/* 主内容始终为常驻侧栏让出右侧空间，避免被遮挡（侧栏本身固定、不随正文滚动）。 */
-#toolbar,
-#notebook-container,
-#content {
-  padding-right: var(--kb-rail-w);
-}
-
-/* Notebook page: the symbol/template rail is a real sibling COLUMN of the cells,
-   not a fixed overlay. Inside #main-cols the notebook and the rail sit side by
-   side in normal document flow, separated by a single vertical hairline, and
-   each is its own scroll region (they scroll independently). Scoped to #main-cols
-   so matrix_lab / matrix_panel keep their existing fixed rail untouched.        */
+/* 主体容器：所有带虚拟键盘的页面共用。左侧内容在 main-pane / notebook 内滚动，
+   右侧键盘列自己滚动，键盘永远被限制在主体高度内，不越出页面主体。 */
 #main-cols {
   display: flex;
   align-items: stretch;
@@ -708,6 +693,13 @@ a {
 }
 body.hd-menu-pinned #main-cols {
   height: calc(100dvh - 96px);           /* extra 48px when the top menu is pinned */
+}
+#main-cols > #main-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 #main-cols > #notebook-container {
   flex: 1 1 auto;
@@ -718,19 +710,22 @@ body.hd-menu-pinned #main-cols {
   scroll-padding-top: 16px;
   scrollbar-gutter: stable;
 }
+#main-cols > #main-pane #content,
+#main-cols > #main-pane #notebook-container {
+  min-height: 0;
+  padding-right: 0;
+}
+#main-cols > #main-pane #notebook-container {
+  flex: 0 0 auto;
+  overflow: visible;
+  padding: 20px 0;
+}
 #main-cols > #math-keyboard {
-  position: static;                     /* undo the fixed top/right/bottom rail */
-  top: auto;
-  right: auto;
-  bottom: auto;
   flex: 0 0 var(--kb-rail-w);
   width: var(--kb-rail-w);
   max-width: 45vw;
   min-height: 0;
   overflow: hidden;                     /* its .keyboard-content is the scroller */
-  border-left: 1px solid var(--border-dim);
-  box-shadow: none;
-  scrollbar-gutter: stable;
 }
 
 /* Very narrow: stack the rail under the cells (single page scroll), the two
@@ -740,6 +735,7 @@ body.hd-menu-pinned #main-cols {
     flex-direction: column;
     height: auto;
   }
+  #main-cols > #main-pane,
   #main-cols > #notebook-container,
   #main-cols > #math-keyboard {
     overflow: visible;
@@ -781,17 +777,6 @@ body.hd-menu-pinned #main-cols {
 .hd-plot-controls { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 .hd-plot-control-btn { padding: 4px 8px; font-size: 11px; border: 1px solid var(--jp-border-color1); background: var(--jp-layout-color0); color: var(--jp-ui-font-color0); border-radius: var(--radius); cursor: pointer; }
 .hd-plot-control-btn:hover { background: var(--jp-layout-color1); }
-
-.keyboard-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--jp-border-color1);
-  font-size: calc(14px * var(--fscale));
-  font-weight: 500;
-  color: var(--jp-ui-font-color0);
-}
 
 .keyboard-close-btn {
   background: none;
@@ -841,10 +826,10 @@ body.hd-menu-pinned #main-cols {
 
 .keyboard-row {
   display: flex;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 6px 8px;
+  gap: 6px;
 }
 
 .keyboard-key {
@@ -856,7 +841,7 @@ body.hd-menu-pinned #main-cols {
   font-size: var(--font-body);
   font-family: var(--font-family);
   color: var(--jp-ui-font-color0);
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
   white-space: nowrap;
   min-width: 44px;
   display: flex;
@@ -876,7 +861,6 @@ body.hd-menu-pinned #main-cols {
   background-color: currentColor;
   opacity: 0;
   transition: opacity 0.2s;
-  border-radius: inherit;
 }
 
 .keyboard-key:hover::after {
@@ -885,10 +869,10 @@ body.hd-menu-pinned #main-cols {
 
 .keyboard-key:hover {
   background-color: var(--jp-layout-color1);
-  color: var(--bg);
-  border-color: var(--jp-brand-color0);
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  color: var(--jp-ui-font-color0);
+  border-color: var(--jp-border-color2);
+  transform: none;
+  box-shadow: none;
 }
 
 /* Math-rendered keys show the real inserted template (with \square slots).
