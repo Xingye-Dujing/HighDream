@@ -243,8 +243,6 @@ document.addEventListener("DOMContentLoaded", function () {
   addNewCell();
   bindEvents();
   animateMathBackground();
-  setupAutoSave();
-  setTimeout(loadAutoSave, 1000);
 });
 
 // Add control buttons to all math-output areas
@@ -404,6 +402,8 @@ function bindEvents() {
   // "save as PDF" destination produces the document.
   const _exportPdfBtn = document.getElementById("exportPdfBtn");
   if (_exportPdfBtn) _exportPdfBtn.addEventListener("click", () => window.print());
+  const _snapshotBtn = document.getElementById("snapshotBtn");
+  if (_snapshotBtn) _snapshotBtn.addEventListener("click", openSnapshotPanel);
 
   // Cancel active cell when clicking on other areas of the document
   document.addEventListener("click", function (e) {
@@ -1452,6 +1452,10 @@ function displayLatex(raw) {
   let s = raw.replace(/\\placeholder\s*\{\s*\}/g, "\\square").replace(/\\placeholder\b/g, "\\square");
   s = s.replace(/\{\s*\}/g, "{\\square}").replace(/\[\s*\]/g, "[\\square]");
   if (/^[\^_]/.test(s)) s = "\\square" + s;   // bare ^{}/_{} need a base to render
+  // Function/operator names render upright like \sin, not as a product of italic
+  // variables: simplify(...) -> \operatorname{simplify}(...). Commands such as
+  // \sin are left alone because their name is preceded by a backslash.
+  s = s.replace(/(?<![\\A-Za-z0-9])([A-Za-z][A-Za-z0-9]*)(?=\()/g, "\\operatorname{$1}");
   let depth = 0;
   let out = "";
   for (const ch of s) {
@@ -1899,117 +1903,199 @@ function loadNotebook() {
   input.click();
 }
 
-// ---- Auto-save: keep a local snapshot so a reload/restart loses nothing ----
-const AUTOSAVE_KEY = "highdream_autosave";
-const AUTOSAVE_TIME_KEY = "highdream_autosave_time";
-const AUTOSAVE_INTERVAL = 120000; // 2 minutes
-const AUTOSAVE_MAX_AGE_MIN = 60;
-const AUTOSAVE_TAB_ID = Math.random().toString(36).slice(2);
-
-let autoSaveTimer = null;
-let autoSaveChannel = null;
-try {
-  autoSaveChannel = new BroadcastChannel("highdream-autosave");
-  // Another tab in this browser owns a live notebook; its snapshot is not a
-  // crash recovery candidate for this tab.
-  autoSaveChannel.addEventListener("message", function (e) {
-    if (e.data && e.data.type === "ping") {
-      autoSaveChannel.postMessage({ type: "pong", id: AUTOSAVE_TAB_ID });
-    }
-  });
-} catch (e) {
-  autoSaveChannel = null;
+// ---- History snapshots -----------------------------------------------------
+// The notebook no longer auto-saves to localStorage. Every snapshot is an
+// explicit user action written to the server database (utils/snapshot_store.py)
+// and the history panel restores whichever one the user picks.
+function snapshotPayload() {
+  return JSON.stringify(getNotebookData());
 }
 
-function writeAutoSave() {
+function formatSnapshotTime(value) {
+  if (!value) return "";
   try {
-    const cells = getNotebookData();
-    if (cells.length > 0) {
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(cells));
-      localStorage.setItem(AUTOSAVE_TIME_KEY, new Date().toISOString());
-    }
+    return new Date(value).toLocaleString();
   } catch (e) {
-    console.warn("Auto-save failed:", e);
+    return value;
   }
 }
 
-function setupAutoSave() {
-  if (autoSaveTimer) {
-    clearInterval(autoSaveTimer);
+function createSnapshot(silent) {
+  const cells = getNotebookData();
+  if (!Array.isArray(cells) || cells.length === 0) {
+    showNotification("笔记本为空，未创建快照", "error");
+    return Promise.resolve(false);
   }
-  autoSaveTimer = setInterval(writeAutoSave, AUTOSAVE_INTERVAL);
-  // A 2-minute timer alone loses short sessions: snapshot on the way out too.
-  window.addEventListener("pagehide", writeAutoSave);
-}
-
-function otherNotebookTabAlive() {
-  return new Promise(function (resolve) {
-    if (!autoSaveChannel) {
-      resolve(false);
-      return;
-    }
-    let alive = false;
-    const onMessage = function (e) {
-      if (e.data && e.data.type === "pong" && e.data.id !== AUTOSAVE_TAB_ID) {
-        alive = true;
+  return fetch("/api/snapshot_save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title: new Date().toLocaleString(), cells: cells }),
+  })
+    .then((r) => r.json())
+    .then((data) => {
+      if (data && data.success) {
+        if (!silent) showNotification("快照已保存", "success");
+        return true;
       }
-    };
-    autoSaveChannel.addEventListener("message", onMessage);
-    try {
-      autoSaveChannel.postMessage({ type: "ping", id: AUTOSAVE_TAB_ID });
-    } catch (e) {
-      autoSaveChannel.removeEventListener("message", onMessage);
-      resolve(false);
-      return;
-    }
-    setTimeout(function () {
-      autoSaveChannel.removeEventListener("message", onMessage);
-      resolve(alive);
-    }, 250);
+      if (!silent) showNotification("快照保存失败: " + (data.error || "未知错误"), "error");
+      return false;
+    })
+    .catch((error) => {
+      if (!silent) showNotification("快照保存失败: " + error.message, "error");
+      return false;
+    });
+}
+
+function buildSnapshotPanel() {
+  let overlay = document.getElementById("hd-snapshot-overlay");
+  if (overlay) return overlay;
+
+  overlay = document.createElement("div");
+  overlay.id = "hd-snapshot-overlay";
+  overlay.className = "hd-snapshot-overlay";
+  overlay.innerHTML =
+    '<div class="hd-snapshot-panel" role="dialog" aria-modal="true" aria-label="历史快照">' +
+    '<div class="hd-snapshot-head">' +
+    '<span class="hd-snapshot-title">历史快照</span>' +
+    '<span class="hd-snapshot-actions">' +
+    '<button type="button" class="hd-snapshot-new"><i class="fas fa-plus"></i><span>新建快照</span></button>' +
+    '<button type="button" class="hd-snapshot-close" title="关闭"><i class="fas fa-times"></i></button>' +
+    "</span>" +
+    "</div>" +
+    '<div class="hd-snapshot-list"></div>' +
+    "</div>";
+  document.body.appendChild(overlay);
+
+  overlay.querySelector(".hd-snapshot-new").addEventListener("click", function () {
+    createSnapshot(false).then(function (ok) {
+      if (ok) refreshSnapshotList();
+    });
   });
+  overlay.querySelector(".hd-snapshot-close").addEventListener("click", closeSnapshotPanel);
+  overlay.addEventListener("click", function (event) {
+    if (event.target === overlay) closeSnapshotPanel();
+  });
+  return overlay;
 }
 
-async function loadAutoSave() {
-  // Two open tabs would keep overwriting each other's snapshot; only the tab
-  // opened on its own (after a reload / restart) offers a restore.
-  if (await otherNotebookTabAlive()) return;
-
-  let raw = null;
-  try {
-    raw = localStorage.getItem(AUTOSAVE_KEY);
-  } catch (e) {
-    return;
-  }
-  if (!raw) return;
-
-  let savedAt = null;
-  try {
-    const stamp = localStorage.getItem(AUTOSAVE_TIME_KEY);
-    if (stamp) savedAt = new Date(stamp);
-  } catch (e) { /* ignore */ }
-  if (savedAt && (Date.now() - savedAt.getTime()) / 60000 > AUTOSAVE_MAX_AGE_MIN) return;
-
-  let cells;
-  try {
-    cells = JSON.parse(raw);
-  } catch (e) {
-    return;
-  }
-  if (!Array.isArray(cells) || cells.length === 0) return;
-
-  // Never overwrite a notebook the user is already working in.
-  try {
-    const current = getNotebookData();
-    if (current.some((c) => (c.content || "").trim())) return;
-  } catch (e) {
-    return;
-  }
-
-  const label = savedAt ? savedAt.toLocaleString() : "上次";
-  if (!confirm(`发现 ${label} 的自动保存，是否恢复？`)) return;
-  loadNotebookData(cells);
-  showNotification("已恢复自动保存", "success");
+function closeSnapshotPanel() {
+  const overlay = document.getElementById("hd-snapshot-overlay");
+  if (overlay) overlay.classList.remove("hd-open");
 }
+
+function refreshSnapshotList() {
+  const overlay = buildSnapshotPanel();
+  const list = overlay.querySelector(".hd-snapshot-list");
+  list.innerHTML = '<div class="hd-snapshot-empty">加载中...</div>';
+  fetch("/api/snapshot_list?limit=100")
+    .then((r) => r.json())
+    .then((data) => {
+      const rows = (data && data.snapshots) || [];
+      if (!rows.length) {
+        list.innerHTML = '<div class="hd-snapshot-empty">还没有快照。点击「新建快照」保存当前笔记本。</div>';
+        return;
+      }
+      list.innerHTML = "";
+      rows.forEach(function (row) {
+        const item = document.createElement("div");
+        item.className = "hd-snapshot-item";
+
+        const meta = document.createElement("div");
+        meta.className = "hd-snapshot-meta";
+        const name = document.createElement("span");
+        name.className = "hd-snapshot-name";
+        name.textContent = row.title || ("快照 #" + row.id);
+        const time = document.createElement("span");
+        time.className = "hd-snapshot-time";
+        time.textContent = formatSnapshotTime(row.created_at);
+        meta.appendChild(name);
+        meta.appendChild(time);
+
+        const actions = document.createElement("div");
+        actions.className = "hd-snapshot-item-actions";
+        const restore = document.createElement("button");
+        restore.type = "button";
+        restore.className = "hd-snapshot-restore";
+        restore.textContent = "恢复";
+        restore.addEventListener("click", function () {
+          restoreSnapshot(row.id);
+        });
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "hd-snapshot-delete";
+        del.textContent = "删除";
+        del.addEventListener("click", function () {
+          deleteSnapshot(row.id);
+        });
+        actions.appendChild(restore);
+        actions.appendChild(del);
+
+        item.appendChild(meta);
+        item.appendChild(actions);
+        list.appendChild(item);
+      });
+    })
+    .catch((error) => {
+      list.innerHTML = '<div class="hd-snapshot-empty">加载失败: ' + escapeHtml(error.message) + "</div>";
+    });
+}
+
+function openSnapshotPanel() {
+  const overlay = buildSnapshotPanel();
+  overlay.classList.add("hd-open");
+  refreshSnapshotList();
+}
+
+function restoreSnapshot(id) {
+  fetch("/api/snapshot_get?id=" + encodeURIComponent(id))
+    .then((r) => r.json())
+    .then((data) => {
+      if (!data || !data.success || !data.snapshot) {
+        showNotification("恢复失败: " + ((data && data.error) || "快照不存在"), "error");
+        return;
+      }
+      let cells;
+      try {
+        cells = JSON.parse(data.snapshot.payload);
+      } catch (e) {
+        showNotification("恢复失败: 快照内容损坏", "error");
+        return;
+      }
+      if (!Array.isArray(cells) || cells.length === 0) return;
+      // Keep the current document as a safety snapshot before replacing it.
+      const hasContent = getNotebookData().some((c) => (c.content || "").trim());
+      const safety = hasContent ? createSnapshot(true) : Promise.resolve(true);
+      safety.then(function () {
+        loadNotebookData(cells);
+        closeSnapshotPanel();
+        showNotification("已恢复到所选快照", "success");
+      });
+    })
+    .catch((error) => {
+      showNotification("恢复失败: " + error.message, "error");
+    });
+}
+
+function deleteSnapshot(id) {
+  if (!confirm("删除这条快照？")) return;
+  fetch("/api/snapshot_delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: id }),
+  })
+    .then((r) => r.json())
+    .then((data) => {
+      if (!data || !data.success) {
+        showNotification("删除失败: " + ((data && data.error) || "未知错误"), "error");
+        return;
+      }
+      refreshSnapshotList();
+    })
+    .catch((error) => {
+      showNotification("删除失败: " + error.message, "error");
+    });
+}
+
 
 // Subscribe to task status via SSE
 // ---- Step-linking: open a derivation sub-expression in a fresh cell ----
