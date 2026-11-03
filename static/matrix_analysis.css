@@ -94,7 +94,7 @@ a {
   transition: all var(--transition-speed);
   position: relative;
   overflow: hidden;
-  font-size: calc(16px * var(--fscale));
+  font-size: calc(var(--font-title) * var(--fscale));
 }
 
 .header-btn:hover {
@@ -184,7 +184,10 @@ body:hover .math-bg-element {
 }
 
 .result-section {
-  margin-top: 20px;
+  margin-block: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
 }
 
 #render {
@@ -201,7 +204,7 @@ body:hover .math-bg-element {
 .U,
 .S,
 .V {
-  margin-bottom: 10px;
+  /* Vertical rhythm comes from the .result-item column gap. */
 }
 
 .matrix-preview,
@@ -210,7 +213,7 @@ body:hover .math-bg-element {
   border-radius: var(--radius);
   min-height: 52px;
   border: 1px dashed var(--jp-border-color1);
-  font-size: calc(15px * var(--fscale));
+  font-size: calc(var(--font-math) * var(--fscale));
   transition: all var(--transition-speed);
 }
 
@@ -228,19 +231,19 @@ body:hover .math-bg-element {
 }
 
 .result-item {
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
   transition: all 0.2s ease;
 }
 
 .result-item:last-child {
-  margin-bottom: 0;
   padding-bottom: 0;
   border-bottom: none;
 }
 
 .result-item h3 {
-  margin: 0 0 12px 0;
-  font-size: 1em;
+  margin: 0;
   font-weight: 500;
   text-indent: 2em;
 }
@@ -268,7 +271,7 @@ body:hover .math-bg-element {
   transition: all var(--transition-speed);
   z-index: 10;
   color: var(--jp-ui-font-color1);
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
 }
 
 .run-button:hover {
@@ -299,7 +302,7 @@ body:hover .math-bg-element {
   cursor: pointer;
   transition: all var(--transition-speed);
   color: var(--jp-ui-font-color1);
-  font-size: var(--font-meta);
+  font-size: calc(var(--font-meta) * var(--fscale));
   opacity: 0.7;
 }
 
@@ -345,6 +348,7 @@ body:hover .math-bg-element {
   transition: transform 0.3s ease;
   display: flex;
   flex-direction: column;
+  gap: var(--space-4);
 }
 
 .math-fullscreen-overlay.active .math-fullscreen-content {
@@ -354,8 +358,7 @@ body:hover .math-bg-element {
 .math-fullscreen-header {
   display: flex;
   justify-content: flex-end;
-  padding-bottom: 15px;
-  margin-bottom: 15px;
+  padding-block-end: var(--space-4);
   border-bottom: 1px solid var(--jp-border-color1);
   flex-shrink: 0;
 }
@@ -372,7 +375,7 @@ body:hover .math-bg-element {
   cursor: pointer;
   transition: all var(--transition-speed);
   color: var(--jp-ui-font-color1);
-  font-size: calc(14px * var(--fscale));
+  font-size: calc(var(--font-body) * var(--fscale));
   flex-shrink: 0;
 }
 

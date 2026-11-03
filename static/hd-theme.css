@@ -56,10 +56,23 @@
 
   /*  The whole UI is sized off one 13px base and one global scale, exactly as
       omm-planner does it.  `--fscale` is driven by the 界面字体 control in the
-      product menu bar, so every rule below stays relative. */
+      product menu bar, so every rule below stays relative.
+
+      Eight steps, one role each -- nothing in the product may hardcode a px
+      size again; pick the role, not the number:
+        display 21  hero numbers / empty-state glyphs
+        title   16  page and card titles
+        math    15  rendered formulas (LaTeX output, math fields)
+        body    13  running text, inputs, list items
+        sub     12  secondary prose, hints beside a value
+        menu    11  buttons, menu items, control labels
+        meta    10  field names, timestamps, captions
+        label    9  uppercase micro-labels, table heads                        */
   --fscale: 1;
   --font-base: 13px;
+  --font-display: 21px;
   --font-title: 16px;
+  --font-math: 15px;
   --font-body: 13px;
   --font-sub: 12px;
   --font-menu: 11px;
@@ -72,6 +85,17 @@
   --ls-menu: 0.4px;
   --weight: 500;
   --leading: 1.6;
+
+  /* --- spacing ---------------------------------------------------------- */
+  /*  One rhythm for the whole product: 4px micro, 8px inline, 12px block,
+      16px card padding, 24px section break.  Prefer a flex/grid `gap` on the
+      container over a one-sided margin on a child -- that keeps the space
+      even on every side and stops the "margin only underneath" drift.        */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
 
   /* --- motion ----------------------------------------------------------- */
   --transition-speed: 0.15s;
@@ -250,7 +274,7 @@ body {
 .hd-menu-label,
 .hd-dd-label,
 .modal-title {
-  font-size: calc(var(--font-label) * var(--fscale));
+  font-size: calc(var(--font-menu) * var(--fscale));
   letter-spacing: var(--ls-section);
   text-transform: uppercase;
   font-weight: var(--weight);
@@ -268,11 +292,11 @@ body {
 }
 
 #help-container h1 {
-  font-size: calc(21px * var(--fscale));
+  font-size: calc(var(--font-display) * var(--fscale));
   letter-spacing: var(--ls-title);
 }
 #help-container h3 {
-  font-size: calc(15px * var(--fscale));
+  font-size: calc(var(--font-body) * var(--fscale));
   letter-spacing: var(--ls-meta);
 }
 
@@ -599,10 +623,34 @@ code {
 .expr-sort,
 .gene-sort,
 .limit-sort,
-.sort {
+.sort,
+.mt-field input,
+.mt-field select,
+.rs-input-row input,
+.rs-input-row select {
   background: var(--bg);
   border: 1px solid var(--border-dim);
   color: var(--text);
+  border-radius: var(--radius);
+}
+
+/*  One field shape for the whole product: same padding, same size, same frame.
+    The per-page sheets used to give each form 5/9px, 5/8px or 6/10px.          */
+.var-input input,
+.expression-controls input,
+.limit-controls input,
+.expr-sort,
+.gene-sort,
+.limit-sort,
+.sort,
+.mt-field input,
+.mt-field select,
+.rs-input-row input,
+.rs-input-row select {
+  padding: 5px 8px;
+  font-size: calc(var(--font-body) * var(--fscale));
+  line-height: 1.4;
+  font-family: var(--font-family);
 }
 
 .math-preview,
@@ -1427,7 +1475,7 @@ body.hd-submenu-open #hd-top-menu {
   background: var(--border-dim);
 }
 .hd-menu-label {
-  font-size: 9px;
+  font-size: calc(var(--font-label) * var(--fscale));
   letter-spacing: 1.5px;
   color: var(--text-faint);
   text-transform: uppercase;
@@ -1458,7 +1506,7 @@ body.hd-submenu-open #hd-top-menu {
 }
 .hd-menu-btn i,
 .hd-menu-group-actions .header-btn i {
-  font-size: 10px;
+  font-size: calc(var(--font-meta) * var(--fscale));
   line-height: 1;
 }
 .hd-menu-btn:hover,
@@ -1483,7 +1531,7 @@ body.hd-submenu-open #hd-top-menu {
   border: 1px solid transparent;
   cursor: pointer;
   color: var(--text-faint);
-  font-size: 14px;
+  font-size: calc(var(--font-body) * var(--fscale));
   margin-left: 2px;
   background: transparent;
   flex-shrink: 0;
@@ -1540,7 +1588,7 @@ body.hd-submenu-open #hd-top-menu {
   justify-content: space-between;
   padding: 6px 10px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: calc(var(--font-sub) * var(--fscale));
   color: var(--text-dim);
   border: 1px solid transparent;
   background: transparent;
@@ -1556,7 +1604,7 @@ body.hd-submenu-open #hd-top-menu {
 }
 .hd-dd-item .hd-hint,
 .hd-dd-row .hd-hint {
-  font-size: 10px;
+  font-size: calc(var(--font-meta) * var(--fscale));
   color: var(--text-faint);
 }
 .hd-dd-divider {
@@ -1566,7 +1614,7 @@ body.hd-submenu-open #hd-top-menu {
 }
 .hd-dd-label {
   padding: 6px 10px 2px;
-  font-size: 9px;
+  font-size: calc(var(--font-label) * var(--fscale));
   text-transform: uppercase;
   letter-spacing: 1.5px;
   color: var(--text-faint);
@@ -1588,7 +1636,7 @@ body.hd-submenu-open #hd-top-menu {
   border: 1px solid var(--border-dim);
   background: transparent;
   color: var(--text-dim);
-  font-size: 13px;
+  font-size: calc(var(--font-body) * var(--fscale));
   transition: all var(--transition-speed);
   user-select: none;
   border-radius: var(--radius);
@@ -1601,7 +1649,7 @@ body.hd-submenu-open #hd-top-menu {
 .hd-step-value {
   min-width: 34px;
   text-align: center;
-  font-size: 11px;
+  font-size: calc(var(--font-menu) * var(--fscale));
   color: var(--text);
 }
 
@@ -1631,7 +1679,7 @@ body.hd-menu-pinned #blueprint-canvas-container {
   background: var(--bg);
   border: 1px solid var(--border);
   padding: 6px 16px;
-  font-size: 11px;
+  font-size: calc(var(--font-menu) * var(--fscale));
   color: var(--text);
   z-index: 3000;
   opacity: 0;
@@ -1718,7 +1766,7 @@ body.hd-menu-pinned #blueprint-canvas-container {
   display: flex;
   align-items: stretch;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-block: var(--space-4);
 }
 .hd-universal-bar .hd-universal-field {
   flex: 1 1 auto;
@@ -1777,7 +1825,7 @@ body.hd-menu-pinned #blueprint-canvas-container {
   border-bottom: 1px solid var(--border-dim);
 }
 .hd-snapshot-title {
-  font-size: var(--font-label);
+  font-size: calc(var(--font-label) * var(--fscale));
   letter-spacing: var(--ls-section);
   text-transform: uppercase;
   color: var(--text-faint);

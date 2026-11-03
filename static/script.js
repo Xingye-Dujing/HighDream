@@ -1028,9 +1028,9 @@ function createCellElement(id, type) {
                   <option value="-">左极限</option>
                   <option value="both">双极限/极限</option>
                 </select>
-                <label style="font-size:12px;">趋于:</label>
+                <label style="font-size: calc(var(--font-meta) * var(--fscale));">趋于:</label>
                 <input class="point" value="0" style="width:50px;">
-                <label style="font-size:12px;">最多使用洛必达的次数</label>
+                <label style="font-size: calc(var(--font-meta) * var(--fscale));">最多使用洛必达的次数</label>
                 <input class="max-lhopital-count" value="5" style="width:50px;">
               </div>
 
@@ -1044,9 +1044,9 @@ function createCellElement(id, type) {
                 <input type="radio" name="${radioButtonGroupName}" value="none">
                 <span>不包含特殊匹配器</span>
                </label>
-               <label style="font-size:12px; margin-left:8px;">上限:</label>
+               <label style="font-size: calc(var(--font-meta) * var(--fscale)); margin-left: var(--space-2);">上限:</label>
                <input class="integral-upper" placeholder="空=不定积分" style="width:80px;">
-               <label style="font-size:12px;">下限:</label>
+               <label style="font-size: calc(var(--font-meta) * var(--fscale));">下限:</label>
                <input class="integral-lower" placeholder="默认0" style="width:70px;">
               </div>
 
@@ -1058,7 +1058,7 @@ function createCellElement(id, type) {
                   <option value="length">长度</option>
                   <option value="none">不排序</option>
                 </select>
-                <label style="font-size:12px;">深度:</label>
+                <label style="font-size: calc(var(--font-meta) * var(--fscale));">深度:</label>
                 <input type="number" class="expr-depth" value="3" min="1" max="10" style="width:50px;">
                 <!--
                 <span class="gene-label">生成推导树:</label>
@@ -1071,33 +1071,33 @@ function createCellElement(id, type) {
 
               <!-- 高等数学(应用/级数/方程) 专有 -->
               <div class="applied-controls" style="display: none; gap:8px; margin-left:8px; align-items:center; flex-wrap:wrap;">
-                <label style="font-size:12px;">点/初值:</label>
+                <label style="font-size: calc(var(--font-meta) * var(--fscale));">点/初值:</label>
                 <input class="applied-point" value="0" style="width:60px;">
-                <label style="font-size:12px;">下限:</label>
+                <label style="font-size: calc(var(--font-meta) * var(--fscale));">下限:</label>
                 <input class="applied-lower" value="0" style="width:60px;">
-                <label style="font-size:12px;">上限:</label>
+                <label style="font-size: calc(var(--font-meta) * var(--fscale));">上限:</label>
                 <input class="applied-upper" value="1" style="width:60px;">
-                <label style="font-size:12px;">阶数/次数:</label>
+                <label style="font-size: calc(var(--font-meta) * var(--fscale));">阶数/次数:</label>
                 <input class="applied-order" value="6" style="width:50px;">
               </div>
 
               <!-- 累次/二重积分: 第二个变量与其上下限 (第一变量的上下限复用"下限/上限") -->
               <div class="iterated-controls" style="display: none; gap:8px; margin-left:8px; align-items:center; flex-wrap:wrap;">
-                <label style="font-size:12px;">变量2:</label>
+                <label style="font-size: calc(var(--font-meta) * var(--fscale));">变量2:</label>
                 <input class="iterated-var2" value="y" style="width:50px;">
-                <label style="font-size:12px;">下限2:</label>
+                <label style="font-size: calc(var(--font-meta) * var(--fscale));">下限2:</label>
                 <input class="iterated-lower2" value="0" style="width:60px;">
-                <label style="font-size:12px;">上限2:</label>
+                <label style="font-size: calc(var(--font-meta) * var(--fscale));">上限2:</label>
                 <input class="iterated-upper2" value="1" style="width:60px;">
               </div>
 
               <span class="assumptions-controls controls" style="display:inline-flex; gap:4px; margin-left:8px; align-items:center;">
-                <label style="font-size:12px;">假设:</label>
+                <label style="font-size: calc(var(--font-meta) * var(--fscale));">假设:</label>
                 <input class="assumptions-input" placeholder="x&gt;0, y real" style="width:150px; text-align:left;" title="化简假设, 例如 x>0 使 sqrt(x^2)=x; 多个用逗号分隔">
               </span>
 
               <span class="var-input" style="display:inline-flex; align-items:center; gap:4px; margin-left:8px;">
-                <label style="font-size:12px;">变量/指标:</label>
+                <label style="font-size: calc(var(--font-meta) * var(--fscale));">变量/指标:</label>
                 <input value="x" style="width:50px;" title="求导/积分/极限变量, 级数指标等">
               </span>
 
@@ -1111,7 +1111,7 @@ function createCellElement(id, type) {
             </div>
             <math-field class="math-editor" virtual-keyboard-mode="manual" toolbar="hide" style="display:none;"></math-field>
             <textarea placeholder="输入数学表达式..." class="math-input"></textarea>
-            <span class="input-b-label" style="display:none; font-size:12px; color:#888; margin-top:4px;">第二个矩阵/向量:</span>
+            <span class="input-b-label" style="display:none; font-size: calc(var(--font-meta) * var(--fscale)); color: var(--text-mid); margin-top: var(--space-1);">第二个矩阵/向量:</span>
             <math-field class="math-editor math-editor-b" virtual-keyboard-mode="manual" toolbar="hide" style="display:none;"></math-field>
             <textarea placeholder="第二个输入..." class="math-input math-input-b" style="display:none;"></textarea>
           </div>
@@ -2237,15 +2237,15 @@ function spawnCellFromSubtask(sub) {
 
 // Build a collapsed <details> of per-step "rule cards" from /api/steps structured
 // steps [{index, latex, reason}]. Returns null when there is nothing to show. Reason
-// text keeps its $..$ converted to \(..\) (tex-chtml uses \(..\) for inline math).
+// text keeps its $..$ converted to \(..\) (MathJax uses \(..\) for inline math).
 function makeStepCards(steps) {
   if (!Array.isArray(steps)) return null;
   const wrap = document.createElement('details');
   wrap.className = 'step-cards';
-  wrap.style.cssText = "margin-top:8px;";
+  wrap.style.cssText = "margin-block:var(--space-2);";
   const summary = document.createElement('summary');
   summary.textContent = '分步规则卡片';
-  summary.style.cssText = "cursor:pointer;font-size:12px;color:#888;";
+  summary.style.cssText = "cursor:pointer;font-size:calc(var(--font-sub) * var(--fscale));color:var(--text-mid);";
   wrap.appendChild(summary);
   let count = 0;
   steps.forEach((st) => {
@@ -2254,10 +2254,10 @@ function makeStepCards(steps) {
       .replace(/\$([^$]+)\$/g, '\\(' + '$1' + '\\)');
     const card = document.createElement('div');
     card.className = 'step-card';
-    card.style.cssText = "border:1px solid #ccc;border-radius:6px;padding:6px 8px;margin:6px 0;background:#f7f7f7;";
+    card.style.cssText = "border:1px solid var(--border-dim);border-radius:var(--radius);padding:6px 8px;margin-block:var(--space-1);background:var(--surface);";
     const head = document.createElement('div');
     head.className = 'step-card-head';
-    head.style.cssText = "font-size:12px;color:#888;margin-bottom:4px;";
+    head.style.cssText = "font-size:calc(var(--font-sub) * var(--fscale));color:var(--text-mid);margin-block-end:var(--space-1);";
     head.textContent = (st.index === 0 ? '初始表达式' : ('第 ' + st.index + ' 步 · ' + expl));
     const body = document.createElement('div');
     body.className = 'step-card-body';

@@ -727,7 +727,7 @@ function runSymPyCode(paragraph) {
       if (data.success) {
         // If there is LaTeX result, prioritize displaying LaTeX
         if (data.latex) {
-          output.innerHTML = `$$${data.latex}$$<div style="font-size: 12px; color: var(--text-faint); margin-top: 8px;">${escapeHtml(data.result)}</div>`;
+          output.innerHTML = `$$${data.latex}$$<div style="font-size: calc(var(--font-sub) * var(--fscale)); color: var(--text-faint); margin-top: var(--space-2);">${escapeHtml(data.result)}</div>`;
         } else {
           output.textContent = data.result;
         }

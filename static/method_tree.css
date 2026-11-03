@@ -31,7 +31,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
   color: var(--jp-ui-font-color1, #333);
 }
 
@@ -47,7 +47,7 @@
   border-radius: var(--radius);
   background: var(--jp-layout-color0, var(--bg));
   color: var(--jp-ui-font-color0, #222);
-  font-size: var(--font-body);
+  font-size: calc(var(--font-body) * var(--fscale));
   min-width: 70px;
   font-family: var(--font-family, inherit);
   transition: border-color 0.2s;
@@ -78,7 +78,7 @@
 .mt-field.mt-buttons button {
   background: none;
   border: 1px solid transparent;
-  font-size: var(--font-body);
+  font-size: calc(var(--font-body) * var(--fscale));
   padding: 8px 12px;
   cursor: pointer;
   color: var(--jp-ui-font-color0, #222);
@@ -102,7 +102,7 @@
 }
 
 .mt-field.mt-buttons button i {
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
 }
 
 #mt-start-btn { color: var(--text); }
@@ -183,7 +183,7 @@
   height: 12px;
   border-radius: 50%;
   background-color: var(--jp-border-color2, #888);
-  border: 2px solid var(--jp-border-color1, #bbb);
+  border: 1px solid var(--jp-border-color1, #bbb);
   cursor: pointer;
   z-index: 3;
   transition: background-color 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.15s;
@@ -198,7 +198,7 @@
 .mt-port.mt-port-connecting {
   background-color: var(--jp-brand-color0, var(--text));
   border-color: var(--jp-brand-color1, var(--text));
-  box-shadow: 0 0 8px rgba(91, 137, 205, 0.6);
+  box-shadow: 0 0 0 2px var(--hover-strong);
 }
 
 .mt-port.mt-port-input {
@@ -271,7 +271,8 @@
 }
 
 .mt-node:hover {
-  box-shadow: 0 4px 14px rgba(30, 60, 110, 0.2);
+  border-color: var(--border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
 }
 
 .mt-node-header {
@@ -285,17 +286,17 @@
 }
 
 .mt-node-title {
-  font-size: var(--font-body);
+  font-size: calc(var(--font-body) * var(--fscale));
   font-weight: 500;
   color: var(--jp-ui-font-color0, #222);
   margin-right: auto;
-  var(--bg)-space: nowrap;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .mt-node-type {
-  font-size: var(--font-meta);
+  font-size: calc(var(--font-meta) * var(--fscale));
   color: var(--jp-ui-font-color1, #555);
   background-color: var(--jp-layout-color1, var(--surface));
   padding: 2px 6px;
@@ -309,7 +310,7 @@
   overflow-x: auto;
   line-height: 1.4;
   color: var(--jp-ui-font-color0, #222);
-  font-size: calc(14px * var(--fscale));
+  font-size: calc(var(--font-body) * var(--fscale));
 }
 
 .mt-node-content .MathJax {
@@ -366,7 +367,7 @@
 /* Footer labels (final result / truncation) */
 .mt-node-footer {
   padding: 6px 12px;
-  font-size: var(--font-menu);
+  font-size: calc(var(--font-menu) * var(--fscale));
   font-weight: 500;
   border-top: 1px dashed var(--bp-node-border);
   background-color: var(--jp-layout-color1, var(--surface));
@@ -390,12 +391,12 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--bg);
   border: 1px solid var(--bp-node-border);
   border-radius: var(--radius);
   padding: 10px 16px;
-  box-shadow: 0 4px 14px rgba(30, 60, 110, 0.18);
-  font-size: var(--font-body);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+  font-size: calc(var(--font-body) * var(--fscale));
   color: var(--jp-ui-font-color0, #222);
   z-index: 10;
 }
@@ -418,11 +419,11 @@
   position: absolute;
   right: 20px;
   top: 20px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg);
   border: 1px solid var(--bp-node-border);
   border-radius: var(--radius);
   padding: 8px 14px;
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
   color: var(--jp-ui-font-color0, #222);
   z-index: 9;
   max-width: 340px;
@@ -432,7 +433,7 @@
 #mt-stats:empty { display: none; }
 
 #mt-stats .mt-stat-line {
-  var(--bg)-space: nowrap;
+  white-space: nowrap;
 }
 
 #mt-stats .mt-reason {
@@ -458,10 +459,10 @@
   gap: 6px;
   cursor: pointer;
   font-weight: 500;
-  font-size: var(--font-body);
+  font-size: calc(var(--font-body) * var(--fscale));
   color: var(--jp-ui-font-color0, #222);
   user-select: none;
-  var(--bg)-space: nowrap;
+  white-space: nowrap;
   padding: 4px 0;
 }
 
@@ -481,21 +482,20 @@
   bottom: 30px;
   transform: translateX(-50%);
   z-index: 20;
-  background: rgba(255, 255, 255, 0.97);
-  border: 2px solid var(--jp-brand-color0, var(--text));
+  background: var(--bg);
+  border: var(--hairline) solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 8px 32px rgba(30, 60, 110, 0.25);
-  padding: 16px 24px;
+  box-shadow: none;
+  padding: var(--space-4) var(--space-5);
   min-width: 360px;
   max-width: 520px;
-  backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .mt-decision-header {
-  font-size: calc(14px * var(--fscale));
+  font-size: calc(var(--font-body) * var(--fscale));
   font-weight: 500;
   color: var(--jp-brand-color0, var(--text));
   text-align: center;
@@ -514,10 +514,13 @@
   max-height: calc(100vh - 180px);
   overflow: auto;
   background: var(--bg);
-  border: 2px solid var(--border);
+  border: var(--hairline) solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 8px 32px rgba(30, 60, 110, 0.25);
-  padding: 12px 16px;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
   color: var(--text);
 }
 .mt-path-header {
@@ -525,11 +528,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  font-size: calc(14px * var(--fscale));
-  font-weight: 600;
+  font-size: calc(var(--font-body) * var(--fscale));
+  font-weight: var(--weight);
   color: var(--jp-brand-color0, var(--text));
-  padding-bottom: 6px;
-  margin-bottom: 6px;
+  padding-block-end: var(--space-1);
   border-bottom: 1px solid var(--border-dim);
 }
 .mt-path-close {
@@ -537,12 +539,11 @@
   background: transparent;
   color: var(--text);
   cursor: pointer;
-  font-size: calc(14px * var(--fscale));
+  font-size: calc(var(--font-body) * var(--fscale));
 }
 .mt-path-hint {
-  font-size: calc(12px * var(--fscale));
+  font-size: calc(var(--font-sub) * var(--fscale));
   color: var(--text-faint);
-  margin-bottom: 8px;
 }
 .mt-path-panel .math-output { max-height: none; overflow: visible; }
 .mt-path-loading { color: var(--text-faint); }
@@ -553,7 +554,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: calc(14px * var(--fscale));
+  font-size: calc(var(--font-body) * var(--fscale));
 }
 
 .mt-decision-value {
@@ -568,7 +569,7 @@
 }
 
 .mt-decision-label {
-  font-size: var(--font-menu);
+  font-size: calc(var(--font-menu) * var(--fscale));
   font-weight: 500;
   color: var(--jp-ui-font-color1, #555);
   text-transform: uppercase;
@@ -576,7 +577,7 @@
 }
 
 .mt-decision-latex {
-  font-size: calc(14px * var(--fscale));
+  font-size: calc(var(--font-body) * var(--fscale));
   color: var(--jp-ui-font-color0, #222);
   padding: 6px 10px;
   background: var(--jp-layout-color1, var(--surface));
@@ -596,7 +597,7 @@
 .mt-btn-accept,
 .mt-btn-skip {
   border: none;
-  font-size: var(--font-body);
+  font-size: calc(var(--font-body) * var(--fscale));
   font-weight: 500;
   padding: 8px 20px;
   border-radius: var(--radius);

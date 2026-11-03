@@ -150,7 +150,7 @@ a {
 .toolbar-button {
   background: none;
   border: 1px solid transparent;
-  font-size: var(--font-body);
+  font-size: calc(var(--font-body) * var(--fscale));
   padding: 8px 12px;
   cursor: pointer;
   color: var(--jp-ui-font-color0);
@@ -188,7 +188,7 @@ a {
 }
 
 .toolbar-button i {
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
 }
 
 .toolbar-separator {
@@ -201,7 +201,7 @@ a {
 #kernel-status {
   display: flex;
   align-items: center;
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
   color: var(--jp-kernel-idle-color);
   margin-left: auto;
 }
@@ -226,11 +226,15 @@ a {
   width: 100%;
   max-width: 1000px;
   padding: 0 20px;
+  /* The column owns the rhythm between cells instead of every cell carrying a
+     bottom margin -- even spacing, one place to change it. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
 }
 
 .cell {
   display: flex;
-  margin-bottom: 24px;
   position: relative;
   transition: transform 0.2s, opacity 0.3s;
   opacity: 1;
@@ -246,7 +250,7 @@ a {
   padding: var(--jp-cell-padding);
   text-align: right;
   font-family: var(--font-family);
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
   opacity: var(--jp-cell-prompt-not-active-opacity);
   flex-shrink: 0;
   user-select: none;
@@ -274,6 +278,9 @@ a {
   border-radius: var(--radius);
   overflow: visible;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
   transition: border-color var(--transition-speed);
 }
 
@@ -287,6 +294,9 @@ a {
 
 .cell-input {
   padding: var(--jp-cell-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .cell-controls {
@@ -294,8 +304,7 @@ a {
      only math + results (Maple-style). All controls remain fully usable. */
   display: none;
   align-items: center;
-  margin-bottom: 12px;
-  padding: 4px 0;
+  padding: 0;
   gap: 8px;
   flex-wrap: wrap;
   font-family: var(--font-family);
@@ -325,7 +334,7 @@ a {
 .limit-sort,
 .sort {
   padding: 6px 10px;
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
   font-family: var(--font-family);
   border: 1px dashed var(--jp-border-color1);
   border-radius: var(--radius);
@@ -345,7 +354,7 @@ a {
 .limit-controls,
 .integral-controls,
 .controls {
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
   color: var(--jp-ui-font-color1);
   display: inline-flex;
   align-items: center;
@@ -390,34 +399,32 @@ a {
 }
 
 .math-preview {
-  margin-top: 12px;
+  margin-block: var(--space-3);
   padding: 16px;
   border-radius: var(--radius);
   min-height: 48px;
   border: 1px dashed var(--jp-border-color1);
-  font-size: calc(15px * var(--fscale));
+  font-size: calc(var(--font-math) * var(--fscale));
   transition: all var(--transition-speed);
 }
 
 
 .preview-error {
   color: var(--jp-error-color);
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
 }
 
 .cell-output-container {
   overflow: hidden;
-  margin-top: 8px;
 }
 
 .cell-output {
-  margin-top: 12px;
   padding: 16px 8px 16px 16px;
   background-color: var(--jp-cell-output-background);
   border-radius: var(--radius);
   min-height: 48px;
   border: 1px dashed var(--jp-border-color1);
-  font-size: calc(15px * var(--fscale));
+  font-size: calc(var(--font-math) * var(--fscale));
   transition: all var(--transition-speed);
   max-height: 300px;
   overflow-y: hidden;
@@ -477,7 +484,7 @@ a {
   transition: all var(--transition-speed);
   z-index: 10;
   color: var(--jp-ui-font-color1);
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
 }
 
 .run-cell-button,
@@ -496,7 +503,7 @@ a {
   transition: all var(--transition-speed);
   z-index: 10;
   color: var(--jp-ui-font-color1);
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
 }
 
 .cell:hover .add-cell-button,
@@ -529,12 +536,12 @@ a {
 .cell-type-selector {
   display: flex;
   border-bottom: 1px solid var(--jp-border-color0);
-  margin-bottom: 12px;
+  margin-block: 0 var(--space-3);
 }
 
 .cell-type-btn {
   padding: 6px 12px;
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
   background: none;
   border: none;
   cursor: pointer;
@@ -574,7 +581,7 @@ a {
 .error {
   color: var(--jp-error-color);
   font-family: var(--font-family);
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
   padding: 12px;
   background-color: var(--hover);
   border-radius: var(--radius);
@@ -587,6 +594,7 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--space-4);
   padding: 30px;
   color: var(--jp-ui-font-color0);
   font-family: var(--font-family);
@@ -599,11 +607,10 @@ a {
   border-top: 4px solid var(--jp-brand-color0);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 16px;
 }
 
 .loading-text {
-  font-size: calc(14px * var(--fscale));
+  font-size: calc(var(--font-body) * var(--fscale));
   color: var(--jp-ui-font-color1);
   text-align: center;
 }
@@ -612,7 +619,6 @@ a {
 .computing .fa-clock {
   font-size: 32px;
   color: var(--jp-kernel-busy-color);
-  margin-bottom: 16px;
   animation: pulse 1.5s ease-in-out infinite;
 }
 
@@ -756,14 +762,14 @@ body.hd-menu-pinned #main-cols {
 }
 
 /* 函数图像（SVG 曲线）：折叠的 <details> 内嵌于 .math-output, 仅用主题变量描色。 */
-.cell-plot { margin-top: 8px; }
+.cell-plot { margin-block: var(--space-2); }
 .cell-plot > summary {
   cursor: pointer;
-  font-size: calc(12px * var(--fscale));
+  font-size: calc(var(--font-sub) * var(--fscale));
   color: var(--text-faint);
 }
-.hd-plot-body { margin-top: 6px; }
-.hd-plot-loading { font-size: calc(12px * var(--fscale)); color: var(--text-faint); }
+.hd-plot-body { margin-block: var(--space-2); }
+.hd-plot-loading { font-size: calc(var(--font-sub) * var(--fscale)); color: var(--text-faint); }
 .hd-plot-svg { display: block; width: 100%; max-width: 520px; height: auto; }
 .hd-plot-axis { stroke: var(--border-dim); stroke-width: 1; }
 .hd-plot-zero { stroke: var(--border); stroke-width: 1; }
@@ -771,11 +777,11 @@ body.hd-menu-pinned #main-cols {
 .hd-plot-curve { fill: none; stroke: var(--jp-brand-color0, var(--text)); stroke-width: 2; }
 .hd-plot-tangent { fill: none; stroke: var(--selected-line, var(--text)); stroke-width: 1.5; stroke-dasharray: 4 3; }
 .hd-plot-root { fill: var(--accent-green); stroke: var(--jp-layout-color0); stroke-width: 1; }
-.hd-plot-root-label { font-size: 9px; fill: var(--jp-ui-font-color0); opacity: 0.8; }
+.hd-plot-root-label { font-size: calc(var(--font-label) * var(--fscale)); fill: var(--jp-ui-font-color0); opacity: 0.8; }
 .hd-plot-marker { fill: var(--jp-brand-color0, var(--text)); }
-.hd-plot-tick { fill: var(--text-faint); font-size: 10px; }
-.hd-plot-controls { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-.hd-plot-control-btn { padding: 4px 8px; font-size: 11px; border: 1px solid var(--jp-border-color1); background: var(--jp-layout-color0); color: var(--jp-ui-font-color0); border-radius: var(--radius); cursor: pointer; }
+.hd-plot-tick { fill: var(--text-faint); font-size: calc(var(--font-meta) * var(--fscale)); }
+.hd-plot-controls { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-block: var(--space-2); }
+.hd-plot-control-btn { padding: 4px 8px; font-size: calc(var(--font-menu) * var(--fscale)); border: 1px solid var(--jp-border-color1); background: var(--jp-layout-color0); color: var(--jp-ui-font-color0); border-radius: var(--radius); cursor: pointer; }
 .hd-plot-control-btn:hover { background: var(--jp-layout-color1); }
 
 .keyboard-close-btn {
@@ -822,11 +828,13 @@ body.hd-menu-pinned #main-cols {
   padding: 16px;
   overflow-y: auto;
   overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .keyboard-row {
   display: flex;
-  margin-bottom: 8px;
   justify-content: flex-start;
   flex-wrap: wrap;
   gap: 6px;
@@ -838,7 +846,7 @@ body.hd-menu-pinned #main-cols {
   border: 1px solid var(--jp-border-color1);
   border-radius: var(--radius);
   cursor: pointer;
-  font-size: var(--font-body);
+  font-size: calc(var(--font-body) * var(--fscale));
   font-family: var(--font-family);
   color: var(--jp-ui-font-color0);
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -880,7 +888,7 @@ body.hd-menu-pinned #main-cols {
 .keyboard-key-math {
   min-width: 40px;
   padding: 8px 10px;
-  font-size: calc(15px * var(--fscale));
+  font-size: calc(var(--font-math) * var(--fscale));
   line-height: 1.25;
 }
 
@@ -893,9 +901,9 @@ body.hd-menu-pinned #main-cols {
 }
 
 .keyboard-group-label {
-  font-size: 11px;
+  font-size: calc(var(--font-menu) * var(--fscale));
   color: var(--jp-ui-font-color1);
-  margin: 16px 0 6px;
+  margin-block: var(--space-3) 0;
   text-align: left;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -903,7 +911,7 @@ body.hd-menu-pinned #main-cols {
 }
 
 .keyboard-content > .keyboard-group-label:first-child {
-  margin-top: 4px;
+  margin-block-start: 0;
 }
 
 /* Hide MathLive's built-in on-screen keyboard and per-field toolbar entirely:
@@ -972,7 +980,7 @@ math-virtual-keyboard,
 }
 
 .notification i {
-  font-size: calc(20px * var(--fscale));
+  font-size: calc(var(--font-display) * var(--fscale));
 }
 
 #math-background {
@@ -1041,7 +1049,7 @@ body:hover .math-bg-element {
   cursor: pointer;
   transition: all var(--transition-speed);
   color: var(--jp-ui-font-color1);
-  font-size: var(--font-meta);
+  font-size: calc(var(--font-meta) * var(--fscale));
   opacity: 0.7;
 }
 
@@ -1052,7 +1060,7 @@ body:hover .math-bg-element {
 }
 
 .step-links {
-  margin-top: 8px;
+  margin-block: var(--space-2);
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -1060,14 +1068,14 @@ body:hover .math-bg-element {
 }
 
 .step-links-title {
-  font-size: 12px;
+  font-size: calc(var(--font-sub) * var(--fscale));
   color: var(--text-mid);
   margin-right: 4px;
 }
 
 .step-link-btn {
   cursor: pointer;
-  font-size: 12px;
+  font-size: calc(var(--font-sub) * var(--fscale));
   padding: 2px 8px;
   border: 1px solid var(--jp-border-color1);
   border-radius: var(--radius);
@@ -1099,12 +1107,12 @@ body:hover .math-bg-element {
 }
 
 .subexpr-select mjx-container:hover {
-  background: rgba(66, 165, 245, 0.12);
+  background: var(--hover);
   border-radius: 4px;
 }
 
 .step-cards {
-  margin-top: 10px;
+  margin-block: var(--space-3);
 }
 
 .hd-subexpr-menu {
@@ -1120,7 +1128,7 @@ body:hover .math-bg-element {
 
 .hd-subexpr-menu .hd-subexpr-title {
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: calc(var(--font-sub) * var(--fscale));
   color: var(--jp-ui-font-color1);
   background: var(--jp-layout-color1);
 }
@@ -1134,7 +1142,7 @@ body:hover .math-bg-element {
   background: none;
   color: var(--jp-ui-font-color0);
   cursor: pointer;
-  font-size: 13px;
+  font-size: calc(var(--font-body) * var(--fscale));
 }
 
 .hd-subexpr-menu button:hover {
@@ -1198,8 +1206,8 @@ body:hover .math-bg-element {
 .math-fullscreen-header {
   display: flex;
   justify-content: flex-end;
-  padding-bottom: 15px;
-  margin-bottom: 15px;
+  padding-block-end: var(--space-4);
+  margin-block-end: var(--space-4);
   border-bottom: 1px solid var(--jp-border-color1);
   flex-shrink: 0;
 }
@@ -1216,7 +1224,7 @@ body:hover .math-bg-element {
   cursor: pointer;
   transition: all var(--transition-speed);
   color: var(--jp-ui-font-color1);
-  font-size: calc(14px * var(--fscale));
+  font-size: calc(var(--font-body) * var(--fscale));
   flex-shrink: 0;
 }
 
@@ -1254,7 +1262,7 @@ body:hover .math-bg-element {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: var(--font-menu);
+  font-size: calc(var(--font-menu) * var(--fscale));
   color: var(--jp-ui-font-color1);
   cursor: pointer;
   user-select: none;

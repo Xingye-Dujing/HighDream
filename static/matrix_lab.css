@@ -30,7 +30,7 @@
   border-radius: var(--radius);
   min-height: 52px;
   border: 1px dashed var(--jp-border-color1);
-  font-size: calc(15px * var(--fscale));
+  font-size: calc(var(--font-math) * var(--fscale));
   transition: all var(--transition-speed);
 }
 
@@ -45,7 +45,7 @@
   display: inline-flex;
   align-items: center;
   margin-left: 10px;
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
   color: var(--jp-ui-font-color1);
 }
 
@@ -54,5 +54,5 @@
 }
 
 .record-toggle span {
-  var(--bg)-space: nowrap;
+  white-space: nowrap;
 }

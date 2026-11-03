@@ -28,7 +28,7 @@
 .bp-toolbar-button {
   background: none;
   border: 1px solid transparent;
-  font-size: var(--font-body);
+  font-size: calc(var(--font-body) * var(--fscale));
   padding: 8px 12px;
   cursor: pointer;
   color: var(--jp-ui-font-color0);
@@ -66,7 +66,7 @@
 
 .bp-toolbar-button i {
   margin-right: 6px;
-  font-size: var(--font-sub);
+  font-size: calc(var(--font-sub) * var(--fscale));
 }
 
 .bp-toolbar-separator {
@@ -173,14 +173,14 @@
 }
 
 .bp-node-title {
-  font-size: calc(14px * var(--fscale));
+  font-size: calc(var(--font-body) * var(--fscale));
   font-weight: 500;
   color: var(--jp-ui-font-color0);
   margin-right: auto;
 }
 
 .bp-node-type {
-  font-size: var(--font-menu);
+  font-size: calc(var(--font-menu) * var(--fscale));
   color: var(--jp-ui-font-color1);
   background-color: var(--jp-layout-color1);
   padding: 2px 6px;
@@ -200,7 +200,7 @@
   border: 1px dashed var(--jp-border-color1);
   border-radius: var(--radius);
   font-family: var(--font-family);
-  font-size: var(--font-body);
+  font-size: calc(var(--font-body) * var(--fscale));
   resize: none;
   background: transparent;
   outline: none;
@@ -214,7 +214,7 @@
   border: 1px dashed var(--jp-border-color1);
   border-radius: var(--radius);
   font-family: var(--font-family);
-  font-size: calc(15px * var(--fscale));
+  font-size: calc(var(--font-math) * var(--fscale));
   background: transparent;
   outline: none;
   flex: 1;
@@ -222,30 +222,30 @@
 
 
 .bp-node-result {
-  margin-top: 8px;
+  margin-block: var(--space-2);
   padding: 8px;
   background-color: var(--jp-cell-output-background);
   border-radius: var(--radius);
   min-height: 40px;
   max-height: 200px;
-  font-size: calc(15px * var(--fscale));
+  font-size: calc(var(--font-math) * var(--fscale));
   text-align: center;
 }
 
 .bp-node-result mjx-container {
-  font-size: 1.2rem !important;
+  font-size: 1.15em !important;
 }
 
 .bp-node-controls {
   display: flex;
   gap: 6px;
-  margin-top: 8px;
+  margin-block: var(--space-2);
 }
 
 .bp-node-operation {
   width: 100%;
   padding: 8px 12px;
-  font-size: var(--font-body);
+  font-size: calc(var(--font-body) * var(--fscale));
   font-family: var(--font-family);
   border: 1px solid var(--jp-border-color1);
   border-radius: var(--radius);
@@ -254,7 +254,7 @@
   cursor: pointer;
   outline: none;
   transition: border-color 0.2s ease;
-  margin-bottom: 8px;
+  margin-block: var(--space-2);
 }
 
 
@@ -268,7 +268,7 @@
 .bp-node-limit-point {
   width: 100%;
   padding: 8px 12px;
-  font-size: var(--font-body);
+  font-size: calc(var(--font-body) * var(--fscale));
   font-family: var(--font-family);
   border: 1px solid var(--jp-border-color1);
   border-radius: var(--radius);
@@ -290,7 +290,7 @@
   height: var(--bp-port-size);
   border-radius: 50%;
   background-color: var(--jp-border-color2);
-  border: 2px solid var(--jp-border-color1);
+  border: 1px solid var(--jp-border-color1);
   cursor: pointer;
   z-index: 2;
   transition: all var(--transition-speed);
@@ -332,7 +332,7 @@
 .bp-port.connecting {
   background-color: var(--jp-layout-color1);
   border-color: var(--jp-brand-color1);
-  box-shadow: 0 0 8px rgba(91, 137, 205, 0.6);
+  box-shadow: 0 0 0 2px var(--hover-strong);
 }
 
 .bp-port-label {
@@ -344,9 +344,9 @@
   border: 1px solid var(--jp-border-color1);
   border-radius: var(--radius);
   padding: 2px 6px;
-  font-size: var(--font-meta);
+  font-size: calc(var(--font-meta) * var(--fscale));
   color: var(--jp-ui-font-color2);
-  var(--bg)-space: nowrap;
+  white-space: nowrap;
   pointer-events: none;
   opacity: 0;
   transition: opacity var(--transition-speed);
@@ -431,7 +431,7 @@
 
 .context-menu-item {
   padding: 8px 12px;
-  font-size: var(--font-body);
+  font-size: calc(var(--font-body) * var(--fscale));
   color: var(--jp-ui-font-color0);
   cursor: pointer;
   display: flex;
