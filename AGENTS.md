@@ -51,7 +51,7 @@ Update **both** `README.md` (Chinese, primary) and `README-EN.md` (English) on u
 
 ## Commit messages
 
-Short **Chinese**, matching existing log (e.g. `更新文档`, `Fix md`).
+Short **Chinese**, matching existing log (e.g. `更新文档`, `Fix md`). Commit once per separate type of change (e.g. backend, styles, page JS, docs) instead of batching everything together.
 
 ## Code style
 
