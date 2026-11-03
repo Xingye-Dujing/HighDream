@@ -270,6 +270,13 @@ function renderPlotSvg(data) {
     xmin = xmin0; xmax = xmax0; ymin = ymin0; ymax = ymax0;
     redraw();
   });
+  
+  // Add plot controls
+  svg.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    // Simple toggle for grid via double click + shift
+  });
+  
   svg.style.cursor = 'grab';
   return svg;
 }
