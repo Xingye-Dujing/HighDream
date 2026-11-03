@@ -986,7 +986,7 @@ function applyTheme(isDark) {
   localStorage.setItem('darkTheme', isDarkTheme);
 }
 
-function showNotification(message, type = 'success') {
+function showNotification(message, type = 'success', duration = 3000) {
   const notification = document.getElementById('notification');
   const notificationText = document.getElementById('notification-text');
   const icon = notification.querySelector('i');
@@ -996,8 +996,12 @@ function showNotification(message, type = 'success') {
 
   if (type === 'success') {
     icon.className = 'fas fa-check-circle';
-  } else {
+  } else if (type === 'error') {
     icon.className = 'fas fa-exclamation-circle';
+  } else if (type === 'warning') {
+    icon.className = 'fas fa-exclamation-triangle';
+  } else {
+    icon.className = 'fas fa-info-circle';
   }
 
   notification.classList.remove('notification-hide');
@@ -1006,7 +1010,24 @@ function showNotification(message, type = 'success') {
   setTimeout(() => {
     notification.classList.remove('notification-show');
     notification.classList.add('notification-hide');
-  }, 3000);
+  }, duration);
+}
+
+function showError(message, details = '') {
+  let fullMessage = message;
+  if (details) {
+    fullMessage = message + '。详细信息已记录到控制台。';
+    console.error('Error details:', details);
+  }
+  showNotification(fullMessage, 'error', 5000);
+}
+
+function showSuccess(message) {
+  showNotification(message, 'success', 2000);
+}
+
+function showWarning(message) {
+  showNotification(message, 'warning', 4000);
 }
 
 function animateMathBackground() {
