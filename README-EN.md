@@ -170,6 +170,12 @@ This project mainly consists of **four** architectures:
 
   (3) Visit `https://high-dream.vercel.app/` (for experience only, computation speed is slow)
 
+## Testing
+
+- Run the full suite with `.venv/Scripts/python.exe -m pytest` on Windows or `python -m pytest` elsewhere.
+- Besides ordinary regressions, contract suites enumerate every computation operation, every palette key, every Flask page/API, and every matrix operation. Adding an operation/key/endpoint without extending its contract data makes the suite fail first.
+- The suite currently has 2200+ cases covering valid derivations, empty/placeholder/malformed rejection, matrix shape checks, LaTeX invariants (braces, environments, no literal `$`, no `\newline`), async task lifecycles, manual rule selection, method trees, snapshot/cache SQLite stores, and frontend JS/template layout.
+
 ## Notes on Usage
 
 0. Do not close the command line (black window) while using.

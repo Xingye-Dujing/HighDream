@@ -47,6 +47,8 @@ Update **both** `README.md` (Chinese, primary) and `README-EN.md` (English) on u
 ## Testing
 
 - Regression tests live in `tests/` (pure-logic: `utils/expr_type.py`, `ExpressionParser` product-to-sum, the large-power guard, and the documented SymPy gotchas). Run all: `.venv/Scripts/python.exe -m pytest` or `/test`. Run single test: `.venv/Scripts/python.exe -m pytest tests/test_xxx.py -q`. `pytest` is a dev-only dep (see `requirements_local.txt`). Add a `test_*.py` (with `tests/__init__.py` so pylint resolves top-level imports) for new deterministic logic.
+- **Contract suites** (fail until a new feature is added to their maps): `test_operation_contract.py` covers every operation type (valid, empty/unfilled, malformed, matrix shape, LaTeX invariants); `test_keyboard_contract.py` covers every palette key; `test_api_contract.py` covers every Flask page/API route, task lifecycle, manual/method-tree/snapshot flows; `test_matrix_operations.py` covers every matrix operation; `test_frontend_static_contract.py` checks JS syntax, layout landmarks, unique IDs and local assets; `test_cache_contract.py` covers the SQLite cache. Add a new operation/key/API/route to the relevant contract set when implementing it.
+
 - End-to-end smoke check: `/verify` boots `app_local.py` and curls `/api/parse`; or run `main.ipynb` / the web UI manually.
 
 ## Commit messages
