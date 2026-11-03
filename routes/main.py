@@ -5,6 +5,9 @@ including the home page, matrix panel, analysis and lab features.
 """
 
 from flask import Blueprint, render_template, request
+from sympy import Matrix, sympify
+
+from utils.matrix_latex import latex_to_nested
 
 main = Blueprint('main', __name__)
 """Blueprint: The main application blueprint instance.
@@ -147,6 +150,18 @@ def matrix_panel():
     return render_template('matrix_panel.html')
 
 
+def _matrix_expression(raw):
+    """Normalize a URL/form matrix expression; return ``(expr, error)``."""
+    if raw is None or str(raw).strip() == '':
+        return None, None
+    try:
+        expr = latex_to_nested(str(raw))
+        Matrix(sympify(expr))
+        return expr, None
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        return None, f'无法解析矩阵输入: {exc}'
+
+
 @main.route('/matrix_analysis', methods=['GET', 'POST'])
 def matrix_analysis():
     """Handle matrix analysis requests with support for both GET and POST methods.
@@ -157,9 +172,10 @@ def matrix_analysis():
     Returns:
         str: Rendered HTML template for matrix analysis with expression context.
     """
-    expr = request.form.get(
+    raw = request.form.get(
         'expression') if request.method == 'POST' else request.args.get('expression')
-    return render_template('matrix_analysis.html', expression=expr)
+    expr, error = _matrix_expression(raw)
+    return render_template('matrix_analysis.html', expression=expr, matrix_error=error)
 
 
 @main.route('/matrix_lab', methods=['GET', 'POST'])
@@ -172,9 +188,11 @@ def matrix_lab():
     Returns:
         str: Rendered HTML template for the matrix lab with expression context.
     """
-    expr = request.form.get(
+    raw = request.form.get(
         'expression') if request.method == 'POST' else request.args.get('expression')
-    return render_template('matrix_lab.html', expression=expr)
+    expr, error = _matrix_expression(raw)
+    return render_template('matrix_lab.html', expression=expr, matrix_error=error)
+
 
 
 @main.route('/blueprint_canvas')

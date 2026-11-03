@@ -135,7 +135,11 @@ def convert_form():
     (unchanged if the expression is neither a recognisable operator nor LaTeX)."""
     data = request.json or {}
     from routes.op_form import toggle_form  # pylint: disable=import-outside-toplevel
-    return jsonify({'success': True, 'result': toggle_form(data.get('expression', ''))})
+    try:
+        result = toggle_form(data.get('expression', ''))
+        return jsonify({'success': True, 'result': result})
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        return jsonify({'success': False, 'error': str(exc)})
 
 
 @api.route('/steps', methods=['POST'])
@@ -277,7 +281,12 @@ def matrix_analyze():
     """
     data = request.json or {}
     expr = data.get('expression', '')
-    return jsonify(MatrixAnalyzer().analyze(expr))
+    from utils.matrix_latex import latex_to_nested  # pylint: disable=import-outside-toplevel
+    try:
+        expr = latex_to_nested(expr)
+        return jsonify(MatrixAnalyzer().analyze(expr))
+    except ValueError as exc:
+        return jsonify({'success': False, 'error': str(exc)})
 
 
 @api.route('/matrix_cal', methods=['POST'])
@@ -295,12 +304,22 @@ def matrix_cal():
     """
     data = request.json or {}
     expr = data.get('expression', '')
-    ops = data.get('operations', '').split('\n')
+    ops = [o for o in data.get('operations', '').split('\n') if o.strip()]
     record = data.get('record_all_steps') == 'True'
+    from utils.matrix_latex import latex_to_nested  # pylint: disable=import-outside-toplevel
+    try:
+        expr = latex_to_nested(expr)
+        ops = [latex_to_nested(o) for o in ops]
+    except ValueError as exc:
+        return jsonify({'success': False, 'error': str(exc), 'steps': ''})
 
     calc = MatrixCalculator()
-    calc.calculate(expr, ops, record)
-    return jsonify({'steps': calc.get_steps_latex()})
+    try:
+        calc.calculate(expr, ops, record)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        from routes.compute_service import _user_error  # pylint: disable=import-outside-toplevel
+        return jsonify({'success': False, 'error': _user_error(exc, '矩阵操作'), 'steps': ''})
+    return jsonify({'success': True, 'steps': calc.get_steps_latex()})
 
 
 @api.route('/get_process', methods=['POST'])
@@ -317,7 +336,12 @@ def get_process():
     data = request.json or {}
     ptype = data.get('type', '')
     expr = data.get('expression', '')
-    return jsonify(ProcessManager.get_process(ptype, expr))
+    from utils.matrix_latex import latex_to_nested  # pylint: disable=import-outside-toplevel
+    try:
+        expr = latex_to_nested(expr)
+        return jsonify(ProcessManager.get_process(ptype, expr))
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        return jsonify({'success': False, 'error': str(exc), 'process': ''})
 
 
 @api.route('/render_latex', methods=['POST'])
@@ -364,12 +388,12 @@ def sympy_calculate():
             error (str): Error message describing the issue.
     """
     data = request.json or {}
-    expression = simplify(data.get('expression', ''))
+    expression = data.get('expression', '')
     operation_type = data.get('operation_type', 'diff')
     variable = data.get('variable', 'x')
 
     try:
-        expr = sympify(expression)
+        expr = cached_sympify(expression)
         var = Symbol(variable, real=True)
 
         if operation_type == 'diff':
@@ -411,7 +435,7 @@ def sympy_simplify():
     expression = data.get('expression', '')
 
     try:
-        result = simplify(sympify(expression))
+        result = simplify(cached_sympify(expression))
         result_str = str(result)
 
         return jsonify({'success': True, 'result': result_str})

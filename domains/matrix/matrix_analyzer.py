@@ -1,5 +1,8 @@
 from typing import List, Dict
 
+# A small value object with one public entry point is the intended API here.
+# pylint: disable=too-few-public-methods
+
 from sympy import Matrix, latex, sympify
 
 from .SVD_solver import SVDSolver
@@ -30,7 +33,8 @@ class MatrixAnalyzer:
             ValueError: If the matrix input cannot be parsed
         """
         try:
-            return Matrix(sympify(matrix_input))
+            from utils.matrix_latex import latex_to_nested  # pylint: disable=import-outside-toplevel
+            return Matrix(sympify(latex_to_nested(matrix_input)))
         except Exception as e:
             raise ValueError("无法解析矩阵输入. 请使用有效的矩阵格式 '[[1, 2], [3, 4]]'") from e
 

@@ -1,8 +1,10 @@
 import re
 from functools import lru_cache
 
-from sympy import (Expr, Mul, S, bottom_up, evaluate, expand_log,
-                   latex, log, radsimp, simplify, sympify)
+from sympy import (Expr, Mul, S, Symbol, bottom_up, evaluate, expand_log,
+                   latex, log, pi, radsimp, simplify, sympify)
+from sympy.parsing.sympy_parser import (implicit_multiplication_application,
+                                        parse_expr, standard_transformations)
 
 from config import LARGE_POWER_EXPONENT_DIGITS
 
@@ -23,6 +25,11 @@ def _has_huge_power_literal(expr_str: str) -> bool:
                for match in _HUGE_POWER_RE.finditer(expr_str))
 
 
+def has_unfilled_placeholders(expr_str: str) -> bool:
+    """True when the UI still has an empty template slot (□ / empty fraction)."""
+    return any(rx.search(str(expr_str)) for rx in _UNFILLED_RES)
+
+
 def _is_latex(expr_str: str) -> bool:
     """Heuristic: a backslash command or a caret/braced-subscript marks LaTeX input.
 
@@ -37,10 +44,27 @@ def _is_latex(expr_str: str) -> bool:
 
 
 # MathLive emits LaTeX that parse_latex mis-handles; normalize it first.
-_TEXT_RE = re.compile(r'\\(?:text|textrm|textnormal|mathrm|mbox|operatorname)\s*\{[^{}]*\}')
+# Only real prose wrappers are dropped here.  \mathrm/\operatorname are kept:
+# dropping a function name such as \operatorname{re}(z) used to turn it into
+# just (z), silently losing the function.
+_TEXT_RE = re.compile(r'\\(?:text|textrm|textnormal|mbox)\s*\{[^{}]*\}')
 _LN_RE = re.compile(r'(?<![A-Za-z])\\ln\b')
 _EPOW_BRACE_RE = re.compile(r'(?<![A-Za-z\\])e\^\{([^{}]*)\}')
 _EPOW_CHAR_RE = re.compile(r'(?<![A-Za-z\\])e\^([A-Za-z0-9])')
+_OPNAME_RE = re.compile(r'\\(?:operatorname|mathrm)\s*\{([^{}]*)\}')
+# MathLive/SymPy spellings that parse_latex understands only with a backslash.
+_OPNAME_MAP = {
+    're': r'\Re', 'Re': r'\Re', 'im': r'\Im', 'Im': r'\Im',
+    'arg': r'\arg', 'ln': r'\ln', 'log': r'\log', 'exp': r'\exp',
+    'sin': r'\sin', 'cos': r'\cos', 'tan': r'\tan', 'cot': r'\cot',
+    'sec': r'\sec', 'csc': r'\csc', 'sinh': r'\sinh', 'cosh': r'\cosh',
+    'tanh': r'\tanh', 'coth': r'\coth', 'asin': r'\arcsin',
+    'acos': r'\arccos', 'atan': r'\arctan', 'arcsin': r'\arcsin',
+    'arccos': r'\arccos', 'arctan': r'\arctan',
+}
+_DIFF_D_RE = re.compile(r'\\mathrm\s*\{\s*d\s*\}')
+# parse_latex (1.13) turns \pi into Symbol('pi') instead of the constant pi.
+_CONST_SYMBOLS = {Symbol('pi'): pi}
 _UNFILLED_RES = (
     re.compile(r'\\square\b|\\Box\b|\\bigbox\b|\\placeholder\b'),
     re.compile(r'\\frac\s*\{\s*\}\s*\{\s*\}'),
@@ -179,6 +203,58 @@ def _prefix_bare_funcs(s: str) -> str:
     return _BARE_CALL_RE.sub(rep, s)
 
 
+def _replace_opnames(s: str) -> str:
+    """Turn ``\\operatorname{re}`` / ``\\mathrm{d}`` into parse_latex spellings.
+
+    Known function names get the backslash form parse_latex understands; other
+    names keep their text so a matrix operator (``\\mathrm{rank}``) can still be
+    recognized before this scalar parser is reached.
+    """
+    def repl(match):
+        name = match.group(1).strip()
+        mapped = _OPNAME_MAP.get(name)
+        if mapped:
+            return mapped + ' '
+        return name + ' '
+
+    return _OPNAME_RE.sub(repl, s)
+
+
+_ABS_TOKEN = 987654321
+
+
+def _extract_abs_groups(s: str):
+    """Protect ``|x|`` / ``Abs(x)`` while parse_latex parses the rest.
+
+    SymPy's parse_latex has no absolute-value syntax.  Replace each group with a
+    unique integer literal, parse the outer expression, then substitute
+    ``Abs(inner)`` back.  Returns ``(rewritten, {token: inner})``.
+    """
+    groups = {}
+
+    def repl(match):
+        inner = match.group(1)
+        token = str(_ABS_TOKEN + len(groups))
+        groups[token] = inner
+        return token
+
+    s = re.sub(r'\\left\|([^{}]*?)\\right\|', repl, s)
+    s = re.sub(r'\\operatorname\s*\{\s*abs\s*\}\s*\(([^{}]*?)\)', repl, s)
+    s = re.sub(r'(?<![A-Za-z\\])Abs\s*\(([^{}]*?)\)', repl, s)
+    s = re.sub(r'(?<![A-Za-z\\])abs\s*\(([^{}]*?)\)', repl, s)
+    return s, groups
+
+
+def _restore_abs_groups(expr, groups):
+    if not groups or not hasattr(expr, 'subs'):
+        return expr
+    from sympy import Abs, Integer  # pylint: disable=import-outside-toplevel
+    for token, inner in groups.items():
+        value = cached_sympify(inner)
+        expr = expr.subs(Integer(int(token)), Abs(value))
+    return expr
+
+
 def _normalize_mathlive_latex(s: str) -> str:
     """Turn MathLive WYSIWYG LaTeX into a form parse_latex handles correctly.
 
@@ -187,7 +263,9 @@ def _normalize_mathlive_latex(s: str) -> str:
     if any(rx.search(s) for rx in _UNFILLED_RES):
         raise ValueError('请先填写输入框中的占位（□）后再计算')
     s = _TEXT_RE.sub('', s)               # drop prose labels
-    s = _LN_RE.sub(r'\\log', s)           # \ln -> \lnatural log
+    s = _replace_opnames(s)               # \operatorname{re} -> \Re, \mathrm{d} -> d
+    s = _DIFF_D_RE.sub('d', s)            # \mathrm{d}x -> dx
+    s = _LN_RE.sub(r'\\log', s)           # \ln -> \log
     s = _brace_bare_powers(s)             # 3^sin(x) -> 3^{sin(x)} (parse_latex truncates bare carets)
     s = _EPOW_BRACE_RE.sub(r'\\exp{\1}', s)   # e^{x} -> \exp{x} (true exponential)
     s = _EPOW_CHAR_RE.sub(r'\\exp{\1}', s)
@@ -198,6 +276,13 @@ def _normalize_mathlive_latex(s: str) -> str:
     s = _sqrt_to_braces(s)
     s = _prefix_bare_funcs(s)
     return s
+
+
+def _substitute_known_constants(expr):
+    """Replace parse_latex's Symbol('pi') with the real constant pi."""
+    if hasattr(expr, 'subs'):
+        return expr.subs(_CONST_SYMBOLS, simultaneous=True)
+    return expr
 
 
 def _drop_unit_factor(node):
@@ -279,14 +364,31 @@ def cached_sympify(expr_str: str) -> Expr:
     if _is_latex(expr_str):
         # The interactive WYSIWYG cell input emits LaTeX; normalize MathLive quirks
         # (raising a friendly error on unfilled placeholders) then parse.
-        normalized = _normalize_mathlive_latex(expr_str)
+        prepared, abs_groups = _extract_abs_groups(expr_str)
+        normalized = _normalize_mathlive_latex(prepared)
         try:
             from sympy.parsing.latex import parse_latex  # pylint: disable=import-outside-toplevel
             parsed = bottom_up(parse_latex(normalized), _drop_unit_factor)
+            parsed = _substitute_known_constants(parsed)
+            parsed = _restore_abs_groups(parsed, abs_groups)
             return bottom_up(parsed, _flatten_mul)
-        except Exception:  # pylint: disable=broad-exception-caught
-            return sympify(expr_str)  # type: ignore
-    return sympify(expr_str)  # type: ignore
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            # Never silently fall back to sympify for LaTeX: it turns unknown
+            # commands into products of symbols (e.g. \operatorname{re} -> re),
+            # which produces confident but wrong answers.
+            raise ValueError(f'无法解析该数学输入，请检查 LaTeX 写法: {exc}') from exc
+    try:
+        return sympify(expr_str)  # type: ignore
+    except Exception:  # pylint: disable=broad-exception-caught
+        # Plain text may use textbook implicit multiplication (x y, 2x, 2(x+1)).
+        # Try SymPy's parser with that transformation before surfacing an error.
+        try:
+            return parse_expr(
+                expr_str,
+                transformations=standard_transformations + (implicit_multiplication_application,),
+            )
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            raise ValueError(f'无法解析表达式: {expr_str}') from exc
 
 
 @lru_cache(maxsize=128)

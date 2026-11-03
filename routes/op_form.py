@@ -27,7 +27,7 @@ from .compute_service import _extract_paren_arg, _normalize_latex_ops, _split_to
 # operator name -> LaTeX display prefix for a single-matrix operand (bare prefix + matrix)
 _MAT_PREFIX = {
     'det': r'\det ', 'determinant': r'\det ',
-    'rank': r'\mathrm{rank} ', 'trace': r'\mathrm{tr} ',
+    'rank': r'\mathrm{rank} ', 'trace': r'\mathrm{tr} ', 'tr': r'\mathrm{tr} ',
     'ref': r'\mathrm{rref} ', 'rref': r'\mathrm{rref} ', 'rowreduce': r'\mathrm{rref} ',
     'lu': r'\mathrm{lu} ', 'diag': r'\mathrm{diag} ', 'diagonalize': r'\mathrm{diag} ',
     'svd': r'\mathrm{svd} ', 'singular': r'\mathrm{svd} ',
@@ -184,14 +184,15 @@ def _fold_matrix_ops(s):
                s)
     # \det M
     s = re.sub(r'\\det\s*' + _MAT, lambda m: 'det(%s)' % m.group(1), s)
-    # \mathrm{name} M
-    s = re.sub(r'\\mathrm\{(rank|rref|lu|diag|svd|singular|schur|eigen|orthogonalize|'
-               r'trace|jordan|charpoly|nullspace|colspace|rowspace|inverse)\}\s*' + _MAT,
-               lambda m: '%s(%s)' % ('ref' if m.group(1) == 'rref' else m.group(1), m.group(2)), s)
+    # \mathrm{name} M / \operatorname{name} M
+    s = re.sub(r'\\(?:mathrm|operatorname)\{(rank|rref|lu|diag|svd|singular|schur|eigen|orthogonalize|'
+               r'trace|tr|jordan|charpoly|nullspace|colspace|rowspace|inverse)\}\s*' + _MAT,
+               lambda m: '%s(%s)' % ('ref' if m.group(1) == 'rref' else
+                                     'trace' if m.group(1) == 'tr' else m.group(1), m.group(2)), s)
     # bare "name M" (function name followed by whitespace then a matrix)
     s = re.sub(r'\b(det|rank|rref|ref|lu|diag|svd|singular|schur|eigen|orthogonalize|'
-               r'gramschmidt|trace|inverse)\s+' + _MAT,
-               lambda m: '%s(%s)' % (m.group(1), m.group(2)), s)
+               r'gramschmidt|trace|tr|inverse)\s+' + _MAT,
+               lambda m: '%s(%s)' % ('trace' if m.group(1) == 'tr' else m.group(1), m.group(2)), s)
     # binary:  M \cdot M / M * M -> multiply ; M - M -> subtract ; M + M -> add
     s = re.sub(_MAT + r'\s*(?:\\cdot|\*)\s*' + _MAT,
                lambda m: 'multiply(%s,%s)' % (m.group(1), m.group(2)), s)

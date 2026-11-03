@@ -56,7 +56,17 @@ def simplify_matrix_symbolic(text: str) -> List[Tuple[Expr, str]]:
 
     Raises on invalid input; the caller turns exceptions into an error result.
     """
-    expr = _parse_matrix_expr(text)
+    raw = str(text or '').strip()
+    if not raw:
+        raise ValueError('请输入符号矩阵表达式，例如 (A+B)*(A-B)')
+    if '[' in raw or '\\begin' in raw:
+        raise ValueError(
+            '符号矩阵化简处理大写矩阵名（A、B、…）组成的表达式；'
+            '具体数值矩阵请使用矩阵实验中的 rref/transpose/inverse 等操作'
+        )
+    if not _free_names(raw):
+        raise ValueError('表达式中没有矩阵名；请使用 A、B 等大写字母表示矩阵')
+    expr = _parse_matrix_expr(raw)
     steps: List[Tuple[Expr, str]] = [(expr, '原始符号矩阵表达式')]
 
     # 1) Apply inverse/identity rewrites, then collapse via doit (A*A^-1 -> I etc.).

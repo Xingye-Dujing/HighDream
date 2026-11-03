@@ -19,12 +19,12 @@ _MATRIX_RE = re.compile(r'\\?begin\{([bvpBVP]?matrix)\}(.*?)\\?end\{\1\}', re.DO
 def _cell_to_sympy_str(cell: str) -> str:
     """Render one matrix cell as a SymPy-parseable string (handles LaTeX cells)."""
     cell = cell.strip()
-    if cell == '':
-        return '0'
+    if cell in ('', r'\placeholder{}', r'\square', r'\Box'):
+        raise ValueError('请先填写矩阵中的空白单元格（□）')
     try:
         return str(cached_sympify(cell))
-    except Exception:  # pylint: disable=broad-exception-caught
-        return cell
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        raise ValueError(f'矩阵元素无法解析: {cell}') from exc
 
 
 def _block_to_nested(body: str) -> str:
@@ -32,9 +32,16 @@ def _block_to_nested(body: str) -> str:
     # command like \frac/\sqrt, so it must NOT split rows).
     rows = [r for r in re.split(r'\\{2,}', body) if r.strip() != '']
     nested = []
+    width = None
     for row in rows:
         cells = [_cell_to_sympy_str(c) for c in row.split('&')]
+        if width is None:
+            width = len(cells)
+        elif len(cells) != width:
+            raise ValueError('矩阵每行的元素个数必须相同')
         nested.append('[' + ','.join(cells) + ']')
+    if not nested:
+        raise ValueError('矩阵不能为空')
     return '[' + ','.join(nested) + ']'
 
 

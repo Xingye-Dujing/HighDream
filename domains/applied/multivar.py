@@ -27,6 +27,10 @@ def implicit_diff(data):
     eq = expr if isinstance(expr, Eq) else Eq(expr, 0)
     d_lhs = derivative_steps(str(eq.lhs), x)
     d_rhs = derivative_steps(str(eq.rhs), x)
+    # DiffCalculator cannot differentiate the unknown function y(x) as an
+    # elementary function; its "无法用初等函数表示" note is noise here because
+    # the chain-rule term is kept and solved for y' below. Drop only that note.
+    d_lhs = [(e, n) for (e, n) in d_lhs if '无法用初等函数表示' not in n]
     diffed = simplify(_last_value(d_lhs) - _last_value(d_rhs))
     from sympy import Derivative  # pylint: disable=import-outside-toplevel
     dy = Derivative(y, x)
@@ -47,9 +51,15 @@ def implicit_diff(data):
 
 def parametric_diff(data):
     t = get_var(data)
-    lines = expr_text(data).split('\n')
-    x_str = lines[0]
-    y_str = lines[1] if len(lines) > 1 else lines[0]
+    raw = expr_text(data)
+    lines = [part.strip().rstrip(',').strip()
+             for part in raw.split('\n') if part.strip()]
+    if len(lines) < 2 and ',' in raw:
+        lines = [part.strip() for part in raw.split(',', 1)]
+    x_str = lines[0] if lines else ''
+    y_str = lines[1] if len(lines) > 1 else ''
+    if not x_str or not y_str:
+        return False, '参数方程需要 x(t) 与 y(t) 两个表达式，用逗号或换行分隔'
     x_t = sympify(x_str)
     y_t = sympify(y_str)
     dx_steps = derivative_steps(x_str, t)

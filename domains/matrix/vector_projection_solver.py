@@ -330,6 +330,11 @@ class VectorProjectionSolver(CommonMatrixCalculator):
         vector = self.parse_vector_input(vector_input)
         subspace_basis = self.parse_matrix_input(subspace_input)
 
+        # Accept the usual row-vector spelling [[1,2]] as a column vector when
+        # the basis rows (i.e. the ambient dimension) match its length.
+        if vector.rows == 1 and vector.cols == subspace_basis.rows and vector.cols > 1:
+            vector = vector.T
+
         if show_steps:
             self.add_vector(vector, "\\boldsymbol{v}")
             self.add_matrix(subspace_basis, "A")

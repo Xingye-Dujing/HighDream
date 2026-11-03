@@ -1,6 +1,14 @@
 from typing import List, Tuple
 
-from sympy import Matrix, latex, sympify
+# The top-level comma split is intentionally duplicated locally; importing the
+# route helper would create a routes <-> domains cycle.
+# pylint: disable=duplicate-code
+
+import re
+
+from sympy import Matrix, latex
+
+from utils.cache_utils import cached_sympify
 
 
 # from IPython.display import Math, display
@@ -12,6 +20,43 @@ class MatrixCalculator:
         self.matrix_history = []
         self.latex_results = []
         self.record_all_steps = True
+
+    @staticmethod
+    def _normalize_operation(operation: str) -> str:
+        """Accept the WYSIWYG palette's LaTeX operation form.
+
+        ``\\mathrm{transpose}`` -> ``transpose``;
+        ``\\mathrm{swap\\_rows}(0,1)`` -> ``swap_rows 0 1``;
+        ``\\mathrm{add}([[1,0],[0,1]])`` -> ``add [[1,0],[0,1]]``.
+        """
+        s = str(operation or '').strip()
+        s = re.sub(
+            r'\\(?:mathrm|operatorname)\s*\{([^{}]*)\}',
+            lambda m: m.group(1).replace('\\_', '_'),
+            s,
+        )
+        s = s.replace('\\left', '').replace('\\right', '').strip()
+        call = re.match(r'^([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)\s*$', s, re.S)
+        if call:
+            name, inner = call.group(1), call.group(2).strip()
+            if inner == '':
+                return name
+            # split top-level commas (matrix brackets are nested)
+            parts, depth, cur = [], 0, ''
+            for ch in inner:
+                if ch in '([{':
+                    depth += 1
+                elif ch in ')]}':
+                    depth -= 1
+                if ch == ',' and depth == 0:
+                    parts.append(cur.strip())
+                    cur = ''
+                else:
+                    cur += ch
+            if cur.strip():
+                parts.append(cur.strip())
+            return name + ' ' + ' '.join(parts)
+        return s
 
     @staticmethod
     def parse_matrix_expression(matrix_str: str) -> Matrix:
@@ -27,7 +72,7 @@ class MatrixCalculator:
             ValueError: If the matrix expression cannot be parsed
         """
         try:
-            return Matrix(sympify(matrix_str))
+            return Matrix(cached_sympify(matrix_str))
         except Exception as e:
             raise ValueError(f"无法解析矩阵表达式: {matrix_str} \n 错误: {e}") from e
 
@@ -45,7 +90,7 @@ class MatrixCalculator:
         Raises:
             ValueError: If operation is invalid or missing required parameters
         """
-        op_parts = operation.strip().split()
+        op_parts = self._normalize_operation(operation).strip().split()
         op_type = op_parts[0].lower()
 
         try:
@@ -94,9 +139,9 @@ class MatrixCalculator:
             if op_type in ('scale', '缩放'):
                 if len(op_parts) < 2:
                     raise ValueError("缩放操作需要指定标量")
-                scalar = sympify(op_parts[1])
+                scalar = cached_sympify(op_parts[1])
                 result = scalar * matrix
-                description = f"矩阵缩放(乘以 ${latex(scalar)}$)"
+                description = f"矩阵缩放(乘以 {scalar})"
                 return result, description
 
             if op_type in ('power', '幂'):
@@ -129,7 +174,7 @@ class MatrixCalculator:
                 if len(op_parts) < 4:
                     raise ValueError("行相加需要指定源行、目标行和系数")
                 src, dest, coeff = int(op_parts[1]), int(
-                    op_parts[2]), sympify(op_parts[3])
+                    op_parts[2]), cached_sympify(op_parts[3])
                 result = matrix.copy()
                 result.row_op(dest, lambda v, i_: v + coeff * matrix[src, i_])
                 description = f"将 {coeff} 乘以行 {src} 加到行 {dest}"
@@ -139,7 +184,7 @@ class MatrixCalculator:
                 if len(op_parts) < 4:
                     raise ValueError("列相加需要指定源列、目标列和系数")
                 src, dest, coeff = int(op_parts[1]), int(
-                    op_parts[2]), sympify(op_parts[3])
+                    op_parts[2]), cached_sympify(op_parts[3])
                 result = matrix.copy()
                 result.col_op(dest, lambda v, i_: v + coeff * matrix[i_, src])
                 description = f"将 {coeff} 乘以列 {src} 加到列 {dest}"
@@ -148,26 +193,26 @@ class MatrixCalculator:
             if op_type in ('scale_row', '缩放行'):
                 if len(op_parts) < 3:
                     raise ValueError("缩放行需要指定行索引和系数")
-                row, coeff = int(op_parts[1]), sympify(op_parts[2])
+                row, coeff = int(op_parts[1]), cached_sympify(op_parts[2])
                 result = matrix.copy()
-                result.row_op(row, lambda v: coeff * v)
-                description = f"将行 {row} 乘以 ${latex(coeff)}$"
+                result.row_op(row, lambda v, _i: coeff * v)
+                description = f"将行 {row} 乘以 {coeff}"
                 return result, description
 
             if op_type in ('scale_col', '缩放列'):
                 if len(op_parts) < 3:
                     raise ValueError("缩放列需要指定列索引和系数")
-                col, coeff = int(op_parts[1]), sympify(op_parts[2])
+                col, coeff = int(op_parts[1]), cached_sympify(op_parts[2])
                 result = matrix.copy()
-                result.col_op(col, lambda v: coeff * v)
-                description = f"将列 {col} 乘以 ${latex(coeff)}$"
+                result.col_op(col, lambda v, _i: coeff * v)
+                description = f"将列 {col} 乘以 {coeff}"
                 return result, description
 
             if op_type in ('insert_row', '插入行'):
                 if len(op_parts) < 3:
                     raise ValueError("插入行需要指定位置和行元素")
                 pos = int(op_parts[1])
-                row_elements = [sympify(x) for x in op_parts[2:]]
+                row_elements = [cached_sympify(x) for x in op_parts[2:]]
                 result = matrix.row_insert(pos, Matrix([row_elements]))
                 description = f"在位置 {pos} 插入新行"
                 return result, description
@@ -176,7 +221,7 @@ class MatrixCalculator:
                 if len(op_parts) < 3:
                     raise ValueError("插入列需要指定位置和列元素")
                 pos = int(op_parts[1])
-                col_elements = [sympify(x) for x in op_parts[2:]]
+                col_elements = [cached_sympify(x) for x in op_parts[2:]]
                 result = matrix.col_insert(pos, Matrix(col_elements))
                 description = f"在位置 {pos} 插入新列"
                 return result, description
@@ -204,13 +249,33 @@ class MatrixCalculator:
                     raise ValueError("提取子矩阵需要指定起始行、结束行、起始列、结束列")
                 r1, r2, c1, c2 = map(int, op_parts[1:5])
                 result = matrix[r1:r2 + 1, c1:c2 + 1]
-                description = f"提取子矩阵 $[{r1}:{r2},{c1}:{c2}]$"
+                description = f"提取子矩阵 [{r1}:{r2},{c1}:{c2}]"
+                return result, description
+
+            if op_type in ('det', 'determinant', '行列式'):
+                result = matrix.det()
+                description = "行列式"
+                return result, description
+
+            if op_type in ('rank', '秩'):
+                result = matrix.rank()
+                description = "矩阵的秩"
+                return result, description
+
+            if op_type in ('trace', '迹'):
+                result = matrix.trace()
+                description = "矩阵的迹"
+                return result, description
+
+            if op_type in ('ref', '行阶梯'):
+                result, _ = matrix.rref()
+                description = "化为行阶梯形"
                 return result, description
 
             raise ValueError(f"未知操作: {op_type}")
 
         except Exception as e:
-            raise ValueError(f"操作 '{operation}' 执行失败: {e}") from e
+            raise ValueError(f'操作 “{operation}” 执行失败: {e}') from e
 
     def calculate(self, matrix_expr: str, operations: List[str], record_all_steps: bool = False) \
             -> str | List[str]:
@@ -257,31 +322,20 @@ class MatrixCalculator:
             return self.latex_results[-1]
 
         except Exception as e:
-            return f"计算错误: {e}"
+            raise ValueError(f'计算错误: {e}') from e
 
     def get_steps_latex(self) -> str:
-        """Generate LaTeX formatted steps for display.
-
-        Returns:
-            List[str]: LaTeX formatted string containing all steps or just the final result.
-        """
+        """Generate LaTeX formatted steps for display."""
         if not self.record_all_steps:
-            latex_str = "\\begin{align}"
-            latex_str += self.latex_results[0]
-            latex_str += "\\end{align}"
-            return latex_str
+            return "\\begin{align}" + (self.latex_results[0] if self.latex_results else "") + "\\end{align}"
 
-        latex_str = "\\begin{align}"
+        lines = []
         for i, step in enumerate(self.latex_results):
             if i == 0:
-                step_str = f"& \\text{{初始矩阵:}} {step}"
+                lines.append(f"& \\text{{初始矩阵: }} {step}")
             else:
-                step_str = f"& \\text{{步骤 {i} :}} {step}"
-            latex_str += step_str
-            # New line and skip one line
-            latex_str += r"\\\\"
-        latex_str += "\\end{align}"
-        return latex_str
+                lines.append(f"& \\text{{步骤 {i}: }} {step}")
+        return "\\begin{align}" + r" \\ ".join(lines) + "\\end{align}"
 
 # def demo():
 #     calculator = MatrixCalculator()

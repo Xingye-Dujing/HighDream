@@ -32,7 +32,7 @@ def convergence_rows(a, n, absolute=False):
     # 1) n-th term test (necessary condition for convergence)
     l0 = _lim(a, n)
     if l0 is not None:
-        rows.append((Eq(Symbol('lim_a_n'), l0), note("第 n 项判别: 求 $\\lim_{n\\to\\infty} a_n$")))
+        rows.append((Eq(Symbol('L'), l0), note("第 n 项判别: 求 $\\lim_{n\\to\\infty} a_n$")))
         if l0 != 0 and l0.is_number:
             rows.append((None, note("$\\lim a_n\\neq 0$, 由第 n 项判别法级数发散")))
             return rows, 'diverge'
@@ -67,7 +67,7 @@ def convergence_rows(a, n, absolute=False):
     if _is_alternating(a) and not absolute:
         b = Abs(a)
         lb = _lim(b, n)
-        rows.append((Eq(Symbol('lim_b_n'), lb), note("交错级数莱布尼茨: $b_n=|a_n|\\to 0$ 且单调递减")))
+        rows.append((Eq(Symbol('L'), lb), note("交错级数莱布尼茨: $b_n=|a_n|\\to 0$ 且单调递减")))
         if lb == 0:
             # classify absolute vs conditional via the positive series $\\sum|a_n|$
             _abs_rows, abs_v = convergence_rows(b, n, absolute=True)

@@ -1,9 +1,11 @@
 from typing import List, Tuple, Union
 
-from sympy import Basic, Expr, Matrix, latex, sympify
+from sympy import Basic, Expr, Matrix, latex
 
 import config
 from domains.matrix.linear_system_converter import LinearSystemConverter
+from utils.cache_utils import cached_sympify
+from utils.matrix_latex import latex_to_nested
 
 
 def _wrap_latex(expr: Expr) -> str:
@@ -45,12 +47,12 @@ def str_to_latex(expr: str, operation_type: str = None) -> str:
     - Otherwise, the expression is rendered as-is via SymPy's latex().
     """
     if operation_type in config.RENDER_SINGLE_MATRIX:
-        return latex(Matrix(sympify(expr)))
+        return latex(Matrix(cached_sympify(latex_to_nested(expr))))
 
     if operation_type in config.RENDER_MANY_ROWS_ONLY_NUMBER_MATRIX:
         parts = []
-        for line in expr.strip().split('\n'):
-            sym = sympify(line)
+        for line in latex_to_nested(expr).strip().split('\n'):
+            sym = cached_sympify(line)
             parts.append(
                 latex(sym) if hasattr(sym, 'is_number') and sym.is_number else latex(Matrix(sym)))
         return r"\quad\quad".join(parts)
@@ -60,4 +62,4 @@ def str_to_latex(expr: str, operation_type: str = None) -> str:
         eq_latex = [latex(eq) for eq in equations]
         return r"\begin{cases} " + r" \\ ".join(eq_latex) + r" \end{cases}"
 
-    return latex(sympify(expr))
+    return latex(cached_sympify(latex_to_nested(expr)))

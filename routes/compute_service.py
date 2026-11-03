@@ -10,10 +10,10 @@ and handles data processing, error handling, and result formatting.
 import re
 from typing import Any, Dict, Tuple
 
-from sympy import Symbol, preorder_traversal, latex
+from sympy import I, Symbol, preorder_traversal, latex
 
 from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
-from utils.cache_utils import cached_sympify
+from utils.cache_utils import cached_sympify, has_unfilled_placeholders
 from utils.matrix_latex import latex_to_nested
 from utils.assumptions import parse_assumption_flags
 from domains import (
@@ -263,7 +263,7 @@ def _dispatch_calculus(expression: str):
     d/dx -> differentiation, integral -> integration (with bounds), lim -> limit,
     sum -> series convergence, otherwise simplify the plain expression.
     """
-    from sympy import Derivative, Integral, Limit, Sum, simplify  # pylint: disable=import-outside-toplevel
+    from sympy import Derivative, Integral, Limit, Product, Sum, simplify  # pylint: disable=import-outside-toplevel
     obj = cached_sympify(expression)
 
     if isinstance(obj, Derivative):
@@ -291,6 +291,7 @@ def _dispatch_calculus(expression: str):
 
     if isinstance(obj, Limit):
         direction = obj.args[3] if len(obj.args) > 3 else '+'
+        direction = {'+-': 'both', 'pm': 'both'}.get(str(direction), str(direction))
         return True, LimitCalculator().compute_latex(str(obj.args[0]), obj.args[1], obj.args[2], direction)
 
     if isinstance(obj, Sum):
@@ -300,6 +301,14 @@ def _dispatch_calculus(expression: str):
         if len(spec) >= 3:  # bounded -> finite closed-form sum; else finite_sum falls back to convergence
             d['lower'], d['upper'] = str(spec[1]), str(spec[2])
         return HANDLERS['finite_sum'](d)
+
+    if isinstance(obj, Product):
+        from domains.applied import HANDLERS  # pylint: disable=import-outside-toplevel
+        spec = obj.args[1] if len(obj.args) > 1 else (Symbol('n'),)
+        d = {'operation_type': 'finite_product', 'expression': str(obj.args[0]), 'variable': str(spec[0])}
+        if len(spec) >= 3:
+            d['lower'], d['upper'] = str(spec[1]), str(spec[2])
+        return HANDLERS['finite_product'](d)
 
     return True, r'\begin{align}' + latex(simplify(obj)) + r'\end{align}'
 
@@ -347,6 +356,8 @@ _AUTO_FUNCS = {
     'limit': ('limit', ['expression', 'variable', 'point', 'direction']),
     'sum': ('finite_sum', ['expression', 'variable', 'lower', 'upper']),
     'fsum': ('finite_sum', ['expression', 'variable', 'lower', 'upper']),
+    'prod': ('finite_product', ['expression', 'variable', 'lower', 'upper']),
+    'product': ('finite_product', ['expression', 'variable', 'lower', 'upper']),
     'series': ('series_convergence', ['expression', 'variable']),
     'converge': ('series_convergence', ['expression', 'variable']),
     'taylor': ('taylor', ['expression', 'variable', 'point', 'order']),
@@ -437,6 +448,7 @@ _AUTO_FUNCS = {
     'det': ('det', ['expression']), 'determinant': ('det', ['expression']),
     'rank': ('rank', ['expression']),
     'trace': ('trace', ['expression']),
+    'tr': ('trace', ['expression']),
     'pinv': ('pinv', ['expression']), 'pseudoinverse': ('pinv', ['expression']),
     'jordan': ('jordan', ['expression']), 'jordanform': ('jordan', ['expression']),
     'definite': ('definiteness', ['expression']), 'isdefinite': ('definiteness', ['expression']),
@@ -494,7 +506,7 @@ _MATRIX_OP_NAMES = {
     'eigen', 'eigenvals', 'eigenvects', 'svd', 'singular', 'schur', 'lu', 'diag',
     'diagonalize', 'orthogonal', 'orthogonalize', 'gramschmidt', 'dependent',
     'dependence', 'project', 'projection', 'transpose',
-    'trace', 'nullspace', 'nullity', 'colspace', 'columnspace', 'rowspace',
+    'trace', 'tr', 'nullspace', 'nullity', 'colspace', 'columnspace', 'rowspace',
     'pinv', 'pseudoinverse', 'jordan', 'jordanform',
     'definite', 'isdefinite', 'sylvestar',
     'charpoly', 'characteristic',
@@ -585,7 +597,7 @@ def _normalize_latex_ops(text):
     parenthesized body (and an integral's trailing ``dX``) is CONSUMED so it is not
     duplicated. Unrecognized spellings are left untouched (handled in a later phase).
     Bodies are normalized recursively so nested operators convert too."""
-    return _nl_limit(_nl_integral(_nl_partial(_nl_diff(_nl_sum(text)))))
+    return _nl_limit(_nl_integral(_nl_partial(_nl_diff(_nl_product(_nl_sum(text))))))
 
 
 def _nl_sum(src):
@@ -617,6 +629,35 @@ def _nl_sum(src):
     return ''.join(out)
 
 
+def _nl_product(src):
+    """``\\prod_{var=low}^{high} (BODY)`` -> ``prod(BODY, var, low, high)``."""
+    out, i = [], 0
+    pat = re.compile(r'\\prod\s*_\{([^{}]*?)\}(?:\s*\^\{([^{}]*)\})?')
+    while True:
+        match = pat.search(src, i)
+        if not match:
+            out.append(src[i:])
+            break
+        sub = match.group(1)
+        high = (match.group(2) or '').strip()
+        mvar = re.match(r'\s*(\w+)\s*=\s*(.+)', sub)
+        var = mvar.group(1) if mvar else (sub.strip() or 'n')
+        low = mvar.group(2).strip() if mvar else ''
+        body, after = _grab_balanced_paren(src, match.end())
+        if body is None:
+            out.append(src[i:match.end()])
+            i = match.end()
+            continue
+        out.append(src[i:match.start()])
+        nb = _normalize_latex_ops(body)
+        if high != '':
+            out.append(rf'prod({nb},{var},{low or 1},{high})')
+        else:
+            out.append(rf'prod({nb},{var})')
+        i = after
+    return ''.join(out)
+
+
 def _nl_diff(src):
     """``\\frac{d}{dX}`` / ``\\frac{d^{n}}{dX^{n}}`` + ``(BODY)`` -> ``diff(BODY, X[, n])``."""
     out, i = [], 0
@@ -642,7 +683,7 @@ def _nl_diff(src):
 def _nl_partial(src):
     """``\\partial_{X} (BODY)`` -> ``diff(BODY, X)``."""
     out, i = [], 0
-    pat = re.compile(r'\\partial_\{(\w)\}')
+    pat = re.compile(r'\\partial\s*_\s*\{?(\w)\}?')
     while True:
         match = pat.search(src, i)
         if not match:
@@ -742,7 +783,17 @@ def _build_op_data(name, args):
     """Assemble the per-op data payload from a function name + positional args
     (the same assembly the single-operator path uses, factored for reuse)."""
     op, fields = _AUTO_FUNCS[name]
+    if name == 'limit' and len(args) == 3:
+        # The universal box's \lim / limit(f,x,a) is two-sided; the dedicated
+        # limit operation keeps its explicit UI direction (default right).
+        args = list(args) + ['both']
     data = {'operation_type': op}
+    if name == 'parametric' and len(args) >= 2:
+        # The palette's parametric(□,□) gives x(t) and y(t); the engine reads
+        # them as two lines and differentiates both with respect to t.
+        data['expression'] = args[0] + '\n' + args[1]
+        data['variable'] = args[2] if len(args) >= 3 else 't'
+        return data
     if op in _AUTO_MULTILINE_OPS:
         data['expression'] = '\n'.join(args)
     else:
@@ -968,6 +1019,107 @@ def _should_compound(text, calls):
     return False
 
 
+def _strip_outer_delimiters(text: str) -> str:
+    """Remove a whole-input pair of ``$...$`` / ``\\(...\\)`` / ``\\[...\\]``."""
+    s = str(text or '').strip()
+    for left, right in (('$$', '$$'), (r'\[', r'\]'), (r'\(', r'\)'), ('$', '$')):
+        if s.startswith(left) and s.endswith(right) and len(s) > len(left) + len(right):
+            return s[len(left):-len(right)].strip()
+    return s
+
+
+# Operations whose expression is a structured text (not a single scalar/LaTeX
+# formula), so the generic scalar normalizer must not rewrite it.
+_TEXT_INPUT_OPS = {'ode', 'linear-system', 'parametric_diff'}
+
+# ``ode`` expressions legitimately contain diff(...)/Derivative notation; the
+# universal auto-router must not hijack them.
+_AUTO_ROUTE_SKIP = {'ode', 'matrix_symbolic'}
+
+
+# Ops that only make sense for a square matrix; reject early with one clear message
+# instead of letting each calculator emit a partial "错误: ..." step.
+_SQUARE_MATRIX_OPS = {
+    'invert', 'det', 'eigen', 'schur', 'LU', 'diag', 'trace',
+    'jordan', 'definiteness', 'charpoly',
+}
+
+
+def _looks_like_operator_input(expression: str) -> bool:
+    """True when the user typed an explicit operator/template in the box.
+
+    This is what makes the WYSIWYG palette work everywhere: a key inserts
+    ``diff(x^2,x)``, ``\\int_0^1 ...``, ``\\det [matrix]`` or ``M^{-1}`` and the
+    same dispatcher handles it no matter which operation selector is active.
+    """
+    if not isinstance(expression, str) or not expression.strip():
+        return False
+    text = latex_to_nested(expression)
+    from routes.op_form import _fold_matrix_ops  # pylint: disable=import-outside-toplevel
+    text = _fold_matrix_ops(text)
+    text = _normalize_latex_ops(text)
+    if _iter_op_calls(text):
+        return True
+    # Operators our normalizer cannot turn into a call yet (e.g. a bare \int
+    # without a parenthesized body) are still explicit operator input.
+    return bool(re.search(
+        r'\\(?:int|iint|iiint|sum|prod|lim|partial|frac\s*\{\s*d\s*\})',
+        expression,
+    ))
+
+
+def _normalize_scalar_input(expression: str, complex_mode: bool = False):
+    """Turn WYSIWYG LaTeX / textbook text into a SymPy-source string.
+
+    Returns ``(ok, value_or_error)``.  The whole point is symmetry: the backend
+    must understand exactly the forms the frontend editor and palette can emit.
+    """
+    text = _strip_outer_delimiters(expression)
+    if not text:
+        return False, '请输入表达式'
+    if has_unfilled_placeholders(text):
+        return False, '请先填写输入框中的占位（□）后再计算'
+    try:
+        obj = cached_sympify(text)
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        return False, str(exc)
+    if complex_mode:
+        if hasattr(obj, 'subs'):
+            obj = obj.subs(Symbol('i'), I)
+    if isinstance(obj, (list, tuple, dict)):
+        return False, '请输入单个数学表达式（矩阵请使用矩阵运算入口）'
+    return True, str(obj)
+
+
+def _normalize_matrix_input(expression: str):
+    """Convert MathLive bmatrix blocks and validate the resulting matrix text."""
+    text = _strip_outer_delimiters(expression)
+    if has_unfilled_placeholders(text):
+        return False, '请先填写输入框中的占位（□）后再计算'
+    try:
+        return True, latex_to_nested(text)
+    except ValueError as exc:
+        return False, str(exc)
+
+
+def _user_error(exc, operation_type: str) -> str:
+    """Map internal parser/engine exceptions to a readable user-facing message."""
+    msg = str(exc).strip()
+    low = msg.lower()
+    if 'placeholder' in low or '占位' in msg or '空白单元格' in msg or '请先填写' in msg:
+        return '请先填写输入框中的占位（□）后再计算'
+    if 'cannot convert' in low or 'could not parse' in low or 'sympify' in low \
+            or 'syntaxerror' in low or 'unexpected character' in low:
+        return f'无法解析输入，请检查表达式写法: {msg}'
+    if 'non-square' in low or 'not a square' in low or 'square matrix' in low:
+        return '该运算要求方阵，请检查矩阵行列数'
+    if 'shape' in low or 'dimension' in low or 'size' in low:
+        return f'矩阵维度不匹配: {msg}'
+    if 'singular' in low or 'not invertible' in low:
+        return '该矩阵不可逆（行列式为 0）'
+    return f'计算失败（{operation_type}）: {msg}'
+
+
 def _dispatch_auto(expression: str):
     """Universal single-box dispatcher (Maple-like): classify by operator/structure.
 
@@ -976,7 +1128,7 @@ def _dispatch_auto(expression: str):
     literals (A+B / A*B / lone matrix), partial (∂), and uppercase-symbol products
     (symbolic matrices). Delegates to the existing per-op dispatch so all step-by-step
     engines are reused."""
-    from sympy import Derivative, Integral, Limit, Sum  # pylint: disable=import-outside-toplevel
+    from sympy import Derivative, Integral, Limit, Product, Sum  # pylint: disable=import-outside-toplevel
 
     # Any unfilled placeholder box -> one clear message, checked on the raw input
     # before conversion so latex_to_nested never trips over the empty slots.
@@ -1001,26 +1153,27 @@ def _dispatch_auto(expression: str):
         return _dispatch_compound(expression, norm)
 
     # 1) function-style operator: name(args); bare \name<matrix> only for matrix ops
-    fm = re.match(r'\s*\\?([A-Za-z][A-Za-z0-9]*)\s*(\()?', text)
+    scan = norm
+    fm = re.match(r'\s*\\?([A-Za-z][A-Za-z0-9]*)\s*(\()?', scan)
     if fm:
         name = fm.group(1).lower()
         spec = _AUTO_FUNCS.get(name)
         bare_ok = name in _MATRIX_OP_NAMES
         if spec and (fm.group(2) or bare_ok):
             if fm.group(2):
-                inner = _extract_paren_arg(text, text.index('(', fm.end() - 1))
+                inner = _extract_paren_arg(scan, scan.index('(', fm.end() - 1))
                 args = _split_top_args(inner) if inner is not None else []
             else:
-                m2 = re.search(r'\[\[.*?\]\]', text)
+                m2 = re.search(r'\[\[.*?\]\]', scan)
                 args = [m2.group(0)] if m2 else []
             if args:
                 op = spec[0]
                 return _dispatch_compute(op, _build_op_data(name, args))
 
     # 2) matrix literals: arithmetic or lone matrix
-    mats = re.findall(r'\[\[.*?\]\]', text)
+    mats = re.findall(r'\[\[.*?\]\]', scan)
     if len(mats) >= 2:
-        seg = text[text.index(mats[0]) + len(mats[0]):text.index(mats[1])]
+        seg = scan[scan.index(mats[0]) + len(mats[0]):scan.index(mats[1])]
         op = 'subtract' if '-' in seg else ('multiply' if ('*' in seg or '\u00b7' in seg) else 'add')
         return _dispatch_compute('operations', {'operation_type': 'operations',
                                                 'expression': mats[0] + '\n' + mats[1], 'operations': op})
@@ -1029,12 +1182,12 @@ def _dispatch_auto(expression: str):
 
     # 3) structural operators (calculus) and simplify fallback
     try:
-        obj = cached_sympify(text)
+        obj = cached_sympify(scan)
     except Exception:  # pylint: disable=broad-exception-caught
         obj = None
-    if obj is not None and isinstance(obj, (Derivative, Integral, Limit, Sum)):
-        return _dispatch_calculus(text)
-    return _dispatch_calculus(text)
+    if obj is not None and isinstance(obj, (Derivative, Integral, Limit, Product, Sum)):
+        return _dispatch_calculus(scan)
+    return _dispatch_calculus(scan)
 
 
 def start_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, Any]:
@@ -1109,11 +1262,59 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
         expression = data.get('expression', '')
         variable = data.get('variable', 'x')
 
+        if not str(expression or '').strip():
+            return False, '请输入表达式'
+
+        # The symbolic-matrix palette key wraps the expression as msimplify(...);
+        # the operation selector already says "symbolic matrix", so unwrap it.
+        if operation_type == 'matrix_symbolic':
+            wrapped = re.match(r'\s*(?:\\mathrm\{)?msimplify\}?\s*\((.*)\)\s*$',
+                               str(expression), re.S)
+            if wrapped:
+                expression = wrapped.group(1)
+
+        # The WYSIWYG palette inserts real operator templates (diff(...),
+        # \int_0^1 ..., \det [matrix], M^{-1}, ...).  Honour that explicit intent
+        # regardless of which operation selector is active; otherwise a user who
+        # selected "求导" and then used the derivative key would differentiate a
+        # Derivative and get the second derivative (a silent wrong answer).
+        if (operation_type != 'auto'
+                and operation_type not in _AUTO_ROUTE_SKIP
+                and _looks_like_operator_input(expression)):
+            return _dispatch_auto(expression)
+
         # Linear-algebra cells may carry MathLive LaTeX matrices; convert each
         # bmatrix/pmatrix block to the nested-list form the calculators parse.
         # No-op when the input is already plain text.
-        if operation_type in _MATRIX_LATEX_OPS:
-            expression = latex_to_nested(expression)
+        if operation_type in _MATRIX_LATEX_OPS and operation_type != 'matrix_symbolic':
+            ok, normalized = _normalize_matrix_input(expression)
+            if not ok:
+                return False, normalized
+            expression = normalized
+        elif operation_type not in ('auto', 'calculus', 'matrix_symbolic') \
+                and operation_type not in _TEXT_INPUT_OPS:
+            ok, normalized = _normalize_scalar_input(
+                expression,
+                complex_mode=(operation_type.startswith('complex_')
+                              or operation_type == 'de_moivre'),
+            )
+            if not ok:
+                return False, normalized
+            expression = normalized
+
+        if operation_type in _SQUARE_MATRIX_OPS:
+            from core.common_matrix_calculator import CommonMatrixCalculator  # pylint: disable=import-outside-toplevel
+            try:
+                matrix = CommonMatrixCalculator.parse_matrix_input(expression)
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                return False, f'矩阵无法解析: {exc}'
+            if matrix.rows != matrix.cols:
+                return False, f'该运算要求方阵，当前矩阵为 {matrix.rows}×{matrix.cols}'
+
+        # Every downstream handler reads data['expression']; keep the canonical
+        # normalized value there too (mutating this request's payload is safe and
+        # lets applied handlers publish their composable _auto_value back).
+        data['expression'] = expression
 
         use_cache = data.get('use_cache', False) == 'True'
         record_cache = data.get('record_cache', False) == 'True'
@@ -1268,11 +1469,13 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
             return True, calc.get_steps_latex()
 
         if operation_type == 'projection':
-            lines = expression.split('\n')
+            lines = [line for line in expression.split('\n') if line.strip()]
             if len(lines) < 2:
-                return False, "Requires two lines: vector and basis"
+                return False, "向量投影需要两行：向量和基矩阵"
             calc = _calculators['projection']()
-            calc.auto_project_vector(lines[0], lines[1])
+            result = calc.auto_project_vector(lines[0], lines[1])
+            if result is None:
+                return False, "向量投影失败：请检查向量与基矩阵的维度是否匹配"
             return True, calc.get_steps_latex()
 
         if operation_type == 'dependence':
@@ -1358,7 +1561,7 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
                 if reason:
                     line += rf" \quad \text{{{reason}}}"
                 lines.append(line)
-            return True, r"\begin{align}" + r"\newline".join(lines) + r"\end{align}"
+            return True, r"\begin{align}" + r" \\ ".join(lines) + r"\end{align}"
 
         # pylint: disable=import-outside-toplevel
         from domains.applied import HANDLERS
@@ -1367,9 +1570,9 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
             try:
                 return handler(data)
             except Exception as exc:  # pylint: disable=broad-exception-caught
-                return False, f'计算失败: {exc}'
+                return False, _user_error(exc, operation_type)
 
-        return False, f"Unsupported operation type: {operation_type}"
+        return False, f"不支持的操作类型: {operation_type}"
 
-    except Exception as e:
-        return False, str(e)
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        return False, _user_error(e, operation_type)

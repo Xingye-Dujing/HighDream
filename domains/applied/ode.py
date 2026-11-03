@@ -5,6 +5,8 @@ First-order separable and linear equations are solved by the rule engine
 to SymPy ``dsolve`` (clearly labelled as a non-rule result).
 """
 
+import re
+
 from sympy import Eq, Function, Symbol, dsolve, simplify, solve
 
 from utils.cache_utils import cached_sympify as sympify
@@ -34,7 +36,17 @@ def solve_ode(data):
     f = Function('f')(x)  # pylint: disable=not-callable
     raw = expr_text(data).replace("f'(x)", 'Derivative(f(x), x)') \
                           .replace("f''(x)", 'Derivative(f(x), (x, 2))')
+    # Also accept the two forms users naturally type / the palette inserts:
+    # diff(y,x) and y'/y'' (and the LaTeX \frac{d}{dx} y, which cached_sympify
+    # already turns into Derivative(y,x)).
+    raw = re.sub(r'\bdiff\s*\(\s*([A-Za-z]\w*)\s*,\s*([A-Za-z]\w*)\s*\)',
+                 r'Derivative(\1,\2)', raw)
+    raw = re.sub(r"\b([A-Za-z]\w*)''", r'Derivative(\1, (x, 2))', raw)
+    raw = re.sub(r"\b([A-Za-z]\w*)'", r'Derivative(\1, x)', raw)
     expr = sympify(raw)
+    # The rule engine works with f(x); accept y as the usual dependent variable.
+    if hasattr(expr, 'subs'):
+        expr = expr.subs(Symbol('y'), f)
     eq = expr if isinstance(expr, Eq) else Eq(expr, 0)
 
     rows, handled = solve_ode_rule(eq, x, f)

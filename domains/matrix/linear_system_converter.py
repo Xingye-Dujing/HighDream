@@ -1,8 +1,9 @@
 from typing import List, Tuple, Union
 
-from sympy import Eq, Matrix, Symbol, latex, sympify, zeros
+from sympy import Eq, Matrix, Symbol, latex, zeros
 
 from core import CommonMatrixCalculator
+from utils.cache_utils import cached_sympify
 
 # from sympy import Rational, symbols
 # from IPython.display import Math, display
@@ -30,18 +31,28 @@ class LinearSystemConverter(CommonMatrixCalculator):
         if '=' not in expressions[-1]:
             unknowns_str = expressions[-1]
             expressions = expressions[:-1]
-        elif get_unknowns:
-            raise ValueError("Please specify unknowns in the last line")
         eq_list = []
         for i, expr in enumerate(expressions):
             if '=' not in expr:
                 raise ValueError(f"Equation format error in line {i + 1}")
             left, right = expr.split('=')
-            eq = Eq(sympify(left), sympify(right))
+            eq = Eq(cached_sympify(left), cached_sympify(right))
             eq_list.append(eq)
         if get_unknowns:
-            unkowns = [sympify(sym) for sym in unknowns_str.split(' ')]
-            return eq_list, unkowns  # type: ignore
+            if unknowns_str:
+                unknowns = [cached_sympify(sym) for sym in unknowns_str.split()]
+            else:
+                # No explicit unknown list: infer every free symbol. This keeps
+                # the palette's "equations only" usage working.
+                symbols = set()
+                for eq in eq_list:
+                    symbols.update(eq.free_symbols)
+                unknowns = sorted(symbols, key=str)
+            if not eq_list:
+                raise ValueError('至少需要一个含等号的方程')
+            return eq_list, unknowns  # type: ignore
+        if not eq_list:
+            raise ValueError('至少需要一个含等号的方程')
         return eq_list
 
     @staticmethod

@@ -7,8 +7,8 @@ explicit steps.
 """
 # pylint: disable=duplicate-code
 
-from sympy import (Abs, Eq, Integral, Order, Symbol, expand, factorial, latex, limit,
-                   oo, simplify, summation, Sum)
+from sympy import (Abs, Eq, Integral, Order, Product, Symbol, expand, factorial, latex, limit,
+                   oo, product, simplify, summation, Sum)
 
 from utils.cache_utils import cached_sympify as sympify
 
@@ -76,6 +76,27 @@ def series_convergence(data):
     return True, align(items)
 
 
+def finite_product(data):
+    """Finite product ``\\prod_{var=low}^{high} term`` with the product's work shown."""
+    var = Symbol(data.get('variable', 'n') or 'n')
+    term = sympify(expr_text(data))
+    up = str(data.get('upper', '')).strip()
+    if up == '':
+        return False, '求积需要填写上限（有限乘积）'
+    low = to_num(data.get('lower'), 0)
+    high = to_num(data.get('upper'), 0)
+    if not (low.is_number and high.is_number):
+        return False, '求积的上下限必须是数值'
+    items = [(Product(term, (var, low, high)), note("有限乘积 Π (逐项闭式求积)"))]
+    try:
+        closed = simplify(product(term, (var, low, high)))
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        return False, f'有限求积失败: {exc}'
+    items.append((closed, note("闭式求积结果")))
+    data['_auto_value'] = closed
+    return True, align(items)
+
+
 def finite_sum(data):
     """Finite sum \\sum_{var=lower}^{upper} term. With no upper bound it falls back
     to the convergence analysis (an infinite series)."""
@@ -96,9 +117,28 @@ def finite_sum(data):
     return True, align(items)
 
 
+def _coefficient_only(expr, var):
+    """Reject a function-of-x passed where a coefficient c_n is expected."""
+    if var.name != 'n' and getattr(expr, 'has', None) and expr.has(var):
+        return False, (
+            '幂级数系数请使用指标 n（例如 1/n!），不要把级数变量 x 写进系数；'
+            '若要展开函数，请使用“泰勒/麦克劳林展开”'
+        )
+    other = {s for s in getattr(expr, 'free_symbols', set()) if s != var}
+    if other:
+        return False, (
+            '幂级数需要输入系数 c_n（只含指标 n），例如 1/n!；'
+            '若要展开函数，请使用“泰勒/麦克劳林展开”'
+        )
+    return True, ''
+
+
 def radius_of_convergence(data):
     n = Symbol(data.get('variable', 'n') or 'n')
     coef = sympify(expr_text(data))
+    ok, msg = _coefficient_only(coef, n)
+    if not ok:
+        return False, msg
 
     def _invert(lim):
         if lim == 0:
@@ -188,6 +228,9 @@ def power_series(data):
     termwise differentiation / integration (radius unchanged)."""
     n = Symbol(data.get('variable', 'n') or 'n')
     coef = sympify(expr_text(data))
+    ok, msg = _coefficient_only(coef, n)
+    if not ok:
+        return False, msg
     x0 = to_num(data.get('point'), 0)
     x = Symbol('x')
 
