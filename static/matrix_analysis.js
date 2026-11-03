@@ -102,7 +102,7 @@ function addMathOutputControls() {
         }
 
         // Re-render MathJax
-        if (window.MathJax) {
+        if (window.MathJax && typeof MathJax.typesetPromise === "function") {
           MathJax.typesetPromise([output]);
         }
       });
@@ -135,7 +135,7 @@ function openFullscreen(mathOutput) {
   overlay.classList.add('active');
 
   // Re-render MathJax
-  if (window.MathJax) {
+  if (window.MathJax && typeof MathJax.typesetPromise === "function") {
     MathJax.typesetPromise([content]);
   }
 }
@@ -245,6 +245,10 @@ function analyzeMatrix(expression) {
   })
     .then(response => response.json())
     .then(data => {
+      if (!data || data.success === false || data.error) {
+        showAnalysisError((data && data.error) || '矩阵分析失败');
+        return;
+      }
       data_copy = data;
       data_copy['expression'] = expression;
       // Update page display analysis results
@@ -252,11 +256,20 @@ function analyzeMatrix(expression) {
     })
     .catch(error => {
       console.error('分析矩阵时出错: ', error);
+      showAnalysisError('请求失败: ' + error.message);
     })
     .finally(() => {
       // Hide loading state
       hideLoadingState();
     });
+}
+
+// Show a user-facing analysis error in every result slot.
+function showAnalysisError(message) {
+  document.querySelectorAll('.result-item .math-output').forEach(function (el) {
+    el.innerHTML = `<span class="preview-error">${escapeHtml(message)}</span>`;
+  });
+  hideLoadingState();
 }
 
 // Show loading state
@@ -314,9 +327,9 @@ function hideLoadingState() {
 
 function renderMathPreview() {
   const expressionElement = document.querySelector('.matrix-preview p');
-  let content = expressionElement.textContent;
-
   const previewArea = document.querySelector(".matrix-preview .render");
+  if (!expressionElement || !previewArea) return;
+  let content = expressionElement.textContent;
   const operationType = 'matrix';
 
   if (!content) {
@@ -338,7 +351,7 @@ function renderMathPreview() {
     .then((data) => {
       if (data.success) {
         previewArea.innerHTML = `$$${data.result}$$`;
-        if (typeof MathJax !== "undefined") {
+        if (window.MathJax && typeof MathJax.typesetPromise === "function") {
           MathJax.typesetPromise([previewArea]);
         }
       } else {
@@ -419,23 +432,36 @@ function updateAnalysisResults(data) {
   }
 
   // Re-render MathJax
-  if (window.MathJax) {
-    MathJax.typeset();
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise();
   }
 }
 
 function runRef() {
-  if (data_copy.ref) {
-    const refElement = document.querySelector('.ref');
-    if (refElement) {
-      refElement.textContent = data_copy.ref;
-      // Re-add control buttons
-      addMathOutputControls();
-    }
-
-    if (window.MathJax) {
+  if (!data_copy.ref) {
+    showAnalysisError('暂无行阶梯结果，请重新分析矩阵');
+    return;
+  }
+  const refElement = document.querySelector('.ref');
+  if (refElement) {
+    refElement.innerHTML = '\\[ ' + data_copy.ref + ' \\]';
+    addMathOutputControls();
+    if (window.MathJax && typeof MathJax.typesetPromise === "function") {
       MathJax.typesetPromise([refElement]);
     }
+  }
+}
+
+function showProcessResult(element, data, label) {
+  if (!element) return;
+  if (!data || data.success === false) {
+    element.innerHTML = `<span class="preview-error">${escapeHtml((data && data.error) || label + '计算失败')}</span>`;
+    return;
+  }
+  element.innerHTML = '\\[ ' + (data.process || '') + ' \\]';
+  addMathOutputControls();
+  if (window.MathJax && typeof MathJax.typesetPromise === "function") {
+    MathJax.typesetPromise([element]);
   }
 }
 
@@ -452,15 +478,11 @@ function runDet1() {
   })
     .then((response) => response.json())
     .then((data) => {
-      const detStepElement1 = document.querySelector('.det-steps-1');
-      detStepElement1.innerHTML = `\\( ${data.process} \\)`;
-      // Re-add control buttons
-      addMathOutputControls();
-
-      if (window.MathJax) {
-        MathJax.typesetPromise([detStepElement1]);
-      }
+      showProcessResult(document.querySelector('.det-steps-1'), data, '行列式');
     })
+    .catch((error) => {
+      showProcessResult(document.querySelector('.det-steps-1'), { error: error.message }, '行列式');
+    });
 }
 
 function runDet2() {
@@ -476,15 +498,11 @@ function runDet2() {
   })
     .then((response) => response.json())
     .then((data) => {
-      const detStepElement2 = document.querySelector('.det-steps-2');
-      detStepElement2.innerHTML = `\\( ${data.process} \\)`;
-      // Re-add control buttons
-      addMathOutputControls();
-
-      if (window.MathJax) {
-        MathJax.typesetPromise([detStepElement2]);
-      }
+      showProcessResult(document.querySelector('.det-steps-2'), data, '行列式');
     })
+    .catch((error) => {
+      showProcessResult(document.querySelector('.det-steps-2'), { error: error.message }, '行列式');
+    });
 }
 
 function runRank() {
@@ -500,15 +518,11 @@ function runRank() {
   })
     .then((response) => response.json())
     .then((data) => {
-      const rankStepElement = document.querySelector('.rank-steps');
-      rankStepElement.innerHTML = `\\( ${data.process} \\)`;
-      // Add control buttons
-      addMathOutputControls();
-
-      if (window.MathJax) {
-        MathJax.typesetPromise([rankStepElement]);
-      }
+      showProcessResult(document.querySelector('.rank-steps'), data, '秩');
     })
+    .catch((error) => {
+      showProcessResult(document.querySelector('.rank-steps'), { error: error.message }, '秩');
+    });
 }
 
 function runEigen() {
@@ -524,14 +538,11 @@ function runEigen() {
   })
     .then((response) => response.json())
     .then((data) => {
-      const eigenStepElement = document.querySelector('.eigen-steps');
-      eigenStepElement.innerHTML = `\\( ${data.process} \\)`;
-      // Add control buttons
-      addMathOutputControls();
-      if (window.MathJax) {
-        MathJax.typesetPromise([eigenStepElement]);
-      }
+      showProcessResult(document.querySelector('.eigen-steps'), data, '特征值');
     })
+    .catch((error) => {
+      showProcessResult(document.querySelector('.eigen-steps'), { error: error.message }, '特征值');
+    });
 }
 
 function runSVD() {
@@ -547,27 +558,23 @@ function runSVD() {
   })
     .then((response) => response.json())
     .then((data) => {
-      const svdStepElement = document.querySelector('.svd-steps');
-      svdStepElement.innerHTML = `\\( ${data.process} \\)`;
-
-      const UElement = document.querySelector('.U');
-      const SElement = document.querySelector('.S');
-      const VElement = document.querySelector('.V');
-      if (data.U) {
-        UElement.innerHTML = `\\(U = ${data.U} \\)`;
+      if (!data || data.success === false) {
+        showAnalysisError((data && data.error) || 'SVD 计算失败');
+        return;
       }
-      if (data.S) {
-        SElement.innerHTML = `\\(\\Sigma = ${data.S} \\)`;
-      }
-      if (data.V) {
-        VElement.innerHTML = `\\(V = ${data.V} \\)`;
-      }
-
-      // Add control buttons
+      showProcessResult(document.querySelector('.svd-steps'), data, 'SVD');
+      const UElement = document.querySelector('.svd.U');
+      const SElement = document.querySelector('.svd.S');
+      const VElement = document.querySelector('.svd.V');
+      if (data.U && UElement) UElement.innerHTML = '\\[ U = ' + data.U + ' \\]';
+      if (data.S && SElement) SElement.innerHTML = '\\[ \\Sigma = ' + data.S + ' \\]';
+      if (data.V && VElement) VElement.innerHTML = '\\[ V = ' + data.V + ' \\]';
       addMathOutputControls();
-
-      if (window.MathJax) {
-        MathJax.typesetPromise([svdStepElement, UElement, SElement, VElement]);
+      if (window.MathJax && typeof MathJax.typesetPromise === "function") {
+        MathJax.typesetPromise([UElement, SElement, VElement].filter(Boolean));
       }
     })
+    .catch((error) => {
+      showAnalysisError('SVD 请求失败: ' + error.message);
+    });
 }

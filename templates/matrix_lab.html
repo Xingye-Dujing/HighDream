@@ -57,6 +57,14 @@
 <div id="main-cols">
     <div id="main-pane">
         <div id="content">
+            <form id="matrix-lab-start" class="hd-universal-bar" method="get" action="/matrix_lab">
+                <textarea class="hd-universal-source" data-universal-input
+                          placeholder="输入初始矩阵，例如 [[1,2],[3,4]]">{{ expression or '' }}</textarea>
+                <button type="submit" class="hd-universal-run"><i class="fas fa-play"></i><span>载入矩阵</span></button>
+            </form>
+            {% if matrix_error %}
+            <div class="preview-error">{{ matrix_error }}</div>
+            {% endif %}
             {% if expression %}
             <div id="matrix-render" class="result-section">
                 <div class="matrix-preview">
@@ -75,50 +83,36 @@
         </div>
     </div>
 
-    <div id="math-keyboard" aria-label="矩阵符号 / 模板工具">
+    <div id="math-keyboard" aria-label="矩阵实验操作 / 模板工具">
         <div class="keyboard-content">
-            <div class="keyboard-group-label">变量 / 常数</div>
+            <div class="keyboard-group-label">矩阵操作</div>
             <div class="keyboard-row">
-                <button class="keyboard-key" data-latex="x">x</button>
-                <button class="keyboard-key" data-latex="y">y</button>
-                <button class="keyboard-key" data-latex="z">z</button>
-                <button class="keyboard-key" data-latex="a">a</button>
-                <button class="keyboard-key" data-latex="b">b</button>
-                <button class="keyboard-key" data-latex="c">c</button>
-                <button class="keyboard-key" data-latex="\pi">π</button>
-                <button class="keyboard-key" data-latex="e">e</button>
+                <button class="keyboard-key" data-latex="\mathrm{transpose}" data-insert="\mathrm{transpose}">转置</button>
+                <button class="keyboard-key" data-latex="\mathrm{inverse}" data-insert="\mathrm{inverse}">求逆</button>
+                <button class="keyboard-key" data-latex="\mathrm{rref}" data-insert="\mathrm{rref}">行最简</button>
+                <button class="keyboard-key" data-latex="\det" data-insert="\mathrm{det}">行列式</button>
+                <button class="keyboard-key" data-latex="\mathrm{rank}" data-insert="\mathrm{rank}">秩</button>
+                <button class="keyboard-key" data-latex="\mathrm{trace}" data-insert="\mathrm{trace}">迹</button>
             </div>
-            <div class="keyboard-group-label">矩阵模板</div>
+            <div class="keyboard-group-label">行 / 列操作</div>
             <div class="keyboard-row">
-                <button class="keyboard-key" data-latex="\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}">2×2 矩阵</button>
-                <button class="keyboard-key" data-latex="\begin{bmatrix}\placeholder{}&amp;\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}&amp;\placeholder{}\end{bmatrix}">3×3 矩阵</button>
-                <button class="keyboard-key" data-latex="\begin{bmatrix}\placeholder{}&amp;\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}&amp;\placeholder{}\end{bmatrix}">2×3 矩阵</button>
-                <button class="keyboard-key" data-latex="\begin{bmatrix}\placeholder{}&amp;\placeholder{}&amp;\placeholder{}\end{bmatrix}">行向量</button>
-                <button class="keyboard-key" data-latex="\det\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}">行列式</button>
-            </div>
-            <div class="keyboard-group-label">运算符</div>
-            <div class="keyboard-row">
-                <button class="keyboard-key" data-latex="+">+</button>
-                <button class="keyboard-key" data-latex="-">−</button>
-                <button class="keyboard-key" data-latex="\cdot">×</button>
-                <button class="keyboard-key" data-latex="\div">÷</button>
-                <button class="keyboard-key" data-latex="^{\placeholder{}}">幂</button>
-                <button class="keyboard-key" data-latex="_{\placeholder{}}">下标</button>
-                <button class="keyboard-key" data-latex="\frac{\placeholder{}}{\placeholder{}}">分数</button>
-                <button class="keyboard-key" data-latex="\left(\placeholder{}\right)">( )</button>
-                <button class="keyboard-key" data-latex="\left[\placeholder{}\right]">[ ]</button>
-                <button class="keyboard-key" data-latex="=">=</button>
+                <button class="keyboard-key" data-latex="\mathrm{swap\_rows}(0,1)" data-insert="\mathrm{swap\_rows}(0,1)">交换行</button>
+                <button class="keyboard-key" data-latex="\mathrm{add\_rows}(0,1,1)" data-insert="\mathrm{add\_rows}(0,1,1)">行相加</button>
+                <button class="keyboard-key" data-latex="\mathrm{scale\_row}(0,2)" data-insert="\mathrm{scale\_row}(0,2)">缩放行</button>
+                <button class="keyboard-key" data-latex="\mathrm{swap\_cols}(0,1)" data-insert="\mathrm{swap\_cols}(0,1)">交换列</button>
+                <button class="keyboard-key" data-latex="\mathrm{add\_cols}(0,1,1)" data-insert="\mathrm{add\_cols}(0,1,1)">列相加</button>
+                <button class="keyboard-key" data-latex="\mathrm{scale\_col}(0,2)" data-insert="\mathrm{scale\_col}(0,2)">缩放列</button>
+                <button class="keyboard-key" data-latex="\mathrm{remove\_row}(0)" data-insert="\mathrm{remove\_row}(0)">删除行</button>
+                <button class="keyboard-key" data-latex="\mathrm{remove\_col}(0)" data-insert="\mathrm{remove\_col}(0)">删除列</button>
+                <button class="keyboard-key" data-latex="\mathrm{submatrix}(0,1,0,1)" data-insert="\mathrm{submatrix}(0,1,0,1)">子矩阵</button>
             </div>
             <div class="keyboard-group-label">矩阵运算</div>
             <div class="keyboard-row">
-                <button class="keyboard-key" data-latex="\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}^{-1}">逆</button>
-                <button class="keyboard-key" data-latex="\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}^{T}">转置</button>
-                <button class="keyboard-key" data-latex="\mathrm{rank}\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}">rank</button>
-                <button class="keyboard-key" data-latex="\mathrm{rref}\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}">行最简</button>
-                <button class="keyboard-key" data-latex="\mathrm{eigen}\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}">特征值</button>
-                <button class="keyboard-key" data-latex="\mathrm{svd}\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}">SVD</button>
-                <button class="keyboard-key" data-latex="\mathrm{trace}\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}">迹</button>
-                <button class="keyboard-key" data-latex="\mathrm{lu}\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}">LU</button>
+                <button class="keyboard-key" data-latex="\mathrm{scale}(2)" data-insert="\mathrm{scale}(2)">数乘</button>
+                <button class="keyboard-key" data-latex="\mathrm{power}(2)" data-insert="\mathrm{power}(2)">幂</button>
+                <button class="keyboard-key" data-latex="\mathrm{add}\left(\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}\right)" data-insert="\mathrm{add}\left(\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}\right)">加矩阵</button>
+                <button class="keyboard-key" data-latex="\mathrm{subtract}\left(\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}\right)" data-insert="\mathrm{subtract}\left(\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}\right)">减矩阵</button>
+                <button class="keyboard-key" data-latex="\mathrm{multiply}\left(\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}\right)" data-insert="\mathrm{multiply}\left(\begin{bmatrix}\placeholder{}&amp;\placeholder{}\\\placeholder{}&amp;\placeholder{}\end{bmatrix}\right)">乘矩阵</button>
             </div>
         </div>
     </div>

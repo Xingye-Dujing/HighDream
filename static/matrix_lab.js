@@ -58,7 +58,7 @@ function addMathOutputControls() {
         }
 
         // Re-render MathJax
-        if (window.MathJax) {
+        if (window.MathJax && typeof MathJax.typesetPromise === "function") {
           MathJax.typesetPromise([output]);
         }
       });
@@ -91,7 +91,7 @@ function openFullscreen(mathOutput) {
   overlay.classList.add('active');
 
   // Re-render MathJax
-  if (window.MathJax) {
+  if (window.MathJax && typeof MathJax.typesetPromise === "function") {
     MathJax.typesetPromise([content]);
   }
 }
@@ -125,6 +125,30 @@ function bindEvents() {
   if (_themeBtn) _themeBtn.addEventListener("click", toggleTheme);
   document.getElementById("saveNotebookBtn").addEventListener("click", saveNotebook);
   document.getElementById("loadNotebookBtn").addEventListener("click", loadNotebook);
+
+  // Load / replace the initial matrix. The field is the same WYSIWYG editor as
+  // the notebook's universal input; convert_form turns a filled bmatrix back
+  // into the nested-list form the matrix engine consumes.
+  const startForm = document.getElementById("matrix-lab-start");
+  if (startForm) {
+    startForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      const textarea = startForm.querySelector("textarea");
+      const value = (textarea && textarea.value.trim()) || "";
+      if (!value) {
+        showNotification("请输入初始矩阵", "error");
+        return;
+      }
+      if (/\\(placeholder|square|Box)\b/.test(value)) {
+        showNotification("请先填写矩阵里的占位框", "error");
+        return;
+      }
+      normalizeUniversal(value).then(function (expression) {
+        if (!expression) return;
+        window.location.href = "/matrix_lab?expression=" + encodeURIComponent(expression);
+      });
+    });
+  }
 
   // Fullscreen related events
   const closeBtn = document.querySelector('.math-fullscreen-close');
@@ -216,14 +240,14 @@ function bindEvents() {
   document.querySelectorAll(".keyboard-key").forEach((key) => {
     key.addEventListener("click", function () {
       const latex = this.getAttribute("data-latex");
-      const value = latex || this.getAttribute("data-value");
+      const insert = this.getAttribute("data-insert") || latex || this.getAttribute("data-value");
       const activeCell = document.querySelector(".cell-active");
       if (!activeCell) return;
       const field = activeCell.querySelector("math-field.hd-universal-field");
       if (field) {
         field.focus();
-        if (typeof field.insert === "function") field.insert(value);
-        else field.value = (field.value || "") + value;
+        if (typeof field.insert === "function") field.insert(insert);
+        else field.value = (field.value || "") + insert;
         return;
       }
       const textarea = activeCell.querySelector("textarea");
@@ -231,9 +255,9 @@ function bindEvents() {
         const cursorPos = textarea.selectionStart;
         const textBefore = textarea.value.substring(0, cursorPos);
         const textAfter = textarea.value.substring(cursorPos);
-        textarea.value = textBefore + value + textAfter;
-        textarea.selectionStart = cursorPos + value.length;
-        textarea.selectionEnd = cursorPos + value.length;
+        textarea.value = textBefore + insert + textAfter;
+        textarea.selectionStart = cursorPos + insert.length;
+        textarea.selectionEnd = cursorPos + insert.length;
         textarea.focus();
         textarea.dispatchEvent(new Event("input"));
       }
@@ -390,7 +414,7 @@ function createCellElement(id, type) {
                <span>仅记录最终结果</span>
               </label>
             </div>
-            <textarea placeholder="输入矩阵表达式..." class="math-input" data-universal-input></textarea>
+            <textarea placeholder="输入操作，例如 rref / transpose / inverse；也可点右侧操作键" class="math-input" data-universal-input></textarea>
           </div>
         </div>
         <div class="cell-output-container">
@@ -487,12 +511,20 @@ function runCell(cell) {
 
   const operations = cell.querySelector("textarea").value.trim();
   if (!operations) {
+    runButton.classList.remove("running");
     showNotification("请输入操作", "error");
     return;
   }
 
   if (/\\(placeholder|square|Box)\b/.test(operations)) {
+    runButton.classList.remove("running");
     showNotification("请先填写矩阵里的占位框", "error");
+    return;
+  }
+
+  if (!data_copy["expression"]) {
+    runButton.classList.remove("running");
+    showNotification("请先在上方载入初始矩阵", "error");
     return;
   }
 
@@ -523,10 +555,15 @@ function runCell(cell) {
   })
     .then((response) => response.json())
     .then((data) => {
-      outputArea.innerHTML = `<div class="math-output">${data.steps}</div>`;
+      runButton.classList.remove("running");
+      if (!data || data.success === false) {
+        outputArea.innerHTML = `<div class="error">${escapeHtml((data && data.error) || "计算失败")}</div>`;
+        return;
+      }
+      outputArea.innerHTML = `<div class="math-output">${data.steps || ""}</div>`;
       // Add control buttons
       addMathOutputControls();
-      if (typeof MathJax !== "undefined") {
+      if (window.MathJax && typeof MathJax.typesetPromise === "function") {
         MathJax.typesetPromise([outputArea]);
       }
       outputArea.classList.add("result-animation");
@@ -560,7 +597,7 @@ function renderMathPreview(cell) {
     .replace(/\\placeholder\b/g, "\\square")
     .replace(/\{\s*\}/g, "{\\square}");
   previewArea.innerHTML = `$$${latex}$$`;
-  if (typeof MathJax !== "undefined") {
+  if (window.MathJax && typeof MathJax.typesetPromise === "function") {
     MathJax.typesetPromise([previewArea]);
   }
 }
@@ -741,9 +778,9 @@ function loadNotebook() {
 
 function renderMathPreview() {
   const expressionElement = document.querySelector('.matrix-preview p');
-  let content = expressionElement.textContent;
-
   const previewArea = document.querySelector(".matrix-preview .render");
+  if (!expressionElement || !previewArea) return;
+  let content = expressionElement.textContent;
   const operationType = 'matrix';
 
   if (!content) {
@@ -765,7 +802,7 @@ function renderMathPreview() {
     .then((data) => {
       if (data.success) {
         previewArea.innerHTML = `$$${data.result}$$`;
-        if (typeof MathJax !== "undefined") {
+        if (window.MathJax && typeof MathJax.typesetPromise === "function") {
           MathJax.typesetPromise([previewArea]);
         }
       } else {

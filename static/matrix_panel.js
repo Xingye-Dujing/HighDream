@@ -276,7 +276,7 @@ function createCellElement(id, type) {
                 <i class="fas fa-keyboard"></i>
               </button>
             </div>
-            <textarea placeholder="输入矩阵表达式..." class="math-input" data-universal-input></textarea>
+            <textarea placeholder="输入矩阵，例如 [[1,2],[3,4]]（也可点右侧矩阵模板）" class="math-input" data-universal-input></textarea>
             <div class="math-preview"></div>
           </div>
         </div>
@@ -383,7 +383,7 @@ function runCell(cell) {
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '/matrix_analysis';
-    form.target = '_blank';
+    form.target = '_self';
 
     Object.keys(payload).forEach(key => {
       const input = document.createElement('input');
@@ -419,7 +419,7 @@ function runOpretation(cell) {
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '/matrix_lab';
-    form.target = '_blank';
+    form.target = '_self';
 
     Object.keys(payload).forEach(key => {
       const input = document.createElement('input');
@@ -454,7 +454,7 @@ function renderMathPreview(cell) {
     .replace(/\\placeholder\b/g, "\\square")
     .replace(/\{\s*\}/g, "{\\square}");
   previewArea.innerHTML = `$$${latex}$$`;
-  if (typeof MathJax !== "undefined") {
+  if (window.MathJax && typeof MathJax.typesetPromise === "function") {
     MathJax.typesetPromise([previewArea]);
   }
 }
@@ -464,10 +464,10 @@ function showNotification(message, type = "success") {
   const notification = document.createElement("div");
   notification.className = `notification notification-${type} `;
   notification.innerHTML = `
-      <div div class="notification-content" >
+      <div class="notification-content">
       <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
       <span>${escapeHtml(message)}</span>
-    </div >
+    </div>
       `;
 
   document.body.appendChild(notification);

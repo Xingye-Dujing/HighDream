@@ -141,6 +141,36 @@
       textarea.dispatchEvent(new Event('input', { bubbles: true }))
     })
 
+    /* Pasting or typing the operator form ([[1,2],[3,4]]) should show a real
+       matrix, not literal bracket characters. The field remains canonical LaTeX. */
+    function convertOperatorFormToMatrix() {
+      var current = field.value
+      if (!/^\s*\[\[[\s\S]*\]\]\s*$/.test(current || '')) return
+      toDisplayLatex(current).then(function (latex) {
+        if (latex === current) return
+        field.value = latex
+        syncing = true
+        proto.set.call(textarea, field.value)
+        syncing = false
+        textarea.dispatchEvent(new Event('input', { bubbles: true }))
+      })
+    }
+
+    field.addEventListener('paste', function (event) {
+      var data = event.clipboardData || window.clipboardData
+      var text = data ? data.getData('text') : ''
+      if (!/^\s*\[\[[\s\S]*\]\]\s*$/.test(text || '')) return
+      event.preventDefault()
+      toDisplayLatex(text).then(function (latex) {
+        field.value = latex
+        syncing = true
+        proto.set.call(textarea, field.value)
+        syncing = false
+        textarea.dispatchEvent(new Event('input', { bubbles: true }))
+      })
+    })
+    field.addEventListener('blur', convertOperatorFormToMatrix)
+
     /* Focusing the visible editor activates its notebook cell, exactly like
        clicking the old textarea did. */
     field.addEventListener('focus', function () {
@@ -185,7 +215,7 @@
     s = s.replace(/\{\s*\}/g, '{\\square}').replace(/\[\s*\]/g, '[\\square]')
     if (/^[\^_]/.test(s)) s = '\\square' + s
     s = s.replace(
-      /(?<![\\A-Za-z0-9])([A-Za-z][A-Za-z0-9]*)(?=\()/g,
+      /(?<![\\A-Za-z0-9_{])([A-Za-z][A-Za-z0-9]*)(?=\()/g,
       '\\operatorname{$1}'
     )
     var depth = 0
@@ -216,7 +246,8 @@
         /* MathJax failure must not break the palette */
       })
     } else {
-      setTimeout(typesetKeyboard, 200)
+      window.__hdKeyboardTypesetTries = (window.__hdKeyboardTypesetTries || 0) + 1
+      if (window.__hdKeyboardTypesetTries < 25) setTimeout(typesetKeyboard, 200)
     }
   }
 

@@ -34,6 +34,9 @@
         <textarea class="hd-universal-source" data-universal-input placeholder="输入矩阵表达式，例如 [[1,2],[3,4]]">{{ expression or '' }}</textarea>
         <button type="submit" class="hd-universal-run"><i class="fas fa-play"></i><span>分析</span></button>
     </form>
+    {% if matrix_error %}
+    <div class="preview-error">{{ matrix_error }}</div>
+    {% endif %}
     {% if expression %}
     <div id="matrix-render" class="result-section">
         <div class="matrix-preview">

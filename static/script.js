@@ -50,6 +50,38 @@ function restoreMatrixCells(s) {
   });
 }
 
+// Convert the textbook operator form [[1,2],[3,4]] to a real bmatrix so the
+// WYSIWYG field shows a matrix rather than literal brackets. Returns '' when
+// the text is not a complete nested matrix.
+function operatorMatrixToLatex(text) {
+  const s = String(text || "").trim();
+  if (!s.startsWith("[[") || !s.endsWith("]]")) return "";
+  const splitTop = (body, sep) => {
+    const out = [];
+    let depth = 0;
+    let cur = "";
+    for (const ch of body) {
+      if (ch === "(" || ch === "[" || ch === "{") depth += 1;
+      else if (ch === ")" || ch === "]" || ch === "}") depth -= 1;
+      if (ch === sep && depth === 0) { out.push(cur); cur = ""; }
+      else cur += ch;
+    }
+    out.push(cur);
+    return out;
+  };
+  const rows = splitTop(s.slice(1, -1), ",");
+  const body = [];
+  for (const row of rows) {
+    const trimmed = row.trim();
+    if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) return "";
+    const cells = splitTop(trimmed.slice(1, -1), ",").map((c) => c.trim());
+    if (!cells.length) return "";
+    body.push(cells.join(" & "));
+  }
+  if (!body.length) return "";
+  return "\\begin{bmatrix}" + body.join(" \\\\ ") + "\\end{bmatrix}";
+}
+
 function restorePlaceholders(raw) {
   let s = raw;
   // Protect existing \placeholder{} so its own braces are never re-processed.
@@ -88,6 +120,24 @@ function bindEditorField(field, cell) {
   });
   field.addEventListener("change", function () { readExpr(cell); });
   field.addEventListener("click", function () { setActiveCell(cell); });
+
+  // Let users paste/type the textbook matrix form and still get a real matrix.
+  const convertOperatorMatrix = function () {
+    const latex = operatorMatrixToLatex(field.value);
+    if (latex) {
+      field.value = latex;
+      readExpr(cell);
+    }
+  };
+  field.addEventListener("blur", convertOperatorMatrix);
+  field.addEventListener("paste", function (event) {
+    const data = event.clipboardData || window.clipboardData;
+    const text = data ? data.getData("text") : "";
+    if (!/^\s*\[\[[\s\S]*\]\]\s*$/.test(text || "")) return;
+    event.preventDefault();
+    field.value = operatorMatrixToLatex(text) || text;
+    readExpr(cell);
+  });
 }
 
 
@@ -201,6 +251,11 @@ function applyInputMode(cell) {
   if (isTextOp(op)) {
     field.style.display = "none";
     src.style.display = "";
+    const textHints = {
+      "linear-system": "每行一个方程；最后一行可写未知量（如 x y），省略时自动识别",
+      "matrix_symbolic": "大写矩阵名表达式，如 (A+B)*(A-B)",
+    };
+    src.placeholder = textHints[op] || "输入数学表达式...";
   } else {
     const parts = (src.value || "").split("\n");
     field.value = parts[0] || "";
@@ -294,7 +349,7 @@ function addMathOutputControls() {
         }
 
         // Re-render MathJax
-        if (window.MathJax) {
+        if (window.MathJax && typeof MathJax.typesetPromise === "function") {
           MathJax.typesetPromise([output]);
         }
       });
@@ -332,7 +387,7 @@ function openFullscreen(mathOutput) {
   overlay.classList.add('active');
 
   // Re-render MathJax
-  if (window.MathJax) {
+  if (window.MathJax && typeof MathJax.typesetPromise === "function") {
     MathJax.typesetPromise([content]);
   }
 }
@@ -502,8 +557,22 @@ function bindEvents() {
         }
         if (textarea) textarea.value = field.value;
       } else if (textarea) {
+        // Text ops (equation lists / symbolic-matrix expressions) use a plain
+        // textarea; a template's LaTeX placeholder cannot be filled there, so
+        // insert a clean skeleton and put the caret in the first empty slot.
+        let insertText = latex;
+        let caret = -1;
+        if (insertText.indexOf("\\placeholder") !== -1) {
+          caret = insertText.indexOf("\\placeholder");
+          insertText = insertText.replace(/\\placeholder\s*\{\s*\}/g, "");
+        }
         const cursorPos = textarea.selectionStart || textarea.value.length;
-        textarea.value = textarea.value.substring(0, cursorPos) + latex + textarea.value.substring(cursorPos);
+        const textBefore = textarea.value.substring(0, cursorPos);
+        const textAfter = textarea.value.substring(cursorPos);
+        textarea.value = textBefore + insertText + textAfter;
+        const finalCaret = cursorPos + (caret >= 0 ? caret : insertText.length);
+        textarea.selectionStart = finalCaret;
+        textarea.selectionEnd = finalCaret;
         textarea.focus();
       }
     });
@@ -1347,7 +1416,7 @@ function renderExpressionResult(outputArea, data) {
   // Add control buttons
   addMathOutputControls();
 
-  if (typeof MathJax !== "undefined") {
+  if (window.MathJax && typeof MathJax.typesetPromise === "function") {
     MathJax.typesetPromise([outputArea]);
   }
 }
@@ -1455,7 +1524,7 @@ function displayLatex(raw) {
   // Function/operator names render upright like \sin, not as a product of italic
   // variables: simplify(...) -> \operatorname{simplify}(...). Commands such as
   // \sin are left alone because their name is preceded by a backslash.
-  s = s.replace(/(?<![\\A-Za-z0-9])([A-Za-z][A-Za-z0-9]*)(?=\()/g, "\\operatorname{$1}");
+  s = s.replace(/(?<![\\A-Za-z0-9_{])([A-Za-z][A-Za-z0-9]*)(?=\()/g, "\\operatorname{$1}");
   let depth = 0;
   let out = "";
   for (const ch of s) {
@@ -1473,7 +1542,8 @@ function typesetKeyboard() {
     if (typeof MathJax.typesetClear === "function") MathJax.typesetClear([kb]);
     MathJax.typesetPromise([kb]).catch(function () { /* ignore */ });
   } else {
-    setTimeout(typesetKeyboard, 200);
+    window.__hdNotebookKeyboardTypesetTries = (window.__hdNotebookKeyboardTypesetTries || 0) + 1;
+    if (window.__hdNotebookKeyboardTypesetTries < 25) setTimeout(typesetKeyboard, 200);
   }
 }
 
@@ -2505,7 +2575,7 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
 
       addMathOutputControls();
 
-      if (typeof MathJax !== "undefined") {
+      if (window.MathJax && typeof MathJax.typesetPromise === "function") {
         MathJax.typesetPromise([outputArea]);
       }
 
