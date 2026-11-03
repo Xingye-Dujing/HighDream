@@ -16,11 +16,6 @@ class Diagonalization(CommonMatrixCalculator):
     compute eigenvectors, and perform various types of matrix diagonalization.
     """
 
-    @staticmethod
-    def is_square(matrix: Matrix) -> bool:
-        """Check if the matrix is square."""
-        return matrix.rows == matrix.cols
-
     def check_diagonalizable_conditions(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) \
             -> Tuple[bool, Dict, List]:
         """

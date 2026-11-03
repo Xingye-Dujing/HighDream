@@ -15,19 +15,19 @@ available_sym_chars = [
 ]
 
 
-def format_note(explanation) -> str:
+def format_note(explanation, prose_command: str = 'text') -> str:
     """Render a step explanation as a MathJax fragment.
 
     Text between ``$...$`` becomes live LaTeX (so formulas render); the rest is
-    wrapped in ``\\text{}`` as prose. This avoids showing literal ``$`` or unicode
-    math symbols as plain text.
+    wrapped in ``\\text{}`` (or another prose command such as ``\\textrm{}``) as
+    prose. This avoids showing literal ``$`` or unicode math symbols as plain text.
     """
     parts = str(explanation).split('$')
     out = []
     for i, seg in enumerate(parts):
         if seg == '':
             continue
-        out.append(seg if i % 2 == 1 else r"\text{" + seg + r"}")
+        out.append(seg if i % 2 == 1 else '\\' + prose_command + '{' + seg + '}')
     return ''.join(out)
 
 

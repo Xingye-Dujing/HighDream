@@ -14,11 +14,6 @@ class Inverter(CommonMatrixCalculator):
     Gauss-Jordan elimination method. It also handles special matrix types.
     """
 
-    @staticmethod
-    def is_square(matrix: Matrix) -> bool:
-        """Check if a matrix is square."""
-        return matrix.rows == matrix.cols
-
     def is_invertible(self, matrix: Matrix, show_steps: bool = True, is_clear: bool = True) -> bool:
         """Check if a matrix is invertible by computing its determinant.
 

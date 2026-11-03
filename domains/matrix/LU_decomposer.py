@@ -17,11 +17,6 @@ class LUDecomposition(CommonMatrixCalculator):
     decomposition with partial pivoting.
     """
 
-    @staticmethod
-    def is_square(matrix: Matrix) -> bool:
-        """Check if the matrix is square."""
-        return matrix.rows == matrix.cols
-
     def lu_decomposition_gaussian(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix] | None:
         """Perform LU decomposition using Gaussian elimination approach.
 

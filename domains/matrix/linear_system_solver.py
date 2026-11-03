@@ -55,11 +55,6 @@ class LinearSystemSolver(CommonMatrixCalculator):
         for eq in equations:
             self.add_equation(eq)
 
-    @staticmethod
-    def is_square(matrix: Matrix) -> bool:
-        """Check if a matrix is square."""
-        return matrix.rows == matrix.cols
-
     def check_system_type(self, A: Matrix, b: Matrix, show_steps: bool = True) -> str:
         """Analyze and classify the type of linear system.
 

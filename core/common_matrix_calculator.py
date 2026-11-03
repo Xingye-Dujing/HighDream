@@ -26,6 +26,11 @@ class CommonMatrixCalculator(ABC):
         else:
             self.step_generator.add_step(f"\\text{{{text}}}")
 
+    @staticmethod
+    def is_square(matrix: Matrix) -> bool:
+        """True when a matrix has as many rows as columns."""
+        return matrix.rows == matrix.cols
+
     def add_matrix(self, matrix: str | Matrix, name: str = "A") -> None:
         """Add a matrix to the calculation steps display."""
         self.step_generator.add_step(f"{name} = {latex(matrix)}")

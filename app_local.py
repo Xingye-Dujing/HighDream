@@ -2,11 +2,9 @@ import threading
 import time
 import webbrowser
 
-from flask import Flask
 from gevent import pywsgi
 
-from config import TEMPLATE_FOLDER, STATIC_FOLDER
-from routes import main, api
+from app import create_app
 
 
 # NOTE: This import is required when packaging with PyInstaller !!!
@@ -14,19 +12,6 @@ from routes import main, api
 
 
 # matplotlib.use('Agg')
-
-
-def create_app():
-    """Create and configure the Flask application instance.
-
-    Returns:
-        Flask: A configured Flask application instance with registered blueprints.
-    """
-    app = Flask(__name__, template_folder=TEMPLATE_FOLDER,
-                static_folder=STATIC_FOLDER)
-    app.register_blueprint(main)
-    app.register_blueprint(api, url_prefix='/api')
-    return app
 
 
 if __name__ == '__main__':

@@ -16,11 +16,6 @@ class SchurDecomposition(CommonMatrixCalculator):
     """
 
     @staticmethod
-    def is_square(matrix: Matrix) -> bool:
-        """Check if the matrix is square."""
-        return matrix.rows == matrix.cols
-
-    @staticmethod
     def is_hermitian(matrix: Matrix) -> bool:
         """Check if the matrix is Hermitian.
 

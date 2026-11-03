@@ -7,6 +7,8 @@ derivations, matching the main calculus engines rather than one-line formulas.
 
 from sympy import Symbol
 
+from core.base_step_generator import format_note
+
 from utils.cache_utils import cached_sympify as sympify
 
 
@@ -34,13 +36,7 @@ def steps_value(steps):
 
 def render_note(text) -> str:
     """Prose -> ``\\textrm{}``, ``$...$`` -> live LaTeX (MathJax-safe, no literal $)."""
-    parts = str(text).split('$')
-    out = []
-    for i, seg in enumerate(parts):
-        if seg == '':
-            continue
-        out.append(seg if i % 2 == 1 else r"\textrm{" + seg + r"}")
-    return ''.join(out)
+    return format_note(text, prose_command='textrm')
 
 
 def align(items) -> str:
