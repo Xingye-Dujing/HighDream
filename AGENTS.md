@@ -62,6 +62,8 @@ Short **Chinese**, matching existing log (e.g. `更新文档`, `Fix md`). Commit
 
 ## Keys an agent would miss
 
+- **WYSIWYG / operator symmetry:** `routes/compute_service.py::_dispatch_compute` auto-routes explicit operator templates (`diff(...)`, `\int`, `\lim`, `\det M`, `M^{-1}`) to `_dispatch_auto` regardless of the selected operation, so a derivative template is never differentiated twice. `utils/cache_utils.cached_sympify` normalizes MathLive LaTeX (`\operatorname{re}`, `\left|z\right|`, `\pi` → sympy constant, implicit `x y`), and rejects unfilled templates instead of falling back to a wrong `sympify`. Matrix inputs accept both `bmatrix` and `[[...]]`; `utils/matrix_latex.latex_to_nested` rejects empty/ragged cells.
+- **Matrix page split:** `/matrix_panel` accepts a matrix for analysis/experiments; `/matrix_lab` applies executable operations (`rref`, `transpose`, `inverse`, `\mathrm{swap\_rows}(0,1)`, …) to the matrix loaded by its top form; `/matrix_analysis` analyzes one matrix. Keep each page's palette matching that role.
 - **Manual step solver sessions** (`/rule_select` page) are in-memory dicts in `api.py` (`_manual_sessions`) — lost on server restart.
 - **Step LaTeX rendering:** `core/base_step_generator.py::format_note` turns an explanation's ``$...$`` into live LaTeX and wraps prose in ``\text{}``. Do NOT wrap whole explanations in `\text{}` (that shows literal `$`). Keep math in `$...$` inside rule-explanation strings.
 - **Applied ops** (`core/applied_calc.py`, dispatched by `compute_service`): each returns a `\begin{align}` block; integral-based ops reuse `IntegralCalculator` for step-by-step. All output must be LaTeX (no unicode math symbols in labels).
