@@ -28,9 +28,10 @@ def _cell_to_sympy_str(cell: str) -> str:
 
 
 def _block_to_nested(body: str) -> str:
-    # Row separator is two-or-more backslashes (a single backslash belongs to a
-    # command like \frac/\sqrt, so it must NOT split rows).
-    rows = [r for r in re.split(r'\\{2,}', body) if r.strip() != '']
+    # Row separator is exactly two backslashes.  A cell beginning with a LaTeX
+    # command (e.g. ``\\\sqrt{2}``) has a third backslash; consume only the two
+    # row-separator ones so the command survives.
+    rows = [r for r in re.split(r'\\\\', body) if r.strip() != '']
     nested = []
     width = None
     for row in rows:

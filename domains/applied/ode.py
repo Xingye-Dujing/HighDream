@@ -7,7 +7,7 @@ to SymPy ``dsolve`` (clearly labelled as a non-rule result).
 
 import re
 
-from sympy import Eq, Function, Symbol, dsolve, simplify, solve
+from sympy import Eq, Expr, Function, Symbol, dsolve, simplify, solve
 
 from utils.cache_utils import cached_sympify as sympify
 
@@ -44,6 +44,8 @@ def solve_ode(data):
     raw = re.sub(r"\b([A-Za-z]\w*)''", r'Derivative(\1, (x, 2))', raw)
     raw = re.sub(r"\b([A-Za-z]\w*)'", r'Derivative(\1, x)', raw)
     expr = sympify(raw)
+    if not isinstance(expr, (Eq, Expr)):
+        return False, '微分方程格式不正确：请输入方程或表达式'
     # The rule engine works with f(x); accept y as the usual dependent variable.
     if hasattr(expr, 'subs'):
         expr = expr.subs(Symbol('y'), f)

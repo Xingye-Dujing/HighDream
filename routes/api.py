@@ -306,6 +306,8 @@ def matrix_cal():
     expr = data.get('expression', '')
     ops = [o for o in data.get('operations', '').split('\n') if o.strip()]
     record = data.get('record_all_steps') == 'True'
+    if not ops:
+        return jsonify({'success': False, 'error': '请输入矩阵操作', 'steps': ''})
     from utils.matrix_latex import latex_to_nested  # pylint: disable=import-outside-toplevel
     try:
         expr = latex_to_nested(expr)

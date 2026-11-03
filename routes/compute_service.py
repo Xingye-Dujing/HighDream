@@ -1030,7 +1030,11 @@ def _strip_outer_delimiters(text: str) -> str:
 
 # Operations whose expression is a structured text (not a single scalar/LaTeX
 # formula), so the generic scalar normalizer must not rewrite it.
-_TEXT_INPUT_OPS = {'ode', 'linear-system', 'parametric_diff'}
+_TEXT_INPUT_OPS = {
+    'ode', 'linear-system', 'parametric_diff',
+    # '|'-separated component/variable fields (vector fields, Jacobians, ...)
+    'jacobian', 'curl', 'divergence', 'lagrange', 'line_integral2', 'flux',
+}
 
 # ``ode`` expressions legitimately contain diff(...)/Derivative notation; the
 # universal auto-router must not hijack them.
@@ -1091,15 +1095,28 @@ def _normalize_scalar_input(expression: str, complex_mode: bool = False):
     return True, str(obj)
 
 
-def _normalize_matrix_input(expression: str):
+def _normalize_matrix_input(expression: str, validate: bool = True):
     """Convert MathLive bmatrix blocks and validate the resulting matrix text."""
     text = _strip_outer_delimiters(expression)
     if has_unfilled_placeholders(text):
         return False, '请先填写输入框中的占位（□）后再计算'
     try:
-        return True, latex_to_nested(text)
+        text = latex_to_nested(text)
     except ValueError as exc:
         return False, str(exc)
+    if validate:
+        from core.common_matrix_calculator import CommonMatrixCalculator  # pylint: disable=import-outside-toplevel
+        for line in text.split('\n'):
+            if not line.strip():
+                continue
+            try:
+                CommonMatrixCalculator.parse_matrix_input(line)
+            except Exception:  # pylint: disable=broad-exception-caught
+                return False, (
+                    '矩阵格式不正确：请使用 [[1,2],[3,4]] 或 bmatrix 形式，'
+                    '并保证每行元素个数相同'
+                )
+    return True, text
 
 
 def _user_error(exc, operation_type: str) -> str:
@@ -1111,6 +1128,9 @@ def _user_error(exc, operation_type: str) -> str:
     if 'cannot convert' in low or 'could not parse' in low or 'sympify' in low \
             or 'syntaxerror' in low or 'unexpected character' in low:
         return f'无法解析输入，请检查表达式写法: {msg}'
+    if 'list index out of range' in low or 'not enough values' in low \
+            or 'pop from empty' in low:
+        return '矩阵输入格式不正确，请检查每行元素个数和运算参数'
     if 'non-square' in low or 'not a square' in low or 'square matrix' in low:
         return '该运算要求方阵，请检查矩阵行列数'
     if 'shape' in low or 'dimension' in low or 'size' in low:
@@ -1287,7 +1307,8 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
         # bmatrix/pmatrix block to the nested-list form the calculators parse.
         # No-op when the input is already plain text.
         if operation_type in _MATRIX_LATEX_OPS and operation_type != 'matrix_symbolic':
-            ok, normalized = _normalize_matrix_input(expression)
+            ok, normalized = _normalize_matrix_input(
+                expression, validate=operation_type != 'linear-system')
             if not ok:
                 return False, normalized
             expression = normalized
@@ -1499,16 +1520,41 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
             return True, solver.get_steps_latex()
 
         if operation_type == 'transform-1':
-            calc = _calculators['transform_1']()
             calc_type = data.get('type', 'basis_change')
-            calc.compute_transform(expression, calc_type)
-            return True, calc.get_steps_latex()
+            required = 3 if calc_type in ('coordinate_transform', 'coord_transform') else 2
+            lines = [line for line in expression.split('\n') if line.strip()]
+            if calc_type not in (
+                'basis_change', 'change_basis', 'coordinate_transform', 'coord_transform',
+                'standard_to_basis', 'std_to_basis', 'basis_to_standard', 'basis_to_std',
+            ):
+                return False, f'不支持的基变换类型: {calc_type}'
+            if len(lines) < required:
+                return False, f'该变换需要至少 {required} 行矩阵输入'
+            calc = _calculators['transform_1']()
+            calc.compute_transform('\n'.join(lines), calc_type)
+            result = calc.get_steps_latex()
+            if not result or result.replace(' ', '') == r'\begin{align}\end{align}':
+                return False, '变换未产生结果，请检查输入的基/坐标矩阵'
+            return True, result
 
         if operation_type == 'transform-2':
-            calc = _calculators['transform_2']()
             calc_type = data.get('type', 'find_matrix')
-            calc.compute(expression, calc_type)
-            return True, calc.get_steps_latex()
+            required = 3 if calc_type in (
+                'change_basis', 'basis_change', 'change_transform_basis') else 2
+            if calc_type not in (
+                'find_matrix', 'find_transform_matrix',
+                'change_basis', 'basis_change', 'change_transform_basis',
+            ):
+                return False, f'不支持的线性变换类型: {calc_type}'
+            lines = [line for line in expression.split('\n') if line.strip()]
+            if len(lines) < required:
+                return False, f'该变换需要至少 {required} 行矩阵输入'
+            calc = _calculators['transform_2']()
+            calc.compute('\n'.join(lines), calc_type)
+            result = calc.get_steps_latex()
+            if not result or result.replace(' ', '') == r'\begin{align}\end{align}':
+                return False, '变换未产生结果，请检查输入的变换/基矩阵'
+            return True, result
 
         if operation_type == 'expr':
             max_depth = int(data.get('max_depth', DEFAULT_PARSER_MAX_DEPTH))

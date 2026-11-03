@@ -52,7 +52,13 @@ class CommonMatrixCalculator(ABC):
         try:
             if isinstance(matrix_input, Matrix):
                 return matrix_input
-            return Matrix(sympify(matrix_input))
+            parsed = sympify(matrix_input)
+            if isinstance(parsed, dict):
+                raise ValueError('矩阵不能是字典/空集合')
+            matrix = Matrix(parsed)
+            if matrix.rows == 0 or matrix.cols == 0:
+                raise ValueError('矩阵不能为空')
+            return matrix
         except Exception as e:
             raise ValueError(
                 f"Unable to parse matrix input: {matrix_input}, Error: {str(e)}") from e
@@ -62,6 +68,8 @@ class CommonMatrixCalculator(ABC):
         try:
             if isinstance(vector_input, Matrix):
                 return vector_input
+            if isinstance(vector_input, dict):
+                raise ValueError('向量不能是字典/空集合')
             # Handle column vector format, e.g. '[[1],[2],[3]]'
             if vector_input.startswith('[[') and vector_input.endswith(']]'):
                 vector = Matrix(sympify(vector_input))
@@ -71,7 +79,11 @@ class CommonMatrixCalculator(ABC):
                 vector_str = vector_input.strip('[]')
                 elements = [sympify(x.strip())
                             for x in vector_str.split(',')]
+                if any(isinstance(item, dict) for item in elements):
+                    raise ValueError('向量元素不能是字典/集合')
                 vector = Matrix(elements)
+            if vector.rows == 0 or vector.cols == 0:
+                raise ValueError('向量不能为空')
             return vector
         except Exception as e:
             raise ValueError(

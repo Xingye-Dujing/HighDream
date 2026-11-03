@@ -210,6 +210,13 @@ def _replace_opnames(s: str) -> str:
     names keep their text so a matrix operator (``\\mathrm{rank}``) can still be
     recognized before this scalar parser is reached.
     """
+    # \operatorname{conjugate}(z) has no parse_latex spelling; overline does.
+    s = re.sub(
+        r'\\operatorname\s*\{\s*(?:conjugate|conj)\s*\}\s*\(([^()]*)\)',
+        r'\\overline{\1}',
+        s,
+    )
+
     def repl(match):
         name = match.group(1).strip()
         mapped = _OPNAME_MAP.get(name)
@@ -238,10 +245,10 @@ def _extract_abs_groups(s: str):
         groups[token] = inner
         return token
 
-    s = re.sub(r'\\left\|([^{}]*?)\\right\|', repl, s)
-    s = re.sub(r'\\operatorname\s*\{\s*abs\s*\}\s*\(([^{}]*?)\)', repl, s)
-    s = re.sub(r'(?<![A-Za-z\\])Abs\s*\(([^{}]*?)\)', repl, s)
-    s = re.sub(r'(?<![A-Za-z\\])abs\s*\(([^{}]*?)\)', repl, s)
+    s = re.sub(r'\\left\|([\s\S]*?)\\right\|', repl, s)
+    s = re.sub(r'\\operatorname\s*\{\s*abs\s*\}\s*\(([^()]*)\)', repl, s)
+    s = re.sub(r'(?<![A-Za-z\\])Abs\s*\(([^()]*)\)', repl, s)
+    s = re.sub(r'(?<![A-Za-z\\])abs\s*\(([^()]*)\)', repl, s)
     return s, groups
 
 
