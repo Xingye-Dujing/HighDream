@@ -1,5 +1,7 @@
 """Tests for MathLive LaTeX matrix -> nested-list conversion and matrix ops."""
 
+import pytest
+
 from routes.compute_service import start_compute, _dispatch_auto
 from utils.matrix_latex import latex_to_nested
 
@@ -7,6 +9,20 @@ from utils.matrix_latex import latex_to_nested
 def test_converter_bmatrix():
     s = r'\begin{bmatrix}1&2\\3&4\end{bmatrix}'
     assert latex_to_nested(s) == '[[1,2],[3,4]]'
+
+
+def test_converter_constants_and_functions_in_cells():
+    s = r'\begin{bmatrix}\pi&\frac{1}{2}\\\sqrt{2}&0\end{bmatrix}'
+    assert latex_to_nested(s) == '[[pi,1/2],[sqrt(2),0]]'
+
+
+def test_converter_rejects_empty_and_ragged_cells():
+    with pytest.raises(ValueError):
+        latex_to_nested(r'\begin{bmatrix}1&\\3&4\end{bmatrix}')
+    with pytest.raises(ValueError):
+        latex_to_nested(r'\begin{bmatrix}1&2\\3\end{bmatrix}')
+    with pytest.raises(ValueError):
+        latex_to_nested(r'\begin{bmatrix}\placeholder{}&2\\3&4\end{bmatrix}')
 
 
 def test_converter_pmatrix_and_latex_cells():

@@ -22,7 +22,21 @@ def test_operatorname_functions_are_kept():
     assert str(cached_sympify(r'\operatorname{re}(z)')) == 'Re(z)'
     assert cached_sympify(r'\operatorname{abs}(z)') == Abs(cached_sympify('z'))
     assert cached_sympify(r'\left|z\right|') == Abs(cached_sympify('z'))
+    assert cached_sympify(r'\left|\frac{1}{2}\right|') == cached_sympify('1/2')
+    assert cached_sympify(r'\operatorname{conjugate}(z)') == cached_sympify(r'\overline{z}')
     assert cached_sympify(r'\operatorname{Im}(z)').has(I) is False
+
+
+@pytest.mark.parametrize('expr', [
+    r'\frac{d}{dx}(x^{2})',
+    r'\int_{0}^{1} x^{2}\,dx',
+    r'\lim_{x\to 0}(\sin x/x)',
+    r'\sum_{n=1}^{3} n',
+    r'\prod_{n=1}^{3} n',
+])
+def test_structural_latex_parses(expr):
+    result = cached_sympify(expr)
+    assert result is not None
 
 
 def test_textbook_implicit_multiplication():
