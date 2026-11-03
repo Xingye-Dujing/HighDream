@@ -171,7 +171,8 @@ def plot_curve():
 
     Returns:
         JSON with success and points:[[x, y|null], ...] (null = asymptote/break),
-        plus ymin/ymax and an optional tangent object; plain numbers only.
+        plus ymin/ymax, an optional tangent object and approximate real roots
+        (``roots``: [{x, y}]) when the curve crosses / touches y=0; plain numbers only.
     """
     from utils.plot_data import sample_curve  # pylint: disable=import-outside-toplevel
 

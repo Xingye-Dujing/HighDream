@@ -9,6 +9,7 @@ overlay is computed from the same subs math. Pure (no Flask) so it is unit-testa
 """
 
 import math
+import re
 
 from sympy import Derivative, Expr, Float, Integral, Limit, N, Symbol
 
@@ -30,7 +31,7 @@ def _to_float(expr, var, xval):
 
 
 def _as_num(value):
-    """A plain int/float/numeric-string, else None (rejects symbols like \pi)."""
+    r"""A plain int/float/numeric-string, else None (rejects symbols like \pi)."""
     try:
         v = float(value)
     except (TypeError, ValueError):
@@ -39,79 +40,124 @@ def _as_num(value):
 
 
 def _eval_float(expr, var, xval):
+    """f(xval) as a finite float, else None. Numeric failures never escape."""
     try:
         val = expr.subs(var, Float(repr(xval)))
         f = float(N(val))
-        if not math.isfinite(f):
-            return None
-        return f
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, ArithmeticError, AttributeError):
         return None
+    return f if math.isfinite(f) else None
 
 
-def _find_numerical_roots(expr, var, lo, hi, max_roots=12, grid=400):
-    """Find approximate real roots of f(x)=0 in (lo, hi) by sign changes + linear approx."""
-    roots = []
-    if hi - lo < 1e-12:
-        return roots
-    fp = None
-    try:
-        fp = expr.diff(var)
-    except Exception:
-        fp = None
+def _find_numerical_roots(expr, var, lo, hi, *, max_roots=12, grid=400):
+    """Approximate the real roots of f(x)=0 on (lo, hi).
 
-    step = (hi - lo) / (grid - 1)
-    prev_x = lo
-    prev_f = _eval_float(expr, var, prev_x)
-    for i in range(1, grid):
+    A grid sweep brackets sign changes; each bracket is bisected to sub-pixel
+    width. A root of even multiplicity never changes sign, so it is caught as a
+    local dip of |f| and located by a golden-section search. Both acceptance
+    tests are RELATIVE to the curve's own magnitude: an absolute epsilon would
+    report every grid point of a uniformly small function (f = 1e-5) as a root,
+    and would miss a tangency whose dip does not land exactly on a grid point.
+    """
+    if not hi > lo:
+        return []
+    span = hi - lo
+    step = span / (grid - 1)
+    samples = []
+    for i in range(grid):
         x = lo + i * step
-        f = _eval_float(expr, var, x)
-        if prev_f is not None and f is not None:
-            if prev_f == 0.0:
-                roots.append(prev_x)
-            elif f == 0.0:
-                pass
-            elif prev_f * f < 0.0:
-                t = prev_f / (prev_f - f) if (prev_f - f) != 0 else 0.5
-                xr = prev_x + t * (x - prev_x)
-                for _ in range(8):
-                    f2 = _eval_float(expr, var, xr)
-                    if f2 is None:
-                        break
-                    if abs(f2) < 1e-9:
-                        break
-                    if fp is not None:
-                        fp2 = _eval_float(fp, var, xr)
-                        if fp2 is not None and abs(fp2) > 1e-12:
-                            xr_new = xr - f2 / fp2
-                            if not (lo - 1e-6 <= xr_new <= hi + 1e-6):
-                                break
-                            xr = xr_new
-                            continue
-                    break
-                if lo <= xr <= hi:
-                    fr2 = _eval_float(expr, var, xr)
-                    if fr2 is not None and abs(fr2) < 2e-3:
-                        roots.append(xr)
-            elif abs(f) < 3e-4:
-                roots.append(x)
-        prev_x, prev_f = x, f
+        samples.append((x, _eval_float(expr, var, x)))
 
-    out = []
-    for r in roots:
-        if not out or min(abs(r - o) for o in out) > 2e-3:
-            out.append(r)
-        if len(out) >= max_roots:
+    finite = [abs(f) for _, f in samples if f is not None]
+    if not finite:
+        return []
+    scale = max(finite)
+    if scale == 0.0:
+        # f vanishes across the whole window: report a single representative.
+        return [{'x': round(lo + span / 2, PLOT_COORD_DIGITS), 'y': 0.0}]
+    eps = scale * 1e-6
+
+    def _bisect(a, b, fa):
+        """|f| -> 0 on a bracket with fa*fb <= 0."""
+        for _ in range(24):
+            m = 0.5 * (a + b)
+            fm = _eval_float(expr, var, m)
+            if fm is None:
+                return None
+            if fm == 0.0 or abs(fm) <= 1e-12 * scale:
+                return m
+            if (fa < 0.0) == (fm < 0.0):
+                a, fa = m, fm
+            else:
+                b = m
+        return 0.5 * (a + b)
+
+    def _golden_min(a, b):
+        """Locate the local minimum of |f| inside [a, b] (derivative-free)."""
+        ratio = (math.sqrt(5.0) - 1.0) / 2.0
+        c = b - ratio * (b - a)
+        d = a + ratio * (b - a)
+        fc, fd = _eval_float(expr, var, c), _eval_float(expr, var, d)
+        if fc is None or fd is None:
+            return None
+        fc, fd = abs(fc), abs(fd)
+        for _ in range(24):
+            if fc < fd:
+                b, d, fd = d, c, fc
+                c = b - ratio * (b - a)
+                fc = _eval_float(expr, var, c)
+                if fc is None:
+                    return None
+                fc = abs(fc)
+            else:
+                a, c, fc = c, d, fd
+                d = a + ratio * (b - a)
+                fd = _eval_float(expr, var, d)
+                if fd is None:
+                    return None
+                fd = abs(fd)
+        return 0.5 * (a + b)
+
+    candidates = []
+    for i, (x, f) in enumerate(samples):
+        if f is None:
+            continue
+        if f == 0.0:
+            candidates.append(x)
+            continue
+        if i + 1 < grid:
+            xn, fn = samples[i + 1]
+            if fn is not None and (f < 0.0) != (fn < 0.0):
+                r = _bisect(x, xn, f)
+                if r is not None:
+                    candidates.append(r)
+        if 1 <= i < grid - 1:
+            xp, fp = samples[i - 1]
+            xn, fn = samples[i + 1]
+            if (fp is not None and fn is not None and abs(f) <= 0.01 * scale
+                    and abs(f) < abs(fp) and abs(f) < abs(fn)):
+                r = _golden_min(xp, xn)
+                if r is not None:
+                    candidates.append(r)
+
+    dedupe = max(0.5 * step, 1e-12)
+    picked = []
+    for r in candidates:
+        if any(abs(r - p) <= dedupe for p in picked):
+            continue
+        fr = _eval_float(expr, var, r)
+        if fr is None or abs(fr) > max(eps, 1e-9 * scale):
+            continue
+        picked.append(r)
+        if len(picked) >= max_roots:
             break
 
     res = []
-    for r in out:
+    for r in picked:
         yr = _eval_float(expr, var, r)
-        if yr is None:
-            yr = 0.0
         res.append({
             'x': round(r, PLOT_COORD_DIGITS),
-            'y': round(yr, PLOT_COORD_DIGITS),
+            'y': round(yr, PLOT_COORD_DIGITS) if yr is not None else 0.0,
         })
     return res
 
@@ -145,7 +191,10 @@ def sample_curve(data):
     if var is None:
         return {'success': False, 'error': '需要恰好一个自变量'}
     if expr.free_symbols - {var}:
-        return {'success': False, 'error': '存在多个自由符号, 无法作为单变量函数作图'}
+        hint = ''
+        if re.match(r'\s*\\?[A-Za-z][A-Za-z0-9]*\s*\(', expr_str):
+            hint = '；输入看起来是算子形式（如 diff(...)），作图请只填写函数本身，例如 x^2-1'
+        return {'success': False, 'error': '存在多个自由符号, 无法作为单变量函数作图' + hint}
 
     lo = _as_num(data.get('xmin', data.get('lower')))
     hi = _as_num(data.get('xmax', data.get('upper')))

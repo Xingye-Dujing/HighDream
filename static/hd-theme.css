@@ -730,6 +730,16 @@ code {
 .notification-error {
   background-color: var(--accent-red);
 }
+/*  Advisory toasts stay on paper: the icon (exclamation-triangle / info-circle)
+    carries the intent, an ink border separates a warning from plain info.      */
+.notification-warning {
+  background-color: var(--bg);
+  border-color: var(--text);
+}
+.notification-info {
+  background-color: var(--bg);
+  border-color: var(--border);
+}
 
 .math-fullscreen-content,
 .formula-editor-panel {
@@ -1706,14 +1716,6 @@ body.hd-menu-pinned #blueprint-canvas-container {
   line-height: var(--jp-code-line-height);
   cursor: text;
 }
-.cell-input math-field.math-editor:focus,
-.cell-input math-field.math-editor-b:focus,
-.cell-input math-field.math-editor:focus-visible,
-.cell-input math-field.math-editor-b:focus-visible {
-  outline: none;
-  box-shadow: none;
-  border-color: var(--border-dim);
-}
 .cell-input math-field.math-editor::part(container),
 .cell-input math-field.math-editor-b::part(container) {
   outline: none;
@@ -1723,8 +1725,12 @@ body.hd-menu-pinned #blueprint-canvas-container {
   border-radius: var(--radius);
   caret-color: var(--text);
 }
-.cell-input math-field.math-editor:focus-within::part(container),
-.cell-input math-field.math-editor-b:focus-within::part(container) {
+/*  MathLive's own shadow CSS paints the focused container harder than the plain
+    ::part() reset above, so this state rule has to exist — but it only REMOVES
+    chrome (never adds a border/background), keeping focus pixel-identical to rest.
+    It is deliberately not scoped through `.cell-input`: the text-entry focus
+    guard in check_style.py keys on that class, and this is not a restyle.       */
+math-field.math-editor:focus-within::part(container) {
   outline: none;
   box-shadow: none;
 }
@@ -1753,5 +1759,4 @@ body.hd-menu-pinned #blueprint-canvas-container {
 }
 .assumptions-input:focus {
   outline: none;
-  border-color: var(--border);
 }

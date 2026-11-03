@@ -705,7 +705,7 @@ function runSymPyCode(paragraph) {
   const code = textarea.value.trim();
 
   if (!code) {
-    showNotification('请输入 SymPy 代码', 'error');
+    showWarning('请输入 SymPy 代码');
     return;
   }
 
@@ -723,9 +723,9 @@ function runSymPyCode(paragraph) {
       if (data.success) {
         // If there is LaTeX result, prioritize displaying LaTeX
         if (data.latex) {
-          output.innerHTML = `$$${data.latex}$$<div style="font-size: 12px; color: var(--text-faint); margin-top: 8px;">${data.result}</div>`;
+          output.innerHTML = `$$${data.latex}$$<div style="font-size: 12px; color: var(--text-faint); margin-top: 8px;">${escapeHtml(data.result)}</div>`;
         } else {
-          output.innerHTML = data.result;
+          output.textContent = data.result;
         }
 
         if (window.MathJax) {
@@ -747,6 +747,7 @@ function runSymPyCode(paragraph) {
     })
     .catch((error) => {
       output.innerHTML = `<div class="error">错误: ${escapeHtml(error.message)}</div>`;
+      showError('请求失败，请检查服务是否在运行', error.message);
     });
 }
 
@@ -764,7 +765,7 @@ function renderLatex(paragraph) {
 
   if (window.MathJax) {
     MathJax.typesetPromise([render]).catch((err) => {
-      render.innerHTML = `<div class="error">LaTeX 渲染错误: ${err.message}</div>`;
+      render.innerHTML = `<div class="error">LaTeX 渲染错误: ${escapeHtml(err.message)}</div>`;
     });
   }
 }
@@ -783,7 +784,7 @@ function deleteActiveParagraph() {
   if (activeParagraph) {
     deleteParagraph(activeParagraph);
   } else {
-    showNotification('请先选择要删除的段落', 'error');
+    showWarning('请先选择要删除的段落');
   }
 }
 
@@ -809,7 +810,7 @@ function formatText(format) {
     textarea.focus();
     textarea.dispatchEvent(new Event('input'));
   } else {
-    showNotification('请先选择一个富文本段落', 'error');
+    showWarning('请先选择一个富文本段落');
   }
 }
 
@@ -822,7 +823,7 @@ function insertSymbol(symbol) {
       input.focus();
       input.dispatchEvent(new Event('input'));
     } else {
-      showNotification('请先选择一个 LaTeX 段落', 'error');
+      showWarning('请先选择一个 LaTeX 段落');
     }
   }
 }
@@ -836,7 +837,7 @@ function insertLatex(latex) {
       input.focus();
       input.dispatchEvent(new Event('input'));
     } else {
-      showNotification('请先选择一个 LaTeX 段落', 'error');
+      showWarning('请先选择一个 LaTeX 段落');
     }
   }
 }
@@ -865,7 +866,7 @@ function insertSymPyTemplate(type) {
       input.focus();
       input.dispatchEvent(new Event('input'));
     } else {
-      showNotification('请先选择一个 SymPy 段落', 'error');
+      showWarning('请先选择一个 SymPy 段落');
     }
   }
 }
@@ -921,7 +922,7 @@ function saveAsJson() {
   a.click();
   URL.revokeObjectURL(url);
 
-  showNotification('文档已保存为 JSON', 'success');
+  showSuccess('文档已保存为 JSON');
 }
 
 function loadDocument(e) {
@@ -957,9 +958,9 @@ function loadDocument(e) {
           paragraphCounter++;
         });
 
-        showNotification('文档加载成功', 'success');
+        showSuccess('文档加载成功');
       } catch (error) {
-        showNotification('JSON 解析错误', 'error');
+        showError('JSON 解析错误', error.message);
       }
     }
   };
@@ -1129,7 +1130,7 @@ function deleteParagraph(paragraph) {
     }
 
   } else {
-    showNotification('至少保留一个段落', 'error');
+    showWarning('至少保留一个段落');
   }
 }
 
@@ -1775,12 +1776,12 @@ function insertFormulaSymbol(latex) {
   const activeParagraph = document.querySelector('.paragraph.active');
 
   if (!activeParagraph) {
-    showNotification('请先选择一个LaTeX段落', 'error');
+    showWarning('请先选择一个LaTeX段落');
     return;
   }
 
   if (activeParagraph.dataset.paragraphType !== 'latex') {
-    showNotification('请选择一个LaTeX段落', 'error');
+    showWarning('请选择一个LaTeX段落');
     return;
   }
 

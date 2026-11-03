@@ -51,3 +51,39 @@ def test_tangent_overlay():
     assert abs(t['slope'] - 1.0) < 1e-9
     assert abs(t['y'] - 0.25) < 1e-9       # f(0.5)=0.25
     assert abs(t['y1'] - (0.25 + 1.0 * (-1 - 0.5))) < 1e-9
+
+
+def _root_xs(res):
+    return [r['x'] for r in res.get('roots', [])]
+
+
+def test_roots_are_bracketed_and_sorted():
+    res = sample_curve({'expression': 'x**2 - 1', 'variable': 'x', 'xmin': -2, 'xmax': 2})
+    xs = _root_xs(res)
+    assert len(xs) == 2
+    assert abs(xs[0] + 1.0) < 1e-3
+    assert abs(xs[1] - 1.0) < 1e-3
+
+
+def test_even_multiplicity_root_is_found_non_grid_aligned():
+    # Tangency between two grid points: no sign change, so it needs the |f| dip path.
+    res = sample_curve({'expression': '(x - 0.5)**2', 'variable': 'x', 'xmin': -2, 'xmax': 2})
+    xs = _root_xs(res)
+    assert len(xs) == 1
+    assert abs(xs[0] - 0.5) < 1e-2
+
+
+def test_no_roots_when_none_exist():
+    res = sample_curve({'expression': 'x**2 + 1', 'variable': 'x', 'xmin': -3, 'xmax': 3})
+    assert res.get('roots', []) == []
+
+
+def test_uniformly_small_function_is_not_all_roots():
+    # |f| < 3e-4 everywhere must not turn every grid point into a root.
+    res = sample_curve({'expression': '1/100000', 'variable': 'x', 'xmin': -10, 'xmax': 10})
+    assert res.get('roots', []) == []
+
+
+def test_asymptote_is_not_a_root():
+    res = sample_curve({'expression': '1/(x - 0.3)', 'variable': 'x', 'xmin': -2, 'xmax': 2})
+    assert res.get('roots', []) == []

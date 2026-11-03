@@ -1786,11 +1786,9 @@ function loadNotebookData(cells) {
     if (cellData.type === "code") {
       const textarea = cell.querySelector("textarea");
       const operationTypeSelect = cell.querySelector(".operation-type");
-      const varInputField = cell.querySelector(".var-input input");
 
       if (textarea) textarea.value = cellData.content || "";
       if (operationTypeSelect) operationTypeSelect.value = cellData.operationType || "diff";
-      if (varInputField) varInputField.value = cellData.variable || "x";
 
       // Restore assumptions (unconditional; older notebooks omit the key -> "").
       const assumptionsField = cell.querySelector(".assumptions-input");
@@ -1861,7 +1859,13 @@ function loadNotebookData(cells) {
     }
 
     notebook.appendChild(cell);
-    if (cellData.type === "code") applyInputMode(cell);
+    if (cellData.type === "code") {
+      applyInputMode(cell);
+      // applyInputMode re-seeds the variable with the operation's default, so the
+      // saved variable has to be written back last to survive the load.
+      const savedVar = cell.querySelector(".var-input input");
+      if (savedVar && cellData.variable) savedVar.value = cellData.variable;
+    }
   });
   cellCounter = cells.length;
   if (cells.length > 0) {
@@ -1900,27 +1904,76 @@ const AUTOSAVE_KEY = "highdream_autosave";
 const AUTOSAVE_TIME_KEY = "highdream_autosave_time";
 const AUTOSAVE_INTERVAL = 120000; // 2 minutes
 const AUTOSAVE_MAX_AGE_MIN = 60;
+const AUTOSAVE_TAB_ID = Math.random().toString(36).slice(2);
 
 let autoSaveTimer = null;
+let autoSaveChannel = null;
+try {
+  autoSaveChannel = new BroadcastChannel("highdream-autosave");
+  // Another tab in this browser owns a live notebook; its snapshot is not a
+  // crash recovery candidate for this tab.
+  autoSaveChannel.addEventListener("message", function (e) {
+    if (e.data && e.data.type === "ping") {
+      autoSaveChannel.postMessage({ type: "pong", id: AUTOSAVE_TAB_ID });
+    }
+  });
+} catch (e) {
+  autoSaveChannel = null;
+}
+
+function writeAutoSave() {
+  try {
+    const cells = getNotebookData();
+    if (cells.length > 0) {
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(cells));
+      localStorage.setItem(AUTOSAVE_TIME_KEY, new Date().toISOString());
+    }
+  } catch (e) {
+    console.warn("Auto-save failed:", e);
+  }
+}
 
 function setupAutoSave() {
   if (autoSaveTimer) {
     clearInterval(autoSaveTimer);
   }
-  autoSaveTimer = setInterval(function () {
-    try {
-      const cells = getNotebookData();
-      if (cells.length > 0) {
-        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(cells));
-        localStorage.setItem(AUTOSAVE_TIME_KEY, new Date().toISOString());
-      }
-    } catch (e) {
-      console.warn("Auto-save failed:", e);
-    }
-  }, AUTOSAVE_INTERVAL);
+  autoSaveTimer = setInterval(writeAutoSave, AUTOSAVE_INTERVAL);
+  // A 2-minute timer alone loses short sessions: snapshot on the way out too.
+  window.addEventListener("pagehide", writeAutoSave);
 }
 
-function loadAutoSave() {
+function otherNotebookTabAlive() {
+  return new Promise(function (resolve) {
+    if (!autoSaveChannel) {
+      resolve(false);
+      return;
+    }
+    let alive = false;
+    const onMessage = function (e) {
+      if (e.data && e.data.type === "pong" && e.data.id !== AUTOSAVE_TAB_ID) {
+        alive = true;
+      }
+    };
+    autoSaveChannel.addEventListener("message", onMessage);
+    try {
+      autoSaveChannel.postMessage({ type: "ping", id: AUTOSAVE_TAB_ID });
+    } catch (e) {
+      autoSaveChannel.removeEventListener("message", onMessage);
+      resolve(false);
+      return;
+    }
+    setTimeout(function () {
+      autoSaveChannel.removeEventListener("message", onMessage);
+      resolve(alive);
+    }, 250);
+  });
+}
+
+async function loadAutoSave() {
+  // Two open tabs would keep overwriting each other's snapshot; only the tab
+  // opened on its own (after a reload / restart) offers a restore.
+  if (await otherNotebookTabAlive()) return;
+
   let raw = null;
   try {
     raw = localStorage.getItem(AUTOSAVE_KEY);
@@ -1992,6 +2045,10 @@ function spawnCellFromSubtask(sub) {
   }
   const ta = cell.querySelector("textarea");
   if (ta) ta.value = sub.expression || "";
+  // Mirror the store into the visible editor first: applyInputMode (also run by the
+  // change handler above) re-seeds the variable with the operation default, so the
+  // parameters below have to be written afterwards.
+  applyInputMode(cell);
   const varInput = cell.querySelector(".var-input input");
   if (varInput && sub.variable) varInput.value = sub.variable;
   if (sub.op === "limit") {
@@ -2006,7 +2063,6 @@ function spawnCellFromSubtask(sub) {
     const l = cell.querySelector(".integral-lower");
     if (l) l.value = sub.lower || "";
   }
-  applyInputMode(cell);
   runCell(cell);
 }
 
@@ -2139,15 +2195,25 @@ function renderPlotSvg(data) {
     }
     if (Array.isArray(data.roots)) {
       const g = _plotSvgEl('g', { class: 'hd-plot-roots' });
+      let prevLabelX = -Infinity;
       data.roots.forEach((r) => {
         if (typeof r.x !== 'number') return;
         if (r.x < xmin || r.x > xmax) return;
         const cx = sx(r.x); const cy = sy(0);
         g.appendChild(_plotSvgEl('circle', { cx, cy, r: 3, class: 'hd-plot-root' }));
-        const tt = _plotSvgEl('text', { x: cx + 4, y: cy - 4, class: 'hd-plot-root-label' });
+        const labelX = cx + 4;
+        // Two nearby roots would print on top of each other: alternate the label
+        // above / below the axis whenever the previous one left no room.
+        const below = labelX - prevLabelX < 48;
+        const tt = _plotSvgEl('text', {
+          x: labelX,
+          y: below ? cy + 15 : cy - 6,
+          class: 'hd-plot-root-label'
+        });
         const rx = Math.abs(r.x) >= 1e3 || Math.abs(r.x) < 1e-3 ? r.x.toExponential(2) : r.x.toFixed(3);
         tt.textContent = '(' + rx.replace(/\.?0+e/, 'e') + ', 0)';
         g.appendChild(tt);
+        prevLabelX = labelX;
       });
       if (g.children.length) svg.appendChild(g);
     }
@@ -2175,14 +2241,10 @@ function renderPlotSvg(data) {
     redraw();
   }, { passive: false });
 
-  // Drag: pan.
+  // Drag: pan. Listeners live only for the duration of one drag so repeated
+  // plots (e.g. re-running a cell) do not pile up window handlers.
   let dragging = false; let lastX = 0; let lastY = 0;
-  svg.addEventListener('mousedown', (e) => {
-    dragging = true;
-    lastX = e.clientX; lastY = e.clientY;
-    svg.style.cursor = 'grabbing';
-  });
-  window.addEventListener('mousemove', (e) => {
+  const onMove = (e) => {
     if (!dragging) return;
     const rect = svg.getBoundingClientRect();
     const dx = (e.clientX - lastX) / rect.width * (xmax - xmin);
@@ -2191,12 +2253,21 @@ function renderPlotSvg(data) {
     ymin += dy; ymax += dy;
     lastX = e.clientX; lastY = e.clientY;
     redraw();
-  });
-  window.addEventListener('mouseup', () => {
-    if (dragging) {
-      dragging = false;
-      svg.style.cursor = 'grab';
-    }
+  };
+  const onUp = () => {
+    if (!dragging) return;
+    dragging = false;
+    svg.style.cursor = 'grab';
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+  };
+  svg.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    dragging = true;
+    lastX = e.clientX; lastY = e.clientY;
+    svg.style.cursor = 'grabbing';
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
   });
 
   // Double click: reset the view.
@@ -2281,10 +2352,9 @@ function attachStepLinks(outputArea, cell) {
       if (!data || !data.success || !Array.isArray(data.steps)) return;
       const box = document.createElement("div");
       box.className = "step-links";
-      box.style.cssText = "margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;";
       const title = document.createElement("span");
       title.textContent = "可继续计算的子式：";
-      title.style.cssText = "font-size:12px;color:#888;margin-right:4px;";
+      title.className = "step-links-title";
       box.appendChild(title);
       let count = 0;
       data.steps.forEach((st) => {
@@ -2294,11 +2364,14 @@ function attachStepLinks(outputArea, cell) {
           const btn = document.createElement("button");
           btn.className = "step-link-btn";
           btn.type = "button";
-          btn.style.cssText = "cursor:pointer;font-size:12px;padding:2px 8px;border:1px solid #ccc;border-radius:4px;background:#f7f7f7;";
-          const prefix = sub.op === "integral" ? "∫" : sub.op === "diff" ? ("d/d" + (sub.variable || "x")) : "lim";
+          // Subtasks do not always carry their variable: inherit the parent cell's,
+          // otherwise a t-based sub-expression would be differentiated w.r.t. x and
+          // collapse to 0 in the spawned cell.
+          const subWithVar = Object.assign({ variable: payload.variable }, sub);
+          const prefix = sub.op === "integral" ? "∫" : sub.op === "diff" ? ("d/d" + (subWithVar.variable || "x")) : "lim";
           btn.textContent = prefix + " " + sub.expression;
           btn.title = "在新单元格中计算此式";
-          btn.addEventListener("click", function () { spawnCellFromSubtask(sub); });
+          btn.addEventListener("click", function () { spawnCellFromSubtask(subWithVar); });
           box.appendChild(btn);
         });
       });

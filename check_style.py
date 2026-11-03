@@ -16,7 +16,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent
 
 # third-party / reference files that must not be edited
-SKIP_PARTS = {"mathjax", "fontawesome", "omm-planner.html"}
+SKIP_PARTS = {"mathjax", "mathlive", "fontawesome", "omm-planner.html"}
 
 BANNED = [
     (r"#000\b", "pure black hex"),
