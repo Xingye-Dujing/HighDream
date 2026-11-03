@@ -8,7 +8,9 @@ import re
 
 from sympy import Matrix, latex
 
+from core.common_matrix_calculator import CommonMatrixCalculator
 from utils.cache_utils import cached_sympify
+from utils.expression_utils import split_top_level
 
 
 # from IPython.display import Math, display
@@ -41,20 +43,7 @@ class MatrixCalculator:
             name, inner = call.group(1), call.group(2).strip()
             if inner == '':
                 return name
-            # split top-level commas (matrix brackets are nested)
-            parts, depth, cur = [], 0, ''
-            for ch in inner:
-                if ch in '([{':
-                    depth += 1
-                elif ch in ')]}':
-                    depth -= 1
-                if ch == ',' and depth == 0:
-                    parts.append(cur.strip())
-                    cur = ''
-                else:
-                    cur += ch
-            if cur.strip():
-                parts.append(cur.strip())
+            parts = split_top_level(inner, ',')
             return name + ' ' + ' '.join(parts)
         return s
 
@@ -72,7 +61,7 @@ class MatrixCalculator:
             ValueError: If the matrix expression cannot be parsed
         """
         try:
-            return Matrix(cached_sympify(matrix_str))
+            return CommonMatrixCalculator.parse_matrix_input(matrix_str)
         except Exception as e:
             raise ValueError(f"无法解析矩阵表达式: {matrix_str} \n 错误: {e}") from e
 

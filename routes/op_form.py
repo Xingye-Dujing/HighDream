@@ -22,7 +22,8 @@ from sympy import latex, sympify
 
 from utils.matrix_latex import latex_to_nested
 
-from .compute_service import _extract_paren_arg, _normalize_latex_ops, _split_top_args
+from core.latex_syntax import (_extract_paren_arg, _fold_matrix_ops,
+                               _normalize_latex_ops, _split_top_args)
 
 # operator name -> LaTeX display prefix for a single-matrix operand (bare prefix + matrix)
 _MAT_PREFIX = {
@@ -171,34 +172,6 @@ def latex_to_operator(expr):
     work = _normalize_latex_ops(latex_to_nested(expr))
     work = _fold_matrix_ops(work)
     return work.strip()
-
-
-_MAT = r'(\[\[.*?\]\])'  # one nested matrix (lazy; matrices never nest deeper here)
-
-
-def _fold_matrix_ops(s):
-    # unary suffix:  M^{-1} / M^{T} / M^{+}
-    s = re.sub(_MAT + r'\^\{?(-1|T|t|\+|\\top)\}?',
-               lambda m: '%s(%s)' % ({'-1': 'inverse', 'T': 'transpose', 't': 'transpose',
-                                      '+': 'pinv', '\\top': 'transpose'}[m.group(2)], m.group(1)),
-               s)
-    # \det M
-    s = re.sub(r'\\det\s*' + _MAT, lambda m: 'det(%s)' % m.group(1), s)
-    # \mathrm{name} M / \operatorname{name} M
-    s = re.sub(r'\\(?:mathrm|operatorname)\{(rank|rref|lu|diag|svd|singular|schur|eigen|orthogonalize|'
-               r'trace|tr|jordan|charpoly|nullspace|colspace|rowspace|inverse)\}\s*' + _MAT,
-               lambda m: '%s(%s)' % ('ref' if m.group(1) == 'rref' else
-                                     'trace' if m.group(1) == 'tr' else m.group(1), m.group(2)), s)
-    # bare "name M" (function name followed by whitespace then a matrix)
-    s = re.sub(r'\b(det|rank|rref|ref|lu|diag|svd|singular|schur|eigen|orthogonalize|'
-               r'gramschmidt|trace|tr|inverse)\s+' + _MAT,
-               lambda m: '%s(%s)' % ('trace' if m.group(1) == 'tr' else m.group(1), m.group(2)), s)
-    # binary:  M \cdot M / M * M -> multiply ; M - M -> subtract ; M + M -> add
-    s = re.sub(_MAT + r'\s*(?:\\cdot|\*)\s*' + _MAT,
-               lambda m: 'multiply(%s,%s)' % (m.group(1), m.group(2)), s)
-    s = re.sub(_MAT + r'\s*-\s*' + _MAT, lambda m: 'subtract(%s,%s)' % (m.group(1), m.group(2)), s)
-    s = re.sub(_MAT + r'\s*\+\s*' + _MAT, lambda m: 'add(%s,%s)' % (m.group(1), m.group(2)), s)
-    return s
 
 
 # Sniff the current representation: any MathLive LaTeX construct means "latex".

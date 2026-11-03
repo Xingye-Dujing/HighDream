@@ -7,6 +7,7 @@ from sympy.parsing.sympy_parser import (implicit_multiplication_application,
                                         parse_expr, standard_transformations)
 
 from config import LARGE_POWER_EXPONENT_DIGITS
+from utils.expression_utils import extract_paren_arg, find_matching_paren
 
 _HUGE_POWER_RE = re.compile(r'(?:\*\*|\^)\s*-?(\d+)')
 _LATEX_COMMAND_RE = re.compile(r'\\[a-zA-Z]')
@@ -63,6 +64,8 @@ _OPNAME_MAP = {
     'arccos': r'\arccos', 'arctan': r'\arctan',
 }
 _DIFF_D_RE = re.compile(r'\\mathrm\s*\{\s*d\s*\}')
+_CONJUGATE_RE = re.compile(
+    r'\\operatorname\s*\{\s*(?:conjugate|conj)\s*\}\s*\(([^()]*)\)')
 # parse_latex (1.13) turns \pi into Symbol('pi') instead of the constant pi.
 _CONST_SYMBOLS = {Symbol('pi'): pi}
 _UNFILLED_RES = (
@@ -91,15 +94,10 @@ _BARE_SQRT_RE = re.compile(r'(?<![A-Za-z\\])sqrt\s*\(')
 
 def _match_paren(s: str, open_idx: int):
     """Return (inner_text, index_after_close) for the '(' at open_idx, or (None, ...)."""
-    depth = 0
-    for i in range(open_idx, len(s)):
-        if s[i] == '(':
-            depth += 1
-        elif s[i] == ')':
-            depth -= 1
-            if depth == 0:
-                return s[open_idx + 1:i], i + 1
-    return None, len(s)
+    close = find_matching_paren(s, open_idx)
+    if close is None:
+        return None, len(s)
+    return extract_paren_arg(s, open_idx), close + 1
 
 
 _ATOM_NAME_RE = re.compile(r'[A-Za-z]+')
@@ -211,11 +209,7 @@ def _replace_opnames(s: str) -> str:
     recognized before this scalar parser is reached.
     """
     # \operatorname{conjugate}(z) has no parse_latex spelling; overline does.
-    s = re.sub(
-        r'\\operatorname\s*\{\s*(?:conjugate|conj)\s*\}\s*\(([^()]*)\)',
-        r'\\overline{\1}',
-        s,
-    )
+    s = _CONJUGATE_RE.sub(r'\\overline{\1}', s)
 
     def repl(match):
         name = match.group(1).strip()
@@ -228,6 +222,10 @@ def _replace_opnames(s: str) -> str:
 
 
 _ABS_TOKEN = 987654321
+_ABS_LEFT_RE = re.compile(r'\\left\|([\s\S]*?)\\right\|')
+_ABS_OP_RE = re.compile(r'\\operatorname\s*\{\s*abs\s*\}\s*\(([^()]*)\)')
+_ABS_CAP_RE = re.compile(r'(?<![A-Za-z\\])Abs\s*\(([^()]*)\)')
+_ABS_LOWER_RE = re.compile(r'(?<![A-Za-z\\])abs\s*\(([^()]*)\)')
 
 
 def _extract_abs_groups(s: str):
@@ -245,10 +243,10 @@ def _extract_abs_groups(s: str):
         groups[token] = inner
         return token
 
-    s = re.sub(r'\\left\|([\s\S]*?)\\right\|', repl, s)
-    s = re.sub(r'\\operatorname\s*\{\s*abs\s*\}\s*\(([^()]*)\)', repl, s)
-    s = re.sub(r'(?<![A-Za-z\\])Abs\s*\(([^()]*)\)', repl, s)
-    s = re.sub(r'(?<![A-Za-z\\])abs\s*\(([^()]*)\)', repl, s)
+    s = _ABS_LEFT_RE.sub(repl, s)
+    s = _ABS_OP_RE.sub(repl, s)
+    s = _ABS_CAP_RE.sub(repl, s)
+    s = _ABS_LOWER_RE.sub(repl, s)
     return s, groups
 
 

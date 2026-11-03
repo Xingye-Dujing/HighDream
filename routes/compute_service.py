@@ -10,10 +10,34 @@ and handles data processing, error handling, and result formatting.
 import re
 from typing import Any, Dict, Tuple
 
-from sympy import I, Symbol, preorder_traversal, latex
+from sympy import Symbol, preorder_traversal, latex
 
 from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
-from utils.cache_utils import cached_sympify, has_unfilled_placeholders
+from core.input_validation import (
+    looks_like_operator_input as _looks_like_operator_input,
+    normalize_matrix_input as _normalize_matrix_input,
+    normalize_scalar_input as _normalize_scalar_input,
+    user_error as _user_error,
+)
+from core.latex_syntax import (
+    _extract_paren_arg, _find_innermost_op, _fold_matrix_ops,
+    _iter_op_calls, _normalize_latex_ops, _split_top_args,
+)
+from core.matrix_ops import (
+    matrix_charpoly as _matrix_charpoly,
+    matrix_definiteness as _matrix_definiteness,
+    matrix_jordan as _matrix_jordan,
+    matrix_of as _matrix_of,
+    matrix_pinv as _matrix_pinv,
+    matrix_subspace as _matrix_subspace,
+    matrix_trace as _matrix_trace,
+)
+from core.operator_registry import (
+    _AUTO_DEFAULTS, _AUTO_FUNCS, _AUTO_MULTILINE_OPS, _AUTO_NAME_EXTRAS,
+    _AUTO_ROUTE_SKIP, _CALC_COMPOSABLE, _MATRIX_LATEX_OPS, _MATRIX_OP_NAMES,
+    _SQUARE_MATRIX_OPS, _TEXT_INPUT_OPS,
+)
+from utils.cache_utils import cached_sympify
 from utils.matrix_latex import latex_to_nested
 from utils.assumptions import parse_assumption_flags
 from domains import (
@@ -25,15 +49,6 @@ from domains import (
     VectorProjectionSolver, LinearDependence, LinearTransform,
     LinearSystemConverter, LinearSystemSolver, BaseTransform
 )
-
-# Operation types that accept MathLive LaTeX matrices (bmatrix/pmatrix). The
-# converter is a no-op for plain-text input, so all linear-algebra ops are listed.
-_MATRIX_LATEX_OPS = {
-    'ref', 'operations', 'invert', 'rank', 'LU', 'diag', 'svd', 'singular',
-    'eigen', 'schur', 'det', 'orthogonal', 'projection', 'dependence',
-    'linear-system', 'linear-solver', 'transform-1', 'transform-2', 'matrix_symbolic',
-    'trace', 'nullspace', 'colspace', 'rowspace', 'pinv', 'jordan', 'definiteness', 'charpoly',
-}
 
 # Cached calculator variants used when use_cache or record_cache is set
 _cached_calculators = {
@@ -118,145 +133,6 @@ def _diff_steps_latex(expr_str, var, order=1):
     return gen.to_latex(), value
 
 
-def _matrix_of(expression):
-    from core.common_matrix_calculator import CommonMatrixCalculator  # pylint: disable=import-outside-toplevel
-    return CommonMatrixCalculator.parse_matrix_input(expression)
-
-
-def _matrix_trace(expression):
-    """tr(A) = sum of the main diagonal, shown as its own step."""
-    try:
-        mat = _matrix_of(expression)
-        total = mat.trace()
-        diag = [mat[i, i] for i in range(min(mat.rows, mat.cols))]
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        return False, f'矩阵解析失败: {exc}'
-    diag_latex = ' + '.join(latex(d) for d in diag) if diag else '0'
-    lines = ['& ' + latex(mat),
-             r'&= ' + diag_latex + r' \quad \text{对角线元素之和}',
-             r'&= \boxed{' + latex(total) + r'}']
-    return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
-
-
-def _matrix_subspace(expression, kind):
-    """Row/column/null space via reduced row echelon form, shown step by step."""
-    try:
-        mat = _matrix_of(expression)
-        rref_mat, pivots = mat.rref()
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        return False, f'矩阵解析失败: {exc}'
-    title = {'nullspace': '零空间 N(A)', 'colspace': '列空间 C(A)', 'rowspace': '行空间 R(A)'}[kind]
-    pivot_latex = ', '.join(str(p + 1) for p in pivots) if pivots else '无'
-    lines = ['& ' + latex(mat),
-             r'&= ' + latex(rref_mat) + r' \quad \text{行最简形, 主元在第 } ' + pivot_latex + r' \text{ 列}']
-    if kind == 'nullspace':
-        basis = mat.nullspace()
-    elif kind == 'rowspace':
-        basis = [rref_mat.row(i).T for i in range(rref_mat.rows)
-                 if any(not rref_mat[i, j].is_zero for j in range(rref_mat.cols))]
-    else:  # colspace: pivot columns of the ORIGINAL matrix
-        basis = [mat.col(p) for p in pivots]
-    for vec in basis:
-        lines.append(r'&\rightarrow\ ' + latex(vec))
-    lines.append(r'&\quad \text{' + title + ' 的一组基如上' +
-                 (f', 维数 = {len(basis)}' if basis else ', 维数 = 0') + '}')
-    return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
-
-
-def _matrix_pinv(expression):
-    """Moore-Penrose pseudoinverse, via the full-rank normal-equation formulas when
-    applicable (shown step by step) or the general ``Matrix.pinv()`` when rank-deficient."""
-    from sympy import simplify  # pylint: disable=import-outside-toplevel
-    try:
-        mat = _matrix_of(expression)
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        return False, f'矩阵解析失败: {exc}'
-    rank, rows, cols = mat.rank(), mat.rows, mat.cols
-    lines = ['& ' + latex(mat)]
-    if rank == cols and cols <= rows:  # full column rank
-        ata = simplify(mat.T * mat)
-        lines.append(r'&\Rightarrow A^{T}A = ' + latex(ata)
-                     + r' \quad \text{列满秩: } A^{+}=(A^{T}A)^{-1}A^{T}')
-        pinv_mat = simplify(ata.inv() * mat.T)
-    elif rank == rows and rows <= cols:  # full row rank
-        aat = simplify(mat * mat.T)
-        lines.append(r'&\Rightarrow AA^{T} = ' + latex(aat)
-                     + r' \quad \text{行满秩: } A^{+}=A^{T}(AA^{T})^{-1}')
-        pinv_mat = simplify(mat.T * aat.inv())
-    else:
-        pinv_mat = mat.pinv()
-        lines.append(r'& \quad \text{秩亏, 由 Moore-Penrose 定义(SVD/降阶)求伪逆}')
-    lines.append(r'&= \boxed{' + latex(pinv_mat) + '}')
-    return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
-
-
-def _matrix_jordan(expression):
-    """Jordan normal form A = P J P^{-1}: eigenvalues, the Jordan form J and P."""
-    from sympy import simplify  # pylint: disable=import-outside-toplevel
-    try:
-        mat = _matrix_of(expression)
-        p_mat, j_mat = mat.jordan_form()
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        return False, f'Jordan 标准形失败(可能含无法解析的符号特征值): {exc}'
-    j_mat = simplify(j_mat)
-    lines = [
-        '& ' + latex(mat) + r' \quad \text{矩阵 } A',
-        r'&= P J P^{-1} \quad \text{Jordan 分解}',
-        r'& J = ' + latex(j_mat) + r' \quad \text{(对角块为 Jordan 块 } \lambda I + N\text{)}',
-        r'& P = ' + latex(simplify(p_mat)) + r' \quad \text{(列向量为特征/广义特征向量)}',
-    ]
-    return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
-
-
-def _matrix_definiteness(expression):
-    """Sylvester criterion: classify A by its leading principal minors."""
-    from sympy import simplify  # pylint: disable=import-outside-toplevel
-    try:
-        mat = _matrix_of(expression)
-        if mat.rows != mat.cols:
-            return False, '正定/负定判定要求方阵'
-        minors = [simplify(mat[:k, :k].det()) for k in range(1, mat.rows + 1)]
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        return False, f'矩阵解析失败: {exc}'
-    lines = ['& ' + latex(mat) + r' \quad \text{实对称矩阵 } A']
-    for k, delta in enumerate(minors, start=1):
-        lines.append(r'& \Delta_{' + str(k) + r'} = ' + latex(delta) + r'\quad \text{顺序主子式}')
-    signs = [getattr(d, 'is_positive', None) for d in minors]
-    if all(s is True for s in signs):
-        verdict = '正定 (所有顺序主子式均大于 0)'
-    elif signs and signs[0] is False and all(signs[i] is (i % 2 == 1) for i in range(len(signs))):
-        verdict = '负定 (顺序主子式符号交替, 与 (-1)^k 同号)'
-    elif None in signs:
-        verdict = '无法判定 (含未定符号的主子式)'
-    elif all(s is not False for s in signs):
-        verdict = '半正定/不定 (存在退化的顺序主子式, 建议结合特征值)'
-    else:
-        verdict = '不定 (不满足正定或负定条件)'
-    lines.append(r'& \Rightarrow \boxed{\text{' + verdict + r'}}')
-    return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
-
-
-def _matrix_charpoly(expression):
-    """Characteristic polynomial det(A - lambda I), expanded and factored."""
-    from sympy import eye, expand, factor  # pylint: disable=import-outside-toplevel
-    try:
-        mat = _matrix_of(expression)
-        if mat.rows != mat.cols:
-            return False, '特征多项式要求方阵'
-        lam = Symbol('lambda')
-        char = (mat - lam * eye(mat.rows)).det()
-        expanded = expand(char)
-        factored = factor(expanded)
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        return False, f'特征多项式失败: {exc}'
-    lines = [
-        '& ' + latex(mat) + r' \quad \text{方阵 } A',
-        r'& p(\lambda)=\det(A-\lambda I) = ' + latex(expanded) + r'\quad \text{按行列式展开}',
-        r'&= ' + latex(factored) + r'\quad \text{因式分解}, \text{ 令 } p(\lambda)=0 \text{ 得特征值}',
-    ]
-    return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
-
-
 def _dispatch_calculus(expression: str):
     """Auto-route a combined calculus expression by its top-level operator.
 
@@ -313,206 +189,6 @@ def _dispatch_calculus(expression: str):
     return True, r'\begin{align}' + latex(simplify(obj)) + r'\end{align}'
 
 
-def _extract_paren_arg(text: str, open_idx: int):
-    """Return the substring inside the balanced parentheses starting at open_idx."""
-    depth = 0
-    for i in range(open_idx, len(text)):
-        if text[i] == '(':
-            depth += 1
-        elif text[i] == ')':
-            depth -= 1
-            if depth == 0:
-                return text[open_idx + 1:i]
-    return None
-
-
-def _split_top_args(argstr: str):
-    """Split a function argument string on top-level commas (paren/bracket aware)."""
-    args, depth, cur = [], 0, ''
-    for ch in argstr:
-        if ch in '([{':
-            depth += 1
-        elif ch in ')]}':
-            depth -= 1
-        if ch == ',' and depth == 0:
-            args.append(cur.strip())
-            cur = ''
-        else:
-            cur += ch
-    if cur.strip():
-        args.append(cur.strip())
-    return args
-
-
-# name -> (operation_type, ordered data fields). Args fill the fields positionally;
-# 'variable'/'direction'/'type'/'operations'/'target_form' fall back to defaults.
-_AUTO_FUNCS = {
-    # calculus
-    'diff': ('diff', ['expression', 'variable', 'order']),
-    'derivative': ('diff', ['expression', 'variable', 'order']),
-    'd': ('diff', ['expression', 'variable', 'order']),
-    'int': ('integral', ['expression', 'variable', 'lower', 'upper']),
-    'integrate': ('integral', ['expression', 'variable', 'lower', 'upper']),
-    'limit': ('limit', ['expression', 'variable', 'point', 'direction']),
-    'sum': ('finite_sum', ['expression', 'variable', 'lower', 'upper']),
-    'fsum': ('finite_sum', ['expression', 'variable', 'lower', 'upper']),
-    'prod': ('finite_product', ['expression', 'variable', 'lower', 'upper']),
-    'product': ('finite_product', ['expression', 'variable', 'lower', 'upper']),
-    'series': ('series_convergence', ['expression', 'variable']),
-    'converge': ('series_convergence', ['expression', 'variable']),
-    'taylor': ('taylor', ['expression', 'variable', 'point', 'order']),
-    'maclaurin': ('taylor', ['expression', 'variable', 'point', 'order']),
-    'taylorerror': ('taylor_error', ['expression', 'variable', 'point', 'order']),
-    'radius': ('radius_of_convergence', ['expression', 'variable']),
-    'radiusofconvergence': ('radius_of_convergence', ['expression', 'variable']),
-    'powerseries': ('power_series', ['expression', 'variable', 'point']),
-    'improper': ('improper_integral', ['expression', 'variable', 'lower', 'upper']),
-    'improperintegral': ('improper_integral', ['expression', 'variable', 'lower', 'upper']),
-    'iterated': ('iterated_integral', ['expression', 'variable', 'variable2', 'lower', 'upper', 'lower2', 'upper2']),
-    'doubleintegral': ('iterated_integral', ['expression', 'variable', 'variable2', 'lower', 'upper', 'lower2', 'upper2']),
-    'tripleintegral': ('triple_integral', ['expression', 'variable', 'variable2', 'variable3',
-                                           'lower', 'upper', 'lower2', 'upper2', 'lower3', 'upper3']),
-    'triple': ('triple_integral', ['expression', 'variable', 'variable2', 'variable3',
-                                   'lower', 'upper', 'lower2', 'upper2', 'lower3', 'upper3']),
-    'changeorder': ('changeorder', ['expression', 'variable', 'variable2',
-                                    'lower', 'upper', 'lower2', 'upper2']),
-    'cylindrical': ('cylindrical', ['expression', 'lower', 'upper', 'lower2', 'upper2', 'lower3', 'upper3']),
-    'spherical': ('spherical', ['expression', 'lower', 'upper', 'lower2', 'upper2', 'lower3', 'upper3']),
-    'changeorderofintegration': ('changeorder', ['expression', 'variable', 'variable2',
-                                                  'lower', 'upper', 'lower2', 'upper2']),
-    # applications of differentiation / integration
-    'tangent': ('tangent', ['expression', 'variable', 'point']),
-    'linearization': ('linearization', ['expression', 'variable', 'point']),
-    'linearize': ('linearization', ['expression', 'variable', 'point']),
-    'critical': ('critical_points', ['expression', 'variable']),
-    'extrema': ('critical_points', ['expression', 'variable']),
-    'newton': ('newton', ['expression', 'variable', 'point', 'order']),
-    'bisection': ('bisection', ['expression', 'variable', 'lower', 'upper', 'order']),
-    'secant': ('secant', ['expression', 'variable', 'point', 'x1', 'order']),
-    'fixedpoint': ('fixed_point', ['expression', 'variable', 'point', 'order']),
-    'iterate': ('fixed_point', ['expression', 'variable', 'point', 'order']),
-    'meanvalue': ('mean_value', ['expression', 'variable', 'lower', 'upper']),
-    'rolle': ('mean_value', ['expression', 'variable', 'lower', 'upper']),
-    'arclength': ('arc_length', ['expression', 'variable', 'lower', 'upper']),
-    'volume': ('volume_disk', ['expression', 'variable', 'lower', 'upper']),
-    'disk': ('volume_disk', ['expression', 'variable', 'lower', 'upper']),
-    'shell': ('volume_shell', ['expression', 'variable', 'lower', 'upper']),
-    'surface': ('surface_area', ['expression', 'variable', 'lower', 'upper']),
-    'implicit': ('implicit_diff', ['expression', 'variable']),
-    'parametric': ('parametric_diff', ['expression', 'variable']),
-    'polararea': ('polar_area', ['expression', 'variable', 'lower', 'upper']),
-    'polarslope': ('polar_slope', ['expression', 'variable']),
-    'grad': ('gradient', ['expression', 'variable']),
-    'gradient': ('gradient', ['expression', 'variable']),
-    'hessian': ('hessian', ['expression', 'variable', 'variable2']),
-    'jacobian': ('jacobian', ['expression', 'variable']),
-    'directional': ('directional', ['expression', 'direction']),
-    'directionalderivative': ('directional', ['expression', 'direction']),
-    'curl': ('curl', ['expression', 'variable']),
-    'div': ('divergence', ['expression', 'variable']),
-    'divergence': ('divergence', ['expression', 'variable']),
-    'lagrange': ('lagrange', ['expression', 'variable']),
-    'lagrangemultiplier': ('lagrange', ['expression', 'variable']),
-    'lineint': ('line_integral', ['expression', 'curve', 'variable', 'lower', 'upper']),
-    'lineintegral': ('line_integral', ['expression', 'curve', 'variable', 'lower', 'upper']),
-    'lineint2': ('line_integral2', ['expression', 'curve', 'variable', 'lower', 'upper']),
-    'work': ('line_integral2', ['expression', 'curve', 'variable', 'lower', 'upper']),
-    'surfint': ('surface_integral', ['expression', 'surface', 'variable', 'variable2',
-                                     'lower', 'upper', 'lower2', 'upper2']),
-    'surfaceintegral': ('surface_integral', ['expression', 'surface', 'variable', 'variable2',
-                                             'lower', 'upper', 'lower2', 'upper2']),
-    'flux': ('flux', ['expression', 'surface', 'variable', 'variable2',
-                      'lower', 'upper', 'lower2', 'upper2']),
-    'ode': ('ode', ['expression', 'variable']),
-    'dsolve': ('ode', ['expression', 'variable']),
-    'numerical': ('numerical_integration', ['expression', 'variable', 'lower', 'upper', 'order']),
-    'numericalintegration': ('numerical_integration', ['expression', 'variable', 'lower', 'upper', 'order']),
-    'simpson': ('numerical_integration', ['expression', 'variable', 'lower', 'upper', 'order']),
-    'trapezoid': ('numerical_integration', ['expression', 'variable', 'lower', 'upper', 'order']),
-    # numerical IVP solvers: euler(rhs, x, x0, y0, x_end, steps)
-    'euler': ('euler', ['expression', 'variable', 'point', 'yvalue', 'target', 'steps']),
-    'heun': ('heun', ['expression', 'variable', 'point', 'yvalue', 'target', 'steps']),
-    'improvedeuler': ('heun', ['expression', 'variable', 'point', 'yvalue', 'target', 'steps']),
-    'rk4': ('rk4', ['expression', 'variable', 'point', 'yvalue', 'target', 'steps']),
-    'rungekutta': ('rk4', ['expression', 'variable', 'point', 'yvalue', 'target', 'steps']),
-    # complex
-    'complex': ('complex_simplify', ['expression']),
-    'complexsimplify': ('complex_simplify', ['expression']),
-    'complexpolar': ('complex_polar', ['expression']),
-    'complexroots': ('complex_roots', ['expression', 'variable']),
-    'nthroots': ('complex_nth_roots', ['expression', 'order']),
-    'complexnthroots': ('complex_nth_roots', ['expression', 'order']),
-    'rootsunity': ('complex_nth_roots', ['expression', 'order']),
-    'demoivre': ('de_moivre', ['expression', 'order']),
-    # linear algebra
-    'det': ('det', ['expression']), 'determinant': ('det', ['expression']),
-    'rank': ('rank', ['expression']),
-    'trace': ('trace', ['expression']),
-    'tr': ('trace', ['expression']),
-    'pinv': ('pinv', ['expression']), 'pseudoinverse': ('pinv', ['expression']),
-    'jordan': ('jordan', ['expression']), 'jordanform': ('jordan', ['expression']),
-    'definite': ('definiteness', ['expression']), 'isdefinite': ('definiteness', ['expression']),
-    'sylvestar': ('definiteness', ['expression']),
-    'charpoly': ('charpoly', ['expression']), 'characteristic': ('charpoly', ['expression']),
-    'nullspace': ('nullspace', ['expression']), 'nullity': ('nullspace', ['expression']),
-    'colspace': ('colspace', ['expression']), 'columnspace': ('colspace', ['expression']),
-    'rowspace': ('rowspace', ['expression']),
-    'inverse': ('invert', ['expression']), 'inv': ('invert', ['expression']),
-    'transpose': ('operations', ['expression']),
-    'rref': ('ref', ['expression']), 'ref': ('ref', ['expression']), 'rowreduce': ('ref', ['expression']),
-    'eigen': ('eigen', ['expression']), 'eigenvals': ('eigen', ['expression']),
-    'eigenvects': ('eigen', ['expression']),
-    'svd': ('svd', ['expression']), 'singular': ('svd', ['expression']),
-    'schur': ('schur', ['expression']),
-    'lu': ('LU', ['expression']),
-    'diag': ('diag', ['expression']), 'diagonalize': ('diag', ['expression']),
-    'orthogonal': ('orthogonal', ['expression']), 'orthogonalize': ('orthogonal', ['expression']),
-    'gramschmidt': ('orthogonal', ['expression']),
-    'dependent': ('dependence', ['expression']), 'dependence': ('dependence', ['expression']),
-    'project': ('projection', ['expression']), 'projection': ('projection', ['expression']),
-    # symbolic / expression
-    'simplify': ('expr', ['expression']), 'expand': ('expr', ['expression']),
-    'factor': ('expr', ['expression']), 'equivalent': ('expr', ['expression']),
-    'msimplify': ('matrix_symbolic', ['expression']),
-    'matrixsimplify': ('matrix_symbolic', ['expression']),
-    'symmatrix': ('matrix_symbolic', ['expression']),
-    # matrix arithmetic via the universal box (two matrix args joined by newline)
-    'add': ('operations', []), 'subtract': ('operations', []), 'minus': ('operations', []),
-    'multiply': ('operations', []), 'matmul': ('operations', []),
-}
-
-# op -> fixed extra data fields the calculators require.
-_AUTO_DEFAULTS = {
-    'det': {'type': '1'}, 'ref': {'target_form': 'rref'}, 'svd': {},
-    'expr': {'sort_strategy': 'simplify'},
-}
-
-# Ops whose calculators read a single ``expression`` holding several matrices /
-# vectors separated by newlines: every function argument is joined with '\n'.
-_AUTO_MULTILINE_OPS = {
-    'operations', 'projection', 'dependence', 'orthogonal',
-}
-
-# Function name -> fixed data fields that the name itself decides.
-_AUTO_NAME_EXTRAS = {
-    'add': {'operations': '+'}, 'subtract': {'operations': '-'}, 'minus': {'operations': '-'},
-    'multiply': {'operations': '*'}, 'matmul': {'operations': '*'},
-    'transpose': {'operations': 'transpose'},
-}
-
-# Matrix-function names that may appear bare (e.g. \det [[1,2],[3,4]]).
-_MATRIX_OP_NAMES = {
-    'det', 'determinant', 'rank', 'inverse', 'inv', 'rref', 'ref', 'rowreduce',
-    'eigen', 'eigenvals', 'eigenvects', 'svd', 'singular', 'schur', 'lu', 'diag',
-    'diagonalize', 'orthogonal', 'orthogonalize', 'gramschmidt', 'dependent',
-    'dependence', 'project', 'projection', 'transpose',
-    'trace', 'tr', 'nullspace', 'nullity', 'colspace', 'columnspace', 'rowspace',
-    'pinv', 'pseudoinverse', 'jordan', 'jordanform',
-    'definite', 'isdefinite', 'sylvestar',
-    'charpoly', 'characteristic',
-}
-
-
 # ---------------------------------------------------------------------------
 # Universal-box RECURSIVE compound evaluation.
 #
@@ -528,255 +204,6 @@ _MATRIX_OP_NAMES = {
 # ---------------------------------------------------------------------------
 
 _COMPOUND_MAX_STEPS = 64
-_OP_CALL_RX = re.compile(r'(?<![A-Za-z_\\])([A-Za-z][A-Za-z0-9]*)\s*\(')
-
-
-def _paren_close_index(text, open_idx):
-    """Index of the ')' matching the '(' at ``open_idx`` (balanced), else None."""
-    depth = 0
-    for i in range(open_idx, len(text)):
-        if text[i] == '(':
-            depth += 1
-        elif text[i] == ')':
-            depth -= 1
-            if depth == 0:
-                return i
-    return None
-
-
-def _grab_balanced_paren(text, search_from):
-    """If a balanced ``(...)`` group starts at/after ``search_from`` (only spaces
-    skipped), return ``(inner, end_idx_after_close)``; else ``(None, search_from)``."""
-    i = search_from
-    while i < len(text) and text[i] == ' ':
-        i += 1
-    if i >= len(text) or text[i] != '(':
-        return None, search_from
-    close = _paren_close_index(text, i)
-    if close is None:
-        return None, search_from
-    return text[i + 1:close], close + 1
-
-
-def _iter_op_calls(text):
-    """All ``name(...)`` calls whose ``name`` is a supported operator, in order.
-
-    Each entry: name/start/open/end/inner/raw. Unknown names (sin, exp, foo) are
-    intentionally NOT treated as operators so they flow through as plain functions.
-    """
-    calls = []
-    for match in _OP_CALL_RX.finditer(text):
-        name = match.group(1).lower()
-        if name not in _AUTO_FUNCS:
-            continue
-        open_idx = match.end() - 1
-        close = _paren_close_index(text, open_idx)
-        if close is None:
-            continue
-        calls.append({'name': name, 'start': match.start(), 'open': open_idx,
-                      'end': close + 1, 'inner': text[open_idx + 1:close],
-                      'raw': text[match.start():close + 1]})
-    return calls
-
-
-def _find_innermost_op(text):
-    """The first operator call whose arguments contain no further operator call.
-
-    Innermost-first resolution guarantees each engine call receives fully
-    resolved, operator-free arguments."""
-    calls = _iter_op_calls(text)
-    for call in calls:
-        if not _iter_op_calls(call['inner']):
-            return call
-    return calls[0] if calls else None
-
-
-def _normalize_latex_ops(text):
-    """Rewrite the LaTeX operator forms the MathLive keyboard emits into the
-    functional ``name(args)`` form the compound scanner understands. Each operator's
-    parenthesized body (and an integral's trailing ``dX``) is CONSUMED so it is not
-    duplicated. Unrecognized spellings are left untouched (handled in a later phase).
-    Bodies are normalized recursively so nested operators convert too."""
-    return _nl_limit(_nl_integral(_nl_partial(_nl_diff(_nl_product(_nl_sum(text))))))
-
-
-def _nl_sum(src):
-    """``\\sum_{var=low}^{high} (BODY)`` -> ``sum(BODY, var, low, high)``."""
-    out, i = [], 0
-    pat = re.compile(r'\\sum\s*_\{([^{}]*?)\}(?:\s*\^\{([^{}]*)\})?')
-    while True:
-        match = pat.search(src, i)
-        if not match:
-            out.append(src[i:])
-            break
-        sub = match.group(1)
-        high = (match.group(2) or '').strip()
-        mvar = re.match(r'\s*(\w+)\s*=\s*(.+)', sub)
-        var = mvar.group(1) if mvar else (sub.strip() or 'n')
-        low = mvar.group(2).strip() if mvar else ''
-        body, after = _grab_balanced_paren(src, match.end())
-        if body is None:
-            out.append(src[i:match.end()])
-            i = match.end()
-            continue
-        out.append(src[i:match.start()])
-        nb = _normalize_latex_ops(body)
-        if high != '':
-            out.append(rf'sum({nb},{var},{low or 1},{high})')
-        else:
-            out.append(rf'sum({nb},{var})')
-        i = after
-    return ''.join(out)
-
-
-def _nl_product(src):
-    """``\\prod_{var=low}^{high} (BODY)`` -> ``prod(BODY, var, low, high)``."""
-    out, i = [], 0
-    pat = re.compile(r'\\prod\s*_\{([^{}]*?)\}(?:\s*\^\{([^{}]*)\})?')
-    while True:
-        match = pat.search(src, i)
-        if not match:
-            out.append(src[i:])
-            break
-        sub = match.group(1)
-        high = (match.group(2) or '').strip()
-        mvar = re.match(r'\s*(\w+)\s*=\s*(.+)', sub)
-        var = mvar.group(1) if mvar else (sub.strip() or 'n')
-        low = mvar.group(2).strip() if mvar else ''
-        body, after = _grab_balanced_paren(src, match.end())
-        if body is None:
-            out.append(src[i:match.end()])
-            i = match.end()
-            continue
-        out.append(src[i:match.start()])
-        nb = _normalize_latex_ops(body)
-        if high != '':
-            out.append(rf'prod({nb},{var},{low or 1},{high})')
-        else:
-            out.append(rf'prod({nb},{var})')
-        i = after
-    return ''.join(out)
-
-
-def _nl_diff(src):
-    """``\\frac{d}{dX}`` / ``\\frac{d^{n}}{dX^{n}}`` + ``(BODY)`` -> ``diff(BODY, X[, n])``."""
-    out, i = [], 0
-    pat = re.compile(r'\\frac\{d(?:\^\{?(\w+)\}?)?\}\{d\s*(\w)\}')
-    while True:
-        match = pat.search(src, i)
-        if not match:
-            out.append(src[i:])
-            break
-        body, after = _grab_balanced_paren(src, match.end())
-        if body is None:
-            out.append(src[i:match.end()])
-            i = match.end()
-            continue
-        out.append(src[i:match.start()])
-        order, var = match.group(1), match.group(2)
-        tail = rf',{order}' if order else ''
-        out.append(rf'diff({_normalize_latex_ops(body)},{var}{tail})')
-        i = after
-    return ''.join(out)
-
-
-def _nl_partial(src):
-    """``\\partial_{X} (BODY)`` -> ``diff(BODY, X)``."""
-    out, i = [], 0
-    pat = re.compile(r'\\partial\s*_\s*\{?(\w)\}?')
-    while True:
-        match = pat.search(src, i)
-        if not match:
-            out.append(src[i:])
-            break
-        body, after = _grab_balanced_paren(src, match.end())
-        if body is None:
-            out.append(src[i:match.end()])
-            i = match.end()
-            continue
-        out.append(src[i:match.start()])
-        out.append(rf'diff({_normalize_latex_ops(body)},{match.group(1)})')
-        i = after
-    return ''.join(out)
-
-
-def _nl_integral(src):
-    """``\\int [_{a}] [^{b}] (BODY) \\, dX`` -> ``int(BODY, X[, a, b])``."""
-    out, i = [], 0
-    pat = re.compile(r'\\int(?![A-Za-z])(?:\s*_\{([^{}]*)\})?(?:\s*\^\{([^{}]*)\})?')
-    while True:
-        match = pat.search(src, i)
-        if not match:
-            out.append(src[i:])
-            break
-        low = (match.group(1) or '').strip()
-        up = (match.group(2) or '').strip()
-        body, after = _grab_balanced_paren(src, match.end())
-        if body is None:
-            out.append(src[i:match.end()])
-            i = match.end()
-            continue
-        mvar = re.match(r'(?:[\s\\,]*)d\s*(\w)', src[after:])
-        var = mvar.group(1) if mvar else 'x'
-        consume_end = after + (mvar.end() if mvar else 0)
-        out.append(src[i:match.start()])
-        nb = _normalize_latex_ops(body)
-        if up != '':
-            out.append(rf'int({nb},{var},{low or 0},{up})')
-        else:
-            out.append(rf'int({nb},{var})')
-        i = consume_end
-    return ''.join(out)
-
-
-def _nl_limit(src):
-    """``\\lim_{X \\to a[\\;^{+|-|\\pm}]\\;} (BODY)`` -> ``limit(BODY, X, a[, dir])``.
-
-    Reads the subscript with a balanced-brace scan (so ``0^{+}`` / ``\\infty`` survive)
-    and maps a trailing ``^{+}``/``^{-}``/``^{\\pm}`` to the direction argument; no
-    marker leaves it unspecified (the engine's default)."""
-    out, i = [], 0
-    pat = re.compile(r'\\lim\s*_\{')
-    while True:
-        match = pat.search(src, i)
-        if not match:
-            out.append(src[i:])
-            break
-        start = match.end()
-        j = start
-        depth = 1
-        while j < len(src) and depth:
-            if src[j] == '{':
-                depth += 1
-            elif src[j] == '}':
-                depth -= 1
-            j += 1
-        if depth != 0:                      # unbalanced subscript: leave untouched
-            out.append(src[i:match.end()])
-            i = match.end()
-            continue
-        inner = src[start:j - 1]
-        body, after = _grab_balanced_paren(src, j)
-        if body is None:
-            out.append(src[i:j])
-            i = j
-            continue
-        out.append(src[i:match.start()])
-        left, _, right = inner.partition('\\to')
-        var = left.strip() or 'x'
-        target = right.strip()
-        direction = ''
-        mdir = (re.search(r'\^\{\s*(\\pm|pm|[+-])\s*\}\s*$', target)
-                or re.search(r'\^\s*([+-])\s*$', target))
-        if mdir:
-            raw = mdir.group(1)
-            direction = {'+': '+', '-': '-', 'pm': '+-', '\\pm': '+-'}.get(raw, '')
-            target = target[:mdir.start()].strip()
-        point = target or '0'
-        extra = f',{direction}' if direction else ''
-        out.append(rf'limit({_normalize_latex_ops(body)},{var},{point}{extra})')
-        i = after
-    return ''.join(out)
 
 
 def _build_op_data(name, args):
@@ -987,17 +414,6 @@ def _render_compound(original_display, blocks, substituted, final_value):
     return r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
 
 
-# Ops whose engine wants the RAW argument text (its parser handles nested symbolic
-# names like Inverse/Add itself) -- these must keep the single-call fast path.
-_RAW_ARG_OPS = {
-    'matrix_symbolic', 'ref', 'operations', 'invert', 'rank', 'LU', 'diag', 'svd',
-    'singular', 'eigen', 'schur', 'det', 'orthogonal', 'projection', 'dependence',
-    'linear-system', 'linear-solver', 'transform-1', 'transform-2',
-}
-# Ops whose engine consumes a RESOLVED value, so a nested operator is worth hoisting.
-_CALC_COMPOSABLE = {'diff', 'integral', 'limit', 'expr'}
-
-
 def _should_compound(text, calls):
     """Decide whether the universal box should run the recursive compound evaluator.
 
@@ -1017,127 +433,6 @@ def _should_compound(text, calls):
     if outer_op in _CALC_COMPOSABLE and _iter_op_calls(leading['inner']):
         return True
     return False
-
-
-def _strip_outer_delimiters(text: str) -> str:
-    """Remove a whole-input pair of ``$...$`` / ``\\(...\\)`` / ``\\[...\\]``."""
-    s = str(text or '').strip()
-    for left, right in (('$$', '$$'), (r'\[', r'\]'), (r'\(', r'\)'), ('$', '$')):
-        if s.startswith(left) and s.endswith(right) and len(s) > len(left) + len(right):
-            return s[len(left):-len(right)].strip()
-    return s
-
-
-# Operations whose expression is a structured text (not a single scalar/LaTeX
-# formula), so the generic scalar normalizer must not rewrite it.
-_TEXT_INPUT_OPS = {
-    'ode', 'linear-system', 'parametric_diff',
-    # '|'-separated component/variable fields (vector fields, Jacobians, ...)
-    'jacobian', 'curl', 'divergence', 'lagrange', 'line_integral2', 'flux',
-}
-
-# ``ode`` expressions legitimately contain diff(...)/Derivative notation; the
-# universal auto-router must not hijack them.
-_AUTO_ROUTE_SKIP = {'ode', 'matrix_symbolic'}
-
-
-# Ops that only make sense for a square matrix; reject early with one clear message
-# instead of letting each calculator emit a partial "错误: ..." step.
-_SQUARE_MATRIX_OPS = {
-    'invert', 'det', 'eigen', 'schur', 'LU', 'diag', 'trace',
-    'jordan', 'definiteness', 'charpoly',
-}
-
-
-def _looks_like_operator_input(expression: str) -> bool:
-    """True when the user typed an explicit operator/template in the box.
-
-    This is what makes the WYSIWYG palette work everywhere: a key inserts
-    ``diff(x^2,x)``, ``\\int_0^1 ...``, ``\\det [matrix]`` or ``M^{-1}`` and the
-    same dispatcher handles it no matter which operation selector is active.
-    """
-    if not isinstance(expression, str) or not expression.strip():
-        return False
-    text = latex_to_nested(expression)
-    from routes.op_form import _fold_matrix_ops  # pylint: disable=import-outside-toplevel
-    text = _fold_matrix_ops(text)
-    text = _normalize_latex_ops(text)
-    if _iter_op_calls(text):
-        return True
-    # Operators our normalizer cannot turn into a call yet (e.g. a bare \int
-    # without a parenthesized body) are still explicit operator input.
-    return bool(re.search(
-        r'\\(?:int|iint|iiint|sum|prod|lim|partial|frac\s*\{\s*d\s*\})',
-        expression,
-    ))
-
-
-def _normalize_scalar_input(expression: str, complex_mode: bool = False):
-    """Turn WYSIWYG LaTeX / textbook text into a SymPy-source string.
-
-    Returns ``(ok, value_or_error)``.  The whole point is symmetry: the backend
-    must understand exactly the forms the frontend editor and palette can emit.
-    """
-    text = _strip_outer_delimiters(expression)
-    if not text:
-        return False, '请输入表达式'
-    if has_unfilled_placeholders(text):
-        return False, '请先填写输入框中的占位（□）后再计算'
-    try:
-        obj = cached_sympify(text)
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        return False, str(exc)
-    if complex_mode:
-        if hasattr(obj, 'subs'):
-            obj = obj.subs(Symbol('i'), I)
-    if isinstance(obj, (list, tuple, dict)):
-        return False, '请输入单个数学表达式（矩阵请使用矩阵运算入口）'
-    return True, str(obj)
-
-
-def _normalize_matrix_input(expression: str, validate: bool = True):
-    """Convert MathLive bmatrix blocks and validate the resulting matrix text."""
-    text = _strip_outer_delimiters(expression)
-    if has_unfilled_placeholders(text):
-        return False, '请先填写输入框中的占位（□）后再计算'
-    try:
-        text = latex_to_nested(text)
-    except ValueError as exc:
-        return False, str(exc)
-    if validate:
-        from core.common_matrix_calculator import CommonMatrixCalculator  # pylint: disable=import-outside-toplevel
-        for line in text.split('\n'):
-            if not line.strip():
-                continue
-            try:
-                CommonMatrixCalculator.parse_matrix_input(line)
-            except Exception:  # pylint: disable=broad-exception-caught
-                return False, (
-                    '矩阵格式不正确：请使用 [[1,2],[3,4]] 或 bmatrix 形式，'
-                    '并保证每行元素个数相同'
-                )
-    return True, text
-
-
-def _user_error(exc, operation_type: str) -> str:
-    """Map internal parser/engine exceptions to a readable user-facing message."""
-    msg = str(exc).strip()
-    low = msg.lower()
-    if 'placeholder' in low or '占位' in msg or '空白单元格' in msg or '请先填写' in msg:
-        return '请先填写输入框中的占位（□）后再计算'
-    if 'cannot convert' in low or 'could not parse' in low or 'sympify' in low \
-            or 'syntaxerror' in low or 'unexpected character' in low:
-        return f'无法解析输入，请检查表达式写法: {msg}'
-    if 'list index out of range' in low or 'not enough values' in low \
-            or 'pop from empty' in low:
-        return '矩阵输入格式不正确，请检查每行元素个数和运算参数'
-    if 'non-square' in low or 'not a square' in low or 'square matrix' in low:
-        return '该运算要求方阵，请检查矩阵行列数'
-    if 'shape' in low or 'dimension' in low or 'size' in low:
-        return f'矩阵维度不匹配: {msg}'
-    if 'singular' in low or 'not invertible' in low:
-        return '该矩阵不可逆（行列式为 0）'
-    return f'计算失败（{operation_type}）: {msg}'
 
 
 def _dispatch_auto(expression: str):
@@ -1160,7 +455,6 @@ def _dispatch_auto(expression: str):
     # M*M, M+M, M-M) into operator CALLS so the operator fast-path below dispatches the
     # requested matrix operation. Without this a lone "M^{T}" was treated as a bare
     # matrix and silently returned rref, dropping the operator entirely.
-    from routes.op_form import _fold_matrix_ops  # pylint: disable=import-outside-toplevel
     text = _fold_matrix_ops(text)
 
     # 0) compound: an operator call embedded inside a larger elementary expression

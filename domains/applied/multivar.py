@@ -9,6 +9,7 @@ then solves for y'.
 from sympy import Eq, Function, Matrix, Symbol, cos, latex, sin, solve, simplify, sqrt, Integral
 
 from utils.cache_utils import cached_sympify as sympify
+from utils.expression_utils import split_top_level_pipe
 
 from domains.applied._common import (align, derivative_steps, derivative_value, expr_text,
                                      get_var, integral_steps, render_note as note, steps_value, to_num)
@@ -128,7 +129,7 @@ def gradient(data):
 def _split_pipe(text):
     """Split a '|'-separated vector/list argument (commas would clash with the
     auto-dispatcher's top-level arg splitting)."""
-    return [p.strip() for p in str(text).split('|') if p.strip() != '']
+    return split_top_level_pipe(str(text))
 
 
 def hessian(data):
@@ -233,11 +234,11 @@ def _vector_field(data):
 
 def curl(data):
     """Curl ∇×F of a 3-D vector field (P|Q|R over x|y|z). Component partials are rule-derived."""
-    exprs, cstrs, syms = _vector_field(data)
+    exprs, cstrs, syms = _vector_field(data)  # pylint: disable=unbalanced-tuple-unpacking
     if len(exprs) != 3 or len(syms) != 3:
         return False, '旋度需三维向量场 curl(P|Q|R, x|y|z)'
     P, Q, R = exprs
-    ps, qs, rs = cstrs
+    ps, qs, rs = cstrs  # pylint: disable=unbalanced-tuple-unpacking
     x, y, z = syms
     def d(fstr, v):
         return derivative_value(fstr, v)
@@ -252,7 +253,7 @@ def curl(data):
 
 def divergence(data):
     """Divergence ∇·F of a vector field (P|Q|R over x|y|z). Partials rule-derived."""
-    exprs, cstrs, syms = _vector_field(data)
+    exprs, cstrs, syms = _vector_field(data)  # pylint: disable=unbalanced-tuple-unpacking
     if len(exprs) != len(syms) or len(exprs) < 2:
         return False, '散度需分量数与变量数一致, 如 div(P|Q|R, x|y|z)'
     items = [(Matrix(exprs), note("向量场 F"))]
@@ -274,7 +275,7 @@ def lagrange(data):
     parts = _split_pipe(expr_text(data))
     if len(parts) != 2:
         return False, '拉格朗日乘数需 f|g 两个表达式(lagrange(f|g, x|y))'
-    fstr, gstr = parts
+    fstr, gstr = parts  # pylint: disable=unbalanced-tuple-unpacking
     f, g = sympify(fstr), sympify(gstr)
     syms = [sympify(v) for v in _split_pipe(data.get('variable', ''))] or sorted((f.free_symbols | g.free_symbols), key=str)
     lam = Symbol('lambda')

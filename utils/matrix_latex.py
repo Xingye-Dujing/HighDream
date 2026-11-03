@@ -8,6 +8,7 @@ styles keep working.
 """
 
 import re
+from functools import lru_cache
 
 from utils.cache_utils import cached_sympify
 
@@ -46,6 +47,7 @@ def _block_to_nested(body: str) -> str:
     return '[' + ','.join(nested) + ']'
 
 
+@lru_cache(maxsize=512)
 def latex_to_nested(text: str) -> str:
     """Replace every LaTeX matrix block in ``text`` with its ``[[...]]`` form."""
     if 'begin{' not in text:
