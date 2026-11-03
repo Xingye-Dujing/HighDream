@@ -30,12 +30,90 @@ def _to_float(expr, var, xval):
 
 
 def _as_num(value):
-    """A plain int/float/numeric-string, else None (rejects symbols like \\pi)."""
+    """A plain int/float/numeric-string, else None (rejects symbols like \pi)."""
     try:
         v = float(value)
     except (TypeError, ValueError):
         return None
     return v if math.isfinite(v) else None
+
+
+def _eval_float(expr, var, xval):
+    try:
+        val = expr.subs(var, Float(repr(xval)))
+        f = float(N(val))
+        if not math.isfinite(f):
+            return None
+        return f
+    except (TypeError, ValueError):
+        return None
+
+
+def _find_numerical_roots(expr, var, lo, hi, max_roots=12, grid=400):
+    """Find approximate real roots of f(x)=0 in (lo, hi) by sign changes + linear approx."""
+    roots = []
+    if hi - lo < 1e-12:
+        return roots
+    fp = None
+    try:
+        fp = expr.diff(var)
+    except Exception:
+        fp = None
+
+    step = (hi - lo) / (grid - 1)
+    prev_x = lo
+    prev_f = _eval_float(expr, var, prev_x)
+    for i in range(1, grid):
+        x = lo + i * step
+        f = _eval_float(expr, var, x)
+        if prev_f is not None and f is not None:
+            if prev_f == 0.0:
+                roots.append(prev_x)
+            elif f == 0.0:
+                pass
+            elif prev_f * f < 0.0:
+                t = prev_f / (prev_f - f) if (prev_f - f) != 0 else 0.5
+                xr = prev_x + t * (x - prev_x)
+                for _ in range(8):
+                    f2 = _eval_float(expr, var, xr)
+                    if f2 is None:
+                        break
+                    if abs(f2) < 1e-9:
+                        break
+                    if fp is not None:
+                        fp2 = _eval_float(fp, var, xr)
+                        if fp2 is not None and abs(fp2) > 1e-12:
+                            xr_new = xr - f2 / fp2
+                            if not (lo - 1e-6 <= xr_new <= hi + 1e-6):
+                                break
+                            xr = xr_new
+                            continue
+                    break
+                if lo <= xr <= hi:
+                    fr2 = _eval_float(expr, var, xr)
+                    if fr2 is not None and abs(fr2) < 2e-3:
+                        roots.append(xr)
+            elif abs(f) < 3e-4:
+                roots.append(x)
+        prev_x, prev_f = x, f
+
+    out = []
+    for r in roots:
+        if not out or min(abs(r - o) for o in out) > 2e-3:
+            out.append(r)
+        if len(out) >= max_roots:
+            break
+
+    res = []
+    for r in out:
+        yr = _eval_float(expr, var, r)
+        if yr is None:
+            yr = 0.0
+        res.append({
+            'x': round(r, PLOT_COORD_DIGITS),
+            'y': round(yr, PLOT_COORD_DIGITS),
+        })
+    return res
 
 
 def sample_curve(data):
@@ -109,4 +187,12 @@ def sample_curve(data):
                 'y1': round(y0 + slope * (lo - a), PLOT_COORD_DIGITS),
                 'y2': round(y0 + slope * (hi - a), PLOT_COORD_DIGITS),
             }
+
+    try:
+        roots = _find_numerical_roots(expr, var, lo, hi)
+        if roots:
+            out['roots'] = roots
+    except Exception:
+        pass
+
     return out

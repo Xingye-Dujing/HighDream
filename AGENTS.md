@@ -46,7 +46,7 @@ Update **both** `README.md` (Chinese, primary) and `README-EN.md` (English) on u
 
 ## Testing
 
-- Regression tests live in `tests/` (pure-logic: `utils/expr_type.py`, `ExpressionParser` product-to-sum, the large-power guard, and the documented SymPy gotchas). Run `.venv/Scripts/python.exe -m pytest` or `/test`; `pytest` is a dev-only dep (see `requirements_local.txt`). Add a `test_*.py` (with `tests/__init__.py` so pylint resolves top-level imports) for new deterministic logic.
+- Regression tests live in `tests/` (pure-logic: `utils/expr_type.py`, `ExpressionParser` product-to-sum, the large-power guard, and the documented SymPy gotchas). Run all: `.venv/Scripts/python.exe -m pytest` or `/test`. Run single test: `.venv/Scripts/python.exe -m pytest tests/test_xxx.py -q`. `pytest` is a dev-only dep (see `requirements_local.txt`). Add a `test_*.py` (with `tests/__init__.py` so pylint resolves top-level imports) for new deterministic logic.
 - End-to-end smoke check: `/verify` boots `app_local.py` and curls `/api/parse`; or run `main.ipynb` / the web UI manually.
 
 ## Commit messages
