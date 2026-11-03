@@ -1522,7 +1522,21 @@
         user-select: none;
       }
       .fake-input::after {
-        content: '▾';
+        content: '';
+        display: inline-block;
+        width: 10px;
+        height: 6px;
+        margin-left: 4px;
+        vertical-align: middle;
+        background-color: currentColor;
+        -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1L5 5L9 1' stroke='black' stroke-width='1.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1L5 5L9 1' stroke='black' stroke-width='1.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
         color: var(--text-faint);
         font-size: calc(10px * var(--fscale));
         flex-shrink: 0;

@@ -17,7 +17,7 @@
 ;(function () {
   'use strict'
 
-  var CARET = '▾'
+  var CARET_SVG = '<svg class="hd-caret-svg" viewBox="0 0 10 6" width="10" height="6" aria-hidden="true" focusable="false"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   var open = null // the single open popup, if any
 
   /* ------------------------------------------------------------- helpers */
@@ -240,7 +240,7 @@
     var caret = document.createElement('span')
     caret.className = 'hd-select-caret'
     caret.setAttribute('aria-hidden', 'true')
-    caret.textContent = CARET
+    caret.innerHTML = CARET_SVG
     trigger.appendChild(caret)
 
     select.parentNode.insertBefore(wrapper, select)

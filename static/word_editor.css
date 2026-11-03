@@ -561,11 +561,12 @@
   transform: translateY(-50%);
   width: 24px;
   height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background-color: var(--jp-layout-color0);
   border: 1px solid var(--jp-border-color1);
   border-radius: var(--radius);
-  align-items: center;
-  justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
   color: var(--jp-ui-font-color1);
@@ -579,6 +580,10 @@
 .paragraph:hover .minimal-mode-toggle {
   opacity: 1;
   visibility: visible;
+}
+
+.minimal-mode-toggle svg {
+  display: block;
 }
 
 .minimal-mode-toggle:hover {

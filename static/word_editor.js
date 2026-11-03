@@ -12,6 +12,10 @@ function escapeHtml(s) {
     .replace(/'/g, "&#39;");
 }
 
+// Inline SVG icons for the minimal-mode toggle (no icon-font glyph dependency).
+const ICON_EYE = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 3C4.5 3 1.7 5.6 1 8c.7 2.4 3.5 5 7 5s6.3-2.6 7-5c-.7-2.4-3.5-5-7-5zm0 8.5A3.5 3.5 0 1 1 8 4.5a3.5 3.5 0 0 1 0 7zm0-1.75A1.75 1.75 0 1 0 8 6a1.75 1.75 0 0 0 0 3.75z" fill="currentColor"/></svg>';
+const ICON_EYE_OFF = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 3C4.5 3 1.7 5.6 1 8c.7 2.4 3.5 5 7 5s6.3-2.6 7-5c-.7-2.4-3.5-5-7-5zm0 8.5A3.5 3.5 0 1 1 8 4.5a3.5 3.5 0 0 1 0 7zm0-1.75A1.75 1.75 0 1 0 8 6a1.75 1.75 0 0 0 0 3.75z" fill="currentColor"/><path d="M2.6 2.6l10.8 10.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+
 // SymPy auto-completion items
 const sympyCompletions = {
   // Core functions
@@ -512,7 +516,7 @@ function createParagraphElement(id, type) {
   const minimalToggle = document.createElement('button');
   minimalToggle.className = 'minimal-mode-toggle';
   minimalToggle.title = '切换最简模式';
-  minimalToggle.innerHTML = '<i class="fas fa-eye-slash"></i>';
+  minimalToggle.innerHTML = ICON_EYE_OFF;
   paragraph.appendChild(minimalToggle);
 
   if (type === 'text') {
@@ -1104,13 +1108,8 @@ function toggleMinimalMode(paragraph) {
   paragraph.classList.toggle('minimal-mode');
   const isMinimal = paragraph.classList.contains('minimal-mode');
   const toggleBtn = paragraph.querySelector('.minimal-mode-toggle');
-  const icon = toggleBtn.querySelector('i');
 
-  if (isMinimal) {
-    icon.className = 'fas fa-eye';
-  } else {
-    icon.className = 'fas fa-eye-slash';
-  }
+  toggleBtn.innerHTML = isMinimal ? ICON_EYE : ICON_EYE_OFF;
 }
 
 function deleteParagraph(paragraph) {
@@ -1142,15 +1141,11 @@ function toggleAllMinimalMode() {
     if (allMinimal) {
       // If all are in minimal mode, exit minimal mode
       paragraph.classList.remove('minimal-mode');
-      const toggleBtn = paragraph.querySelector('.minimal-mode-toggle');
-      const icon = toggleBtn.querySelector('i');
-      icon.className = 'fas fa-eye-slash';
+      paragraph.querySelector('.minimal-mode-toggle').innerHTML = ICON_EYE_OFF;
     } else {
       // Otherwise enter minimal mode for all
       paragraph.classList.add('minimal-mode');
-      const toggleBtn = paragraph.querySelector('.minimal-mode-toggle');
-      const icon = toggleBtn.querySelector('i');
-      icon.className = 'fas fa-eye';
+      paragraph.querySelector('.minimal-mode-toggle').innerHTML = ICON_EYE;
     }
   });
 }

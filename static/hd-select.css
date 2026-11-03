@@ -93,10 +93,17 @@
 
 .hd-select-caret {
   flex-shrink: 0;
-  font-size: calc(9px * var(--fscale));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-mid);
   line-height: 1;
-  color: var(--text-faint);
-  transition: transform var(--transition-speed);
+  transition: color var(--transition-speed), transform var(--transition-speed);
+}
+.hd-select-caret .hd-caret-svg {
+  display: block;
+  width: 10px;
+  height: 6px;
 }
 
 .hd-select-trigger:hover {
