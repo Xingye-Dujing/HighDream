@@ -233,7 +233,7 @@ class SchurDecomposition(CommonMatrixCalculator):
 
             if show_steps:
                 self.step_generator.add_step(
-                    f"\\text{{处理子矩阵(大小 ${submatrix_size} \\times {submatrix_size})$}}")
+                    f"\\text{{处理子矩阵(大小 }} {submatrix_size} \\times {submatrix_size} \\text{{)}}")
                 self.add_matrix(
                     sub_T, f"T_{iteration}[{iteration}:, {iteration}:]")
 

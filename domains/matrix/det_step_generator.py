@@ -1,6 +1,7 @@
 from sympy import latex
 
 from core import BaseStepGenerator
+from core.base_step_generator import format_note
 
 
 class DetStepGenerator(BaseStepGenerator):
@@ -13,19 +14,13 @@ class DetStepGenerator(BaseStepGenerator):
         Returns:
             str: A LaTeX formatted string containing all steps with explanations.
         """
-        latex_str = "\\begin{align}"
-
-        # Match corresponding transformations and principles
+        lines = []
         for i, (step, explanation) in enumerate(zip(self.steps, self._explanations)):
             if i == 0:
-                latex_str += '&' + latex(step)
+                line = '&' + latex(step)
             else:
-                # Alignment symbol
-                latex_str += "\\\\ &=" + latex(step)
-
+                line = "&= " + latex(step)
             if explanation:
-                latex_str += f" \\quad \\text{{{explanation}}}"
-            latex_str += "\\\\\n"
-
-        latex_str += "\\end{align}"
-        return latex_str
+                line += " \\quad " + format_note(explanation)
+            lines.append(line)
+        return r"\begin{align}" + " \\\\ ".join(lines) + r"\end{align}"

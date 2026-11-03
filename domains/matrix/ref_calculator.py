@@ -333,10 +333,12 @@ class RefCalculator:
         # Write each leaf's steps to step_generator (with branch title and conditions)
         for i, leaf in enumerate(leaves):
             cond_latex = BranchManager.conditions_to_latex(leaf.conditions)
+            cond_note = ('条件：' + cond_latex if cond_latex == '无额外条件'
+                         else f'条件：${cond_latex}$')
             # Line break
             self.step_generator.add_step("", "")
             self.step_generator.add_step(
-                f"\\quad\\quad 分支 {i + 1}", f"条件：${cond_latex}$")
+                f"\\quad\\quad 分支 {i + 1}", cond_note)
             for mat_or_str, expl in leaf.steps:
                 # Line break
                 self.step_generator.add_step("", "")
@@ -354,6 +356,8 @@ class RefCalculator:
             )
             for i, leaf in enumerate(leaves):
                 cond_latex = BranchManager.conditions_to_latex(leaf.conditions)
+                cond_note = ('条件：' + cond_latex if cond_latex == '无额外条件'
+                             else f'条件：${cond_latex}$')
                 # Get the final matrix from the last step of branch
                 if isinstance(leaf.steps[-1][0], str):
                     final_matrix = leaf.steps[-2][0]
@@ -363,7 +367,7 @@ class RefCalculator:
                 self.step_generator.add_step("", "")
                 self.step_generator.add_step(
                     final_matrix,
-                    f"分支 {i + 1}: 条件 ${cond_latex}$"
+                    f"分支 {i + 1}: {cond_note}"
                 )
 
         steps, explanations = self.step_generator.get_steps()

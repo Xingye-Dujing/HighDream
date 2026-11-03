@@ -257,7 +257,8 @@ class OrthogonalProcessor(CommonMatrixCalculator):
                     is_orthogonal = False
                     if show_steps:
                         self.step_generator.add_step(
-                            f"\\text{{位置 ({i + 1},{j + 1}): 得到 ${latex(element)}$, 期望 {latex(expected)}}}"
+                            f"\\text{{位置 ({i + 1},{j + 1}): 得到 }} {latex(element)}"
+                            f"\\text{{, 期望 }} {latex(expected)}"
                         )
 
         if is_orthogonal:

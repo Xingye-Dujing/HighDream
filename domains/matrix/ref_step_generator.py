@@ -3,6 +3,7 @@ from typing import List, Union
 from sympy import Expr, Matrix, latex, simplify
 
 from core import BaseStepGenerator
+from core.base_step_generator import format_note
 
 
 class RefStepGenerator(BaseStepGenerator):
@@ -22,8 +23,11 @@ class RefStepGenerator(BaseStepGenerator):
         for i, (step, explanation) in enumerate(zip(steps, explanations)):
             # Step can be a string (branch title or note) or a Matrix
             if isinstance(step, str):
-                # Render as a full line note
-                step_str = f"& \\text{{{step}}} \\quad & \\text{{{explanation}}}"
+                # Render as a full line note. Explanations may carry $...$ math;
+                # format_note keeps that math live instead of showing literal $.
+                step_render = format_note(step) if '$' in step else f"\\text{{{step}}}"
+                note = format_note(explanation) if explanation else ''
+                step_str = f"& {step_render} \\quad & {note}"
             else:
                 # Process matrix or general expression
                 try:
@@ -33,13 +37,14 @@ class RefStepGenerator(BaseStepGenerator):
                         m_latex = latex(step)
                 except Exception:
                     m_latex = str(step)
+                note = format_note(explanation) if explanation else ''
                 # If explanation contains branching keywords, display matrix with explanation directly
                 if i == 0:
-                    step_str = f"& {m_latex} \\quad & \\text{{{explanation}}}"
+                    step_str = f"& {m_latex} \\quad & {note}"
                 elif '分支' in explanation or '合并' in explanation or '条件' in explanation:
-                    step_str = f"& {m_latex} \\quad & \\text{{{explanation}}}"
+                    step_str = f"& {m_latex} \\quad & {note}"
                 else:
-                    step_str = f"&\\Rightarrow {m_latex} \\quad & \\text{{{explanation}}}"
+                    step_str = f"&\\Rightarrow {m_latex} \\quad & {note}"
             latex_str += step_str
             if i < len(steps) - 1:
                 latex_str += "\\\\\n"

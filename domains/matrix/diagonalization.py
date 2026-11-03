@@ -113,7 +113,7 @@ class Diagonalization(CommonMatrixCalculator):
                         f"\\text{{满足条件: 代数重数 = 几何重数}}")
                 else:
                     self.step_generator.add_step(
-                        f"\\text{{不满足条件: 代数重数 $\\neq$ 几何重数}}")
+                        r"\text{不满足条件: 代数重数 } \neq \text{ 几何重数}")
                     diagonalizable = False
 
         # Check total number of linearly independent eigenvectors

@@ -3,6 +3,7 @@ from abc import ABC
 from sympy import Matrix, latex, simplify, sympify
 
 from core.matrix_step_generator import MatrixStepGenerator
+from core.base_step_generator import format_note
 
 
 class CommonMatrixCalculator(ABC):
@@ -17,7 +18,13 @@ class CommonMatrixCalculator(ABC):
 
     def add_step(self, title: str) -> None:
         """Add a step title to the calculation process."""
-        self.step_generator.add_step(f"\\text{{{title}}}")
+        text = str(title)
+        if '$' in text:
+            self.step_generator.add_step(format_note(text))
+        elif text.lstrip().startswith('\\'):
+            self.step_generator.add_step(text)
+        else:
+            self.step_generator.add_step(f"\\text{{{text}}}")
 
     def add_matrix(self, matrix: str | Matrix, name: str = "A") -> None:
         """Add a matrix to the calculation steps display."""
@@ -43,6 +50,8 @@ class CommonMatrixCalculator(ABC):
     def parse_matrix_input(matrix_input: str | Matrix) -> Matrix:
         """Parse matrix input string into a SymPy Matrix."""
         try:
+            if isinstance(matrix_input, Matrix):
+                return matrix_input
             return Matrix(sympify(matrix_input))
         except Exception as e:
             raise ValueError(
@@ -51,6 +60,8 @@ class CommonMatrixCalculator(ABC):
     def parse_vector_input(self, vector_input: str | Matrix) -> Matrix:
         """Parse vector input string into a SymPy Matrix (column vector)."""
         try:
+            if isinstance(vector_input, Matrix):
+                return vector_input
             # Handle column vector format, e.g. '[[1],[2],[3]]'
             if vector_input.startswith('[[') and vector_input.endswith(']]'):
                 vector = Matrix(sympify(vector_input))

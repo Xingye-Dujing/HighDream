@@ -36,7 +36,7 @@ class MatrixStepGenerator:
             # nothing renders as literal text.
             step_str = f"& {step.replace('$', '')}"
             latex_str += step_str
-            # Add line break for next step
-            latex_str += r"\\\\"
+            # One row break between steps (not a blank row).
+            latex_str += r" \\ "
         latex_str += "\\end{align}"
         return latex_str

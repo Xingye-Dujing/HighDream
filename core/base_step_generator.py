@@ -96,5 +96,5 @@ class BaseStepGenerator(ABC):
                 line += r" \quad " + format_note(explanation)
             lines.append(line)
 
-        body = r"\newline".join(lines)
+        body = r" \\ ".join(lines)
         return rf"\begin{{align}}{body}\end{{align}}"
