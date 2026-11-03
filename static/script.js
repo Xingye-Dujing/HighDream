@@ -1,3 +1,59 @@
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+  // Ctrl+Enter or Cmd+Enter: Run current cell
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    const activeCell = document.querySelector('.cell-active');
+    if (activeCell && !activeCell.classList.contains('markdown-cell')) {
+      const runBtn = activeCell.querySelector('.run-cell-button');
+      if (runBtn) runBtn.click();
+    } else {
+      // If no active cell or in markdown, find the last cell and run it or add new
+      const cells = document.querySelectorAll('.cell');
+      if (cells.length > 0) {
+        const lastCell = cells[cells.length - 1];
+        if (lastCell.classList.contains('code-cell')) {
+          setActiveCell(lastCell);
+          const runBtn = lastCell.querySelector('.run-cell-button');
+          if (runBtn) runBtn.click();
+        }
+      }
+    }
+  }
+  
+  // Ctrl+S or Cmd+S: Save notebook
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    const saveBtn = document.getElementById('saveNotebookBtn');
+    if (saveBtn) saveBtn.click();
+  }
+  
+  // Ctrl+Shift+N or Cmd+Shift+N: Add new code cell
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
+    e.preventDefault();
+    if (typeof addNewCell === 'function') {
+      addNewCell('code');
+    }
+  }
+  
+  // Ctrl+Shift+M or Cmd+Shift+M: Add new markdown cell
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'M') {
+    e.preventDefault();
+    if (typeof addNewCell === 'function') {
+      addNewCell('markdown');
+    }
+  }
+  
+  // Escape: Close fullscreen or clear focus
+  if (e.key === 'Escape') {
+    const overlay = document.querySelector('.math-fullscreen-overlay.active');
+    if (overlay) {
+      const closeBtn = overlay.querySelector('.math-fullscreen-close');
+      if (closeBtn) closeBtn.click();
+    }
+  }
+});
+
 // Plot helpers
 function _plotSvgEl(tag, attrs) {
   const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
