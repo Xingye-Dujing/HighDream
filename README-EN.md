@@ -149,6 +149,8 @@ This project mainly consists of **four** architectures:
 3. Architecture for frontend to call backend for computation (Flask blueprints + `task_manager` async tasks)
 4. Architecture for manual rule selection and exhaustive rule-enumeration method tree (`BaseManualStepSolver` with its per-domain subclasses, and `MethodTreeEnumerator`)
 
+The compute entry point is decomposed into small replaceable modules: `core/operator_registry.py` (operation tables), `core/latex_syntax.py` (structural LaTeX ↔ operator-call normalization), `core/input_validation.py` (WYSIWYG/text/matrix validation and user-facing errors), and `utils/expression_utils.py` (balanced-parenthesis / top-level splitting). `routes/api.py` is a thin aggregator over `compute_api`, `matrix_api`, `sympy_api`, `manual_api`, `method_tree_api`, and `snapshot_api`.
+
 ## Core Classes
 
 - [**BaseCalculator**](https://high-dream.vercel.app/help/base_calculator) (`core/base_calculator.py`)

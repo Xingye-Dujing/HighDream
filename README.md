@@ -149,6 +149,8 @@ HighDream 是一个基于 **Python** 和 **SymPy** 的符号计算工具。它�
 3. 用于前端调用后端进行计算的架构（Flask 蓝图 + `task_manager` 异步任务）
 4. 用于手动规则选择与全规则遍历方法树的架构（`BaseManualStepSolver` 及各领域子类、`MethodTreeEnumerator`）
 
+计算入口进一步拆成可替换的小模块：`core/operator_registry.py` 只存操作表，`core/latex_syntax.py` 负责结构 LaTeX ↔ 算子调用的归一化，`core/input_validation.py` 负责所见即所得/文本/矩阵输入校验与用户错误映射，`utils/expression_utils.py` 提供括号匹配与顶层分割等通用工具；`routes/api.py` 仅聚合 `compute_api` / `matrix_api` / `sympy_api` / `manual_api` / `method_tree_api` / `snapshot_api` 六个路由模块。
+
 ## 核心类
 
 - [**BaseCalculator**](https://high-dream.vercel.app/help/base_calculator) (`core/base_calculator.py`)
