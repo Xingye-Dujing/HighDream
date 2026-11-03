@@ -1388,6 +1388,19 @@ function renderExpressionResult(outputArea, data) {
   // data.result: [{latex, reason}, ...]
   const expressions = data.result || [];
 
+  // A single equivalent form (e.g. simplify(3+x) typed into the universal box)
+  // is the result itself, not a one-item list: show it as plain math output.
+  if (expressions.length === 1) {
+    const only = expressions[0];
+    outputArea.innerHTML = `<div class="math-output">$$${only.latex}$$</div>`;
+    outputArea.dataset.latexSource = JSON.stringify([only.latex]);
+    addMathOutputControls();
+    if (window.MathJax && typeof MathJax.typesetPromise === "function") {
+      MathJax.typesetPromise([outputArea]);
+    }
+    return;
+  }
+
   let html = `<div class="math-output">`;
   if (expressions.length === 0) {
     html += `<div class="error"> 未找到等价表达式</div> `;
@@ -2564,10 +2577,17 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
 
     const task = JSON.parse(e.data);
 
-    if (operationType === "expr") {
+    // `expr` (equivalent expressions) is the only list-shaped result, but it also
+    // arrives through the universal box (e.g. simplify(3+x) in the auto cell) where
+    // the selected operation is "auto" -- detect it by shape so the list of
+    // {latex, reason} objects is never stringified into "[object Object]".
+    const exprList =
+      task.result && Array.isArray(task.result[0]) ? task.result[0] : null;
+
+    if (operationType === "expr" || exprList) {
       renderExpressionResult(outputArea, {
         success: true,
-        result: task.result[0]
+        result: exprList || task.result[0]
       });
     } else {
       outputArea.innerHTML = `<div class="math-output">${task.result}</div>`;
