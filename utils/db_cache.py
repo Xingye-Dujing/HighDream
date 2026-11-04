@@ -8,6 +8,9 @@ from typing import Optional
 DB_DIR = Path(__file__).resolve().parent.parent / 'cache'
 DB_PATH = DB_DIR / 'computation.db'
 
+# Rows kept in the result cache (oldest ``last_accessed`` are pruned on insert).
+CACHE_MAX_ROWS = 5000
+
 _local = threading.local()
 
 
@@ -45,6 +48,10 @@ def build_hash(operation_type: str, expression: str, **params) -> str:
         'var': str(params.get('variable', '')),
         'point': str(params.get('point', '')),
         'direction': str(params.get('direction', '')),
+        # Option flags that change the derivation (integral special matchers,
+        # L'Hopital cap, ...). Without them a cache hit could serve a derivation
+        # produced under completely different settings.
+        'options': params.get('options') or {},
     }, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(normalized.encode('utf-8')).hexdigest()
 
@@ -75,4 +82,13 @@ def set_cache(hash_key: str, operation_type: str, expression: str,
         str(params.get('direction', '')),
         result,
     ))
+    # Bound the table so long-lived installs do not grow it forever.
+    count = conn.execute('SELECT COUNT(*) FROM computation_cache').fetchone()[0]
+    if count > CACHE_MAX_ROWS:
+        conn.execute(
+            'DELETE FROM computation_cache WHERE hash_key IN ('
+            'SELECT hash_key FROM computation_cache '
+            'ORDER BY last_accessed ASC LIMIT ?)',
+            (count - CACHE_MAX_ROWS,),
+        )
     conn.commit()

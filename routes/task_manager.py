@@ -121,41 +121,77 @@ class TaskManager:
 
     def _execute_task(self, task: Task):
         """Execute the task (runs in background thread)"""
-        # Acquire semaphore to ensure we don't exceed max workers
-        with self._semaphore:
+        timeout = (task.timeout_seconds
+                   if getattr(task, 'timeout_seconds', None)
+                   else SINGLE_TASK_EXECUTE_TIMEOUT_SECONDS)
+
+        # Acquire a worker slot. A task that cannot get one within its own budget
+        # is failed instead of waiting forever (hung tasks keep their slot until
+        # they really finish, so this is honest backpressure, not a false error).
+        if not self._semaphore.acquire(timeout=timeout):  # pylint: disable=consider-using-with
+            task.status = TaskStatus.FAILED
+            task.error = "服务正忙, 任务排队超时, 请稍后重试."
+            task.completed_at = datetime.now()
+            self._set_task_event(task.task_id)
+            return
+
+        # Normally the ``finally`` below releases the slot; a timed-out task that
+        # keeps computing in the executor stays counted until it actually ends.
+        release_semaphore = True
+        try:
+            # Update status to running
+            task.status = TaskStatus.RUNNING
+            task.started_at = datetime.now()
+
+            future = self._executor.submit(
+                start_compute, task.operation_type, task.data)
             try:
-                # Update status to running
-                task.status = TaskStatus.RUNNING
-                task.started_at = datetime.now()
-
-                future = self._executor.submit(
-                    start_compute, task.operation_type, task.data)
-                timeout = (task.timeout_seconds
-                           if getattr(task, 'timeout_seconds', None)
-                           else SINGLE_TASK_EXECUTE_TIMEOUT_SECONDS)
-                try:
-                    success, result = future.result(timeout=timeout)
-                    # Update task result
-                    if success:
-                        task.status = TaskStatus.COMPLETED
-                        task.result = result
-                    else:
-                        task.status = TaskStatus.FAILED
-                        task.error = result
-                except TimeoutError:
+                success, result = future.result(timeout=timeout)
+                # Update task result
+                if success:
+                    task.status = TaskStatus.COMPLETED
+                    task.result = result
+                else:
                     task.status = TaskStatus.FAILED
-                    task.error = "任务超时, 程序无法求解该题. 若确定其有初等函数解, 可尝试等价变形表达式后再次运行计算."
-
-            except Exception as e:
+                    task.error = result
+            except TimeoutError:
                 task.status = TaskStatus.FAILED
-                task.error = str(e)
+                task.error = "任务超时, 程序无法求解该题. 若确定其有初等函数解, 可尝试等价变形表达式后再次运行计算."
+                # The computation cannot be cancelled (SymPy has no kill switch).
+                # Keep its slot occupied until the future finishes, otherwise
+                # timed-out work would let the executor queue grow without bound
+                # and every later task would time out behind it.
+                release_semaphore = False
+                self._release_semaphore_when_done(future)
 
+        except Exception as e:
+            task.status = TaskStatus.FAILED
+            task.error = str(e)
+
+        finally:
+            if release_semaphore:
+                self._semaphore.release()
+            task.completed_at = datetime.now()
+            self._set_task_event(task.task_id)
+
+    def _release_semaphore_when_done(self, future) -> None:
+        """Release the worker slot only once an abandoned computation finishes."""
+        def _waiter():
+            try:
+                future.result()
+            except Exception:  # pylint: disable=broad-exception-caught
+                pass
             finally:
-                task.completed_at = datetime.now()
-                with self._task_lock:
-                    event = self._task_events.get(task.task_id)
-                    if event:
-                        event.set()
+                self._semaphore.release()
+
+        threading.Thread(target=_waiter, daemon=True).start()
+
+    def _set_task_event(self, task_id: str) -> None:
+        """Signal any waiter (SSE/polling) that the task reached a final state."""
+        with self._task_lock:
+            event = self._task_events.get(task_id)
+            if event:
+                event.set()
 
     def _start_cleanup_thread(self):
         def cleanup_worker():

@@ -37,6 +37,17 @@ class DBCachedCalculator:
                 context['point'] = str(args[1]) if len(args) > 1 else ''
                 context['direction'] = str(args[2]) if len(args) > 2 else ''
 
+        # Options that change the derivation must be part of the cache key.
+        options = {}
+        special = getattr(self, '_include_special_matchers', None)
+        if special is not None:
+            options['include_special_matchers'] = bool(special)
+        lhopital = getattr(self, '_lhopital_max', None)
+        if lhopital is not None:
+            options['max_lhopital'] = int(lhopital)
+        if options:
+            context['options'] = options
+
         key = build_hash(op_type, expr, **context)
 
         if use_cache:
@@ -46,7 +57,10 @@ class DBCachedCalculator:
 
         result = super().compute_latex(expr, *args, **kwargs)
 
-        if record_cache:
+        # Never cache an unresolved/aborted derivation: a transient failure would
+        # otherwise be replayed as the answer forever.
+        aborted = getattr(self, 'sudden_end', [False])
+        if record_cache and not (aborted and aborted[0]):
             cache_set(key, op_type, expr, result, **context)
 
         return result

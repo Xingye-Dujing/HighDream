@@ -47,6 +47,9 @@ def create_integral_calculator(base_class):
                 super().__init__(Integral, RULE_DICT, MATCHER_LIST)
             else:
                 super().__init__(Integral, RULE_DICT, N_MATCHER_LIST)
+            # Remembered so the DB cache can key on this choice: the two matcher
+            # sets produce visibly different derivations.
+            self._include_special_matchers = bool(include_special_matchers)
             # Definite-integral state; populated by compute_list / compute_latex so
             # that reset_process() (run inside the engine) cannot clear it.
             self._var: Symbol = Symbol('x')
