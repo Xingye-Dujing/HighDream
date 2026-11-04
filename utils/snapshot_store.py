@@ -20,6 +20,9 @@ DB_PATH = DB_DIR / 'snapshots.db'
 
 # Older snapshots are pruned so the database cannot grow without bound.
 MAX_SNAPSHOTS = 200
+# A single notebook payload is capped: without this one request could store an
+# arbitrarily large blob in the local database.
+MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024
 
 _local = threading.local()
 
@@ -46,7 +49,12 @@ def _get_conn() -> sqlite3.Connection:
 
 
 def create_snapshot(payload: str, title: str = '') -> dict:
-    """Insert one snapshot and return its metadata (without the payload)."""
+    """Insert one snapshot and return its metadata (without the payload).
+
+    Raises ``ValueError`` when the payload exceeds ``MAX_SNAPSHOT_BYTES``.
+    """
+    if len(payload.encode('utf-8')) > MAX_SNAPSHOT_BYTES:
+        raise ValueError('笔记本过大, 单个快照不能超过 2 MB')
     conn = _get_conn()
     created_at = datetime.now(timezone.utc).isoformat(timespec='seconds')
     cursor = conn.execute(

@@ -1,5 +1,7 @@
 """Manual rule-selection session endpoints (state is intentionally in-memory)."""
 
+import threading
+import time
 import uuid
 
 from flask import jsonify, request
@@ -8,7 +10,32 @@ from core.manual_step_solver import ManualStepSolver
 
 from .api_blueprint import api
 
+# Sessions are tiny but never freed by the client unless the page calls
+# manual_reset; cap them so a long-lived server cannot grow without bound.
+_MANUAL_SESSION_MAX = 200
+_MANUAL_SESSION_TTL_SECONDS = 3600
 _manual_sessions: dict = {}
+_manual_sessions_lock = threading.Lock()
+
+
+def _prune_manual_sessions() -> None:
+    """Drop expired sessions, then the oldest ones beyond the cap."""
+    now = time.monotonic()
+    with _manual_sessions_lock:
+        expired = [sid for sid, (_, created) in _manual_sessions.items()
+                   if now - created > _MANUAL_SESSION_TTL_SECONDS]
+        for sid in expired:
+            _manual_sessions.pop(sid, None)
+        overflow = len(_manual_sessions) - _MANUAL_SESSION_MAX
+        if overflow > 0:
+            oldest = sorted(_manual_sessions.items(), key=lambda kv: kv[1][1])[:overflow]
+            for sid, _ in oldest:
+                _manual_sessions.pop(sid, None)
+
+
+def _get_manual_solver(session_id: str):
+    entry = _manual_sessions.get(session_id)
+    return entry[0] if entry else None
 
 
 @api.route('/manual_start', methods=['POST'])
@@ -40,8 +67,10 @@ def manual_start():
             domain=domain, expression=expression,
             variable=variable, point=point, direction=direction,
         )
+        _prune_manual_sessions()
         session_id = uuid.uuid4().hex
-        _manual_sessions[session_id] = solver
+        with _manual_sessions_lock:
+            _manual_sessions[session_id] = (solver, time.monotonic())
         return jsonify({
             'success': True,
             'session_id': session_id,
@@ -68,7 +97,7 @@ def manual_step():
     session_id = data.get('session_id', '')
     rule_name = data.get('rule_name', '')
 
-    solver = _manual_sessions.get(session_id)
+    solver = _get_manual_solver(session_id)
     if solver is None:
         return jsonify({'success': False, 'error': 'Session not found'})
 
@@ -94,7 +123,7 @@ def manual_undo():
     data = request.json or {}
     session_id = data.get('session_id', '')
 
-    solver = _manual_sessions.get(session_id)
+    solver = _get_manual_solver(session_id)
     if solver is None:
         return jsonify({'success': False, 'error': 'Session not found'})
 
@@ -120,7 +149,7 @@ def manual_fallback():
     data = request.json or {}
     session_id = data.get('session_id', '')
 
-    solver = _manual_sessions.get(session_id)
+    solver = _get_manual_solver(session_id)
     if solver is None:
         return jsonify({'success': False, 'error': 'Session not found'})
 
@@ -144,5 +173,6 @@ def manual_reset():
     """
     data = request.json or {}
     session_id = data.get('session_id', '')
-    _manual_sessions.pop(session_id, None)
+    with _manual_sessions_lock:
+        _manual_sessions.pop(session_id, None)
     return jsonify({'success': True})

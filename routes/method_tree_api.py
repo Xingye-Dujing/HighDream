@@ -2,6 +2,7 @@
 
 from flask import jsonify, request
 
+from core.input_validation import as_bool_flag
 from routes.task_manager import task_manager
 
 from .api_blueprint import api
@@ -30,7 +31,7 @@ def method_tree_start():
     if not data.get('expression'):
         return jsonify({'success': False, 'error': 'missing expression'})
 
-    interactive = data.get('interactive', False)
+    interactive = as_bool_flag(data.get('interactive', False))
     if interactive:
         from config import METHOD_TREE_INTERACTIVE_TASK_TIMEOUT_SECONDS  # pylint: disable=import-outside-toplevel
         timeout = METHOD_TREE_INTERACTIVE_TASK_TIMEOUT_SECONDS

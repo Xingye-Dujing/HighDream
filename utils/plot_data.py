@@ -198,9 +198,18 @@ def sample_curve(data):
 
     lo = _as_num(data.get('xmin', data.get('lower')))
     hi = _as_num(data.get('xmax', data.get('upper')))
-    if lo is None or hi is None or hi <= lo:
-        lo = lo if lo is not None else -PLOT_DEFAULT_WINDOW
-        hi = hi if hi is not None and hi > lo else PLOT_DEFAULT_WINDOW
+    span = 2 * PLOT_DEFAULT_WINDOW
+    if lo is None and hi is None:
+        lo, hi = -PLOT_DEFAULT_WINDOW, PLOT_DEFAULT_WINDOW
+    elif lo is None:
+        # Only an upper bound was given: keep the default window width.
+        lo = hi - span
+    elif hi is None:
+        # Only a lower bound was given: previously this produced a *reversed*
+        # window ([100 .. 10]) because hi silently fell back to +10.
+        hi = lo + span
+    if hi <= lo:
+        return {'success': False, 'error': 'xmin 必须小于 xmax'}
     try:
         n = int(data.get('samples', PLOT_DEFAULT_SAMPLES))
     except (TypeError, ValueError):

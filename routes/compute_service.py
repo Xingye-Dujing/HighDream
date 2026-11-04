@@ -14,6 +14,7 @@ from sympy import Symbol, preorder_traversal, latex
 
 from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
 from core.input_validation import (
+    as_bool_flag as _as_bool_flag,
     looks_like_operator_input as _looks_like_operator_input,
     normalize_matrix_input as _normalize_matrix_input,
     normalize_scalar_input as _normalize_scalar_input,
@@ -631,8 +632,8 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
         # lets applied handlers publish their composable _auto_value back).
         data['expression'] = expression
 
-        use_cache = data.get('use_cache', False) == 'True'
-        record_cache = data.get('record_cache', False) == 'True'
+        use_cache = _as_bool_flag(data.get('use_cache', False))
+        record_cache = _as_bool_flag(data.get('record_cache', False))
 
         # Optional user assumptions (e.g. "x>0, y real"). Applied as a final honest
         # simplify step on the calculators below. The result cache key (db_cache.
@@ -664,7 +665,8 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
             # omits the key, so a plain bool/absent value must still mean "special
             # matchers ON" (the documented default). str()-coercion keeps '' False-only
             # semantics without silently disabling quotient-diff / f*e^g rules.
-            include_special_matchers = str(data.get('include_special_matchers', True)) == 'True'
+            include_special_matchers = _as_bool_flag(
+                data.get('include_special_matchers', True), default=True)
             bounds = {}
             lower_raw = str(data.get('lower', '')).strip()
             upper_raw = str(data.get('upper', '')).strip()

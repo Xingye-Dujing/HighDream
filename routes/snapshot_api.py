@@ -25,9 +25,12 @@ def snapshot_save():
     if not isinstance(cells, list) or not cells:
         return jsonify({'success': False, 'error': '笔记本为空'})
     title = (data.get('title') or '').strip()
-    meta = snapshot_store.create_snapshot(
-        json.dumps(cells, ensure_ascii=False), title
-    )
+    try:
+        meta = snapshot_store.create_snapshot(
+            json.dumps(cells, ensure_ascii=False), title
+        )
+    except ValueError as exc:
+        return jsonify({'success': False, 'error': str(exc)})
     return jsonify({'success': True, 'snapshot': meta})
 
 

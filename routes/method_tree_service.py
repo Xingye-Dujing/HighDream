@@ -17,6 +17,7 @@ import threading
 from typing import Any, Dict, Optional, Tuple
 
 import config
+from core.input_validation import as_bool_flag
 from core.method_tree_enumerator import MethodTreeEnumerator
 
 
@@ -26,7 +27,7 @@ _lock = threading.Lock()
 
 def _extract_kwargs(data: Dict[str, Any]) -> Dict[str, Any]:
     """Pull the subset of keys MethodTreeEnumerator accepts."""
-    interactive = data.get('interactive', False)
+    interactive = as_bool_flag(data.get('interactive', False))
     kwargs = {
         'domain': data.get('domain', 'diff'),
         'expression': data.get('expression', ''),

@@ -2,6 +2,7 @@
 
 from flask import jsonify, request
 
+from core.input_validation import as_bool_flag
 from domains import MatrixAnalyzer, MatrixCalculator, ProcessManager
 
 from .api_blueprint import api
@@ -19,11 +20,13 @@ def matrix_analyze():
     """
     data = request.json or {}
     expr = data.get('expression', '')
+    if not isinstance(expr, str) or not expr.strip():
+        return jsonify({'success': False, 'error': '请输入矩阵表达式'})
     from utils.matrix_latex import latex_to_nested  # pylint: disable=import-outside-toplevel
     try:
         expr = latex_to_nested(expr)
         return jsonify(MatrixAnalyzer().analyze(expr))
-    except ValueError as exc:
+    except (ValueError, TypeError) as exc:
         return jsonify({'success': False, 'error': str(exc)})
 
 
@@ -43,7 +46,7 @@ def matrix_cal():
     data = request.json or {}
     expr = data.get('expression', '')
     ops = [o for o in data.get('operations', '').split('\n') if o.strip()]
-    record = data.get('record_all_steps') == 'True'
+    record = as_bool_flag(data.get('record_all_steps'))
     if not ops:
         return jsonify({'success': False, 'error': '请输入矩阵操作', 'steps': ''})
     from utils.matrix_latex import latex_to_nested  # pylint: disable=import-outside-toplevel

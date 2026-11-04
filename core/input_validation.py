@@ -80,6 +80,19 @@ def normalize_matrix_input(expression: str, validate: bool = True):
     return True, text
 
 
+def as_bool_flag(value, default: bool = False) -> bool:
+    """Interpret a UI flag that may arrive as a real bool or as ``'True'``/``'False'``.
+
+    The notebooks send strings, but API clients (and the tests) may send JSON
+    booleans; comparing with ``== 'True'`` silently ignored the latter.
+    """
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ('true', '1', 'yes')
+
+
 def user_error(exc, operation_type: str) -> str:
     """Map internal parser/engine exceptions to a readable user-facing message."""
     msg = str(exc).strip()

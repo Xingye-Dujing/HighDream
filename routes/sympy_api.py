@@ -74,7 +74,11 @@ def sympy_calculate():
 
     try:
         expr = cached_sympify(expression)
-        var = Symbol(variable, real=True)
+        # No assumptions on the working symbol: the expression's own symbols are
+        # assumption-free (sympify), and sympy treats Symbol('x', real=True) as a
+        # *different* symbol, which made diff/integral/limit silently return
+        # 0 / x*x / x for every input.
+        var = Symbol(variable)
 
         if operation_type == 'diff':
             result = diff(expr, var)
@@ -83,7 +87,7 @@ def sympy_calculate():
         elif operation_type == 'limit':
             point = data.get('point', '0')
             direction = data.get('direction', '+-')
-            point = sympify(point)
+            point = cached_sympify(str(point))
             result = limit(expr, var, point, dir=direction)
         else:
             # Default to just returning the parsed expression
