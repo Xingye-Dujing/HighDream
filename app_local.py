@@ -2,7 +2,7 @@ import threading
 import time
 import webbrowser
 
-from gevent import pywsgi
+from werkzeug.serving import make_server
 
 from app import create_app
 
@@ -17,7 +17,11 @@ from app import create_app
 if __name__ == '__main__':
     # Function to run the server
     def start_server():
-        server = pywsgi.WSGIServer(('127.0.0.1', 5000), create_app(), log=None)
+        # Werkzeug's threaded server runs every request in its own OS thread.
+        # The previous gevent greenlet server shared a single hub: any handler
+        # that blocked (e.g. the SSE endpoint waiting on a task's threading.Event)
+        # froze *every* other request until that wait returned.
+        server = make_server('127.0.0.1', 5000, create_app(), threaded=True)
         server.serve_forever()
 
     # Start server in a separate thread
