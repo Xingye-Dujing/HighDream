@@ -40,6 +40,30 @@ def test_definite_upper_only_defaults_lower_to_zero():
     assert simplify(steps[-1] - 2) == 0
 
 
+def test_blank_lower_bound_interior_pole_reports_divergence():
+    # Regression: a blank lower bound reaches the engine as the int 0 (no
+    # ``is_number``), so the interior-pole scan was skipped and a divergent
+    # integral returned a bogus finite Newton-Leibniz value.
+    for expr in ('1/(x-1)', '1/(x-1)**2'):
+        steps, _ = IntegralCalculator().compute_list(expr, x, lower=0, upper=2)
+        assert steps[-1] == sympy.nan, (expr, steps[-1])
+
+
+def test_blank_lower_bound_web_path_reports_divergence():
+    ok, res = _dispatch_compute(
+        'integral',
+        {'operation_type': 'integral', 'expression': '1/(x-1)',
+         'variable': 'x', 'lower': '', 'upper': '2'})
+    assert ok
+    assert 'NaN' in res and '发散' in res
+
+
+def test_definite_normal_integral_unaffected_by_pole_scan():
+    # The added sympify must not change a normal (pole-free) definite integral.
+    steps, _ = IntegralCalculator().compute_list('x**2', x, lower=0, upper=3)
+    assert simplify(steps[-1] - 9) == 0
+
+
 def test_infinity_token_spellings_all_parse_to_oo():
     # users type the infinite bound many ways; all must reach SymPy's oo
     assert cached_sympify('∞') == oo

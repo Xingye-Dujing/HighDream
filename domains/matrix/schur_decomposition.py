@@ -209,97 +209,25 @@ class SchurDecomposition(CommonMatrixCalculator):
             self.add_matrix(A, "A")
             self.step_generator.add_step(f"\\text{{矩阵维度: }} {n} \\times {n}")
 
-        # Initialize with A and identity matrix
-        T = A.copy()
-        Q = eye(n)
+        # Exact real Schur via recursive invariant-subspace deflation. The old
+        # single-pass QR loop crashed on rank-deficient submatrices (SymPy's QR
+        # drops zero-norm columns, breaking the fixed-size copy into Q_full) and
+        # left T non-triangular; this construction is exact and finite.
+        Q, T = self._recursive_schur(A, max_depth=max_iterations)
 
         if show_steps:
-            self.add_step("初始化")
-            self.add_matrix(Q, "Q_0")
-            self.add_matrix(T, "T_0")
+            Q = Q.applyfunc(simplify)
+            T = T.applyfunc(simplify)
 
-        for iteration in range(min(n - 1, max_iterations)):
-            if show_steps:
-                self.add_step(f"迭代 {iteration + 1}")
-
-            # Select bottom-right submatrix for QR decomposition
-            submatrix_size = n - iteration
-            sub_T = T[iteration:, iteration:]
-
-            if show_steps:
-                self.step_generator.add_step(
-                    f"\\text{{处理子矩阵(大小 }} {submatrix_size} \\times {submatrix_size} \\text{{)}}")
-                self.add_matrix(
-                    sub_T, f"T_{iteration}[{iteration}:, {iteration}:]")
-
-            # QR decomposition
-            Q_sub, R_sub = sub_T.QRdecomposition()
-
-            if show_steps:
-                self.add_step("子矩阵的 QR 分解")
-                self.add_matrix(Q_sub, f"Q_{iteration}^{{sub}}")
-                self.add_matrix(R_sub, f"R_{iteration}^{{sub}}")
-
-                # Verify QR decomposition
-                Q_times_R = Q_sub * R_sub
-                self.add_matrix(
-                    Q_times_R, f"Q_{iteration}^{{sub}} R_{iteration}^{{sub}}")
-                if Q_times_R == sub_T:
-                    self.step_generator.add_step("\\text{QR 分解验证正确}")
-                else:
-                    self.step_generator.add_step("\\text{QR 分解验证错误}")
-
-            # Update T matrix
-            # Construct full Q rotation matrix
-            Q_full = eye(n)
-            for i in range(submatrix_size):
-                for j in range(submatrix_size):
-                    Q_full[iteration + i, iteration + j] = Q_sub[i, j]
-
-            # Update: T = Q^H * T * Q
-            T_new = Q_full.transpose().conjugate() * T * Q_full
-
-            if show_steps:
-                self.add_step("更新 T 矩阵")
-                self.add_equation(
-                    f"T_{iteration + 1} = Q_{iteration}^H T_{iteration} Q_{iteration}")
-                self.add_matrix(T_new, f"T_{iteration + 1}")
-
-            # Update accumulated Q matrix
-            Q = Q * Q_full
-
-            if show_steps:
-                self.add_step("更新 Q 矩阵")
-                self.add_equation(
-                    f"Q_{iteration + 1} = Q_{iteration} Q_{iteration}^{{rot}}")
-                self.add_matrix(Q, f"Q_{iteration + 1}")
-
-            T = T_new
-
-            # Check convergence (whether lower triangular part approaches 0)
-            convergence = True
-            for i in range(iteration + 2, n):
-                for j in range(iteration + 1):
-                    if abs(T[i, j]) > 1e-10:  # Convergence threshold
-                        convergence = False
-                        break
-                if not convergence:
-                    break
-
-            if convergence and show_steps:
-                self.step_generator.add_step(
-                    f"\\text{{在第 {iteration + 1} 次迭代后收敛}}")
-                break
-
-        # Final verification
-        if show_steps:
-            self.add_step("最终结果验证")
+            self.add_step("结果")
             self.add_matrix(Q, "Q")
             self.add_matrix(T, "T")
 
+            # Final verification
+            self.add_step("最终结果验证")
             Q_H = Q.transpose().conjugate()
-            Q_T_Q = Q_H * Q
-            reconstruction = Q * T * Q_H
+            Q_T_Q = (Q_H * Q).applyfunc(simplify)
+            reconstruction = (Q * T * Q_H).applyfunc(simplify)
 
             self.add_step("正交性验证")
             self.add_matrix(Q_T_Q, "Q^H Q")
@@ -314,6 +242,93 @@ class SchurDecomposition(CommonMatrixCalculator):
                 self.step_generator.add_step("\\text{Schur 分解正确}")
 
         return Q, T
+
+    @staticmethod
+    def _seed_orthonormal(seeds, size):
+        """Orthonormalize ``seeds`` and complete them to a full orthonormal basis.
+
+        Returns ``(basis, seed_count)`` where ``basis`` has ``size`` real
+        orthonormal columns starting with the orthonormalized seeds, and
+        ``seed_count`` is how many independent seed vectors survived.
+        """
+        basis = []
+
+        def _orthogonalize(vec):
+            u = vec
+            for base in basis:
+                denom = simplify(base.dot(base))
+                if denom != 0:
+                    u = u - (simplify(u.dot(base)) / denom) * base
+            return u.applyfunc(simplify)
+
+        for seed in seeds:
+            u = _orthogonalize(seed)
+            norm = sqrt(simplify(u.dot(u)))
+            if norm != 0:
+                basis.append((u / norm).applyfunc(simplify))
+        seed_count = len(basis)
+        for k in range(size):
+            if len(basis) >= size:
+                break
+            unit = zeros(size, 1)
+            unit[k] = 1
+            u = _orthogonalize(unit)
+            norm = sqrt(simplify(u.dot(u)))
+            if norm != 0:
+                basis.append((u / norm).applyfunc(simplify))
+        return basis, seed_count
+
+    @staticmethod
+    def _diag_blocks(block, sub_q, size):
+        """``diag(I_block, sub_q)`` as a ``size x size`` matrix."""
+        result = zeros(size)
+        for i in range(block):
+            result[i, i] = 1
+        for i in range(sub_q.rows):
+            for j in range(sub_q.cols):
+                result[block + i, block + j] = sub_q[i, j]
+        return result
+
+    def _recursive_schur(self, H: Matrix, max_depth: int = 100) -> Tuple[Matrix, Matrix]:
+        """Exact real Schur ``(Q, T)`` by recursive invariant-subspace deflation.
+
+        Picks one eigenvector of ``H``, uses it (or, for a complex eigenvalue, its
+        real and imaginary parts) to build an orthonormal basis whose first
+        column(s) span an ``A``-invariant subspace, then recurses on the trailing
+        block. ``T`` is block upper triangular (1x1 real blocks, 2x2 blocks for a
+        complex-conjugate pair)."""
+        n = H.rows
+        if n == 0:
+            return zeros(0, 0), zeros(0, 0)
+        if n == 1:
+            return eye(1), H.copy()
+        if max_depth <= 0:
+            raise ValueError("Schur 分解递归深度超限")
+
+        vector = H.eigenvects()[0][2][0].applyfunc(simplify)
+        real_part = vector.applyfunc(lambda z: simplify(z.as_real_imag()[0]))
+        imag_part = vector.applyfunc(lambda z: simplify(z.as_real_imag()[1]))
+        is_real = all(value == 0 for value in imag_part)
+        seeds = [real_part] if is_real else [real_part, imag_part]
+        block = len(seeds)
+
+        orthonormal, seed_count = self._seed_orthonormal(seeds, n)
+        if seed_count < block:
+            raise ValueError("无法为 Schur 分解构造不变子空间")
+        basis = Matrix.hstack(*orthonormal)
+        reduced = (basis.transpose() * H * basis).applyfunc(simplify)
+
+        sub_q, sub_t = self._recursive_schur(reduced[block:, block:], max_depth - 1)
+
+        q_mat = (basis * self._diag_blocks(block, sub_q, n)).applyfunc(simplify)
+        t_mat = zeros(n)
+        for i in range(block):
+            for j in range(n):
+                t_mat[i, j] = reduced[i, j]
+        for i in range(sub_t.rows):
+            for j in range(sub_t.cols):
+                t_mat[block + i, block + j] = sub_t[i, j]
+        return q_mat, t_mat
 
     def schur_decomposition_direct(self, matrix_input: str, show_steps: bool = True) -> Tuple[Matrix, Matrix]:
         """Direct method for Schur decomposition (applicable to diagonalizable matrices)."""
@@ -418,14 +433,24 @@ class SchurDecomposition(CommonMatrixCalculator):
         # Orthogonalize
         orthogonal_basis = self.gram_schmidt(all_eigenvectors, show_steps)
 
+        # A Hermitian matrix always has n orthonormal eigenvectors (counting
+        # multiplicity), so Gram-Schmidt yields a full orthonormal basis even when
+        # eigenvalues repeat. The old code indexed the *distinct*-eigenvalue dict
+        # by row number, which raised IndexError for any repeated eigenvalue.
+        if len(orthogonal_basis) < n:
+            raise ValueError("无法为 Hermitian 矩阵构造完整的正交特征基")
+
         # Construct Q and T
         Q = zeros(n)
-        T = zeros(n)
-
         for i in range(n):
             for j in range(n):
                 Q[j, i] = orthogonal_basis[i][j]
-            T[i, i] = list(eigenvalues.keys())[i]  # Eigenvalues on diagonal
+
+        # T = Q^H A Q is exactly diagonal for a Hermitian matrix; computing it
+        # (instead of dumping distinct eigenvalues on the diagonal) also carries
+        # repeated eigenvalues correctly.
+        Q_H = Q.transpose().conjugate()
+        T = (Q_H * A * Q).applyfunc(simplify)
 
         if show_steps:
             self.add_matrix(Q, "Q")

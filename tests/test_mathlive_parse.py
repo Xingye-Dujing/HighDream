@@ -40,6 +40,34 @@ def test_derivative_and_integral_latex():
     assert cached_sympify(r'\int_{0}^{1} x\, dx') == Integral(x, (x, 0, 1))
 
 
+def test_higher_order_derivative_latex_is_normalized():
+    # Regression: _DIFF_RE only matched \frac{d}{dx}, so the editor's
+    # \frac{d^{2}}{dx^{2}} template was root-sympified into d**2*x**3/dx**2 (garbage)
+    # and never routed to the derivative engine.
+    from core.latex_syntax import _normalize_latex_ops
+    from core.input_validation import looks_like_operator_input
+    assert _normalize_latex_ops(r'\frac{d^{2}}{dx^{2}}(x^{3})') == 'diff(x^{3},x,2)'
+    assert _normalize_latex_ops(r'\frac{d^2}{dx^2}(x^{3})') == 'diff(x^{3},x,2)'
+    assert looks_like_operator_input(r'\frac{d^{2}}{dx^{2}}(x^{3})')
+
+
+def test_higher_order_partial_derivative_latex_is_normalized():
+    # \frac{\partial^{2}}{\partial x^{2}} used to reach raw sympify as
+    # Symbol('partial')*y -- a silently wrong answer.
+    from core.latex_syntax import _normalize_latex_ops
+    assert _normalize_latex_ops(r'\frac{\partial^2}{\partial x^2}(x^{2} y)') == 'diff(x^{2} y,x,2)'
+    assert _normalize_latex_ops(r'\frac{\partial}{\partial x}(x^{2} y)') == 'diff(x^{2} y,x)'
+    assert _normalize_latex_ops(r'\partial_x (x^{2} y)') == 'diff(x^{2} y,x)'
+
+
+def test_higher_order_derivative_dispatches_end_to_end():
+    from routes.compute_service import _dispatch_auto
+    ok, res = _dispatch_auto(r'\frac{d^{2}}{dx^{2}}(x^{3})')
+    assert ok and '无法' not in res
+    # second derivative of x^3 is 6x; the engine must reach it, not a bogus product.
+    assert 'd^{2}' not in res
+
+
 def test_unfilled_placeholder_raises_friendly():
     for s in [r'\square', r'\frac{}{}', r'\sqrt{}']:
         with pytest.raises(ValueError):

@@ -23,8 +23,13 @@ from core.operator_registry import _AUTO_FUNCS
 _OP_CALL_RX = re.compile(r'(?<![A-Za-z_\\])([A-Za-z][A-Za-z0-9]*)\s*\(')
 _SUM_RE = re.compile(r'\\sum\s*_\{([^{}]*?)\}(?:\s*\^\{([^{}]*)\})?')
 _PROD_RE = re.compile(r'\\prod\s*_\{([^{}]*?)\}(?:\s*\^\{([^{}]*)\})?')
-_DIFF_RE = re.compile(r'\\frac\{d(?:\^\{?(\w+)\}?)?\}\{d\s*(\w)\}')
+_DIFF_RE = re.compile(
+    r'\\frac\{d(?:\s*\^\s*\{?(\d+)\}?)?\}\{d\s*([A-Za-z])(?:\s*\^\s*\{?(\d+)\}?)?\}')
 _PARTIAL_RE = re.compile(r'\\partial\s*_\s*\{?(\w)\}?')
+# \frac{\partial^{n}}{\partial x^{n}} (n optional) - the higher-order partial
+# spelling the editor inserts; _PARTIAL_RE alone only matches \partial_x.
+_PARTIAL_FRAC_RE = re.compile(
+    r'\\frac\{\\partial(?:\s*\^\s*\{?(\d+)\}?)?\}\{\\partial\s*([A-Za-z])(?:\s*\^\s*\{?(\d+)\}?)?\}')
 _INTEGRAL_RE = re.compile(r'\\int(?![A-Za-z])(?:\s*_\{([^{}]*)\})?(?:\s*\^\{([^{}]*)\})?')
 _LIMIT_RE = re.compile(r'\\lim\s*_\{')
 _DIRECTION_RE = re.compile(r'\^\{\s*(\\pm|pm|[+-])\s*\}\s*$')
@@ -182,6 +187,29 @@ def _nl_diff(src):
             continue
         out.append(src[i:match.start()])
         order, var = match.group(1), match.group(2)
+        order = order or match.group(3)   # \frac{d^{2}}{dx^{2}} puts n in either brace
+        tail = rf',{order}' if order else ''
+        out.append(rf'diff({_normalize_latex_ops(body)},{var}{tail})')
+        i = after
+    return ''.join(out)
+
+
+def _nl_partial_frac(src):
+    """``\\frac{\\partial^{n}}{\\partial X^{n}}`` + ``(BODY)`` -> ``diff(BODY, X[, n])``."""
+    out, i = [], 0
+    while True:
+        match = _PARTIAL_FRAC_RE.search(src, i)
+        if not match:
+            out.append(src[i:])
+            break
+        body, after = _grab_balanced_paren(src, match.end())
+        if body is None:
+            out.append(src[i:match.end()])
+            i = match.end()
+            continue
+        out.append(src[i:match.start()])
+        order = match.group(1) or match.group(3)
+        var = match.group(2)
         tail = rf',{order}' if order else ''
         out.append(rf'diff({_normalize_latex_ops(body)},{var}{tail})')
         i = after
@@ -189,7 +217,8 @@ def _nl_diff(src):
 
 
 def _nl_partial(src):
-    """``\\partial_{X} (BODY)`` -> ``diff(BODY, X)``."""
+    """``\\frac{\\partial^{n}}{\\partial X^{n}}`` / ``\\partial_{X}`` + body -> ``diff``."""
+    src = _nl_partial_frac(src)
     out, i = [], 0
     while True:
         match = _PARTIAL_RE.search(src, i)

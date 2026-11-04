@@ -303,6 +303,15 @@ def create_integral_calculator(base_class):
             for concrete finite bounds the search is confined to Interval.open(a, b);
             otherwise iteration is capped. Symbolic bounds cannot be compared, so they
             are skipped rather than crashing on ``a <= b``."""
+            # Bounds may arrive as plain Python numbers (the web path defaults a
+            # blank lower bound to the int ``0``); plain numbers have no
+            # ``is_number`` attribute, so sympify first. Otherwise the pole scan
+            # is silently skipped and a divergent integral returns a bogus finite
+            # Newton-Leibniz value.
+            try:
+                a, b = sympify(a), sympify(b)
+            except Exception:  # pylint: disable=broad-exception-caught
+                return []
             if not (getattr(a, 'is_number', False) and getattr(b, 'is_number', False)):
                 return []
             try:
