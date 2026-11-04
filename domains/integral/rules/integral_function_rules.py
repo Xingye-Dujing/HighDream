@@ -389,8 +389,12 @@ cosh_matcher = _create_matcher(cosh)
 tanh_matcher = _create_matcher(tanh)
 
 
-def const_matcher(expr: Expr, _context: RuleContext) -> MatcherFunctionReturn:
-    if expr.is_constant():
+def const_matcher(expr: Expr, context: RuleContext) -> MatcherFunctionReturn:
+    # Anything independent of the working variable is a constant factor for this
+    # integral -- including *other symbols* when the caller picked the variable
+    # explicitly (int a dt = a*t + C). ``is_constant`` alone only covers numbers.
+    var = context.get('variable')
+    if expr.is_constant() or (var is not None and not expr.has(var)):
         return 'const'
     return None
 

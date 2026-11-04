@@ -62,10 +62,10 @@ class BaseTransform(CommonMatrixCalculator):
         try:
             try:
                 old_basis_inv = old_basis.inv()
-            except Exception:
+            except Exception as exc:
                 self.step_generator.add_step(
                     r"\text{V 不可逆, 这意味着 V 的列向量线性相关, 不构成基}")
-                return None
+                raise ValueError('旧基不可逆（列向量线性相关），不构成基') from exc
             self.add_matrix(
                 old_basis_inv, r"其中\;V^{-1}")
 
@@ -74,9 +74,12 @@ class BaseTransform(CommonMatrixCalculator):
 
             return P
 
+        except ValueError:
+            raise
         except Exception as e:
-            self.step_generator.add_step(f"\\text{{错误: {e}}}")
-            return None
+            # Never bury an internal error inside the shown steps and claim the
+            # computation succeeded; let the API layer report it.
+            raise ValueError(f'过渡矩阵计算失败: {e}') from e
 
     def coordinate_transform(self, vector_input: str, from_basis_input: str, to_basis_input: str,
                              show_steps: bool = True) -> Dict[str, Matrix] | None:
@@ -190,13 +193,15 @@ class BaseTransform(CommonMatrixCalculator):
         if operation in ['basis_change', 'change_basis']:
             # For basis_change_matrix: old_basis, new_basis
             if len(expressions) >= 2:
-                self.basis_change_matrix(expressions[0], expressions[1])
+                if self.basis_change_matrix(expressions[0], expressions[1]) is None:
+                    raise ValueError('基变换失败: 请检查两个基矩阵的维度与可逆性')
 
         elif operation in ['coordinate_transform', 'coord_transform']:
             # For coordinate_transform: vector, from_basis, to_basis
             if len(expressions) >= 3:
-                self.coordinate_transform(
-                    expressions[0], expressions[1], expressions[2])
+                if self.coordinate_transform(
+                        expressions[0], expressions[1], expressions[2]) is None:
+                    raise ValueError('坐标变换失败: 请检查向量与两个基矩阵的维度')
 
         elif operation in ['standard_to_basis', 'std_to_basis']:
             # For standard_to_basis: vector, basis

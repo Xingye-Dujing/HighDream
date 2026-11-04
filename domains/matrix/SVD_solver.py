@@ -125,6 +125,8 @@ class SVDSolver(CommonMatrixCalculator):
         self.step_generator.clear()
 
         A = self.parse_matrix_input(matrix_input)
+        if A.has(I):
+            raise ValueError('奇异值分解仅支持实矩阵（输入含虚数单位 i）')
 
         if show_steps:
             self.step_generator.add_step(r"\textbf{奇异值分解求解器}")
@@ -339,6 +341,8 @@ class SVDSolver(CommonMatrixCalculator):
         self.step_generator.clear()
 
         A = self.parse_matrix_input(matrix_input)
+        if A.has(I):
+            raise ValueError('奇异值分解仅支持实矩阵（输入含虚数单位 i）')
 
         if show_steps:
             self.step_generator.add_step(r"\textbf{奇异值计算}")

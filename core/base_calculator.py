@@ -262,6 +262,11 @@ class BaseCalculator(ABC):
                 # through substitutions via the operation's own variables.
                 context['variable'] = passed_var if isinstance(passed_var, Symbol) \
                     else symbol_list[0]
+            elif isinstance(passed_var, Symbol):
+                # The caller named the working variable (the integral UI's variable
+                # selector): honor it even when the integrand does not contain it.
+                # Otherwise int(2, t) silently became int(2, x).
+                context['variable'] = passed_var
             else:
                 context['variable'] = symbol_list[0] if symbol_list else Symbol("x")
 

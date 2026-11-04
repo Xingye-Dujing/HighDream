@@ -98,28 +98,55 @@ def matrix_jordan(expression):
 
 
 def matrix_definiteness(expression):
-    """Sylvester criterion: classify A by its leading principal minors."""
+    """Classify a real symmetric matrix by its eigenvalues.
+
+    Sylvester's leading-minor criterion only decides strict definiteness; a
+    semidefinite matrix (e.g. the zero matrix, or diag(1, 0)) has a zero minor and
+    used to be reported as "indefinite", which is mathematically wrong. The
+    eigenvalues decide all five cases; the minors stay in the shown derivation.
+    """
     try:
         mat = matrix_of(expression)
         if mat.rows != mat.cols:
             return False, '正定/负定判定要求方阵'
+        if mat != mat.T:
+            return False, '正定/负定判定要求实对称矩阵'
         minors = [simplify(mat[:k, :k].det()) for k in range(1, mat.rows + 1)]
+        eigvals = list(mat.eigenvals().keys())
     except Exception as exc:  # pylint: disable=broad-exception-caught
         return False, f'矩阵解析失败: {exc}'
     lines = ['& ' + latex(mat) + r' \quad \text{实对称矩阵 } A']
     for k, delta in enumerate(minors, start=1):
         lines.append(r'& \Delta_{' + str(k) + r'} = ' + latex(delta) + r'\quad \text{顺序主子式}')
-    signs = [getattr(d, 'is_positive', None) for d in minors]
-    if all(s is True for s in signs):
-        verdict = '正定 (所有顺序主子式均大于 0)'
-    elif signs and signs[0] is False and all(signs[i] is (i % 2 == 1) for i in range(len(signs))):
-        verdict = '负定 (顺序主子式符号交替, 与 (-1)^k 同号)'
-    elif None in signs:
-        verdict = '无法判定 (含未定符号的主子式)'
-    elif all(s is not False for s in signs):
-        verdict = '半正定/不定 (存在退化的顺序主子式, 建议结合特征值)'
+
+    signs = []
+    for val in eigvals:
+        if val.is_positive:
+            signs.append(1)
+        elif val.is_negative:
+            signs.append(-1)
+        elif val.is_zero:
+            signs.append(0)
+        else:
+            signs = None
+            break
+
+    if signs is None:
+        verdict = '无法判定 (含未定符号的特征值)'
+    elif all(s == 0 for s in signs):
+        verdict = '零矩阵: 既半正定又半负定'
+    elif all(s > 0 for s in signs):
+        verdict = '正定 (所有特征值大于 0)'
+    elif all(s >= 0 for s in signs):
+        verdict = '半正定 (特征值非负, 存在 0 特征值)'
+    elif all(s < 0 for s in signs):
+        verdict = '负定 (所有特征值小于 0)'
+    elif all(s <= 0 for s in signs):
+        verdict = '半负定 (特征值非正, 存在 0 特征值)'
     else:
-        verdict = '不定 (不满足正定或负定条件)'
+        verdict = '不定 (特征值有正有负)'
+    if signs is not None:
+        lines.append(r'& \text{特征值: } ' + ', '.join(latex(v) for v in eigvals))
     lines.append(r'& \Rightarrow \boxed{\text{' + verdict + r'}}')
     return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
 
