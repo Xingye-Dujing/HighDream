@@ -350,7 +350,7 @@ function renderMathPreview() {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        previewArea.innerHTML = `$$${data.result}$$`;
+        previewArea.innerHTML = `$$${escapeHtml(data.result)}$$`;
         if (window.MathJax && typeof MathJax.typesetPromise === "function") {
           MathJax.typesetPromise([previewArea]);
         }
@@ -369,7 +369,7 @@ function updateAnalysisResults(data) {
   if (data.rank !== undefined) {
     const rankElement = document.querySelector('.rank');
     if (rankElement) {
-      rankElement.innerHTML = `\\( \\text{rank}(A) = ${data.rank} \\)`;
+      rankElement.innerHTML = `\\( \\text{rank}(A) = ${escapeHtml(data.rank)} \\)`;
       // Re-add control buttons
       addMathOutputControls();
     }
@@ -379,7 +379,7 @@ function updateAnalysisResults(data) {
   if (data.determinant !== undefined) {
     const detElement = document.querySelector('.det');
     if (detElement) {
-      detElement.innerHTML = `\\( \\det(A) = ${data.determinant} \\)`;
+      detElement.innerHTML = `\\( \\det(A) = ${escapeHtml(data.determinant)} \\)`;
       // Re-add control buttons
       addMathOutputControls();
     }
@@ -392,7 +392,7 @@ function updateAnalysisResults(data) {
       // Construct matrix display based on returned data format
       let matrixLatex = '';
       data.eigenvalues.forEach((value, idx) => {
-        matrixLatex += '\\lambda_{' + (idx + 1) + '} = ' + value;
+        matrixLatex += '\\lambda_{' + (idx + 1) + '} = ' + escapeHtml(value);
         matrixLatex += idx < data.eigenvalues.length - 1 ? ',\\quad' : '';
       })
       eigenValuesElement.innerHTML = `\\( ${matrixLatex} \\)`
@@ -401,7 +401,7 @@ function updateAnalysisResults(data) {
     }
     else if (data.eigenvalues) {
       if (eigenValuesElement) {
-        eigenValuesElement.innerHTML = `\\( ${data.eigenvalues} \\)`;
+        eigenValuesElement.innerHTML = `\\( ${escapeHtml(data.eigenvalues)} \\)`;
         // Re-add control buttons
         addMathOutputControls();
       }
@@ -415,7 +415,7 @@ function updateAnalysisResults(data) {
       // Construct matrix display based on returned data format
       let matrixLatex = '';
       data.eigenvectors.forEach((vector, idx) => {
-        matrixLatex += '\\boldsymbol{v}_{' + (idx + 1) + '} = ' + vector;
+        matrixLatex += '\\boldsymbol{v}_{' + (idx + 1) + '} = ' + escapeHtml(vector);
         matrixLatex += idx < data.eigenvectors.length - 1 ? ',\\quad' : '';
       });
       eigenVectorsElement.innerHTML = `\\( ${matrixLatex} \\)`;
@@ -424,7 +424,7 @@ function updateAnalysisResults(data) {
     }
     else if (data.eigenvectors) {
       if (eigenVectorsElement) {
-        eigenVectorsElement.innerHTML = `\\( ${data.eigenvectors} \\)`;
+        eigenVectorsElement.innerHTML = `\\( ${escapeHtml(data.eigenvectors)} \\)`;
         // Re-add control buttons
         addMathOutputControls();
       }
@@ -444,7 +444,7 @@ function runRef() {
   }
   const refElement = document.querySelector('.ref');
   if (refElement) {
-    refElement.innerHTML = '\\[ ' + data_copy.ref + ' \\]';
+    refElement.innerHTML = '\\[ ' + escapeHtml(data_copy.ref) + ' \\]';
     addMathOutputControls();
     if (window.MathJax && typeof MathJax.typesetPromise === "function") {
       MathJax.typesetPromise([refElement]);
@@ -458,7 +458,7 @@ function showProcessResult(element, data, label) {
     element.innerHTML = `<span class="preview-error">${escapeHtml((data && data.error) || label + '计算失败')}</span>`;
     return;
   }
-  element.innerHTML = '\\[ ' + (data.process || '') + ' \\]';
+  element.innerHTML = '\\[ ' + escapeHtml(data.process || '') + ' \\]';
   addMathOutputControls();
   if (window.MathJax && typeof MathJax.typesetPromise === "function") {
     MathJax.typesetPromise([element]);
@@ -566,9 +566,9 @@ function runSVD() {
       const UElement = document.querySelector('.svd.U');
       const SElement = document.querySelector('.svd.S');
       const VElement = document.querySelector('.svd.V');
-      if (data.U && UElement) UElement.innerHTML = '\\[ U = ' + data.U + ' \\]';
-      if (data.S && SElement) SElement.innerHTML = '\\[ \\Sigma = ' + data.S + ' \\]';
-      if (data.V && VElement) VElement.innerHTML = '\\[ V = ' + data.V + ' \\]';
+      if (data.U && UElement) UElement.innerHTML = '\\[ U = ' + escapeHtml(data.U) + ' \\]';
+      if (data.S && SElement) SElement.innerHTML = '\\[ \\Sigma = ' + escapeHtml(data.S) + ' \\]';
+      if (data.V && VElement) VElement.innerHTML = '\\[ V = ' + escapeHtml(data.V) + ' \\]';
       addMathOutputControls();
       if (window.MathJax && typeof MathJax.typesetPromise === "function") {
         MathJax.typesetPromise([UElement, SElement, VElement].filter(Boolean));

@@ -54,6 +54,7 @@
     if (open && open.panel) return open
     var panel = document.createElement('div')
     panel.className = 'hd-select-menu'
+    panel.id = 'hd-select-menu'
     panel.setAttribute('role', 'listbox')
     panel.hidden = true
 
@@ -63,6 +64,12 @@
     var scroll = document.createElement('div')
     scroll.className = 'hd-select-scroll'
     panel.appendChild(scroll)
+
+    /*  Bound once (not per open): the pointer leaving the list drops the
+        highlight.                                                          */
+    scroll.addEventListener('mouseleave', function () {
+      if (open) clearHighlight(open)
+    })
 
     document.body.appendChild(panel)
     open = { panel: panel, scroll: scroll, trigger: null, select: null, items: [], index: -1 }
@@ -141,12 +148,6 @@
     st.scroll.scrollTop = 0
     st.items = Array.prototype.slice.call(
       st.scroll.querySelectorAll('.hd-select-option:not([disabled])'))
-
-    /*  The pointer leaving the list means nothing is hovered, so the tint
-        goes with it. */
-    st.scroll.addEventListener('mouseleave', function () {
-      clearHighlight(st)
-    })
 
     st.items.forEach(function (el) {
       el.addEventListener('mouseenter', function () {
@@ -257,14 +258,32 @@
     select.hdTrigger = trigger
     select.hdText = text
 
+    /*  Keep the visual trigger in step with programmatic select.disabled
+        changes (e.g. the rule-select page locking its inputs while busy).   */
+    function syncDisabled() {
+      trigger.disabled = select.disabled
+    }
+    if (window.MutationObserver) {
+      new MutationObserver(syncDisabled).observe(
+        select, { attributes: true, attributeFilter: ['disabled'] })
+    }
+    syncDisabled()
+
     trigger.addEventListener('click', function () {
+      if (select.disabled) return
       if (open && open.trigger === trigger) closeMenu()
       else openMenu(trigger, select)
     })
     trigger.addEventListener('keydown', function (e) {
+      if (select.disabled) return
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
+        // Already open: let the document handler move the highlight / commit.
+        // Opening from this keystroke must not also be handled as navigation,
+        // which used to skip one item or commit the highlighted one at once.
+        if (open && open.trigger === trigger) return
         openMenu(trigger, select)
+        e.stopPropagation()
         if (e.key === 'ArrowUp') highlight(open, open.index - 1)
       }
     })

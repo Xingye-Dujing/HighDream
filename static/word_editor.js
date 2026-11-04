@@ -615,11 +615,9 @@ function setupParagraphEvents(paragraph) {
     // Setup autocomplete for LaTeX input and get the new textarea
     const newTextarea = setupLatexAutocomplete(textarea);
 
-    newTextarea.addEventListener('input', function () {
-      debounce(() => {
-        renderLatex(paragraph);
-      }, 200)();
-    });
+    newTextarea.addEventListener('input', debounce(function () {
+      renderLatex(paragraph);
+    }, 200));
 
     newTextarea.addEventListener('focus', function () {
       setActiveParagraph(paragraph);
@@ -727,7 +725,7 @@ function runSymPyCode(paragraph) {
       if (data.success) {
         // If there is LaTeX result, prioritize displaying LaTeX
         if (data.latex) {
-          output.innerHTML = `$$${data.latex}$$<div style="font-size: calc(var(--font-sub) * var(--fscale)); color: var(--text-faint); margin-top: var(--space-2);">${escapeHtml(data.result)}</div>`;
+          output.innerHTML = `$$${escapeHtml(data.latex)}$$<div style="font-size: calc(var(--font-sub) * var(--fscale)); color: var(--text-faint); margin-top: var(--space-2);">${escapeHtml(data.result)}</div>`;
         } else {
           output.textContent = data.result;
         }
@@ -765,7 +763,7 @@ function renderLatex(paragraph) {
     return;
   }
 
-  render.innerHTML = `$$${latex}$$`;
+  render.innerHTML = `$$${escapeHtml(latex)}$$`;
 
   if (window.MathJax) {
     MathJax.typesetPromise([render]).catch((err) => {

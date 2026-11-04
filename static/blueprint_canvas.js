@@ -68,6 +68,13 @@ class BlueprintCanvas {
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
+      // Never delete a node while the user types in an editor inside it.
+      const target = e.target;
+      const tag = target && target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' ||
+          (target && target.closest && target.closest('[contenteditable="true"]'))) {
+        return;
+      }
       if (e.key === 'Delete' && this.selectedNode) {
         this.deleteNode(this.selectedNode.id);
       }
@@ -259,7 +266,7 @@ class BlueprintCanvas {
 
       case 'render':
         content = `
-          <div class="bp-node-result" data-node-id="${node.id}">${node.data.latex ? this.renderLatex(node.data.latex) : '渲染结果'}</div>
+          <div class="bp-node-result" data-node-id="${node.id}">${node.data.latex ? this.renderLatex(escapeHtml(node.data.latex)) : '渲染结果'}</div>
         `;
         break;
     }
@@ -322,11 +329,15 @@ class BlueprintCanvas {
   addNodeEventListeners(nodeEl, node) {
     // Node selection
     nodeEl.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('bp-port') &&
-        !e.target.classList.contains('bp-node-btn') &&
-        !e.target.tagName === 'BUTTON' &&
-        !e.target.tagName === 'TEXTAREA' &&
-        !e.target.tagName === 'SELECT') {
+      const target = e.target;
+      if (target.closest && target.closest('button, textarea, select, input, [contenteditable="true"]')) {
+        return;
+      }
+      if (!target.classList.contains('bp-port') &&
+        !target.classList.contains('bp-node-btn') &&
+        target.tagName !== 'BUTTON' &&
+        target.tagName !== 'TEXTAREA' &&
+        target.tagName !== 'SELECT') {
         this.selectNode(node.id);
       }
     });
@@ -896,7 +907,7 @@ class BlueprintCanvas {
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          element.innerHTML = this.renderLatex(data.latex);
+          element.innerHTML = this.renderLatex(escapeHtml(data.latex));
           // Re-render MathJax if available
           if (window.MathJax) {
             window.MathJax.typeset([element]);
@@ -1440,7 +1451,7 @@ class BlueprintCanvas {
     notification.innerHTML = `
       <div class="notification-content">
         <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-        <span>${message}</span>
+        <span>${escapeHtml(message)}</span>
       </div>
     `;
 

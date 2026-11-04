@@ -33,6 +33,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // --------------------------------------------------------------- helpers
 
+  /** Escape untrusted text / server LaTeX before it goes into innerHTML. */
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   /** Show a non-blocking loading spinner on the rules area */
   function showLoading() {
     $rulesList.classList.add('rs-loading');
@@ -86,8 +93,8 @@ document.addEventListener('DOMContentLoaded', function () {
       /* replace $...$ with \(...\) for inline math — tex-chtml-full.js default */
       expl = expl.replace(/\$([^$]+)\$/g, '\\(' + '$1' + '\\)');
       html += `<div class="rs-step${active ? ' active' : ''}">
-        <div class="rs-step-explanation">${expl}</div>
-        <div class="rs-step-latex">$$${st.latex}$$</div>
+        <div class="rs-step-explanation">${escapeHtml(expl)}</div>
+        <div class="rs-step-latex">$$${escapeHtml(st.latex)}$$</div>
       </div>`;
     }
     $stepsList.innerHTML = html;
@@ -99,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Current expression label
     if (state.current_expr_latex && !state.done) {
-      $currentLabel.innerHTML = '当前: \\(' + state.current_expr_latex + '\\)';
+      $currentLabel.innerHTML = '当前: \\(' + escapeHtml(state.current_expr_latex) + '\\)';
       if (window.MathJax && MathJax.typesetPromise) {
         MathJax.typesetPromise([$currentLabel]).catch(function () {});
       }
@@ -133,10 +140,10 @@ document.addEventListener('DOMContentLoaded', function () {
     let rulesHtml = '';
     for (const r of rules) {
       const previewHtml = r.latex_preview
-        ? '<span class="rs-rule-preview">\\(' + r.latex_preview + '\\)</span>'
+        ? '<span class="rs-rule-preview">\\(' + escapeHtml(r.latex_preview) + '\\)</span>'
         : '';
-      rulesHtml += `<div class="rs-rule-card" data-rule="${r.name}">
-        <div class="rs-rule-name">${r.display_name || r.name}</div>
+      rulesHtml += `<div class="rs-rule-card" data-rule="${escapeHtml(r.name)}">
+        <div class="rs-rule-name">${escapeHtml(r.display_name || r.name)}</div>
         ${previewHtml}
       </div>`;
     }

@@ -14,6 +14,24 @@ function escapeHtml(s) {
     .replace(/'/g, "&#39;");
 }
 
+// Only allow non-executing URL schemes for markdown links (block javascript:, etc.).
+function safeUrl(url) {
+  const trimmed = String(url).trim();
+  return /^(https?:|mailto:|#|\/)/i.test(trimmed) ? trimmed : "#";
+}
+
+// True when a keydown came from a text editor (input/textarea/select,
+// contenteditable, MathLive field). Single-letter Ctrl/Cmd shortcuts must not
+// hijack editing there -- Ctrl+D used to delete the whole cell mid-typing.
+function isTextEditingTarget(target) {
+  if (!target || !target.tagName) return false;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "MATH-FIELD") {
+    return true;
+  }
+  return !!(target.closest && target.closest('[contenteditable="true"]'));
+}
+
 // Initialize after page loads
 document.addEventListener("DOMContentLoaded", function () {
   applyTheme(isDarkTheme);
@@ -46,7 +64,7 @@ function bindEvents() {
 
   // Cancel active cell when clicking elsewhere in the document
   document.addEventListener("click", function (e) {
-    if (!e.target.closest(".cell") && !e.target.closest("#math-keyboard") && !e.target.closest("#hd-top-menu") && !e.target.closest("#toolbar")) {
+    if (!e.target.closest(".cell") && !e.target.closest("#math-keyboard") && !e.target.closest("#hd-top-menu") && !e.target.closest("#toolbar") && !e.target.closest(".hd-select-menu") && !e.target.closest(".hd-select")) {
       document.querySelectorAll(".cell").forEach((cell) => {
         cell.classList.remove("cell-active");
         if (cell.dataset.cellType === "markdown") {
@@ -69,6 +87,9 @@ function bindEvents() {
       if (activeCell) runCell(activeCell);
       e.preventDefault();
     }
+
+    // The remaining shortcuts are document-level only (not while editing).
+    if (isTextEditingTarget(e.target)) return;
 
     if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
@@ -153,12 +174,10 @@ function setupCellEvents(cell) {
       runOpretation(cell);
     });
 
-    // Textbox input event - real-time preview
-    textarea.addEventListener("input", function () {
-      debounce(() => {
-        renderMathPreview(cell);
-      }, 500)();
-    });
+    // Textbox input event - real-time preview (debounced: build the wrapper once)
+    textarea.addEventListener("input", debounce(function () {
+      renderMathPreview(cell);
+    }, 500));
   }
 
   const cellPrompt = cell.querySelector(".cell-prompt");
@@ -271,9 +290,6 @@ function createCellElement(id, type) {
               </button>
               <button class="operation-button" title="操作">
                 <i class="fas fa-calculator"></i>
-              </button>
-              <button class="keyboard-button" title="虚拟键盘">
-                <i class="fas fa-keyboard"></i>
               </button>
             </div>
             <textarea placeholder="输入矩阵，例如 [[1,2],[3,4]]（也可点右侧矩阵模板）" class="math-input" data-universal-input></textarea>
@@ -453,7 +469,7 @@ function renderMathPreview(cell) {
     .replace(/\\placeholder\s*\{\s*\}/g, "\\square")
     .replace(/\\placeholder\b/g, "\\square")
     .replace(/\{\s*\}/g, "{\\square}");
-  previewArea.innerHTML = `$$${latex}$$`;
+  previewArea.innerHTML = `$$${escapeHtml(latex)}$$`;
   if (window.MathJax && typeof MathJax.typesetPromise === "function") {
     MathJax.typesetPromise([previewArea]);
   }
@@ -644,7 +660,8 @@ function renderMarkdown(cell) {
 
   if (!markdownInput || !markdownRendered) return;
 
-  const content = markdownInput.value;
+  // Escape first: all raw HTML from the cell is neutralized before we re-add markup.
+  const content = escapeHtml(markdownInput.value);
 
   // Simple Markdown rendering implementation
   let html = content
@@ -663,8 +680,8 @@ function renderMarkdown(cell) {
     .replace(/`(.*?)`/gim, '<code>$1</code>')
     // Line break
     .replace(/\n/gim, '<br>')
-    // Link
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank">$1</a>')
+    // Link (URL scheme allowlisted to block javascript:)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, (m, text, url) => '<a href="' + safeUrl(url) + '" target="_blank" rel="noopener noreferrer">' + text + '</a>')
     // Unordered list
     .replace(/^\s*[-*] (.*$)/gim, '<li>$1</li>')
     // Handle list wrapping

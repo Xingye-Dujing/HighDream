@@ -30,6 +30,8 @@
   var pollTimer = null;
   var renderedNodeIds = new Set();
   var renderedTree = null;
+  // Monotonic token so a slow linear-path response cannot overwrite a newer one.
+  var pathRequestSeq = 0;
 
   // User-mutable structure (initialized from backend tree; then user can rewire).
   var userChildren = {};  // nodeId -> [childNodeIds]
@@ -170,9 +172,14 @@
 
   // ------------------------------------------------------------------- polling
 
+  var pollFailures = 0;
+  var MAX_POLL_FAILURES = 4;
+
   function startEnumeration() {
     hideError();
     if (!elExpr.value.trim()) { showError('请输入表达式'); return; }
+    stopPolling(); // never leave an older interval running in parallel
+    pollFailures = 0;
     isInteractive = elInteractive.checked;
     var body = {
       domain: elDomain.value,
@@ -208,11 +215,17 @@
 
   function cancelEnumeration() {
     if (!currentTaskId) return;
+    var taskId = currentTaskId;
     fetch('/api/method_tree_cancel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ task_id: currentTaskId }),
+      body: JSON.stringify({ task_id: taskId }),
     }).catch(function () {});
+    // The server marks the task's tree as cancelled; stop watching immediately
+    // instead of leaving the UI busy until some later poll notices.
+    stopPolling();
+    setUiBusy(false);
+    closeOverlay();
   }
 
   function pollOnce() {
@@ -224,13 +237,24 @@
     })
       .then(function (r) { return r.json(); })
       .then(function (payload) {
+        pollFailures = 0;
         if (payload.tree && !window.__mtFirstPayloadLogged) {
           window.__mtFirstPayloadLogged = true;
           console.log('[mt] FIRST tree payload:', JSON.stringify(payload.tree, null, 2));
         }
         handlePoll(payload);
       })
-      .catch(function (err) { showError('轮询失败: ' + err); });
+      .catch(function (err) {
+        // A dead server or flaky network must not spin a request every 400 ms
+        // forever: stop after a few consecutive failures and let the user retry.
+        pollFailures += 1;
+        if (pollFailures >= MAX_POLL_FAILURES) {
+          stopPolling();
+          setUiBusy(false);
+          closeOverlay();
+          showError('轮询失败: ' + err + '（已停止轮询，请重试）');
+        }
+      });
   }
 
   function handlePoll(payload) {
@@ -328,10 +352,8 @@
   function showDecision(decision, payload) {
     if (!elDecisionPanel) return;
     elDecisionRuleName.textContent = decision.rule_display || decision.rule_name;
-    elDecisionParentLatex.innerHTML = decision.parent_latex
-      ? ('\\(' + decision.parent_latex + '\\)') : '<em>(空)</em>';
-    elDecisionPreviewLatex.innerHTML = decision.preview_latex
-      ? ('\\(' + decision.preview_latex + '\\)') : '<em>(空)</em>';
+    elDecisionParentLatex.innerHTML = decision.parent_latex ? ('\\(' + escapeHtml(decision.parent_latex) + '\\)') : '<em>(空)</em>';
+    elDecisionPreviewLatex.innerHTML = decision.preview_latex ? ('\\(' + escapeHtml(decision.preview_latex) + '\\)') : '<em>(空)</em>';
     elDecisionPanel.style.display = '';
     // Typeset the LaTeX in the decision panel.
     if (mathJaxReady && window.MathJax && MathJax.typesetPromise) {
@@ -389,6 +411,7 @@
     if (!elPathPanel || !elPathLatex || !elPathSteps) return;
     var node = nodeData[nodeId];
     if (!node) return;
+    var requestId = ++pathRequestSeq;
     if (elPathTitle) {
       elPathTitle.textContent = '线性推导 · 路径到「' +
         (node.rule_display || node.rule_applied || '此节点') + '」';
@@ -413,6 +436,7 @@
     })
       .then(function (r) { return r.json(); })
       .then(function (data) {
+        if (requestId !== pathRequestSeq) return; // a newer node was clicked
         if (!data || !data.success) {
           elPathLatex.innerHTML = '<em class="mt-error">' +
             escapeHtml((data && data.error) || '生成失败') + '</em>';
@@ -428,13 +452,14 @@
             : (st.explanation ? st.explanation : '');
           expl = expl.replace(/\$([^$]+)\$/g, '\\(' + '$1' + '\\)');
           html += '<div class="rs-step' + (i === data.steps.length - 1 ? ' active' : '') + '">' +
-            '<div class="rs-step-explanation">' + expl + '</div>' +
-            '<div class="rs-step-latex">$$' + st.latex + '$$</div></div>';
+            '<div class="rs-step-explanation">' + escapeHtml(expl) + '</div>' +
+            '<div class="rs-step-latex">$$' + escapeHtml(st.latex) + '$$</div></div>';
         });
         elPathSteps.innerHTML = html;
         safeTypeset([elPathPanel]);
       })
       .catch(function (err) {
+        if (requestId !== pathRequestSeq) return;
         elPathLatex.innerHTML = '<em class="mt-error">请求失败: ' +
           escapeHtml(String(err)) + '</em>';
       });
@@ -713,7 +738,7 @@
     var content = document.createElement('div');
     content.className = 'mt-node-content';
     var latex = (node.parent ? (node.top_latex || node.latex) : node.latex) || '';
-    content.innerHTML = latex ? ('\\(' + latex + '\\)') : '<em>(空)</em>';
+    content.innerHTML = latex ? ('\\(' + escapeHtml(latex) + '\\)') : '<em>(空)</em>';
     el.appendChild(content);
 
     updateFooter(el, node);

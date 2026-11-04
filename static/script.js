@@ -462,7 +462,7 @@ function bindEvents() {
 
   // Cancel active cell when clicking on other areas of the document
   document.addEventListener("click", function (e) {
-    if (!e.target.closest(".cell") && !e.target.closest("#math-keyboard") && !e.target.closest("#hd-top-menu") && !e.target.closest("#toolbar")) {
+    if (!e.target.closest(".cell") && !e.target.closest("#math-keyboard") && !e.target.closest("#hd-top-menu") && !e.target.closest("#toolbar") && !e.target.closest(".hd-select-menu") && !e.target.closest(".hd-select")) {
       document.querySelectorAll(".cell").forEach((cell) => {
         cell.classList.remove("cell-active");
         if (cell.dataset.cellType === "code" && !foreverVisible) {
@@ -492,6 +492,10 @@ function bindEvents() {
       e.preventDefault();
       saveNotebook();
     }
+
+    // The remaining shortcuts are document-level only: while the user types in
+    // an editor (or a MathLive field) Ctrl/Cmd+A/B/D and the arrows stay native.
+    if (isTextEditingTarget(e.target)) return;
 
     if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
@@ -749,6 +753,7 @@ function setupCellEvents(cell) {
       area.addEventListener("keydown", function (e) {
         if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
+          e.stopPropagation();
           evaluateAndAdvance();
         }
       });
@@ -1226,7 +1231,9 @@ function updateKernelStatus(status) {
 
 // Run single cell
 function runCell(cell) {
-  const operationType = cell.querySelector(".operation-type").value;
+  const operationSelect = cell.querySelector(".operation-type");
+  if (!operationSelect) return; // markdown-only cells have nothing to compute
+  const operationType = operationSelect.value;
   const expression = readExpr(cell);
   const variable = cell.querySelector(".var-input input")
     ? cell.querySelector(".var-input input").value.trim() || "x"
@@ -1246,6 +1253,9 @@ function runCell(cell) {
   }
 
   outputArea.dataset.latexSource = "";
+  // A second run of the same cell must replace the first one: close its stream
+  // and ignore its late result, otherwise an older answer can overwrite the new.
+  cancelCellTask(outputArea);
   outputArea.innerHTML = '<div class="loading">计算中...</div>';
   updateKernelStatus('busy');
 
@@ -1392,7 +1402,7 @@ function renderExpressionResult(outputArea, data) {
   // is the result itself, not a one-item list: show it as plain math output.
   if (expressions.length === 1) {
     const only = expressions[0];
-    outputArea.innerHTML = `<div class="math-output">$$${only.latex}$$</div>`;
+    outputArea.innerHTML = `<div class="math-output">$$${escapeHtml(only.latex)}$$</div>`;
     outputArea.dataset.latexSource = JSON.stringify([only.latex]);
     addMathOutputControls();
     if (window.MathJax && typeof MathJax.typesetPromise === "function") {
@@ -1407,7 +1417,7 @@ function renderExpressionResult(outputArea, data) {
   } else {
     html += `<div class="expr-list"> <h3>等价表达式</h3>`;
     expressions.forEach((it, idx) => {
-      html += `<div class="expr-item"> <div class="expr-rank">${idx + 1}.&nbsp;&nbsp;${it.reason}<div><div class="expr-content">$$${it.latex}$$</div></div>`;
+      html += `<div class="expr-item"> <div class="expr-rank">${idx + 1}.&nbsp;&nbsp;${escapeHtml(it.reason)}<div><div class="expr-content">$$${escapeHtml(it.latex)}$$</div></div>`;
     });
     html += `</div>`;
   }
@@ -1446,6 +1456,18 @@ function escapeHtml(s) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+// True when a keydown came from a text editor (input/textarea/select,
+// contenteditable, MathLive field). Single-letter Ctrl/Cmd shortcuts must not
+// hijack editing there -- Ctrl+D used to delete the whole cell mid-typing.
+function isTextEditingTarget(target) {
+  if (!target || !target.tagName) return false;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "MATH-FIELD") {
+    return true;
+  }
+  return !!(target.closest && target.closest('[contenteditable="true"]'));
 }
 
 // Only allow non-executing URL schemes for markdown links (block javascript:, etc.).
@@ -1938,7 +1960,7 @@ function loadNotebookData(cells) {
 
       // Trigger change event to show/hide appropriate controls
       if (operationTypeSelect) {
-        operationTypeSelect.dispatchEvent(new Event('change'));
+        operationTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
       }
     } else {
       const textarea = cell.querySelector("textarea");
@@ -2210,7 +2232,7 @@ function spawnCellFromSubtask(sub) {
   const opSel = cell.querySelector(".operation-type");
   if (opSel) {
     opSel.value = sub.op;
-    opSel.dispatchEvent(new Event("change"));
+    opSel.dispatchEvent(new Event("change", { bubbles: true }));
   }
   const ta = cell.querySelector("textarea");
   if (ta) ta.value = sub.expression || "";
@@ -2494,7 +2516,7 @@ function attachPlot(outputArea, cell) {
         if (!data || !data.success || !(data.points || []).length) {
           loaded = false;
           const msg = (data && data.error) || '此表达式暂不支持作图';
-          body.innerHTML = '<span class="hd-plot-loading">' + msg + '</span>';
+          body.innerHTML = '<span class="hd-plot-loading">' + escapeHtml(msg) + '</span>';
           return;
         }
         body.appendChild(renderPlotSvg(data));
@@ -2559,11 +2581,29 @@ function attachStepLinks(outputArea, cell) {
     .catch(() => {});
 }
 
+function cancelCellTask(outputArea) {
+  const oldId = outputArea.dataset.activeTask;
+  if (!oldId) return;
+  const old = pollTimers.get(oldId);
+  if (old) {
+    old.close();
+    pollTimers.delete(oldId);
+  }
+  delete outputArea.dataset.activeTask;
+}
+
 function subscribeTask(taskId, outputArea, runButton, operationType) {
   const es = new EventSource(`/api/stream?task_id=${taskId}`);
   pollTimers.set(taskId, es);
+  outputArea.dataset.activeTask = taskId;
+
+  /** True when a newer run of this cell replaced the one that opened this stream. */
+  function isStale() {
+    return outputArea.dataset.activeTask !== taskId;
+  }
 
   es.addEventListener('status', function (e) {
+    if (isStale()) return;
     const data = JSON.parse(e.data);
     updateComputingStatus(outputArea, data.status);
   });
@@ -2571,6 +2611,8 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
   es.addEventListener('completed', function (e) {
     es.close();
     pollTimers.delete(taskId);
+    if (isStale()) return;
+    delete outputArea.dataset.activeTask;
 
     runButton.classList.remove("running");
     updateKernelStatus('idle');
@@ -2590,7 +2632,7 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
         result: exprList || task.result[0]
       });
     } else {
-      outputArea.innerHTML = `<div class="math-output">${task.result}</div>`;
+      outputArea.innerHTML = `<div class="math-output">${escapeHtml(task.result)}</div>`;
       outputArea.dataset.latexSource = JSON.stringify([task.result]);
 
       addMathOutputControls();
@@ -2616,6 +2658,8 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
   es.addEventListener('failed', function (e) {
     es.close();
     pollTimers.delete(taskId);
+    if (isStale()) return;
+    delete outputArea.dataset.activeTask;
 
     runButton.classList.remove("running");
     updateKernelStatus('idle');
@@ -2634,6 +2678,8 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
     // EventSource auto-reconnects; only clean up if permanently closed
     if (es.readyState === EventSource.CLOSED) {
       pollTimers.delete(taskId);
+      if (isStale()) return;
+      delete outputArea.dataset.activeTask;
       runButton.classList.remove("running");
       updateKernelStatus('idle');
       outputArea.innerHTML = '<div class="error">连接中断</div>';
