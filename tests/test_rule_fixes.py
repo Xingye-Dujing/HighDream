@@ -157,6 +157,12 @@ def test_matrix_definiteness_sylvester():
     assert '正定' in _dispatch_auto('definite([[2,0],[0,3]])')[1]
     assert '负定' in _dispatch_auto('definite([[-1,0],[0,-2]])')[1]
     assert '不定' in _dispatch_auto('definite([[1,2],[2,1]])')[1]
+    # Semidefinite matrices are not "indefinite": a zero eigenvalue decides.
+    assert '半正定' in _dispatch_auto('definite([[1,0],[0,0]])')[1]
+    assert '半正定' in _dispatch_auto('definite([[0,0],[0,0]])')[1]
+    assert '半负定' in _dispatch_auto('definite([[-1,0],[0,0]])')[1]
+    # Definiteness is only defined for symmetric matrices.
+    assert _dispatch_auto('definite([[1,2],[3,4]])')[0] is False
 
 
 def test_matrix_charpoly():

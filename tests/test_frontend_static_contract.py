@@ -76,3 +76,45 @@ def test_templates_have_unique_ids_and_local_assets():
                 continue
             relative = asset.split('?', 1)[0].replace('/static/', '', 1)
             assert (STATIC / relative).exists(), (path.name, asset)
+
+
+# Server-authored strings (SymPy LaTeX, rule explanations, task results) can carry
+# user-controlled characters: sympify accepts Symbol('<img src=x onerror=...>').
+# Whenever such a value is written with innerHTML it must be escapeHtml()-wrapped
+# (or set via textContent), otherwise the browser executes the injected tags.
+UNTRUSTED_INNERHTML_VALUES = [
+    ('script.js', 'only.latex'),
+    ('script.js', 'it.latex'),
+    ('script.js', 'it.reason'),
+    ('script.js', 'task.result'),
+    ('method_tree.js', 'decision.parent_latex'),
+    ('method_tree.js', 'decision.preview_latex'),
+    ('method_tree.js', 'st.latex'),
+    ('rule_select.js', 'st.latex'),
+    ('rule_select.js', 'state.current_expr_latex'),
+    ('rule_select.js', 'r.latex_preview'),
+    ('matrix_lab.js', 'data.steps'),
+    ('matrix_lab.js', 'data.result'),
+    ('matrix_analysis.js', 'data.result'),
+    ('matrix_analysis.js', 'data.rank'),
+    ('matrix_analysis.js', 'data.determinant'),
+    ('matrix_analysis.js', 'data.eigenvalues'),
+    ('matrix_analysis.js', 'data.eigenvectors'),
+    ('matrix_analysis.js', 'data_copy.ref'),
+    ('matrix_analysis.js', 'data.process'),
+    ('matrix_analysis.js', 'data.U'),
+    ('matrix_analysis.js', 'data.S'),
+    ('matrix_analysis.js', 'data.V'),
+    ('blueprint_canvas.js', 'data.latex'),
+    ('blueprint_canvas.js', 'node.data.latex'),
+    ('word_editor.js', 'data.latex'),
+]
+
+
+@pytest.mark.parametrize('filename,needle', UNTRUSTED_INNERHTML_VALUES)
+def test_server_values_are_escaped_before_innerhtml(filename, needle):
+    text = (STATIC / filename).read_text(encoding='utf-8')
+    for line in text.splitlines():
+        if needle not in line or 'innerHTML' not in line:
+            continue
+        assert 'escapeHtml' in line or 'textContent' in line, (filename, needle, line.strip())

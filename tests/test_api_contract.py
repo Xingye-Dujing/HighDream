@@ -202,6 +202,19 @@ def test_parse_render_and_convert_endpoints(client):
     }).get_json()
     assert unfilled['success'] is False
 
+    # Regression: operator input used to fall into SymPy's implicit-multiplication
+    # fallback and preview as "di f f(x^2, x)" / "a e g i n r t..." garbage.
+    diff_preview = client.post('/api/parse', json={
+        'expression': 'diff(x^2,x)', 'operation_type': 'auto',
+    }).get_json()
+    assert diff_preview['success'] is True
+    assert r'\operatorname{diff}' in diff_preview['result']
+    integral_preview = client.post('/api/parse', json={
+        'expression': 'integrate(x^2,x)', 'operation_type': 'auto',
+    }).get_json()
+    assert integral_preview['success'] is True
+    assert r'\operatorname{integrate}' in integral_preview['result']
+
     rendered = client.post('/api/render_latex', json={'expression': 'x^2'}).get_json()
     assert rendered['success'] is True and 'x^{2}' in rendered['latex']
     assert client.post('/api/render_latex', json={'expression': '((('}).get_json()['success'] is False
@@ -219,6 +232,23 @@ def test_sympy_endpoints(client):
         'expression': 'x^2', 'operation_type': 'diff', 'variable': 'x',
     }).get_json()
     assert diff['success'] is True and diff['result']
+    # Regression: Symbol(variable, real=True) is a *different* symbol than the
+    # assumption-free symbols sympify produces, so every derivative used to
+    # come back as "0" and every integral as "x*x".
+    assert diff['result'] == '2*x'
+    partial = client.post('/api/sympy_calculate', json={
+        'expression': 'x*y', 'operation_type': 'diff', 'variable': 'x',
+    }).get_json()
+    assert partial['result'] == 'y'
+    integral = client.post('/api/sympy_calculate', json={
+        'expression': 'x', 'operation_type': 'integral', 'variable': 'x',
+    }).get_json()
+    assert integral['result'] == 'x**2/2'
+    limit = client.post('/api/sympy_calculate', json={
+        'expression': 'sin(x)/x', 'operation_type': 'limit', 'variable': 'x',
+        'point': '0', 'direction': '+-',
+    }).get_json()
+    assert limit['result'] == '1'
     for op, extra in [
         ('integral', {}), ('limit', {'point': '0', 'direction': '+'}),
     ]:
@@ -243,6 +273,11 @@ def test_matrix_api_endpoints(client):
     assert analyzed['determinant'] == '-2'
     invalid = client.post('/api/matrix_analyze', json={'expression': '[[1,2],[3]]'}).get_json()
     assert invalid['success'] is False
+    # Regression: non-string payloads used to raise TypeError -> HTTP 500.
+    for bad in (None, 123, [], True, {'a': 1}):
+        response = client.post('/api/matrix_analyze', json={'expression': bad})
+        assert response.status_code == 200, bad
+        assert response.get_json()['success'] is False, bad
 
     for op_type in ('det_1', 'det_2', 'rank', 'eigen', 'svd'):
         payload = client.post('/api/get_process', json={
@@ -328,9 +363,34 @@ def test_method_tree_api(client):
     assert path['success'] is True, path
 
 
+def test_manual_sessions_are_pruned(monkeypatch):
+    from routes import manual_api  # pylint: disable=import-outside-toplevel
+
+    manual_api._manual_sessions.clear()  # pylint: disable=protected-access
+    now = time.monotonic()
+    # 5 expired entries + cap+5 fresh ones; prune must remove both classes.
+    for i in range(5):
+        manual_api._manual_sessions[f'old{i}'] = (object(), now - 10_000)  # pylint: disable=protected-access
+    for i in range(manual_api._MANUAL_SESSION_MAX + 5):  # pylint: disable=protected-access
+        # s0 is the oldest entry; the overflow evicts the oldest first.
+        manual_api._manual_sessions[f's{i}'] = (  # pylint: disable=protected-access
+            object(), now - (manual_api._MANUAL_SESSION_MAX + 5 - i))
+    manual_api._prune_manual_sessions()  # pylint: disable=protected-access
+    sessions = manual_api._manual_sessions  # pylint: disable=protected-access
+    assert len(sessions) == manual_api._MANUAL_SESSION_MAX  # pylint: disable=protected-access
+    assert all(not key.startswith('old') for key in sessions)
+    assert 's0' not in sessions and 's5' in sessions
+    sessions.clear()
+
+
 def test_snapshot_crud_api(client, temp_snapshot_db):
     empty = client.post('/api/snapshot_save', json={'cells': []}).get_json()
     assert empty['success'] is False
+    too_big = client.post('/api/snapshot_save', json={
+        'cells': [{'type': 'code', 'content': 'x' * (snapshot_store.MAX_SNAPSHOT_BYTES + 1)}],
+    }).get_json()
+    assert too_big['success'] is False
+    assert '2 MB' in too_big['error']
     saved = client.post('/api/snapshot_save', json={
         'cells': [{'type': 'code', 'content': 'x^2'}], 'title': 'first',
     }).get_json()

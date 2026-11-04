@@ -44,6 +44,27 @@ def test_huge_power_does_not_raise():
     assert res['success'] is True
 
 
+def test_one_sided_window_keeps_direction():
+    # Only a lower bound: the window must run forwards, not [100 .. 10].
+    res = sample_curve({'expression': 'x', 'xmin': 100, 'samples': 5})
+    assert res['success'] is True
+    xs = [p[0] for p in res['points']]
+    assert xs == sorted(xs), xs
+    assert res['xmax'] > 100
+
+    # Only an upper bound mirrors it backwards.
+    res = sample_curve({'expression': 'x', 'xmax': 5, 'samples': 5})
+    xs = [p[0] for p in res['points']]
+    assert xs == sorted(xs), xs
+    assert res['xmin'] < 5
+
+
+def test_reversed_window_is_rejected():
+    res = sample_curve({'expression': 'x', 'xmin': 5, 'xmax': 1})
+    assert res['success'] is False
+    assert 'xmin' in res['error']
+
+
 def test_tangent_overlay():
     res = sample_curve({'expression': 'x**2', 'variable': 'x', 'xmin': -1, 'xmax': 1,
                         'samples': 3, 'tangent_at': 0.5})

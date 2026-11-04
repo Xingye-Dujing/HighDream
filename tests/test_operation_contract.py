@@ -38,7 +38,7 @@ SAMPLES = {
     'trace': {'expression': '[[1,2],[3,4]]'},
     'pinv': {'expression': '[[1,2],[3,4]]'},
     'jordan': {'expression': '[[1,2],[3,4]]'},
-    'definiteness': {'expression': '[[1,2],[3,4]]'},
+    'definiteness': {'expression': '[[1,2],[2,1]]'},
     'charpoly': {'expression': '[[1,2],[3,4]]'},
     'nullspace': {'expression': '[[1,2],[3,4]]'},
     'colspace': {'expression': '[[1,2],[3,4]]'},
