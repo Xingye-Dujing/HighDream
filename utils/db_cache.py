@@ -58,19 +58,71 @@ def _get_conn() -> sqlite3.Connection:
     return _local.conn
 
 
+# Key schema version. Bumping this prefix invalidates every pre-existing row so
+# an old key (which ignored bounds / assumptions / order / unknown params) can
+# never be served as a hit for the richer v2 key.
+_HASH_VERSION = 'v2'
+
+# Canonical key name -> empty default, for every parameter known to influence a
+# derivation. The key ALWAYS carries this full structure, so omitting a field
+# still yields a self-consistent key. Any caller param NOT listed here is folded
+# in under ``extra`` (sorted by key) instead of being silently dropped, so a
+# newly introduced result-affecting field can never produce a stale cache hit.
+_KNOWN_FIELDS = {
+    'var': '', 'point': '', 'direction': '', 'options': {},
+    'lower': '', 'upper': '', 'bounds': '', 'assumptions': '', 'order': '',
+}
+# Caller-facing param name -> canonical key name (``variable`` is stored as
+# ``var`` to stay aligned with the DB columns).
+_PARAM_ALIASES = {
+    'variable': 'var',
+    'point': 'point',
+    'direction': 'direction',
+    'options': 'options',
+    'lower': 'lower',
+    'upper': 'upper',
+    'bounds': 'bounds',
+    'assumptions': 'assumptions',
+    'order': 'order',
+}
+
+
+def _hash_value(value):
+    """Coerce a param value into a deterministic, JSON-serializable structure.
+
+    SymPy objects (bounds, symbols, ...) are not JSON-serializable, so anything
+    outside the plain scalar/container types is reduced to ``str``; dict keys are
+    sorted so the result never depends on insertion order.
+    """
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, dict):
+        return {str(k): _hash_value(v)
+                for k, v in sorted(value.items(), key=lambda kv: str(kv[0]))}
+    if isinstance(value, (list, tuple)):
+        return [_hash_value(v) for v in value]
+    if isinstance(value, (set, frozenset)):
+        return sorted(str(v) for v in value)
+    return str(value)
+
+
 def build_hash(operation_type: str, expression: str, **params) -> str:
-    normalized = json.dumps({
-        'op': operation_type,
-        'expr': expression.strip(),
-        'var': str(params.get('variable', '')),
-        'point': str(params.get('point', '')),
-        'direction': str(params.get('direction', '')),
-        # Option flags that change the derivation (integral special matchers,
-        # L'Hopital cap, ...). Without them a cache hit could serve a derivation
-        # produced under completely different settings.
-        'options': params.get('options') or {},
-    }, sort_keys=True, ensure_ascii=False)
-    return hashlib.sha256(normalized.encode('utf-8')).hexdigest()
+    payload = {'op': operation_type, 'expr': expression.strip()}
+    for name, default in _KNOWN_FIELDS.items():
+        payload[name] = dict(default) if isinstance(default, dict) else default
+    extras = {}
+    for key in sorted(params):
+        value = _hash_value(params[key])
+        canonical = _PARAM_ALIASES.get(key)
+        if canonical is not None:
+            payload[canonical] = value
+        else:
+            extras[key] = value
+    if extras:
+        payload['extra'] = extras
+    normalized = json.dumps(payload, sort_keys=True, ensure_ascii=False)
+    digest = f'{_HASH_VERSION}|{normalized}'.encode('utf-8')
+    return hashlib.sha256(digest).hexdigest()
 
 
 def get(hash_key: str) -> Optional[str]:

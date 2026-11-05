@@ -48,6 +48,18 @@ class DBCachedCalculator:
         if options:
             context['options'] = options
 
+        # Result-affecting inputs that the dispatcher currently routes around the
+        # cache (definite-integral bounds, user assumptions, higher-order
+        # derivatives). Record them on the key too -- taken from the instance or
+        # the call context and defaulting to empty -- so the key stays self-
+        # consistent even if a bypass is ever removed. The bypass branches in
+        # compute_service.py are intentionally left untouched.
+        for field in ('lower', 'upper', 'bounds', 'order'):
+            context.setdefault(field, getattr(self, field, ''))
+        assumptions = getattr(self, 'assum_flags', None) or \
+            getattr(self, 'assumption_note', '')
+        context.setdefault('assumptions', assumptions or '')
+
         key = build_hash(op_type, expr, **context)
 
         if use_cache:

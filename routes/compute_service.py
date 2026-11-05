@@ -5,6 +5,11 @@ including calculus, linear algebra, and expression parsing operations.
 
 The service routes requests to appropriate calculators based on operation type
 and handles data processing, error handling, and result formatting.
+
+Deployment note: the in-memory task/session tables and the local SQLite result
+cache (utils/db_cache.py) only work on a single long-lived process (app_local.py).
+On stateless platforms (e.g. Vercel) task/session state must be externalized and
+HIGHDREAM_CACHE_DIR must point to a writable directory for the cache to work.
 """
 
 import re

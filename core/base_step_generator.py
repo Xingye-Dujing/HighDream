@@ -1,11 +1,9 @@
 from abc import ABC
 from typing import List, Tuple
 
-from sympy import Expr, Symbol
+from sympy import Dummy, Expr, Symbol
 
 from utils.cache_utils import cached_latex
-
-# from sympy import Dummy
 
 
 available_sym_chars = [
@@ -42,6 +40,8 @@ class BaseStepGenerator(ABC):
         self.subs_dict: dict = {}
         # copy() to avoid modifying the original list
         self.available_sym_chars = available_sym_chars.copy()
+        # Number of Dummy symbols handed out after the readable letters are gone.
+        self._dummy_count = 0
 
     def reset(self) -> None:
         """Reset internal state to prepare for a new calculation.
@@ -51,13 +51,19 @@ class BaseStepGenerator(ABC):
         self._explanations = []
         self.subs_dict = {}
         self.available_sym_chars = available_sym_chars.copy()
+        self._dummy_count = 0
 
     def get_available_sym(self, var: Symbol, **symbol_kwargs) -> Symbol:
         if var.name in self.available_sym_chars:
             self.available_sym_chars.remove(var.name)
         if not self.available_sym_chars:
-            raise ValueError("No more available symbols")
-            # return Dummy(var.name)
+            # The 26 readable single letters are exhausted (e.g. a very long
+            # substitution chain). Fall back to a fresh Dummy symbol instead of
+            # raising: the first 26 substitutions still use the original letters,
+            # so existing step LaTeX stays byte-for-byte unchanged. Dummy accepts
+            # the same assumption kwargs as Symbol and is unique on every call.
+            self._dummy_count += 1
+            return Dummy(f'{var.name}_{self._dummy_count}', **symbol_kwargs)
         new_sym_char = self.available_sym_chars[0]
         self.available_sym_chars.remove(new_sym_char)
         return Symbol(new_sym_char, **symbol_kwargs)
