@@ -1,8 +1,9 @@
 from typing import List, Union
 
-from sympy import Matrix, latex, simplify, solve, symbols, sympify, zeros
+from sympy import Matrix, latex, simplify, solve, symbols, zeros
 
 from core import CommonMatrixCalculator
+from utils.cache_utils import cached_sympify
 
 
 # from IPython.display import Math, display
@@ -31,7 +32,7 @@ class LinearDependence(CommonMatrixCalculator):
         try:
             if isinstance(vectors_input, str):
                 # Handle string input like "[[1,2],[3,4],[5,6]]"
-                matrix = Matrix(sympify(vectors_input))
+                matrix = Matrix(cached_sympify(vectors_input))
             elif isinstance(vectors_input, list):
                 # Handle the list of vectors
                 if all(isinstance(v, Matrix) for v in vectors_input):

@@ -3,7 +3,9 @@ from typing import List, Dict
 # A small value object with one public entry point is the intended API here.
 # pylint: disable=too-few-public-methods
 
-from sympy import Matrix, latex, sympify
+from sympy import Matrix, latex
+
+from utils.cache_utils import cached_sympify
 
 from .SVD_solver import SVDSolver
 from .ref_calculator import RefCalculator
@@ -34,7 +36,7 @@ class MatrixAnalyzer:
         """
         try:
             from utils.matrix_latex import latex_to_nested  # pylint: disable=import-outside-toplevel
-            return Matrix(sympify(latex_to_nested(matrix_input)))
+            return Matrix(cached_sympify(latex_to_nested(matrix_input)))
         except Exception as e:
             raise ValueError("无法解析矩阵输入. 请使用有效的矩阵格式 '[[1, 2], [3, 4]]'") from e
 

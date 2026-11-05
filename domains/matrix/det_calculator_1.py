@@ -3,6 +3,7 @@ from typing import List, Tuple
 from sympy import Expr, Matrix, latex, simplify, sympify
 
 from domains.matrix import RefStepGenerator
+from utils.cache_utils import cached_sympify
 
 
 class DeterminantCalculator:
@@ -28,7 +29,7 @@ class DeterminantCalculator:
     def _parse_matrix_input(matrix_input: str) -> Matrix:
         """Parse the input string into a SymPy Matrix."""
         try:
-            M = Matrix(sympify(matrix_input))
+            M = Matrix(cached_sympify(matrix_input))
             if M.shape[0] != M.shape[1]:  # The Matrix must be square
                 raise ValueError("矩阵必须为方阵")
             return M

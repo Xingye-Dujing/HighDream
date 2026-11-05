@@ -1,7 +1,9 @@
 from typing import List, Tuple, Union
 
-from sympy import Eq, Expr, Matrix, Ne, latex, simplify, sympify
+from sympy import Eq, Expr, Matrix, Ne, latex, simplify
 from sympy.core.relational import Relational
+
+from utils.cache_utils import cached_sympify
 
 from domains.matrix import (
     BranchManager, BranchNode, RefStepGenerator, apply_elimination_rule,
@@ -47,7 +49,7 @@ class RefCalculator:
             ValueError: If the matrix cannot be parsed from the input string.
         """
         try:
-            return Matrix(sympify(matrix_input))
+            return Matrix(cached_sympify(matrix_input))
         except Exception as e:
             raise ValueError("无法解析矩阵输入. 请使用有效的矩阵格式 '[[1, 2], [3, 4]]'") from e
 

@@ -3,12 +3,13 @@ from typing import List, Optional, Tuple
 import itertools
 
 from sympy import (Add, Eq, Integer, Interval, S, Symbol, Expr, Integral, Limit, fraction,
-                   latex, limit, log, oo, preorder_traversal, simplify, solveset, sympify,
+                   latex, limit, log, oo, preorder_traversal, simplify, solveset,
                    trigsimp)
 
 from core import BaseCalculator, SelectRuleCalculator
 from core.cached_calculator import DBCachedCalculator
 from domains.integral import MATCHER_LIST, RULE_DICT, N_MATCHER_LIST
+from utils.cache_utils import cached_sympify
 
 # Define the constant of integration C for indefinite integrals.
 C = Symbol('C')
@@ -191,8 +192,8 @@ def create_integral_calculator(base_class):
                 return False
             if result is None:
                 return False
-            lower = sympify(lower)
-            upper = sympify(upper)
+            lower = cached_sympify(lower)
+            upper = cached_sympify(upper)
             params = set(result.free_symbols) | set(lower.free_symbols) | set(upper.free_symbols)
             params.discard(var)
             if not params:
@@ -309,7 +310,7 @@ def create_integral_calculator(base_class):
             # is silently skipped and a divergent integral returns a bogus finite
             # Newton-Leibniz value.
             try:
-                a, b = sympify(a), sympify(b)
+                a, b = cached_sympify(a), cached_sympify(b)
             except Exception:  # pylint: disable=broad-exception-caught
                 return []
             if not (getattr(a, 'is_number', False) and getattr(b, 'is_number', False)):
@@ -450,7 +451,7 @@ def create_integral_calculator(base_class):
             generator, or None to fall through to the normal Newton-Leibniz path."""
             try:
                 a, b = lower, upper
-                a, b = sympify(a), sympify(b)
+                a, b = cached_sympify(a), cached_sympify(b)
                 if not (getattr(a, 'is_number', False) and getattr(b, 'is_number', False)
                         and getattr(a, 'is_finite', True) and getattr(b, 'is_finite', True)):
                     return None

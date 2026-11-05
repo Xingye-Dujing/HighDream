@@ -18,10 +18,10 @@ Unrecognised expressions are returned unchanged (a no-op) so the toggle is alway
 
 import re
 
-from sympy import latex, sympify
+from sympy import latex
 
 from utils.matrix_latex import latex_to_nested
-from utils.cache_utils import _has_huge_power_literal
+from utils.cache_utils import _has_huge_power_literal, cached_sympify
 
 from core.latex_syntax import (_extract_paren_arg, _fold_matrix_ops,
                                _normalize_latex_ops, _split_top_args)
@@ -58,9 +58,10 @@ def _is_mat(arg):
 def _L(expr):
     """Latex of a scalar/expression operand.
 
-    Uses pure SymPy syntax (``^``->``**``, ``ln``->``log``) and sympify directly, NOT
-    cached_sympify: the operator form is machine syntax, and cached_sympify's parse_latex
-    branch would mangle a bare ``sqrt(...)`` into ``s*q*r*t``. Falls back to raw text."""
+    Normalizes to pure SymPy syntax (``^``->``**``, ``ln``->``log``) before parsing.
+    The caret rewrite means cached_sympify takes its plain-text branch, so the
+    builtin-free parser guard applies without mangling a bare ``sqrt(...)`` into
+    ``s*q*r*t``. Falls back to raw text."""
     try:
         s = re.sub(r'\s*\^\s*', '**', str(expr))
         s = re.sub(r'\bln\s*\(', 'log(', s)
@@ -68,7 +69,7 @@ def _L(expr):
         # burn CPU/memory and then crash latex()'s int->str conversion.
         if _has_huge_power_literal(s):
             return str(expr)
-        return latex(sympify(s))
+        return latex(cached_sympify(s))
     except Exception:  # noqa
         return str(expr)
 

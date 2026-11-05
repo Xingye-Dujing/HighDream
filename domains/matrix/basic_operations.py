@@ -1,6 +1,7 @@
-from sympy import Matrix, latex, sympify, zeros
+from sympy import Matrix, latex, zeros
 
 from core import CommonMatrixCalculator
+from utils.cache_utils import cached_sympify
 
 
 # from sympy import symbols
@@ -169,7 +170,7 @@ class BasicOperations(CommonMatrixCalculator):
         if is_clear:
             self.step_generator.clear()
 
-        scalar = sympify(scalar_input)
+        scalar = cached_sympify(scalar_input)
         if not scalar.is_number:
             self.add_step(f"标量输入错误: {scalar_input}")
             return None

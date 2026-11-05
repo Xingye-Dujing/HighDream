@@ -1,9 +1,10 @@
 from abc import ABC
 
-from sympy import Matrix, latex, simplify, sympify
+from sympy import Matrix, latex, simplify
 
 from core.matrix_step_generator import MatrixStepGenerator
 from core.base_step_generator import format_note
+from utils.cache_utils import cached_sympify
 
 
 class CommonMatrixCalculator(ABC):
@@ -57,7 +58,7 @@ class CommonMatrixCalculator(ABC):
         try:
             if isinstance(matrix_input, Matrix):
                 return matrix_input
-            parsed = sympify(matrix_input)
+            parsed = cached_sympify(matrix_input)
             if isinstance(parsed, dict):
                 raise ValueError('矩阵不能是字典/空集合')
             matrix = Matrix(parsed)
@@ -77,12 +78,12 @@ class CommonMatrixCalculator(ABC):
                 raise ValueError('向量不能是字典/空集合')
             # Handle column vector format, e.g. '[[1],[2],[3]]'
             if vector_input.startswith('[[') and vector_input.endswith(']]'):
-                vector = Matrix(sympify(vector_input))
+                vector = Matrix(cached_sympify(vector_input))
             # Handle row vector format, e.g. '[1,2,3]'
             else:
                 # Convert to column vector format
                 vector_str = vector_input.strip('[]')
-                elements = [sympify(x.strip())
+                elements = [cached_sympify(x.strip())
                             for x in vector_str.split(',')]
                 if any(isinstance(item, dict) for item in elements):
                     raise ValueError('向量元素不能是字典/集合')
