@@ -9,11 +9,20 @@ from typing import List, Optional, Tuple
 
 
 def strip_outer_delimiters(text: str) -> str:
-    """Remove a whole-input pair of ``$...$`` / ``\\(...\\)`` / ``\\[...\\]``."""
+    """Remove a whole-input pair of ``$...$`` / ``\\(...\\)`` / ``\\[...\\]``.
+
+    Only strips when the delimiters wrap the *entire* input.  If the same
+    delimiter occurs again inside the would-be body (e.g. ``$x$+$y$``), the
+    input is a chain of expressions and is returned unchanged instead of being
+    mangled into ``x$+$y``.
+    """
     s = str(text or '').strip()
     for left, right in (('$$', '$$'), (r'\[', r'\]'), (r'\(', r'\)'), ('$', '$')):
         if s.startswith(left) and s.endswith(right) and len(s) > len(left) + len(right):
-            return s[len(left):-len(right)].strip()
+            inner = s[len(left):-len(right)]
+            if left in inner or right in inner:
+                return s
+            return inner.strip()
     return s
 
 
@@ -58,7 +67,11 @@ def split_top_level(text: str, separators: str = ',') -> List[str]:
 
     Parentheses, square brackets and braces all participate in the depth count,
     so ``add([[1,2],[3,4]], [[5,6],[7,8]])`` splits into its two matrix arguments.
-    Empty pieces are dropped, matching the historical helpers' behaviour.
+    Depth is clamped at zero so an unmatched closing bracket (e.g. ``a),b`` or a
+    one-sided LaTeX ``\\right)``) can never turn it negative and suppress every
+    later split.  ``\\left``/``\\right`` are command words, not brackets; the
+    ``(``/``)`` delimiters that follow them are counted normally, so balanced
+    ``\\left(...\\right)`` still hides its inner commas.  Empty pieces are dropped.
     """
     parts: List[str] = []
     depth = 0
@@ -67,7 +80,7 @@ def split_top_level(text: str, separators: str = ',') -> List[str]:
         if char in '([{':
             depth += 1
         elif char in ')]}':
-            depth -= 1
+            depth = max(0, depth - 1)
         if char in separators and depth == 0:
             piece = ''.join(current).strip()
             if piece:

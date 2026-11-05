@@ -93,6 +93,19 @@ def str_to_latex(expr: str, operation_type: str = None) -> str:
       instead of being fed to SymPy as a plain expression.
     - Otherwise, the expression is rendered as-is via SymPy's latex().
     """
+    from core.input_validation import (  # pylint: disable=import-outside-toplevel
+        looks_like_operator_input, should_route_as_operator,
+    )
+
+    # Keep this check BEFORE every RENDER_* branch: an operator template used
+    # to be fed to Matrix(...) when a matrix operation was selected, while the
+    # compute side routed it to the universal dispatcher. Sharing the predicate
+    # makes preview and computation agree on what the input means.
+    if should_route_as_operator(expr, operation_type):
+        preview = _operator_preview(expr)
+        if preview:
+            return preview
+
     if operation_type in config.RENDER_SINGLE_MATRIX:
         return latex(Matrix(cached_sympify(latex_to_nested(expr))))
 
@@ -112,9 +125,6 @@ def str_to_latex(expr: str, operation_type: str = None) -> str:
         eq_latex = [latex(eq) for eq in equations]
         return r"\begin{cases} " + r" \\ ".join(eq_latex) + r" \end{cases}"
 
-    from core.input_validation import (  # pylint: disable=import-outside-toplevel
-        looks_like_operator_input,
-    )
     if looks_like_operator_input(expr):
         preview = _operator_preview(expr)
         if preview:

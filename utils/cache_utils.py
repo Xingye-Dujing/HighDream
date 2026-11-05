@@ -12,7 +12,9 @@ from sympy.parsing.sympy_parser import (convert_xor,
 from config import LARGE_POWER_EXPONENT_DIGITS
 from utils.expression_utils import extract_paren_arg, find_matching_paren
 
-_HUGE_POWER_RE = re.compile(r'(?:\*\*|\^)\s*-?(\d+)')
+# MathLive writes powers as ^{N} while SymPy source uses **N; both spellings
+# must be detected before the exponent literal is ever materialized.
+_HUGE_POWER_RE = re.compile(r'(?:\*\*|\^)\s*(?:\{\s*)?-?(\d+)')
 _LATEX_COMMAND_RE = re.compile(r'\\[a-zA-Z]')
 # MathLive renders powers/subscripts with braced ^{...} / _{...} (SymPy source uses
 # ** and bare names), so a braced caret/underscore marks WYSIWYG LaTeX input.
@@ -219,37 +221,69 @@ def _replace_opnames(s: str) -> str:
         mapped = _OPNAME_MAP.get(name)
         if mapped:
             return mapped + ' '
+        # An unknown \operatorname{foo}(...) would be split by parse_latex into
+        # a product of single-letter symbols ("rank" -> a*n*r*k(x)), yielding a
+        # confident but WRONG answer. Matrix operators and the differential
+        # "\mathrm{d}" are not followed by "(", so they still keep their text
+        # for the upstream folding / _DIFF_D_RE pass.
+        if re.match(r'\s*\(', s[match.end():]):
+            raise ValueError(f'不支持的运算符名称: {name}')
         return name + ' '
 
     return _OPNAME_RE.sub(repl, s)
 
 
 _ABS_TOKEN = 987654321
-_ABS_LEFT_RE = re.compile(r'\\left\|([\s\S]*?)\\right\|')
-_ABS_OP_RE = re.compile(r'\\operatorname\s*\{\s*abs\s*\}\s*\(([^()]*)\)')
-_ABS_CAP_RE = re.compile(r'(?<![A-Za-z\\])Abs\s*\(([^()]*)\)')
-_ABS_LOWER_RE = re.compile(r'(?<![A-Za-z\\])abs\s*\(([^()]*)\)')
+# Match the INNERMOST \left|...\right| first. The old non-greedy [\s\S]*?
+# stopped at the first \right| and left a stray "\right|" for nested groups.
+_ABS_LEFT_INNER_RE = re.compile(r'\\left\|((?:(?!\\left\|)[\s\S])*?)\\right\|')
+_ABS_CALL_RES = (
+    re.compile(r'\\operatorname\s*\{\s*abs\s*\}\s*\('),
+    re.compile(r'(?<![A-Za-z\\])Abs\s*\('),
+    re.compile(r'(?<![A-Za-z\\])abs\s*\('),
+)
 
 
 def _extract_abs_groups(s: str):
     """Protect ``|x|`` / ``Abs(x)`` while parse_latex parses the rest.
 
-    SymPy's parse_latex has no absolute-value syntax.  Replace each group with a
-    unique integer literal, parse the outer expression, then substitute
-    ``Abs(inner)`` back.  Returns ``(rewritten, {token: inner})``.
+    SymPy's parse_latex has no absolute-value syntax.  Replace each group with
+    a unique integer literal, parse the outer expression, then substitute
+    ``Abs(inner)`` back.  Nested groups and arguments containing parentheses
+    (``Abs(f(x))``) are handled with balanced-paren scanning, innermost first.
+    Returns ``(rewritten, {token: inner})``.
     """
     groups = {}
 
-    def repl(match):
-        inner = match.group(1)
+    def new_token(inner):
+        # Expand already-protected tokens back into LaTeX so nested groups
+        # restore recursively instead of leaving a bare integer inside Abs().
+        for token, value in list(groups.items()):
+            if token in inner:
+                inner = inner.replace(token, r'\left|' + value + r'\right|')
         token = str(_ABS_TOKEN + len(groups))
         groups[token] = inner
         return token
 
-    s = _ABS_LEFT_RE.sub(repl, s)
-    s = _ABS_OP_RE.sub(repl, s)
-    s = _ABS_CAP_RE.sub(repl, s)
-    s = _ABS_LOWER_RE.sub(repl, s)
+    def repl(match):
+        return new_token(match.group(1))
+
+    for _ in range(64):
+        s, count = _ABS_LEFT_INNER_RE.subn(repl, s)
+        if not count:
+            break
+
+    for pattern in _ABS_CALL_RES:
+        for _ in range(64):
+            match = pattern.search(s)
+            if not match:
+                break
+            open_idx = s.index('(', match.start())
+            close_idx = find_matching_paren(s, open_idx)
+            if close_idx is None:
+                break
+            token = new_token(s[open_idx + 1:close_idx])
+            s = s[:match.start()] + token + s[close_idx + 1:]
     return s, groups
 
 
@@ -466,7 +500,9 @@ def cached_sympify(expr_str: str, trusted: bool = False) -> Expr:
     if not isinstance(expr_str, str):
         return sympify(expr_str)  # type: ignore
     expr_str = _normalize_infinities(expr_str)
-    if _has_huge_power_literal(expr_str):
+    # Braced MathLive powers (2^{1000000}) are LaTeX: parse_latex keeps them as
+    # an unevaluated Pow, so they must NOT go through the plain-text parser.
+    if _has_huge_power_literal(expr_str) and not _is_latex(expr_str):
         # Parse without evaluation so a huge integer power stays symbolic instead
         # of being computed (which wastes memory and breaks int -> str rendering).
         # Checked before the LaTeX branch because a bare ``^`` now marks LaTeX and

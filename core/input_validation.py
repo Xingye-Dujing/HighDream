@@ -38,6 +38,21 @@ def looks_like_operator_input(expression: str) -> bool:
     return bool(_STRUCTURAL_OPERATOR_RE.search(expression))
 
 
+def should_route_as_operator(expression: str, operation_type: str = None) -> bool:
+    """Single source of truth for preview (/api/parse) and compute (/api/compute).
+
+    An explicit operator template wins over the selected operation, except for
+    the ops that must parse the input box as data.  Both callers must use this
+    same predicate: when they disagreed, an operator such as ``diff(x^2,x)``
+    was previewed structurally but fed to ``Matrix(...)`` (or vice versa).
+    """
+    from core.operator_registry import _AUTO_ROUTE_SKIP  # pylint: disable=import-outside-toplevel
+
+    return (operation_type not in (None, '', 'auto')
+            and operation_type not in _AUTO_ROUTE_SKIP
+            and looks_like_operator_input(expression))
+
+
 def normalize_scalar_input(expression: str, complex_mode: bool = False):
     """Turn WYSIWYG LaTeX / textbook text into a SymPy-source string."""
     text = strip_outer_delimiters(expression)

@@ -14,8 +14,8 @@ Functions:
 """
 
 from sympy import (
-    Basic, Expr, Pow, Symbol, asin, acos, atan,
-    cos, cot, csc, exp, log, sec, sin, tan
+    Basic, Expr, Float, Pow, Symbol, asin, acos, atan,
+    cos, cot, csc, exp, log, nsimplify, sec, sin, tan
 )
 
 
@@ -134,8 +134,10 @@ def is_exp(f: Expr, var: Symbol) -> bool:
 def has_radical(f: Basic | Expr, var: Symbol) -> bool:
     """Determine if the given expression contains radicals (fractional powers) involving a variable.
 
-    A radical is identified as a power expression with a rational exponent less than 1
-    that contains the specified variable in its base.
+    A radical is a power whose exponent is a rational number strictly between 0
+    and 1 and whose base contains the variable.  Float exponents such as
+    ``x**(1/3)`` are normalized to rationals with ``nsimplify`` before the check
+    so they are not missed; non-positive exponents (e.g. ``x**-2``) are excluded.
 
     Args:
         f (Expr): A SymPy expression to check
@@ -153,7 +155,12 @@ def has_radical(f: Basic | Expr, var: Symbol) -> bool:
         True
         >>> has_radical(x**2, x)
         False
+        >>> has_radical(x**-2, x)
+        False
     """
     if isinstance(f, Pow):
-        return f.exp.is_Rational and f.exp < 1 and f.base.has(var)
+        exponent = f.exp
+        if isinstance(exponent, Float):
+            exponent = nsimplify(exponent)
+        return bool(exponent.is_Rational and 0 < exponent < 1 and f.base.has(var))
     return any(has_radical(arg, var) for arg in f.args) if f.args else False

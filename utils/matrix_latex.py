@@ -31,19 +31,23 @@ def _cell_to_sympy_str(cell: str) -> str:
 def _block_to_nested(body: str) -> str:
     # Row separator is exactly two backslashes.  A cell beginning with a LaTeX
     # command (e.g. ``\\\sqrt{2}``) has a third backslash; consume only the two
-    # row-separator ones so the command survives.
-    rows = [r for r in re.split(r'\\\\', body) if r.strip() != '']
+    # row-separator ones so the command survives.  Empty rows are kept (not
+    # filtered): a blank row means the user left a row unfilled, so reject it
+    # instead of silently dropping it and producing a wrong-sized matrix.
+    rows = re.split(r'\\\\', body)
+    if not body.strip():
+        raise ValueError('矩阵不能为空')
     nested = []
     width = None
     for row in rows:
+        if row.strip() == '':
+            raise ValueError('矩阵存在空行')
         cells = [_cell_to_sympy_str(c) for c in row.split('&')]
         if width is None:
             width = len(cells)
         elif len(cells) != width:
             raise ValueError('矩阵每行的元素个数必须相同')
         nested.append('[' + ','.join(cells) + ']')
-    if not nested:
-        raise ValueError('矩阵不能为空')
     return '[' + ','.join(nested) + ']'
 
 

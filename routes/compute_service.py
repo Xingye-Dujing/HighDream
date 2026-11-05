@@ -15,7 +15,7 @@ from sympy import Symbol, preorder_traversal, latex
 from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
 from core.input_validation import (
     as_bool_flag as _as_bool_flag,
-    looks_like_operator_input as _looks_like_operator_input,
+    should_route_as_operator as _should_route_as_operator,
     normalize_matrix_input as _normalize_matrix_input,
     normalize_scalar_input as _normalize_scalar_input,
     user_error as _user_error,
@@ -35,7 +35,7 @@ from core.matrix_ops import (
 )
 from core.operator_registry import (
     _AUTO_DEFAULTS, _AUTO_FUNCS, _AUTO_MULTILINE_OPS, _AUTO_NAME_EXTRAS,
-    _AUTO_ROUTE_SKIP, _CALC_COMPOSABLE, _MATRIX_LATEX_OPS, _MATRIX_OP_NAMES,
+    _CALC_COMPOSABLE, _MATRIX_LATEX_OPS, _MATRIX_OP_NAMES,
     _SQUARE_MATRIX_OPS, _TEXT_INPUT_OPS,
 )
 from utils.cache_utils import cached_sympify
@@ -207,7 +207,7 @@ def _dispatch_calculus(expression: str):
 _COMPOUND_MAX_STEPS = 64
 
 
-def _build_op_data(name, args):
+def _build_op_data(name, args, user_data=None):
     """Assemble the per-op data payload from a function name + positional args
     (the same assembly the single-operator path uses, factored for reuse)."""
     op, fields = _AUTO_FUNCS[name]
@@ -216,6 +216,14 @@ def _build_op_data(name, args):
         # limit operation keeps its explicit UI direction (default right).
         args = list(args) + ['both']
     data = {'operation_type': op}
+    if user_data:
+        # An explicit operator template must not silently discard options the
+        # caller set (type='2', target_form, use_cache, ...). Insert them before
+        # the defaults so setdefault() cannot overwrite them, while keeping the
+        # parsed operation and expression authoritative.
+        for key, val in user_data.items():
+            if key not in ('operation_type', 'expression', 'task_id'):
+                data.setdefault(key, val)
     if name == 'parametric' and len(args) >= 2:
         # The palette's parametric(□,□) gives x(t) and y(t); the engine reads
         # them as two lines and differentiates both with respect to t.
@@ -436,7 +444,7 @@ def _should_compound(text, calls):
     return False
 
 
-def _dispatch_auto(expression: str):
+def _dispatch_auto(expression: str, user_data: Dict[str, Any] = None):
     """Universal single-box dispatcher (Maple-like): classify by operator/structure.
 
     Recognizes function-style operators (det/rank/integral/diff/taylor/...) for every
@@ -483,7 +491,7 @@ def _dispatch_auto(expression: str):
                 args = [m2.group(0)] if m2 else []
             if args:
                 op = spec[0]
-                return _dispatch_compute(op, _build_op_data(name, args))
+                return _dispatch_compute(op, _build_op_data(name, args, user_data))
 
     # 2) matrix literals: arithmetic or lone matrix
     mats = re.findall(r'\[\[.*?\]\]', scan)
@@ -525,6 +533,8 @@ def _strip_dollar(value):
         return [_strip_dollar(v) for v in value]
     if isinstance(value, tuple):
         return tuple(_strip_dollar(v) for v in value)
+    if isinstance(value, dict):
+        return {k: _strip_dollar(v) for k, v in value.items()}
     return value
 
 
@@ -593,10 +603,8 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
         # regardless of which operation selector is active; otherwise a user who
         # selected "求导" and then used the derivative key would differentiate a
         # Derivative and get the second derivative (a silent wrong answer).
-        if (operation_type != 'auto'
-                and operation_type not in _AUTO_ROUTE_SKIP
-                and _looks_like_operator_input(expression)):
-            return _dispatch_auto(expression)
+        if _should_route_as_operator(expression, operation_type):
+            return _dispatch_auto(expression, data)
 
         # Linear-algebra cells may carry MathLive LaTeX matrices; convert each
         # bmatrix/pmatrix block to the nested-list form the calculators parse.
