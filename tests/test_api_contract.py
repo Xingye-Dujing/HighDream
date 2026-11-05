@@ -5,6 +5,7 @@ import importlib
 import time
 
 import pytest
+from flask import template_rendered
 
 from app import app
 from utils import snapshot_store
@@ -418,3 +419,41 @@ def test_snapshot_store_prunes_to_max(temp_snapshot_db):
     assert len(rows) == snapshot_store.MAX_SNAPSHOTS
     assert rows[0]['id'] == created[-1]['id']
     assert snapshot_store.get_snapshot(created[0]['id']) is None
+
+
+HELP_ROUTE_TEMPLATES = {
+    '/help': 'help.html',
+    '/help/base_calculator': 'help/base_calculator.html',
+    '/help/base_manual_step_solver': 'help/base_manual_step_solver.html',
+    '/help/base_step_generator': 'help/base_step_generator.html',
+    '/help/common_matrix_calculator': 'help/common_matrix_calculator.html',
+    '/help/diff_manual_step_solver': 'help/diff_manual_step_solver.html',
+    '/help/integral_manual_step_solver': 'help/integral_manual_step_solver.html',
+    '/help/limit_manual_step_solver': 'help/limit_manual_step_solver.html',
+    '/help/matrix_step_generator': 'help/matrix_step_generator.html',
+    '/help/method_tree_enumerator': 'help/method_tree_enumerator.html',
+    '/help/rule_registry': 'help/rule_registry.html',
+}
+
+
+def test_help_route_table_matches_registered_routes():
+    actual = {rule.rule for rule in app.url_map.iter_rules()
+              if rule.rule.startswith('/help')}
+    assert actual == set(HELP_ROUTE_TEMPLATES), sorted(actual ^ set(HELP_ROUTE_TEMPLATES))
+    assert len([path for path in HELP_ROUTE_TEMPLATES if path.startswith('/help/')]) == 10
+
+
+@pytest.mark.parametrize('path,expected_template', sorted(HELP_ROUTE_TEMPLATES.items()))
+def test_help_routes_render_their_own_template(client, path, expected_template):
+    """A 200 is not enough: each /help page must render its own template
+    (not a shared fallback), verified through Flask's template_rendered signal."""
+    rendered = []
+
+    def capture(sender, template, context, **extra):
+        rendered.append(template.name)
+
+    with template_rendered.connected_to(capture, app):
+        response = client.get(path)
+    assert response.status_code == 200, path
+    assert response.data, path
+    assert expected_template in rendered, (path, rendered)

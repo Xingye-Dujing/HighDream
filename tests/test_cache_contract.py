@@ -25,7 +25,10 @@ def test_cache_store_roundtrip(temp_cache_db):
     assert db_cache.get(key) is None
     db_cache.set_cache(key, 'diff', 'x^2', r'\begin{align}2x\end{align}', variable='x')
     assert db_cache.get(key) == r'\begin{align}2x\end{align}'
-    assert db_cache.get(key) == r'\begin{align}2x\end{align}'
+    # Overwriting the same key must be visible on the next read.  The old test
+    # just repeated the identical assertion and verified nothing new.
+    db_cache.set_cache(key, 'diff', 'x^2', r'\begin{align}2x+1\end{align}', variable='x')
+    assert db_cache.get(key) == r'\begin{align}2x+1\end{align}'
 
 
 def test_cached_diff_calculator_returns_same_result(temp_cache_db):

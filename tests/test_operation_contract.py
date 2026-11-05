@@ -6,11 +6,13 @@ operation is added and this map is not extended, the suite fails; that is the
 guard against silent loss of coverage.
 """
 
+import ast
 import pathlib
 import re
 
 import pytest
 
+from core.operator_registry import _MATRIX_LATEX_OPS
 from domains.applied import HANDLERS
 from routes.compute_service import _AUTO_FUNCS, _build_op_data, start_compute
 
@@ -192,11 +194,59 @@ def test_samples_cover_every_discovered_operation():
     assert not extra, f'sample for unknown operation: {extra}'
 
 
+def _dispatch_string_literals_from_source(source):
+    """AST-extract every string literal compared against ``operation_type``.
+
+    The old ``operation_type\\s*==\\s*'...'`` regex missed tuple membership
+    branches (``in ('nullspace','colspace','rowspace')``) and the dynamic
+    ``HANDLERS.get(...)`` dispatch.  Walking the AST of ``_dispatch_compute``
+    collects every string constant in such comparisons, including the elements
+    of ``in (...)`` tuples.
+    """
+    tree = ast.parse(source)
+    func = next(node for node in ast.walk(tree)
+                if isinstance(node, ast.FunctionDef) and node.name == '_dispatch_compute')
+    literals = set()
+    for node in ast.walk(func):
+        if not (isinstance(node, ast.Compare)
+                and isinstance(node.left, ast.Name)
+                and node.left.id == 'operation_type'):
+            continue
+        for comparator in node.comparators:
+            for sub in ast.walk(comparator):
+                if isinstance(sub, ast.Constant) and isinstance(sub.value, str):
+                    literals.add(sub.value)
+    return literals
+
+
 def test_every_explicit_dispatch_branch_has_a_sample():
     source = (ROOT / 'routes' / 'compute_service.py').read_text(encoding='utf-8')
-    branches = set(re.findall(r"operation_type\s*==\s*'([^']+)'", source))
+    branches = _dispatch_string_literals_from_source(source)
+    # HANDLERS.get(operation_type) dispatches dynamically: no literal appears in
+    # a comparison, so add all 50 registered applied handlers explicitly.
+    branches |= set(HANDLERS)
+    assert len(HANDLERS) == 50
+    # method_tree is an async task with no single-expression sample.
     branches.discard('method_tree')
     assert branches <= set(SAMPLES), sorted(branches - set(SAMPLES))
+    assert branches <= ALL_OPS, sorted(branches - ALL_OPS)
+    # Pin the branches the regex-based version could not see.
+    assert {'nullspace', 'colspace', 'rowspace', 'singular'} <= branches
+
+
+def test_ast_extraction_catches_tuple_branches_but_not_method_calls():
+    source = (
+        'def _dispatch_compute(operation_type, data):\n'
+        "    if operation_type in ('nullspace', 'colspace', 'rowspace'):\n"
+        '        return 1\n'
+        "    if operation_type == 'det':\n"
+        '        return 2\n'
+        "    if operation_type.startswith('complex_'):\n"
+        '        return 3\n'
+    )
+    assert _dispatch_string_literals_from_source(source) == {
+        'nullspace', 'colspace', 'rowspace', 'det',
+    }
 
 
 def test_frontend_operation_options_are_tested():
@@ -280,14 +330,13 @@ def test_operation_rejects_or_safely_handles_malformed_input(op, bad):
         assert 'Unsupported operation type' not in result
 
 
-@pytest.mark.parametrize('op', sorted({
-    'ref', 'operations', 'invert', 'rank', 'LU', 'diag', 'svd', 'singular',
-    'eigen', 'schur', 'det', 'orthogonal', 'projection', 'dependence',
-    'trace', 'pinv', 'jordan', 'definiteness', 'charpoly', 'nullspace',
-    'colspace', 'rowspace', 'linear-solver',
-}))
+@pytest.mark.parametrize('op', sorted(_MATRIX_LATEX_OPS))
 def test_matrix_operation_rejects_ragged_matrix(op):
-    payload = dict(SAMPLES.get(op, {'expression': '[[1,2],[3]]'}))
+    # Every MathLive-LaTeX matrix op must reject a ragged matrix.  Parametrize
+    # from the registry itself (27 ops) so the 4 previously-missing ops
+    # linear-system / transform-1 / transform-2 / matrix_symbolic stay covered.
+    assert op in SAMPLES, op
+    payload = dict(SAMPLES[op])
     payload['expression'] = '[[1,2],[3]]'
     ok, result = start_compute(op, {'operation_type': op, **payload})
     assert not ok, (op, result)

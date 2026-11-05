@@ -5,13 +5,16 @@ combines) or a filled template that the backend accepts.  A new key that is not
 classified here fails the suite instead of shipping untested.
 """
 
+import pathlib
 import re
 from html import unescape
 
 from app import app
 from routes.compute_service import start_compute
 from routes.op_form import toggle_form
+from tests.test_operation_contract import SAMPLES
 
+ROOT = pathlib.Path(__file__).resolve().parent.parent
 INDEX = 'templates/index.html'
 PANEL = 'templates/matrix_panel.html'
 LAB = 'templates/matrix_lab.html'
@@ -353,3 +356,82 @@ def test_matrix_lab_controls_have_math_labels():
         assert key['data'].get('latex'), key
         assert key['data'].get('insert'), key
         assert key['data']['latex'].count('{') == key['data']['latex'].count('}'), key
+
+
+# ---------------------------------------------------------------------------
+# data-op mode-switch keys + palette token insert strings
+# ---------------------------------------------------------------------------
+
+DATA_OP_KEYS = {'linear-solver', 'linear-system', 'transform-1', 'transform-2'}
+
+
+def test_index_data_op_keys_are_present_and_preset_by_the_form():
+    """End-to-end: the four mode-switch palette keys must exist in the rendered
+    page and their data-op values must be real operation-type options, because
+    clicking one sets ``<select class="operation-type">.value = data-op``."""
+    client = app.test_client()
+    response = client.get('/')
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+
+    keys = parse_keys(INDEX)
+    data_op_keys = [key for key in keys if 'op' in key['data']]
+    assert {key['data']['op'] for key in data_op_keys} == DATA_OP_KEYS
+    assert len(data_op_keys) == 4
+    selector_source = (ROOT / 'static' / 'script.js').read_text(encoding='utf-8')
+    for key in data_op_keys:
+        op = key['data']['op']
+        assert f'data-op="{op}"' in html, op
+        # These are mode-switch-only keys: no latex template is inserted.
+        assert 'latex' not in key['data'], key
+        # The palette handler assigns sel.value = op; the value must be a real
+        # <option> in the generated selector, otherwise it is silently ignored.
+        assert f'<option value="{op}">' in selector_source, op
+        # And the backend must actually be able to route that operation type.
+        assert op in SAMPLES, op
+
+
+def _assert_insert_token_is_valid(token):
+    """A TOKENS member is a literal fragment inserted into the math field."""
+    assert isinstance(token, str) and token.strip(), token
+    assert '<' not in token and '>' not in token and '&' not in token, token
+    assert r'\placeholder' not in token, token
+    assert token.count('{') == token.count('}'), token
+    assert token.count(r'\begin{') == token.count(r'\end{'), token
+
+
+def _assert_key_insert_latex_is_balanced(latex):
+    """Token keys may carry \\placeholder{} slots (x^n, fractions, brackets);
+    only the structural LaTeX invariants must hold for their data-latex."""
+    assert isinstance(latex, str) and latex.strip(), latex
+    assert '<' not in latex and '>' not in latex, latex
+    assert latex.count('{') == latex.count('}'), latex
+    assert latex.count(r'\begin{') == latex.count(r'\end{'), latex
+
+
+def test_notebook_tokens_are_valid_insert_strings():
+    # The classification tests `continue` past token keys; assert here that
+    # every token is a legal insertion and that the table matches the page.
+    for token in NOTEBOOK_TOKENS:
+        _assert_insert_token_is_valid(token)
+    page_tokens = set()
+    for key in parse_keys(INDEX):
+        data = key['data']
+        if 'latex' not in data:
+            continue
+        if data['latex'] in NOTEBOOK_TOKENS or key['label'] in NOTEBOOK_TOKENS:
+            _assert_key_insert_latex_is_balanced(data['latex'])
+            page_tokens.add(data['latex'] if data['latex'] in NOTEBOOK_TOKENS
+                            else key['label'])
+    assert page_tokens == NOTEBOOK_TOKENS, sorted(NOTEBOOK_TOKENS ^ page_tokens)
+
+
+def test_panel_tokens_are_valid_insert_strings():
+    for token in PANEL_TOKENS:
+        _assert_insert_token_is_valid(token)
+    page_tokens = set()
+    for key in parse_keys(PANEL):
+        if key['label'] in PANEL_TOKENS:
+            _assert_key_insert_latex_is_balanced(key['data'].get('latex', ''))
+            page_tokens.add(key['label'])
+    assert page_tokens == PANEL_TOKENS, sorted(PANEL_TOKENS ^ page_tokens)
