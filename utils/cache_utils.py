@@ -1,9 +1,11 @@
+import ast
 import re
 from functools import lru_cache
 
 from sympy import (Expr, Mul, S, Symbol, bottom_up, evaluate, expand_log,
                    latex, log, pi, radsimp, simplify, sympify)
-from sympy.parsing.sympy_parser import (implicit_multiplication_application,
+from sympy.parsing.sympy_parser import (convert_xor,
+                                        implicit_multiplication_application,
                                         parse_expr, standard_transformations)
 
 from config import LARGE_POWER_EXPONENT_DIGITS
@@ -352,8 +354,98 @@ def _normalize_infinities(s: str) -> str:
     return _INF_WORD_RE.sub('oo', s)
 
 
+# -- Hardening -------------------------------------------------------------
+# ``sympify``/``parse_expr`` evaluate generated Python code.  Without the two
+# guards below a plain ``__import__('os').system(...)`` would run with full
+# builtins.  User input is parsed in a namespace without builtins and rejected
+# when it contains Python constructs a mathematical expression never needs.
+_DANGEROUS_NAMES = frozenset({
+    'eval', 'exec', 'compile', 'open', 'input', 'breakpoint', 'globals',
+    'locals', 'vars', 'dir', 'getattr', 'setattr', 'delattr', 'hasattr',
+    'importlib', 'builtins', 'os', 'sys', 'subprocess', 'pathlib', 'io',
+    'type', 'object', 'super', 'property', 'classmethod', 'staticmethod',
+    'bytes', 'bytearray', 'memoryview', 'print', 'exit', 'quit', 'help',
+    'license', 'credits', 'format', 'iter', 'next', 'filter', 'map',
+})
+_FORBIDDEN_AST_NODES = (
+    ast.Attribute, ast.Lambda, ast.ListComp, ast.SetComp, ast.DictComp,
+    ast.GeneratorExp, ast.Await, ast.Yield, ast.YieldFrom, ast.NamedExpr,
+    ast.JoinedStr, ast.FormattedValue, ast.Import, ast.ImportFrom,
+    ast.Global, ast.Nonlocal,
+)
+_UNSAFE_TEXT_RE = re.compile(r'__|\.\s*[A-Za-z_]')
+
+
+def _build_safe_globals():
+    """SymPy's own ``from sympy import *`` namespace, minus every builtin."""
+    namespace = {}
+    exec('from sympy import *', namespace)  # pylint: disable=exec-used
+    namespace['__builtins__'] = {}
+    return namespace
+
+
+_SAFE_GLOBALS = _build_safe_globals()
+# ``sympify`` parses strings with exactly the first set of transformations;
+# reproducing it keeps ``xy`` a single symbol (no implicit multiplication),
+# while the second set is the textbook-shorthand fallback the old code used.
+_PLAIN_TRANSFORMATIONS = standard_transformations + (convert_xor,)
+_IMPLICIT_TRANSFORMATIONS = standard_transformations + (implicit_multiplication_application,)
+
+
+def _reject_unsafe_syntax(expr_str: str) -> None:
+    """Reject Python syntax that a mathematical expression never needs."""
+    if len(expr_str) > 4096:
+        # Avoid pathological AST parsing on huge power literals; the blacklist
+        # still applies and the builtin-free namespace remains in force.
+        if _UNSAFE_TEXT_RE.search(expr_str):
+            raise ValueError('表达式包含不允许的语法')
+        return
+    try:
+        tree = ast.parse(expr_str, mode='eval')
+    except SyntaxError:
+        # "x y" / "2x" / "2(x+1)" are not valid Python; the implicit
+        # multiplication transformation handles them after this check.
+        if _UNSAFE_TEXT_RE.search(expr_str):
+            raise ValueError('表达式包含不允许的语法') from None
+        return
+    for node in ast.walk(tree):
+        if isinstance(node, _FORBIDDEN_AST_NODES):
+            raise ValueError('表达式包含不允许的语法')
+        if isinstance(node, ast.Name):
+            if node.id.startswith('__') or node.id in _DANGEROUS_NAMES:
+                raise ValueError('表达式包含不允许的语法')
+        elif isinstance(node, ast.Call):
+            if not isinstance(node.func, (ast.Name, ast.Call)):
+                raise ValueError('表达式包含不允许的语法')
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+            if '__' in node.value:
+                raise ValueError('表达式包含不允许的语法')
+
+
+def _parse_plain_input(expr_str: str, trusted: bool) -> Expr:
+    """Reproduce ``sympify``'s string parsing without exposing builtins."""
+    if not trusted:
+        _reject_unsafe_syntax(expr_str)
+    global_dict = None if trusted else _SAFE_GLOBALS
+    try:
+        return parse_expr(expr_str, global_dict=global_dict,
+                          transformations=_PLAIN_TRANSFORMATIONS)
+    except Exception:  # pylint: disable=broad-exception-caught
+        try:
+            return parse_expr(expr_str, global_dict=global_dict,
+                              transformations=_IMPLICIT_TRANSFORMATIONS)
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            raise ValueError(f'无法解析表达式: {expr_str}') from exc
+
+
 @lru_cache(maxsize=1024)
-def cached_sympify(expr_str: str) -> Expr:
+def cached_sympify(expr_str: str, trusted: bool = False) -> Expr:
+    """Parse user text/LaTeX into a SymPy object.
+
+    ``trusted=True`` is reserved for internally generated SymPy source strings;
+    every HTTP-facing caller must keep the default so the builtin-free
+    namespace and the syntax guard stay in force.
+    """
     # Callers may pass an already-sympified object (e.g. the limit calculator
     # pre-sympifies); sympify is then idempotent and the regex guard must not run.
     if not isinstance(expr_str, str):
@@ -365,7 +457,7 @@ def cached_sympify(expr_str: str) -> Expr:
         # Checked before the LaTeX branch because a bare ``^`` now marks LaTeX and
         # parse_latex would otherwise materialize the huge value.
         with evaluate(False):
-            return sympify(expr_str)
+            return _parse_plain_input(expr_str, trusted)
     if _is_latex(expr_str):
         # The interactive WYSIWYG cell input emits LaTeX; normalize MathLive quirks
         # (raising a friendly error on unfilled placeholders) then parse.
@@ -382,18 +474,7 @@ def cached_sympify(expr_str: str) -> Expr:
             # commands into products of symbols (e.g. \operatorname{re} -> re),
             # which produces confident but wrong answers.
             raise ValueError(f'无法解析该数学输入，请检查 LaTeX 写法: {exc}') from exc
-    try:
-        return sympify(expr_str)  # type: ignore
-    except Exception:  # pylint: disable=broad-exception-caught
-        # Plain text may use textbook implicit multiplication (x y, 2x, 2(x+1)).
-        # Try SymPy's parser with that transformation before surfacing an error.
-        try:
-            return parse_expr(
-                expr_str,
-                transformations=standard_transformations + (implicit_multiplication_application,),
-            )
-        except Exception as exc:  # pylint: disable=broad-exception-caught
-            raise ValueError(f'无法解析表达式: {expr_str}') from exc
+    return _parse_plain_input(expr_str, trusted)
 
 
 @lru_cache(maxsize=128)
