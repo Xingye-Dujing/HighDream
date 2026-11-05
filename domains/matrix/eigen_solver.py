@@ -1,7 +1,7 @@
 from collections import Counter
 from typing import Dict, List, Tuple
 
-from sympy import Expr, I, Matrix, eye, factor, latex, simplify, solve, symbols, sympify, zeros
+from sympy import Expr, I, Matrix, Symbol, eye, factor, latex, simplify, solve, symbols, zeros
 
 from core import CommonMatrixCalculator
 
@@ -21,8 +21,7 @@ class EigenSolver(CommonMatrixCalculator):
         """Add parentheses for complex or symbolic eigenvalues."""
         has_complex = eigenvalue.has(I)
 
-        is_symbolic = (isinstance(eigenvalue, sympify(
-            'a').__class__) and eigenvalue.free_symbols)
+        is_symbolic = (isinstance(eigenvalue, Symbol) and eigenvalue.free_symbols)
 
         needs_parentheses = False
         if hasattr(eigenvalue, 'args') and len(eigenvalue.args) > 0:

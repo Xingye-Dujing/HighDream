@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from sympy import Expr, Matrix, latex, simplify, sympify
+from sympy import Expr, Matrix, latex, simplify
 
 from domains.matrix import RefStepGenerator
 from utils.cache_utils import cached_sympify
@@ -102,7 +102,7 @@ class DeterminantCalculator:
                 return latex(obj)
             if coeff == -1:
                 return f"-{latex(obj)}"
-            return f"{latex(sympify(coeff * obj))}"
+            return f"{latex(coeff * obj)}"
 
         # Construct expression latex (join terms with + and replace '+-' with '-')
         def expr_to_latex(terms):
