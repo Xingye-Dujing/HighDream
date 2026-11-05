@@ -13,7 +13,8 @@ from sympy import (Abs, Eq, Integral, Order, Product, Symbol, expand, factorial,
 from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import (align, derivative_value, expr_text, get_var,
-                                     integral_steps, render_note as note, steps_value, to_num)
+                                     integral_steps, render_note as note, steps_value,
+                                     to_count, to_num)
 from domains.applied._convergence import convergence_rows
 
 
@@ -21,7 +22,7 @@ def taylor(data):
     x = get_var(data)
     f = sympify(expr_text(data))
     x0 = to_num(data.get('point'), 0)
-    order = int(data.get('order') or data.get('expr-depth') or 6)
+    order = to_count(data.get('order') or data.get('expr-depth'), 6)
     # Build each order's derivative by feeding the previous result back through the
     # rule engine (never a black-box f.diff(x, k)).
     derivs = [f]
@@ -50,7 +51,7 @@ def taylor_error(data):
     x = get_var(data)
     f = sympify(expr_text(data))
     x0 = to_num(data.get('point'), 0)
-    order = int(data.get('order') or data.get('expr-depth') or 6)
+    order = to_count(data.get('order') or data.get('expr-depth'), 6)
     m = order + 1
     deriv = simplify(derivative_value(expr_text(data), x, m))
     xi = Symbol('xi')

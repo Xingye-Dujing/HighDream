@@ -11,7 +11,7 @@ from sympy import Eq, N, Symbol, simplify, solve
 from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import align, derivative_steps, derivative_value, expr_text, get_var
-from domains.applied._common import render_note as note, to_num
+from domains.applied._common import render_note as note, to_count, to_num
 
 
 def _as_float(value):
@@ -77,7 +77,7 @@ def newton(data):
     f_str = expr_text(data)
     f = sympify(f_str)
     x0 = to_num(data.get('point'), 1)
-    iters = int(data.get('order') or data.get('expr-depth') or 4)
+    iters = to_count(data.get('order') or data.get('expr-depth'), 4)
     items = [(f, note("f(x)"))] + derivative_steps(f_str, x)
     items.append((Eq(Symbol('x_0'), x0), note("初值")))
     cur = x0
@@ -93,7 +93,7 @@ def bisection(data):
     f = sympify(expr_text(data))
     lo = to_num(data.get('lower'), 0)
     hi = to_num(data.get('upper'), 1)
-    iters = int(data.get('order') or data.get('steps') or 8)
+    iters = to_count(data.get('order') or data.get('steps'), 8)
     flo, fhi = _as_float(f.subs(x, lo)), _as_float(f.subs(x, hi))
     if flo is None or fhi is None or flo * fhi > 0:
         return False, '二分法需要异号端点: f(a)·f(b) < 0'
@@ -119,7 +119,7 @@ def secant(data):
     f = sympify(expr_text(data))
     x_prev = to_num(data.get('point'), 0)
     x_cur = to_num(data.get('x1'), 1)
-    iters = int(data.get('order') or data.get('steps') or 6)
+    iters = to_count(data.get('order') or data.get('steps'), 6)
     items = [(f, note('f(x)')), (None, note(f'初值 x_0={N(x_prev,6)}, x_1={N(x_cur,6)}'))]
     for k in range(1, iters + 1):
         f_prev, f_cur = _as_float(f.subs(x, x_prev)), _as_float(f.subs(x, x_cur))
@@ -138,7 +138,7 @@ def fixed_point(data):
     x = get_var(data)
     g = sympify(expr_text(data))
     cur = to_num(data.get('point'), 0)
-    iters = int(data.get('order') or data.get('steps') or 8)
+    iters = to_count(data.get('order') or data.get('steps'), 8)
     items = [(g, note('迭代函数 g(x)')), (Eq(Symbol('x_0'), cur), note('初值'))]
     for k in range(1, iters + 1):
         cur = simplify(g.subs(x, cur))

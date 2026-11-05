@@ -7,6 +7,7 @@ derivations, matching the main calculus engines rather than one-line formulas.
 
 from sympy import Symbol
 
+from config import HARD_MAX_DIFF_ORDER, HARD_MAX_ITERATIONS
 from core.base_step_generator import format_note
 
 from utils.cache_utils import cached_sympify as sympify
@@ -20,6 +21,19 @@ def to_num(value, default=None):
     if value is None or str(value).strip() == '':
         return default
     return sympify(str(value))
+
+
+def to_count(value, default: int, low: int = 1, high: int = HARD_MAX_ITERATIONS) -> int:
+    """Clamp a user-selected iteration/order count to a safe range.
+
+    Applied numerical methods loop the requested number of times; an unbounded
+    ``order=10**9`` would monopolize a worker long past the task timeout.
+    """
+    try:
+        count = int(str(value).strip())
+    except (TypeError, ValueError):
+        count = default
+    return max(low, min(high, count))
 
 
 def expr_text(data):
@@ -87,7 +101,7 @@ def derivative_value(f_str, x, order=1):
     from domains import DiffCalculator  # pylint: disable=import-outside-toplevel
     calc = DiffCalculator()
     current = sympify(str(f_str))
-    for _ in range(max(1, int(order))):
+    for _ in range(max(1, min(int(order), HARD_MAX_DIFF_ORDER))):
         steps, _expl = calc.compute_list(str(current), x)
         concrete = [s for s in steps if s is not None]
         current = concrete[-1] if concrete else current

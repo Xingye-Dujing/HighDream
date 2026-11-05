@@ -13,6 +13,19 @@ def test_tangent_line():
     assert r'2x-1' in _res('tangent', expression='x**2', variable='x', point='1')
 
 
+def test_user_iteration_counts_are_clamped():
+    """API clients must not be able to request an unbounded loop count."""
+    from config import HARD_MAX_ITERATIONS  # pylint: disable=import-outside-toplevel
+    from domains.applied._common import to_count  # pylint: disable=import-outside-toplevel
+
+    assert to_count('1000000000', 4) == HARD_MAX_ITERATIONS
+    assert to_count(None, 4) == 4
+    assert to_count('-3', 4) == 1
+    body = _res('euler', expression='x', variable='x', point='0',
+                yvalue='0', target='1', steps='1000000000')
+    assert body
+
+
 def test_arc_length():
     assert r'\sqrt{2}' in _res('arc_length', expression='x', variable='x', lower='0', upper='1')
 

@@ -4,7 +4,8 @@ from sympy import N, Symbol
 
 from utils.cache_utils import cached_sympify as sympify
 
-from domains.applied._common import align, expr_text, get_var, render_note as note, to_num
+from domains.applied._common import (align, expr_text, get_var, render_note as note,
+                                     to_count, to_num)
 
 
 def numerical_integration(data):
@@ -12,7 +13,7 @@ def numerical_integration(data):
     f = sympify(expr_text(data))
     a = to_num(data.get('lower'), 0)
     b = to_num(data.get('upper'), 1)
-    n = int(data.get('order') or data.get('expr-depth') or 4)
+    n = to_count(data.get('order') or data.get('expr-depth'), 4)
     if not (a.is_number and b.is_number) or n <= 0:
         return False, '数值积分需要数值积分上下限'
     h = (b - a) / n
@@ -36,7 +37,7 @@ def _ivp_setup(data):
     x0 = to_num(data.get('point'), 0)
     y0 = to_num(data.get('yvalue') or data.get('upper'), 1)
     x_end = to_num(data.get('target'), 1)
-    steps = int(str(data.get('steps') or data.get('order') or data.get('expr-depth') or 4))
+    steps = to_count(data.get('steps') or data.get('order') or data.get('expr-depth'), 4)
     if steps <= 0:
         return None
     h = (x_end - x0) / steps

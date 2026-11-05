@@ -2,6 +2,7 @@
 
 from sympy import Abs, Eq, I, S, Symbol, arg, expand, exp, im, pi, re, root, simplify, solve
 
+from config import HARD_MAX_ITERATIONS
 from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import align, expr_text, get_var, render_note as note
@@ -38,9 +39,13 @@ def de_moivre_power(data):
 def complex_nth_roots(data):
     """All n-th roots of a complex number w via De Moivre (polar form + 2*pi*k/n)."""
     w = sympify(expr_text(data))
-    n = int(str(data.get('order') or data.get('point') or 2))
+    try:
+        n = int(str(data.get('order') or data.get('point') or 2).strip())
+    except (TypeError, ValueError):
+        return False, '开方阶数 n 需为正整数'
     if n <= 0:
         return False, '开方阶数 n 需为正整数'
+    n = min(n, HARD_MAX_ITERATIONS)
     r = simplify(Abs(w))
     theta = arg(w)
     modulus = root(r, n) if r.is_number else r ** (S(1) / n)

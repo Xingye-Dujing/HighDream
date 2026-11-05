@@ -17,6 +17,10 @@ DEFAULT_LHOPITAL_MAX_COUNT = 5
 HARD_MAX_DIFF_ORDER = 20
 HARD_MAX_PARSER_MAX_DEPTH = 12
 HARD_MAX_LHOPITAL_COUNT = 50
+# Iteration/step count for applied numerical methods (Newton, bisection, Euler,
+# series order, ...). The UI uses small values; without a server-side cap an API
+# client could ask for 10**9 steps and pin a worker thread for minutes.
+HARD_MAX_ITERATIONS = 200
 # Integer-exponent literals with at least this many digits (e.g. 2**1000000 ->
 # exponent "1000000" is 7 digits) are parsed with evaluation disabled, so huge
 # integer powers are never materialized -- doing so wastes CPU/memory and trips
