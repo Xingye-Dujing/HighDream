@@ -39,8 +39,10 @@ def detect_feasible_directions(expr: Basic | Expr, var: Symbol, point: Expr) -> 
     if point in (oo, -oo):
         return {'left': True, 'right': True}
 
-    # Early exit: if point is unreal, directional limits are ill-defined in real calculus
-    if not point.is_real:
+    # Early exit: if point is provably unreal, directional limits are ill-defined
+    # in real calculus. ``is_real is None`` means "unknown" (e.g. a free symbol),
+    # which must not be treated as an unreal point.
+    if point.is_real is False:
         return {'left': False, 'right': False}
 
     # Collect domain constraints as relational expressions (e.g., f(var) > 0)

@@ -21,6 +21,7 @@ import re
 from sympy import latex, sympify
 
 from utils.matrix_latex import latex_to_nested
+from utils.cache_utils import _has_huge_power_literal
 
 from core.latex_syntax import (_extract_paren_arg, _fold_matrix_ops,
                                _normalize_latex_ops, _split_top_args)
@@ -63,6 +64,10 @@ def _L(expr):
     try:
         s = re.sub(r'\s*\^\s*', '**', str(expr))
         s = re.sub(r'\bln\s*\(', 'log(', s)
+        # Do not materialize a giant integer power (2**1000000 etc.) here: it can
+        # burn CPU/memory and then crash latex()'s int->str conversion.
+        if _has_huge_power_literal(s):
+            return str(expr)
         return latex(sympify(s))
     except Exception:  # noqa
         return str(expr)

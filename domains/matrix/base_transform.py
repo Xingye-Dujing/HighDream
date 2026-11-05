@@ -23,7 +23,8 @@ class BaseTransform(CommonMatrixCalculator):
                 f"\\boldsymbol{{v}}_{{{i + 1}}}" for i in range(basis_matrix.cols)]
 
         self.add_step(f"{name}组成的矩阵")
-        for i in range(basis_matrix.rows):
+        # Basis vectors are columns; iterate columns, not rows.
+        for i in range(basis_matrix.cols):
             vector_latex = latex(basis_matrix.col(i))
             self.step_generator.add_step(
                 f"{vector_names[i]} = {vector_latex}")

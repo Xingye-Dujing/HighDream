@@ -1,7 +1,5 @@
 """Raw SymPy / LaTeX helper endpoints used by the word editor and tools."""
 
-import traceback
-
 import sympy as sp
 from flask import jsonify, request
 from sympy import (
@@ -331,7 +329,6 @@ def sympy_execute():
         })
 
     except Exception as e:
-        error_msg = f'Execution error: {str(e)}'
-        # Add detailed error information
-        error_details = traceback.format_exc()
-        return jsonify({'success': False, 'error': error_msg, 'details': error_details})
+        # Do not hand the server traceback (filesystem paths, internals) to the
+        # caller; keep a short, generic message.
+        return jsonify({'success': False, 'error': f'Execution error: {e}'})

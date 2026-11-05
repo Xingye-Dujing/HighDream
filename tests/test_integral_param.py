@@ -9,7 +9,7 @@ verification guard turns any *wrong* parametric closed form into an honest UNEVA
 (``None``) instead of shipping it, so the tests below assert either a verified
 antiderivative or ``None`` — never a wrong expression."""
 
-from sympy import Symbol, exp, sin, cos, sqrt, simplify, Integral
+from sympy import Symbol, exp, sin, cos, sqrt, simplify, Integral, pi
 
 from domains import IntegralCalculator
 
@@ -108,7 +108,10 @@ def test_definite_parametric_verified_correct():
     assert abs(val.real - 1.7 ** 3 / 3) < 1e-6 and abs(val.imag) < 1e-9
 
 
-def test_definite_parametric_rejects_garbage():
-    # int_0^a sqrt(a^2 - x^2) dx currently yields a non-finite closed form (stray zoo);
-    # the numeric definite guard must turn it into an honest UNEVAL, never ship it.
-    assert _definite(sqrt(a ** 2 - x ** 2), 0, a) is None
+def test_definite_parametric_radical_is_verified_quarter_circle():
+    # int_0^a sqrt(a^2 - x^2) dx = a^2*pi/4 for a > 0. The parametric numeric guard
+    # accepts the back-substituted (simplified) closed form that passes both sample
+    # points; previously the unverified token was reported as UNEVAL (steps[-1] = None).
+    res = _definite(sqrt(a ** 2 - x ** 2), 0, a)
+    assert res is not None
+    assert abs(float(res.subs(a, 2.3).evalf()) - 2.3 ** 2 * pi / 4) < 1e-6

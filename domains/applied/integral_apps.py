@@ -166,6 +166,11 @@ def changeorder(data):
 
     corners = [(a, simplify(g1.subs(x, a))), (a, simplify(g2.subs(x, a))),
                (b, simplify(g1.subs(x, b))), (b, simplify(g2.subs(x, b)))]
+    # The slab algorithm below needs every vertex to be numeric: sorting,
+    # min/max comparisons and float() all fail on symbolic y. Decline honestly
+    # instead of crashing with a raw TypeError.
+    if any(not getattr(c[1], 'is_number', False) for c in corners):
+        return False, '换序暂仅支持数值边界(凸多边形区域)'
     ylevs = sorted({c[1] for c in corners}, key=float)
     ylo, yhi = ylevs[0], ylevs[-1]
     if ylo == yhi:

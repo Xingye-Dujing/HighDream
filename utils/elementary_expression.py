@@ -71,7 +71,10 @@ def can_use_weierstrass(expr: Basic | Expr, var: Symbol) -> bool:
 
     if expr_type == Pow:
         base, _exp = expr.args
-        return can_use_weierstrass(base, var) and _exp.is_number
+        # The Weierstrass substitution needs a RATIONAL integrand, so powers must
+        # be integers; accepting arbitrary numbers (e.g. sqrt(sin(x))) routes a
+        # non-rational integral into the rationalizing machinery.
+        return can_use_weierstrass(base, var) and _exp.is_integer
 
     if expr_type in allowed_trig:
         if len(expr.args) != 1:

@@ -121,17 +121,24 @@ class BaseManualStepSolver:
             current_latex = repr(self.current_expr)
         except Exception:
             pass
+        try:
+            top_latex = latex(self._current_top_operation())
+        except Exception:
+            top_latex = ''
+        pending = []
+        for sub in self.pending:
+            try:
+                pending.append(latex(self.calculator._get_cached_operation(
+                    sub, self.calculator.operation, **self._build_context(sub))))
+            except Exception:
+                pending.append('')
         return {
             'done': self.done,
             'error': self.error,
             'domain': self.domain,
-            'top_level_latex': latex(self._current_top_operation()),
+            'top_level_latex': top_latex,
             'current_expr_latex': current_latex,
-            'pending': [
-                latex(self.calculator._get_cached_operation(
-                    sub, self.calculator.operation, **self._build_context(sub))
-                ) for sub in self.pending
-            ],
+            'pending': pending,
             'steps': [
                 {'latex': latex(s) if s is not None else '',
                  'explanation': e}
@@ -221,19 +228,21 @@ class BaseManualStepSolver:
         # a commit can span many steps (_advance_pending + finish()). Pushed only on the
         # success path so a failed/blocked apply leaves history untouched.
         snapshot = self._snapshot_session()
-        step_count_before = len(self.calculator.step_generator.steps)
         try:
             result = rule(self.current_expr, rule_ctx)
         except Exception as e:
+            # Roll back everything the rule wrote (steps, subs_dict, available symbols):
+            # a rule that fails mid-way must not leak half-applied state.
+            self._restore_step_generator(snapshot['generator'])
+            self._sync_from_generator()
             self.error = f"Rule '{rule_name}' raised: {e}"
             return self.state()
 
         if not result:
+            self._restore_step_generator(snapshot['generator'])
+            self._sync_from_generator()
             self.error = (f"规则 '{rule_name}' 无法应用到当前表达式, "
                           "请重新选择或使用 SymPy 回退.")
-            del self.calculator.step_generator.steps[step_count_before:]
-            del self.calculator.step_generator._explanations[step_count_before:]
-            self._sync_from_generator()
             return self.state()
 
         new_expr, explanation = result

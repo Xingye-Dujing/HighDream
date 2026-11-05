@@ -427,8 +427,15 @@ def create_integral_calculator(base_class):
                     r"参数定积分闭式经数值校验未通过, 按未能求得处理 (UNEVAL), 不输出可能错误的结果。")
                 return
 
-            finite = getattr(result, 'is_finite', None) is True
-            concl = "" if finite else r", 该反常积分发散(或不存在)"
+            if result.free_symbols:
+                # A parametric result (a, n, ...) cannot be declared finite or
+                # divergent here, but it survived the numeric validation above;
+                # saying "该反常积分发散" would be wrong.
+                concl = r", 参数定积分结果(已通过数值校验)"
+            elif getattr(result, 'is_finite', None) is True:
+                concl = ""
+            else:
+                concl = r", 该反常积分发散(或不存在)"
             self.step_generator.add_step(
                 result,
                 rf"应用牛顿-莱布尼茨公式: $\left. {latex(F)} \right|_{{{lb}}}^{{{ub}}} "

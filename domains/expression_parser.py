@@ -198,11 +198,14 @@ class ExpressionParser:  # pylint: disable=too-few-public-methods
 
     def _combine_logarithms_transform(
             self, expr: Expr) -> List[Expr]:
-        return self._try_transform(expr, logcombine, force=True)
+        # force=False: combining logs is only valid under positivity assumptions,
+        # which free symbols lack; force=True would present invalid "equivalents".
+        return self._try_transform(expr, logcombine)
 
     def _expand_logarithmic_transform(
             self, expr: Expr) -> List[Expr]:
-        return self._try_transform(expr, expand_log, force=True)
+        # See above: without force, only positivity-safe log rewrites are offered.
+        return self._try_transform(expr, expand_log)
 
     def _apart_transform(self, expr: Expr) -> List[Expr]:
         return self._try_transform(expr, apart)
@@ -215,7 +218,8 @@ class ExpressionParser:  # pylint: disable=too-few-public-methods
         return self._try_transform(expr, radsimp)
 
     def _powsimp_transform(self, expr: Expr) -> List[Expr]:
-        return self._try_transform(expr, powsimp, force=True)
+        # force=False: dropping the force preserves soundness for arbitrary signs.
+        return self._try_transform(expr, powsimp)
 
     def _reciprocal_trig_transform(self, expr: Expr) -> List[Expr]:
         return self._try_transform(expr, trigsimp, reciprocal=True)

@@ -11,6 +11,12 @@ RENDER_MANY_ROWS_ONLY_NUMBER_MATRIX = ['operations', 'linear-solver',
 # Calculator settings
 DEFAULT_PARSER_MAX_DEPTH = 3
 DEFAULT_LHOPITAL_MAX_COUNT = 5
+# Hard upper limits for user-chosen workload knobs. The UI prefills the defaults
+# above and clamps client-side, but API clients can ask for more; without server-
+# side caps a single request can monopolize a worker (e.g. order=10**9).
+HARD_MAX_DIFF_ORDER = 20
+HARD_MAX_PARSER_MAX_DEPTH = 12
+HARD_MAX_LHOPITAL_COUNT = 50
 # Integer-exponent literals with at least this many digits (e.g. 2**1000000 ->
 # exponent "1000000" is 7 digits) are parsed with evaluation disabled, so huge
 # integer powers are never materialized -- doing so wastes CPU/memory and trips

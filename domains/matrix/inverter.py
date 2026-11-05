@@ -594,6 +594,13 @@ class Inverter(CommonMatrixCalculator):
             "lower_triangular": "下三角矩阵"
         }
         A = self.parse_matrix_input(matrix_input)
+
+        # The special routines divide by diagonal entries/pivots without checking;
+        # on a singular matrix that silently produces zoo/oo entries instead of an
+        # honest failure. Refuse like the general methods do.
+        if not self.is_invertible(A, show_steps, is_clear=False):
+            return None
+
         matrix_type = self.check_special_matrix(A)
 
         if show_steps:

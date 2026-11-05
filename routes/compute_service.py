@@ -17,7 +17,8 @@ from typing import Any, Dict, Tuple
 
 from sympy import Symbol, preorder_traversal, latex
 
-from config import DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT
+from config import (DEFAULT_PARSER_MAX_DEPTH, DEFAULT_LHOPITAL_MAX_COUNT,
+    HARD_MAX_DIFF_ORDER, HARD_MAX_PARSER_MAX_DEPTH, HARD_MAX_LHOPITAL_COUNT)
 from core.input_validation import (
     as_bool_flag as _as_bool_flag,
     should_route_as_operator as _should_route_as_operator,
@@ -92,6 +93,16 @@ _calculators = {
 }
 
 
+def _clamp_int(value, low: int, high: int) -> int:
+    """Parse ``value`` as an int bounded to ``[low, high]``. Failures fall back to
+    ``low`` so a huge/garbage order or depth cannot monopolize a worker."""
+    try:
+        parsed = int(str(value).strip())
+    except (TypeError, ValueError):
+        parsed = low
+    return max(low, min(high, parsed))
+
+
 def _derivative_var(obj):
     """The differentiation variable of a Derivative (handles (x,), (x, n), x)."""
     for spec in obj.args[1:]:
@@ -102,13 +113,10 @@ def _derivative_var(obj):
 
 
 def _derivative_order(obj):
-    """The order n of a Derivative: (x, n) -> n, else 1."""
+    """The order n of a Derivative: (x, n) -> n, else 1 (clamped)."""
     for spec in obj.args[1:]:
         if isinstance(spec, (tuple, list)) and len(spec) >= 2:
-            try:
-                return max(1, int(spec[1]))
-            except (TypeError, ValueError):
-                return 1
+            return _clamp_int(spec[1], 1, HARD_MAX_DIFF_ORDER)
     return 1
 
 
@@ -116,7 +124,7 @@ def _diff_steps_latex(expr_str, var, order=1):
     """Differentiate ``expr_str`` ``order`` times, running the rule engine once per
     order and feeding the previous result back (never a black-box ``.diff(n)``), and
     return the combined step LaTeX plus the final value (or None if unresolved)."""
-    order = max(1, int(order or 1))
+    order = _clamp_int(order, 1, HARD_MAX_DIFF_ORDER)
     calc = _calculators['diff']()
     cur = str(expr_str)
     exprs_all, notes_all = [], []
@@ -287,10 +295,10 @@ def _auto_value(op, data):
 
     if op in ('diff', 'integral', 'limit'):
         from core.step_tree import _compute_steps  # pylint: disable=import-outside-toplevel
-        if op == 'diff' and int(str(data.get('order', '1') or '1')) > 1:
+        if op == 'diff' and _clamp_int(data.get('order', '1'), 1, HARD_MAX_DIFF_ORDER) > 1:
             align, value = _diff_steps_latex(
                 data.get('expression', ''), Symbol(str(data.get('variable', 'x') or 'x')),
-                int(str(data.get('order', '1') or '1')))
+                _clamp_int(data.get('order', '1'), 1, HARD_MAX_DIFF_ORDER))
             return True, _as_aligned(align), value
         try:
             exprs, explanations = _compute_steps(op, data)
@@ -658,7 +666,7 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
             use_cache = record_cache = False
 
         if operation_type == 'diff':
-            order = int(str(data.get('order', '1') or '1'))
+            order = _clamp_int(data.get('order', '1'), 1, HARD_MAX_DIFF_ORDER)
             if order > 1:  # higher derivative: run the engine once per order, feeding back
                 align, _val = _diff_steps_latex(expression, Symbol(variable), order)
                 return True, align
@@ -705,7 +713,9 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
         if operation_type == 'limit':
             point = cached_sympify(data.get('point', '0'))
             direction = data.get('direction', '+')
-            max_lhopital = int(data.get('max_lhopital_count', DEFAULT_LHOPITAL_MAX_COUNT))
+            max_lhopital = _clamp_int(
+                data.get('max_lhopital_count', DEFAULT_LHOPITAL_MAX_COUNT),
+                0, HARD_MAX_LHOPITAL_COUNT)
             if use_cache or record_cache:
                 limiter = _cached_calculators['limit'](max_lhopital=max_lhopital)
                 limiter.assum_flags = assum_flags
@@ -751,7 +761,9 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
 
         if operation_type == 'invert':
             calc = _calculators['invert']()
-            calc.auto_matrix_inverse(expression)
+            result = calc.auto_matrix_inverse(expression)
+            if result is None:
+                return False, '该矩阵不可逆（行列式为 0）'
             return True, calc.get_steps_latex()
 
         if operation_type == 'rank':
@@ -866,7 +878,9 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
             return True, result
 
         if operation_type == 'expr':
-            max_depth = int(data.get('max_depth', DEFAULT_PARSER_MAX_DEPTH))
+            max_depth = _clamp_int(
+                data.get('max_depth', DEFAULT_PARSER_MAX_DEPTH),
+                1, HARD_MAX_PARSER_MAX_DEPTH)
             sort_strategy = data.get('sort_strategy', 'complexity')
 
             def length_sort(expr):

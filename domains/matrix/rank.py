@@ -68,10 +68,13 @@ class Rank(CommonMatrixCalculator):
                 rank += 1
                 pivot = current_matrix[pivot_row, pivot_col]
 
-                # Normalize pivot row (optional, for easier calculation)
-                if pivot != 1 and show_steps:
-                    self.step_generator.add_step(
-                        f"\\text{{归一化: }} R_{pivot_row + 1} \\times {latex(1 / pivot)}")
+                # Normalize pivot row: the elimination below only subtracts full rows,
+                # so the pivot must be made 1 first. Normalizing always (not only in
+                # show_steps mode) is required for correct rank even silently.
+                if pivot != 1:
+                    if show_steps:
+                        self.step_generator.add_step(
+                            f"\\text{{归一化: }} R_{pivot_row + 1} \\times {latex(1 / pivot)}")
                     current_matrix[pivot_row, :] = current_matrix[pivot_row, :] / pivot
                     if show_steps:
                         self.add_matrix(current_matrix, "A")
@@ -315,14 +318,28 @@ class Rank(CommonMatrixCalculator):
             eigenvalues = A.eigenvals()
 
             if show_steps:
-                self.add_equation(r"\text{原理: 对于方阵, 秩 = 非零特征值个数}")
+                self.add_equation(r"\text{原理: 对于方阵, 秩 = 非零特征值个数代数重数之和}")
                 self.step_generator.add_step(rf"\text{{特征值: }}" + rf",\,".join(
-                    [f"\\lambda_{{{i + 1}}} = {latex(val)}" for i, val in enumerate(eigenvalues)]))
+                    [f"\\lambda_{{{i + 1}}} = {latex(val)}^{{{m}}}"
+                     for i, (val, m) in enumerate(eigenvalues.items())]))
 
-            # Count number of non-zero eigenvalues
-            nonzero_eigenvalues = sum(
-                1 for eig in eigenvalues if simplify(eig) != 0)
-            rank = nonzero_eigenvalues
+            # The eigenvalue count equals the rank only for diagonalizable
+            # matrices (rank is invariant under a basis change, and for a
+            # diagonal matrix rank is the number of nonzero entries).
+            # A non-diagonalizable matrix (e.g. a Jordan block for a zero
+            # eigenvalue) can have nonzero rank with no nonzero eigenvalues, so
+            # this method declines when diagonalizability is not guaranteed.
+            if A.is_diagonalizable() is not True:
+                if show_steps:
+                    self.step_generator.add_step(
+                        r"\text{矩阵不可对角化或无法判定, 特征值法不适用(使用行阶梯形法)}")
+                return None
+
+            # Count algebraic multiplicities of the nonzero eigenvalues; the
+            # dict maps each DISTINCT eigenvalue to its multiplicity.
+            rank = sum(multiplicity for eig, multiplicity in eigenvalues.items()
+                      if simplify(eig) != 0)
+            nonzero_eigenvalues = rank
 
             if show_steps:
                 self.step_generator.add_step(

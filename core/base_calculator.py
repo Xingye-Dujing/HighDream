@@ -217,7 +217,12 @@ class BaseCalculator(ABC):
             return
 
         # 1. Back substitute
-        self._back_subs(final_expr)
+        back_substituted = self._back_subs(final_expr)
+        # The back-substitution step was recorded with the unsimplified expression;
+        # write the simplified form back so the final answer shown is the one the
+        # step claims to produce.
+        if back_substituted is not final_expr and self.step_generator.steps:
+            self.step_generator.steps[-1] = back_substituted
 
         # 2. Apply user assumptions (e.g. x>0) as an explicit, honest final step so
         #    sqrt(x^2)->x, log(x^2)/2->log(x), etc. Soundly confined: only symbols the

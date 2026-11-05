@@ -27,16 +27,21 @@ class LinearSystemConverter(CommonMatrixCalculator):
             List of SymPy equations or tuple of equations and unknowns.
         """
         unknowns_str = ''
-        expressions = expressions.split('\n')
-        if '=' not in expressions[-1]:
+        expr_lines = expressions.split('\n') if isinstance(expressions, str) else [str(line) for line in expressions]
+        expressions = expr_lines
+        if expressions and '=' not in expressions[-1]:
             unknowns_str = expressions[-1]
             expressions = expressions[:-1]
         eq_list = []
         for i, expr in enumerate(expressions):
-            if '=' not in expr:
+            left, sep, right = expr.partition('=')
+            if not sep:
                 raise ValueError(f"Equation format error in line {i + 1}")
-            left, right = expr.split('=')
-            eq = Eq(cached_sympify(left), cached_sympify(right))
+            # partition() on the first '=' keeps a stray comparison operator from
+            # silently becoming a wrong equation (x = y = 3 now errors at parse time).
+            left_obj = cached_sympify(left.strip())
+            right_obj = cached_sympify(right.strip())
+            eq = Eq(left_obj, right_obj)
             eq_list.append(eq)
         if get_unknowns:
             if unknowns_str:

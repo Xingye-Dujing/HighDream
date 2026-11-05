@@ -183,7 +183,7 @@ def create_limit_calculator(base_class):
                 if not feasible_directions['right']:
                     self.step_generator.add_step(
                         Limit(expr, var, point, '+-'),
-                        rf"初始检测: 在 $\, x \to {point}^- \,$ 处, 右邻域违反定义域约束, 仅能尝试计算左极限."
+                        rf"初始检测: 在 $\, x \to {point}^+ \,$ 处, 右邻域违反定义域约束, 仅能尝试计算左极限."
                     )
 
                     steps, explanations, left_result = self._compute_single_direction(
@@ -203,7 +203,7 @@ def create_limit_calculator(base_class):
                     self.reset_process()
                     self.step_generator.add_step(
                         Limit(expr, var, point, '+'),
-                        rf"初始检测: 在$\, x \to {point}^- \,$ 处, 右邻域违反定义域约束，右极限不可计算."
+                        rf"初始检测: 在$\, x \to {point}^+ \,$ 处, 右邻域违反定义域约束, 右极限不可计算."
                     )
                     return
                 if direction == '-' and not feasible_directions['left']:

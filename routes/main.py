@@ -5,9 +5,10 @@ including the home page, matrix panel, analysis and lab features.
 """
 
 from flask import Blueprint, render_template, request
-from sympy import Matrix, sympify
+from sympy import Matrix
 
 from utils.matrix_latex import latex_to_nested
+from utils.cache_utils import cached_sympify
 
 main = Blueprint('main', __name__)
 """Blueprint: The main application blueprint instance.
@@ -156,7 +157,9 @@ def _matrix_expression(raw):
         return None, None
     try:
         expr = latex_to_nested(str(raw))
-        Matrix(sympify(expr))
+        # cached_sympify routes huge integer powers (2**1000000) through
+        # evaluation-disabled parsing instead of materializing them.
+        Matrix(cached_sympify(expr))
         return expr, None
     except Exception as exc:  # pylint: disable=broad-exception-caught
         return None, f'无法解析矩阵输入: {exc}'

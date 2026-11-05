@@ -142,8 +142,8 @@ class MethodTreeEnumerator:
                 'nodes': nodes_copy,
                 'children': children_copy,
                 'pending_decision': pending,
+                'stats': self._build_stats(len(nodes_copy)),
             }
-        payload['stats'] = self._build_stats(len(nodes_copy))
         return payload
 
     # ----------------------------------------------------------------- internal
@@ -470,9 +470,9 @@ class MethodTreeEnumerator:
 
     def _finalize_payload(self) -> Dict[str, Any]:
         """Produce the final tree payload returned by run()."""
-        snap = self.snapshot()
-        snap['stats'] = self._build_stats(len(snap['nodes']))
-        return snap
+        # snapshot() already attaches stats under the lock; do not re-read the
+        # mutable fields here outside it.
+        return self.snapshot()
 
     def _ask_user_decision(
         self,

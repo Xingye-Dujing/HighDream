@@ -55,6 +55,7 @@ def create_snapshot(payload: str, title: str = '') -> dict:
     """
     if len(payload.encode('utf-8')) > MAX_SNAPSHOT_BYTES:
         raise ValueError('笔记本过大, 单个快照不能超过 2 MB')
+    title = (title or '').strip()[:200]
     conn = _get_conn()
     created_at = datetime.now(timezone.utc).isoformat(timespec='seconds')
     cursor = conn.execute(
