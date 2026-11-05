@@ -52,6 +52,15 @@ def test_radical_minus_linear_conjugate():
     assert simplify(_limit('sqrt(x**2+x)-x', S('oo')) - Rational(1, 2)) == 0
 
 
+def test_two_sided_domain_restriction_note_is_kept():
+    """The feasibility note must survive the single-direction run's generator reset."""
+    for expr, note_side in (('sqrt(x)', '0^-'), ('sqrt(-x)', '0^+')):
+        calc = LimitCalculator()
+        steps, explanations = calc.compute_list(expr, x, 0, 'both')
+        assert any('初始检测' in e and note_side in e for e in explanations), explanations
+        assert [s for s in steps if s is not None][-1] == 0
+
+
 def test_bounded_oscillation_infinity():
     # (x + sin x)/(x + cos x) -> 1 at infinity (L'Hopital invalid; divide by dominant power)
     assert simplify(_limit('(x+sin(x))/(x+cos(x))', S('oo')) - 1) == 0

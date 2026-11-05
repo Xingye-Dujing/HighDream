@@ -86,7 +86,7 @@ def create_limit_calculator(base_class):
 
         def _add_limit_step(  # pylint: disable=too-many-positional-arguments
                 self, direction, expr: Basic | Expr, var: Symbol, point: Expr,
-                steps: List[Expr], explanations: List[str]) -> None:
+                steps: List[Expr], explanations: List[str], note: str = '') -> None:
             if direction == '+':
                 self._add_right_limit_step(expr, var, point)
             elif direction == '-':
@@ -95,6 +95,12 @@ def create_limit_calculator(base_class):
                 self._add_both_limit_step(expr, var, point)
             self.step_generator.steps += steps[1:]
             self.step_generator._explanations += explanations[1:]
+            # A feasibility note is attached to the leading limit row: the row is
+            # added here (after the single-direction run reset the generator), so
+            # the caller cannot add it beforehand without losing it.
+            if note and self.step_generator._explanations \
+                    and not self.step_generator._explanations[0]:
+                self.step_generator._explanations[0] = note
 
         def _add_final_step(self, left_result: Expr, right_result: Expr) -> None:
             try:
@@ -166,31 +172,26 @@ def create_limit_calculator(base_class):
                     self.step_generator.add_step(zoo, "结论: 极限不存在")
                     return
                 if not feasible_directions['left']:
-                    self.step_generator.add_step(
-                        Limit(expr, var, point, '+-'),
-                        rf"初始检测: 在 $\, x \to {point}^- \,$ 处, 左邻域违反定义域约束, 仅能尝试计算右极限."
-                    )
                     steps, explanations, right_result = self._compute_single_direction(
                         expr, '+', **context)
                     self.step_generator.reset()
                     self._add_limit_step(
-                        '+-', expr, var, point, steps, explanations)
+                        '+-', expr, var, point, steps, explanations,
+                        note=(rf"初始检测: 在 $\, x \to {point}^- \,$ 处, "
+                              "左邻域违反定义域约束, 仅能尝试计算右极限."))
                     self.step_generator.add_step(
                         right_result,
                         f"结论: 由于左极限不可计算, 仅右极限存在, 值为 ${latex(right_result)}$."
                     )
                     return
                 if not feasible_directions['right']:
-                    self.step_generator.add_step(
-                        Limit(expr, var, point, '+-'),
-                        rf"初始检测: 在 $\, x \to {point}^+ \,$ 处, 右邻域违反定义域约束, 仅能尝试计算左极限."
-                    )
-
                     steps, explanations, left_result = self._compute_single_direction(
                         expr, '-', **context)
                     self.step_generator.reset()
                     self._add_limit_step(
-                        '+-', expr, var, point, steps, explanations)
+                        '+-', expr, var, point, steps, explanations,
+                        note=(rf"初始检测: 在 $\, x \to {point}^+ \,$ 处, "
+                              "右邻域违反定义域约束, 仅能尝试计算左极限."))
                     self.step_generator.add_step(
                         left_result,
                         f"结论: 由于右极限不可计算, 仅左极限存在, 值为 ${latex(left_result)}$."
