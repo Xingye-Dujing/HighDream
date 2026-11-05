@@ -77,7 +77,13 @@ def refine_with_flags(expr, flags: dict):
     swap_out: dict = {}
     for sym in free:
         if isinstance(sym, Symbol) and sym.name in flags:
-            tmp = Symbol(sym.name, **flags[sym.name])
+            try:
+                tmp = Symbol(sym.name, **flags[sym.name])
+            except ValueError:
+                # Contradictory clauses (e.g. "x>0, x<0") make Symbol() raise
+                # InconsistentAssumptions. As with any unparsable clause, ignore
+                # that symbol rather than failing an otherwise valid derivation.
+                continue
             swap_in[sym] = tmp
             swap_out[tmp] = sym
     if not swap_in:

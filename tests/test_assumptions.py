@@ -64,6 +64,14 @@ def test_engine_end_to_end_honors_assumptions():
     assert '依假设化简' in _integral('1/x', 'x>0')
 
 
+def test_contradictory_assumptions_are_ignored():
+    """Conflicting clauses must not abort an otherwise valid derivation."""
+    assert refine_with_flags(sqrt(x ** 2), parse_assumption_flags('x>0, x<0')) == sqrt(x ** 2)
+    result = _diff('sqrt(x**2)', 'x>0, x<0')
+    assert 'sqrt' in result
+    assert '计算失败' not in result
+
+
 def test_no_assumptions_is_unchanged():
     # omitting the field must produce byte-identical output to an empty one
     assert _diff('sqrt(x**2)') == _diff('sqrt(x**2)', '')
