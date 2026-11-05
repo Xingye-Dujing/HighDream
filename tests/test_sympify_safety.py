@@ -88,6 +88,30 @@ def test_operator_form_converter_does_not_execute_python():
     assert _L(payload) == payload
 
 
+def test_matrix_symbolic_rejects_eval_escape_chains():
+    """parse_expr evaluates attribute chains natively (locals binding cannot sandbox
+    them), so the symbolic-matrix parser must reject them outright."""
+    from domains.matrix.matrix_symbolic import simplify_matrix_symbolic  # pylint: disable=import-outside-toplevel
+
+    for payload in [
+        '().__class__.__base__.__subclasses__()',
+        '().__class__.__name__',
+        'A + ().__class__.__base__.__subclasses__()',
+        '(lambda: 1)()',
+        'A.__class__',
+        '__import__("os")',
+    ]:
+        with pytest.raises(ValueError, match='不允许的语法'):
+            simplify_matrix_symbolic(payload)
+
+
+def test_matrix_symbolic_still_simplifies_legal_input():
+    from domains.matrix.matrix_symbolic import simplify_matrix_symbolic  # pylint: disable=import-outside-toplevel
+
+    steps = simplify_matrix_symbolic('A*B*Inverse(B)')
+    assert steps and str(steps[-1][0]) == 'A'
+
+
 def test_math_semantics_are_preserved():
     """Hardening must not change the documented parse conventions."""
     x = Symbol('x')

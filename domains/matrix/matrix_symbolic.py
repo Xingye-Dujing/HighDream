@@ -17,6 +17,8 @@ from sympy import Expr, Symbol, expand
 from sympy.matrices.expressions import Identity, Inverse, MatMul, MatrixSymbol, Transpose
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations
 
+from utils.cache_utils import _reject_unsafe_syntax
+
 _N = Symbol('n')
 _TOKEN_RE = re.compile(r'[A-Za-z_]\w*')
 _RESERVED = {'Inverse', 'Transpose', 'Identity', 'MatMul', 'MatAdd', 'n'}
@@ -66,6 +68,12 @@ def simplify_matrix_symbolic(text: str) -> List[Tuple[Expr, str]]:
         )
     if not _free_names(raw):
         raise ValueError('表达式中没有矩阵名；请使用 A、B 等大写字母表示矩阵')
+    # parse_expr uses eval: an attribute chain such as
+    # ``().__class__.__base__.__subclasses__()`` is self-contained (never
+    # references the local dict), so binding free names to MatrixSymbol does
+    # NOT sandbox it. Block attribute access / dunder names / calls to
+    # non-symbols outright, exactly as the scalar parser does.
+    _reject_unsafe_syntax(raw)
     expr = _parse_matrix_expr(raw)
     steps: List[Tuple[Expr, str]] = [(expr, '原始符号矩阵表达式')]
 
