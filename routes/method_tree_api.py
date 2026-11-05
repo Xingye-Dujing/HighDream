@@ -26,6 +26,8 @@ def method_tree_start():
         JSON with success + task_id for polling via /api/method_tree_status.
     """
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
     if not data.get('domain'):
         return jsonify({'success': False, 'error': 'missing domain'})
     if not data.get('expression'):
@@ -62,6 +64,8 @@ def method_tree_status():
     from routes.method_tree_service import snapshot_method_tree  # pylint: disable=import-outside-toplevel
 
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
     task_id = data.get('task_id', '')
 
     task_info = task_manager.get_task_status(task_id)
@@ -98,6 +102,8 @@ def method_tree_cancel():
     from routes.method_tree_service import cancel_method_tree  # pylint: disable=import-outside-toplevel
 
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
     task_id = data.get('task_id', '')
     cancelled = cancel_method_tree(task_id)
     return jsonify({'success': True, 'cancelled': cancelled})
@@ -117,9 +123,11 @@ def method_tree_respond():
     from routes.method_tree_service import respond_method_tree  # pylint: disable=import-outside-toplevel
 
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
     task_id = data.get('task_id', '')
-    accepted = data.get('accepted', False)
-    responded = respond_method_tree(task_id, bool(accepted))
+    accepted = as_bool_flag(data.get('accepted', False))
+    responded = respond_method_tree(task_id, accepted)
     return jsonify({'success': True, 'responded': responded})
 
 
@@ -138,4 +146,6 @@ def method_tree_path():
     from routes.method_tree_service import linear_path_method_tree  # pylint: disable=import-outside-toplevel
 
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
     return jsonify(linear_path_method_tree(data))

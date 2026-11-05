@@ -15,11 +15,19 @@ from .api_blueprint import api
 _MANUAL_SESSION_MAX = 200
 _MANUAL_SESSION_TTL_SECONDS = 3600
 _manual_sessions: dict = {}
-_manual_sessions_lock = threading.Lock()
+# One re-entrant lock guards the session dict *and* every solver operation.
+# Because an in-flight step holds this same lock, _prune_manual_sessions (which
+# also needs it) can never run mid-step, so a session still in use is never
+# evicted. RLock lets manual_start call the pruner while already holding it.
+_manual_sessions_lock = threading.RLock()
 
 
 def _prune_manual_sessions() -> None:
-    """Drop expired sessions, then the oldest ones beyond the cap."""
+    """Drop expired sessions, then the oldest ones beyond the cap.
+
+    Must be called while holding ``_manual_sessions_lock`` (directly or
+    re-entrantly). That mutual exclusion is what protects in-use sessions.
+    """
     now = time.monotonic()
     with _manual_sessions_lock:
         expired = [sid for sid, (_, created) in _manual_sessions.items()
@@ -34,8 +42,27 @@ def _prune_manual_sessions() -> None:
 
 
 def _get_manual_solver(session_id: str):
+    """Return a session's solver, or None. Caller must hold the session lock."""
     entry = _manual_sessions.get(session_id)
     return entry[0] if entry else None
+
+
+def _manual_action(session_id, method_name, *args):
+    """Run one solver method and return the endpoint's JSON response.
+
+    The lock is held across fetching the solver, mutating it and serializing
+    the resulting state, so no two requests can mutate the same solver at
+    once and pruning cannot evict a session while it is being stepped.
+    """
+    with _manual_sessions_lock:
+        try:
+            solver = _get_manual_solver(session_id)
+            if solver is None:
+                return jsonify({'success': False, 'error': 'Session not found'})
+            state = getattr(solver, method_name)(*args)
+            return jsonify({'success': True, 'state': state})
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            return jsonify({'success': False, 'error': str(exc)})
 
 
 @api.route('/manual_start', methods=['POST'])
@@ -56,6 +83,8 @@ def manual_start():
             state (dict): Initial solver state
     """
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
     domain = data.get('domain', '')
     expression = data.get('expression', '')
     variable = data.get('variable', 'x')
@@ -67,16 +96,17 @@ def manual_start():
             domain=domain, expression=expression,
             variable=variable, point=point, direction=direction,
         )
-        _prune_manual_sessions()
-        session_id = uuid.uuid4().hex
         with _manual_sessions_lock:
+            _prune_manual_sessions()
+            session_id = uuid.uuid4().hex
             _manual_sessions[session_id] = (solver, time.monotonic())
+            state = solver.state()
         return jsonify({
             'success': True,
             'session_id': session_id,
-            'state': solver.state(),
+            'state': state,
         })
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         return jsonify({'success': False, 'error': str(e)})
 
 
@@ -94,18 +124,11 @@ def manual_step():
             state (dict): Updated solver state
     """
     data = request.json or {}
-    session_id = data.get('session_id', '')
-    rule_name = data.get('rule_name', '')
-
-    solver = _get_manual_solver(session_id)
-    if solver is None:
-        return jsonify({'success': False, 'error': 'Session not found'})
-
-    try:
-        state = solver.apply_rule(rule_name)
-        return jsonify({'success': True, 'state': state})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
+    return _manual_action(
+        data.get('session_id', ''), 'apply_rule', data.get('rule_name', '')
+    )
 
 
 @api.route('/manual_undo', methods=['POST'])
@@ -121,17 +144,9 @@ def manual_undo():
             state (dict): Restored solver state (same shape as /manual_step)
     """
     data = request.json or {}
-    session_id = data.get('session_id', '')
-
-    solver = _get_manual_solver(session_id)
-    if solver is None:
-        return jsonify({'success': False, 'error': 'Session not found'})
-
-    try:
-        state = solver.undo()
-        return jsonify({'success': True, 'state': state})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
+    return _manual_action(data.get('session_id', ''), 'undo')
 
 
 @api.route('/manual_fallback', methods=['POST'])
@@ -147,17 +162,9 @@ def manual_fallback():
             state (dict): Updated solver state
     """
     data = request.json or {}
-    session_id = data.get('session_id', '')
-
-    solver = _get_manual_solver(session_id)
-    if solver is None:
-        return jsonify({'success': False, 'error': 'Session not found'})
-
-    try:
-        state = solver.fallback()
-        return jsonify({'success': True, 'state': state})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
+    return _manual_action(data.get('session_id', ''), 'fallback')
 
 
 @api.route('/manual_reset', methods=['POST'])
@@ -172,7 +179,13 @@ def manual_reset():
             success (bool): True if session was deleted
     """
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
     session_id = data.get('session_id', '')
     with _manual_sessions_lock:
-        _manual_sessions.pop(session_id, None)
+        try:
+            _manual_sessions.pop(session_id, None)
+        except TypeError:
+            # Unhashable id can never match a real session; reset is idempotent.
+            pass
     return jsonify({'success': True})

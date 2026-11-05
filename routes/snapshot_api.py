@@ -21,15 +21,17 @@ def snapshot_save():
         JSON with success and the new snapshot metadata.
     """
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
     cells = data.get('cells')
     if not isinstance(cells, list) or not cells:
         return jsonify({'success': False, 'error': '笔记本为空'})
-    title = (data.get('title') or '').strip()
     try:
+        title = str(data.get('title') or '').strip()
         meta = snapshot_store.create_snapshot(
             json.dumps(cells, ensure_ascii=False), title
         )
-    except ValueError as exc:
+    except (ValueError, TypeError, AttributeError) as exc:
         return jsonify({'success': False, 'error': str(exc)})
     return jsonify({'success': True, 'snapshot': meta})
 
@@ -61,6 +63,8 @@ def snapshot_get():
 def snapshot_delete():
     """Delete one snapshot by id."""
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
     try:
         snapshot_id = int(data.get('id'))
     except (TypeError, ValueError):

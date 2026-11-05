@@ -19,6 +19,8 @@ def matrix_analyze():
         JSON response containing analysis results from MatrixAnalyzer
     """
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
     expr = data.get('expression', '')
     if not isinstance(expr, str) or not expr.strip():
         return jsonify({'success': False, 'error': '请输入矩阵表达式'})
@@ -44,16 +46,21 @@ def matrix_cal():
             steps (list): List of LaTeX-formatted calculation steps.
     """
     data = request.json or {}
-    expr = data.get('expression', '')
-    ops = [o for o in data.get('operations', '').split('\n') if o.strip()]
-    record = as_bool_flag(data.get('record_all_steps'))
-    if not ops:
-        return jsonify({'success': False, 'error': '请输入矩阵操作', 'steps': ''})
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
     from utils.matrix_latex import latex_to_nested  # pylint: disable=import-outside-toplevel
     try:
+        expr = data.get('expression', '')
+        operations = data.get('operations', '')
+        if not isinstance(expr, str) or not isinstance(operations, str):
+            return jsonify({'success': False, 'error': '请输入矩阵表达式和矩阵操作', 'steps': ''})
+        ops = [o for o in operations.split('\n') if o.strip()]
+        if not ops:
+            return jsonify({'success': False, 'error': '请输入矩阵操作', 'steps': ''})
+        record = as_bool_flag(data.get('record_all_steps'))
         expr = latex_to_nested(expr)
         ops = [latex_to_nested(o) for o in ops]
-    except ValueError as exc:
+    except (ValueError, TypeError, AttributeError) as exc:
         return jsonify({'success': False, 'error': str(exc), 'steps': ''})
 
     calc = MatrixCalculator()
@@ -77,6 +84,8 @@ def get_process():
         JSON response containing process information from ProcessManager
     """
     data = request.json or {}
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': '请求体必须是 JSON 对象'}), 400
     ptype = data.get('type', '')
     expr = data.get('expression', '')
     from utils.matrix_latex import latex_to_nested  # pylint: disable=import-outside-toplevel
