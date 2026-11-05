@@ -12,6 +12,12 @@ function escapeHtml(s) {
     .replace(/'/g, "&#39;");
 }
 
+// Only allow non-executing URL schemes for markdown links (block javascript:, etc.).
+function safeUrl(url) {
+  const trimmed = String(url).trim();
+  return /^(https?:|mailto:|#|\/)/i.test(trimmed) ? trimmed : "#";
+}
+
 // Inline SVG icons for the minimal-mode toggle (no icon-font glyph dependency).
 const ICON_EYE = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 3C4.5 3 1.7 5.6 1 8c.7 2.4 3.5 5 7 5s6.3-2.6 7-5c-.7-2.4-3.5-5-7-5zm0 8.5A3.5 3.5 0 1 1 8 4.5a3.5 3.5 0 0 1 0 7zm0-1.75A1.75 1.75 0 1 0 8 6a1.75 1.75 0 0 0 0 3.75z" fill="currentColor"/></svg>';
 const ICON_EYE_OFF = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 3C4.5 3 1.7 5.6 1 8c.7 2.4 3.5 5 7 5s6.3-2.6 7-5c-.7-2.4-3.5-5-7-5zm0 8.5A3.5 3.5 0 1 1 8 4.5a3.5 3.5 0 0 1 0 7zm0-1.75A1.75 1.75 0 1 0 8 6a1.75 1.75 0 0 0 0 3.75z" fill="currentColor"/><path d="M2.6 2.6l10.8 10.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
@@ -653,13 +659,10 @@ function renderMarkdown(paragraph) {
 
   if (!textarea || !render) return;
 
-  const content = textarea.value;
-
-  // Check if content contains SVG tag, if so, render as-is
-  if (content.trim().toLowerCase().startsWith('<svg') && content.trim().endsWith('</svg>')) {
-    render.innerHTML = content;
-    return;
-  }
+  // Escape first: raw HTML from the document (including <svg onload=...> and
+  // <img onerror=...>) must be neutralized before we re-add our own markup.
+  // Loading a shared .json (loadDocument) otherwise ran arbitrary JS.
+  const content = escapeHtml(textarea.value);
 
   let html = content
     // Headers
@@ -681,8 +684,8 @@ function renderMarkdown(paragraph) {
     .replace(/`(.*?)`/gim, '<code>$1</code>')
     // Line breaks
     .replace(/\n/gim, '<br>')
-    // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank">$1</a>')
+    // Links (URL scheme allowlisted so javascript: cannot execute)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, (m, text, url) => `<a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer">${text}</a>`)
     // Unordered lists
     .replace(/^\s*[-*] (.*$)/gim, '<li>$1</li>')
     // Ordered lists

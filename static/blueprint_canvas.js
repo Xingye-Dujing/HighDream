@@ -227,53 +227,53 @@ class BlueprintCanvas {
     switch (node.type) {
       case 'expression':
         content = `
-          <textarea class="bp-node-expression" data-node-id="${node.id}">${node.data.expression}</textarea>
+          <textarea class="bp-node-expression" data-node-id="${escapeHtml(node.id)}">${escapeHtml(node.data.expression || '')}</textarea>
         `;
         break;
 
       case 'operation':
         const isLimit = node.data.operation === 'limit';
         content = `
-          <select class="bp-node-operation" data-node-id="${node.id}">
+          <select class="bp-node-operation" data-node-id="${escapeHtml(node.id)}">
             <option value="diff" ${node.data.operation === 'diff' ? 'selected' : ''}>微分</option>
             <option value="integral" ${node.data.operation === 'integral' ? 'selected' : ''}>积分</option>
             <option value="limit" ${node.data.operation === 'limit' ? 'selected' : ''}>极限</option>
           </select>
           <div class="bp-operation-inputs">
-            <input type="text" class="bp-node-variable" data-node-id="${node.id}" value="${node.data.variable || 'x'}" placeholder="变量">
-            <input type="text" class="bp-node-limit-point ${isLimit ? '' : 'hidden'}" data-node-id="${node.id}" value="${node.data.limitPoint || '0'}" placeholder="趋向点">
+            <input type="text" class="bp-node-variable" data-node-id="${escapeHtml(node.id)}" value="${escapeHtml(node.data.variable || 'x')}" placeholder="变量">
+            <input type="text" class="bp-node-limit-point ${isLimit ? '' : 'hidden'}" data-node-id="${escapeHtml(node.id)}" value="${escapeHtml(node.data.limitPoint || '0')}" placeholder="趋向点">
           </div>
         `;
         break;
 
       case 'result':
         content = `
-          <div class="bp-node-result" data-node-id="${node.id}">${node.data.result}</div>
+          <div class="bp-node-result" data-node-id="${escapeHtml(node.id)}">${escapeHtml(node.data.result || '')}</div>
         `;
         break;
 
       case 'simplify':
         content = `
-          <div class="bp-node-result" data-node-id="${node.id}">${node.data.result}</div>
+          <div class="bp-node-result" data-node-id="${escapeHtml(node.id)}">${escapeHtml(node.data.result || '')}</div>
         `;
         break;
 
       case 'text':
         content = `
-          <textarea class="bp-node-text" data-node-id="${node.id}" placeholder="输入注释文本">${node.data.text}</textarea>
+          <textarea class="bp-node-text" data-node-id="${escapeHtml(node.id)}" placeholder="输入注释文本">${escapeHtml(node.data.text || '')}</textarea>
         `;
         break;
 
       case 'render':
         content = `
-          <div class="bp-node-result" data-node-id="${node.id}">${node.data.latex ? this.renderLatex(escapeHtml(node.data.latex)) : '渲染结果'}</div>
+          <div class="bp-node-result" data-node-id="${escapeHtml(node.id)}">${node.data.latex ? this.renderLatex(escapeHtml(node.data.latex)) : '渲染结果'}</div>
         `;
         break;
     }
 
     return `
       <div class="bp-node-header">
-        <div class="bp-node-title">${node.title}</div>
+        <div class="bp-node-title">${escapeHtml(node.title || '')}</div>
         <div class="bp-node-type">${this.getNodeTypeLabel(node.type)}</div>
       </div>
       <div class="bp-node-content">
@@ -281,7 +281,7 @@ class BlueprintCanvas {
       </div>
       ${this.getInputPortsHTML(node)}
       ${this.getOutputPortsHTML(node)}
-      <div class="bp-node-resizer" data-node-id="${node.id}"></div>
+      <div class="bp-node-resizer" data-node-id="${escapeHtml(node.id)}"></div>
     `;
   }
 

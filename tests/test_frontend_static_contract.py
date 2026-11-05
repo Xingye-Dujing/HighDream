@@ -107,6 +107,10 @@ UNTRUSTED_INNERHTML_VALUES = [
     ('matrix_analysis.js', 'data.V'),
     ('blueprint_canvas.js', 'data.latex'),
     ('blueprint_canvas.js', 'node.data.latex'),
+    ('blueprint_canvas.js', 'node.data.expression'),
+    ('blueprint_canvas.js', 'node.data.result'),
+    ('blueprint_canvas.js', 'node.data.text'),
+    ('blueprint_canvas.js', 'node.title'),
     ('word_editor.js', 'data.latex'),
 ]
 
