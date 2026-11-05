@@ -176,7 +176,7 @@ The compute entry point is decomposed into small replaceable modules: `core/oper
 
 - Run the full suite with `.venv/Scripts/python.exe -m pytest` on Windows or `python -m pytest` elsewhere.
 - Besides ordinary regressions, contract suites enumerate every computation operation, every palette key, every Flask page/API, and every matrix operation. Adding an operation/key/endpoint without extending its contract data makes the suite fail first.
-- The suite currently has 2200+ cases covering valid derivations, empty/placeholder/malformed rejection, matrix shape checks, LaTeX invariants (braces, environments, no literal `$`, no `\newline`), async task lifecycles, manual rule selection, method trees, snapshot/cache SQLite stores, and frontend JS/template layout.
+- The suite currently has 2452 cases after parametrization expansion, covering valid derivations, empty/placeholder/malformed rejection, matrix shape checks, LaTeX invariants (braces, environments, no literal `$`, no `\newline`), async task lifecycles, manual rule selection, method trees, snapshot/cache SQLite stores, and frontend JS/template layout.
 
 ## Notes on Usage
 
@@ -184,6 +184,8 @@ The compute entry point is decomposed into small replaceable modules: `core/oper
 1. The multiplication operator `*` must never be omitted! `ab` will be parsed as a single symbol, not `a*b`.
 2. Inverse trigonometric functions are `asin()`, `acos()`, `atan()`, not `arcsin()`, `arccos()`, `arctan()`.
 3. Do not use `e**` or `e^`; use `exp()` instead. `e` will be parsed as a letter variable like `x`. `exp()` is the properly defined natural exponential function.
+4. On read-only or no-write-permission environments (e.g. Vercel), set `HIGHDREAM_CACHE_DIR` to relocate the SQLite cache directory.
+5. Expression input is sanitized and allows math syntax only; arbitrary Python is never executed.
 
 ## For More Details, See the [Help Documentation](https://high-dream.vercel.app/help)
 

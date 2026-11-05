@@ -7,7 +7,7 @@ Guidance for AI agents working in this repository.
 - **Local dev (opens http://127.0.0.1:5000/):** `python app_local.py` — uses Werkzeug's threaded WSGI server (one thread per request), opens browser automatically. *(gevent's greenlet server froze every request while one handler blocked, e.g. the SSE endpoint waiting on a task event — do not go back to it.)*
 - **Vercel entrypoint:** `python app.py` — plain `Flask.run()` (for local testing of deploy path).
 - **Build executable:** `pyinstaller app_local.spec` → `dist/high-dream.exe`. Do NOT raise `optimize` above `1` (spec pins it); `2` breaks SymPy.
-- **Dependencies:** `requirements_local.txt` for dev, `requirements_deployment.txt` for Vercel (just `sympy`, `flask`).
+- **Dependencies:** `requirements_local.txt` for dev, `requirements_deployment.txt` for Vercel (`sympy`, `flask`, `antlr4-python3-runtime` — three pinned lines).
 
 ## SymPy gotchas (enforce in generated code/examples)
 
@@ -47,7 +47,7 @@ Update **both** `README.md` (Chinese, primary) and `README-EN.md` (English) on u
 
 ## Testing
 
-- Regression tests live in `tests/` (pure-logic: `utils/expr_type.py`, `ExpressionParser` product-to-sum, the large-power guard, and the documented SymPy gotchas). Run all: `.venv/Scripts/python.exe -m pytest` or `/test`. Run single test: `.venv/Scripts/python.exe -m pytest tests/test_xxx.py -q`. `pytest` is a dev-only dep (see `requirements_local.txt`). Add a `test_*.py` (with `tests/__init__.py` so pylint resolves top-level imports) for new deterministic logic.
+- Regression tests live in `tests/` (pure-logic: `utils/expr_type.py`, `ExpressionParser` product-to-sum, the large-power guard, and the documented SymPy gotchas). Run all: `.venv/Scripts/python.exe -m pytest` or `/test`. Run single test: `.venv/Scripts/python.exe -m pytest tests/test_xxx.py -q`. `pytest` is now a pinned dependency in `requirements_local.txt` (it used to be commented out; the deployment requirements do not need it). Add a `test_*.py` (with `tests/__init__.py` so pylint resolves top-level imports) for new deterministic logic.
 - **Contract suites** (fail until a new feature is added to their maps): `test_operation_contract.py` covers every operation type (valid, empty/unfilled, malformed, matrix shape, LaTeX invariants); `test_keyboard_contract.py` covers every palette key; `test_api_contract.py` covers every Flask page/API route, task lifecycle, manual/method-tree/snapshot flows; `test_matrix_operations.py` covers every matrix operation; `test_frontend_static_contract.py` checks JS syntax, layout landmarks, unique IDs and local assets; `test_cache_contract.py` covers the SQLite cache. Add a new operation/key/API/route to the relevant contract set when implementing it.
 
 - End-to-end smoke check: `/verify` boots `app_local.py` and curls `/api/parse`; or run `main.ipynb` / the web UI manually.
@@ -82,4 +82,6 @@ Short **Chinese**, matching existing log (e.g. `更新文档`, `Fix md`). Commit
 - **TaskManager worker slots:** a task whose future exceeds its timeout is marked failed immediately, but its semaphore slot stays held (by a reaper thread) until the abandoned SymPy computation really finishes. A new task that cannot get a slot within its own timeout fails with "排队超时". Don't "fix" this by releasing the slot on timeout — that reintroduces unbounded executor queueing.
 - **Frontend escaping rule:** anything server-authored (SymPy LaTeX, rule explanations, task results) must be wrapped in `escapeHtml(...)` (or set via `textContent`) before `innerHTML`; `sympify` accepts `Symbol('<img ...>')`, so latex alone is not safe. `tests/test_frontend_static_contract.py::test_server_values_are_escaped_before_innerhtml` lists the guarded fields — extend that list for new insertions.
 - **Operator input preview:** `utils/latex_formatter.str_to_latex` renders `diff(...)`-style input as `\operatorname{...}(...)` instead of feeding it to `sympify` (whose implicit-multiplication fallback split `diff` into `d*i*f*f`). Keep the operator branches in `compute_service` and the preview in sync.
+- **Input sanitization:** user-supplied expressions are parsed through `utils/cache_utils.cached_sympify`, which uses a `trusted` flag and a builtin-free namespace (no `__builtins__`), so math input cannot execute arbitrary Python (`/api/sympy_execute` is the deliberate exception).
+- **Cache directory override:** set `HIGHDREAM_CACHE_DIR` to relocate the SQLite cache directory — needed on Vercel's read-only filesystem, where the default `cache/` is not writable.
 - **No CI/CD** — no `.github/`, no `vercel.json`. Deployment is manual via Vercel.

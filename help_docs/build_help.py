@@ -46,7 +46,6 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from bs4 import BeautifulSoup
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES_HELP = ROOT / 'templates' / 'help'
@@ -75,6 +74,10 @@ SOURCE_TO_HTML = {
 
 def _strip_outer_html(html: str) -> str:
     """Drop the ``<ul class="header">`` navigation so pandoc only sees content."""
+
+    # bs4 is only needed by the md/reverse-import path; keep it a lazy import
+    # so `html` builds and `--help` depend on pandoc alone.
+    from bs4 import BeautifulSoup  # pylint: disable=import-outside-toplevel
 
     soup = BeautifulSoup(html, 'html.parser')
     container = soup.find('div', id='help-container')
@@ -223,6 +226,7 @@ def convert_html_to_markdown(html_path: Path, md_path: Path, title: str) -> None
         capture_output=True,
         text=True,
         encoding='utf-8',
+        check=False,
     )
     if result.returncode != 0:
         raise RuntimeError(f'pandoc failed on {html_path}: {result.stderr}')
@@ -237,22 +241,32 @@ def convert_html_to_markdown(html_path: Path, md_path: Path, title: str) -> None
     md_path.write_text(frontmatter + md, encoding='utf-8')
 
 
+def _infer_title(stem: str) -> str:
+    """Reuse an existing frontmatter title, or derive one from the stem.
+
+    ``build_all_markdown`` is a one-shot reverse import, but the Markdown
+    sources are already tracked, so prefer their ``title:`` frontmatter and
+    fall back to a readable form of the file name. This removes the hard-coded
+    title table that had to stay in sync with ``SOURCE_TO_HTML`` (and used to
+    raise KeyError for the five stems missing from it).
+    """
+    md_path = MD_DIR / f'{stem}.md'
+    if md_path.exists():
+        meta, _ = _parse_frontmatter(md_path.read_text(encoding='utf-8'))
+        if meta.get('title'):
+            return meta['title']
+    return stem.replace('_', ' ').title()
+
+
 def build_all_markdown() -> None:
     """Run the reverse import for every entry in ``SOURCE_TO_HTML``."""
-    titles = {
-        'base_calculator': 'BaseCalculator - 符号计算器基类文档',
-        'base_step_generator': 'BaseStepGenerator - 步骤生成器文档',
-        'rule_registry': 'RuleRegistry - 规则注册器文档',
-        'common_matrix_calculator': 'CommonMatrixCalculator - 矩阵计算基类文档',
-        'matrix_step_generator': 'MatrixStepGenerator - 矩阵步骤生成器文档',
-    }
     for stem, html_name in SOURCE_TO_HTML.items():
         html_path = TEMPLATES_HELP / f'{html_name}.html'
         md_path = MD_DIR / f'{stem}.md'
         if not html_path.exists():
             print(f'[skip] {html_path} not found')
             continue
-        convert_html_to_markdown(html_path, md_path, titles[stem])
+        convert_html_to_markdown(html_path, md_path, _infer_title(stem))
         print(f'[ok] {html_path.name} -> {md_path.name}')
 
 
@@ -289,6 +303,7 @@ def convert_markdown_to_html(md_path: Path, html_path: Path) -> None:
         capture_output=True,
         text=True,
         encoding='utf-8',
+        check=False,
     )
     if result.returncode != 0:
         raise RuntimeError(f'pandoc failed on {md_path}: {result.stderr}')

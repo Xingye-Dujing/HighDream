@@ -29,3 +29,6 @@ __pycache__/
 # and commit both .md and .html together. Do NOT hand-edit the HTML.
 # Ignore agent/browser session artifacts
 .openchamber/
+
+# Agent workspace memory directory (should not be version-controlled)
+.workbuddy/
