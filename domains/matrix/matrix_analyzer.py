@@ -7,11 +7,7 @@ from sympy import Matrix, latex
 
 from utils.cache_utils import cached_sympify
 
-from .SVD_solver import SVDSolver
 from .ref_calculator import RefCalculator
-
-svd_solver = SVDSolver()
-ref_calculator = RefCalculator()
 
 
 class MatrixAnalyzer:
@@ -78,7 +74,7 @@ class MatrixAnalyzer:
 
             if 'ref' in analysis_types:
                 try:
-                    ref_result = ref_calculator.compute_latex(
+                    ref_result = RefCalculator().compute_latex(
                         matrix_expr, 'ref')
                     results['ref'] = ref_result
                 except Exception as e:

@@ -6,14 +6,7 @@ from domains import DetCalculator, DeterminantCalculator, EigenSolver
 from .SVD_solver import SVDSolver
 from .rank import Rank
 
-det_cal_1 = DeterminantCalculator()
-det_cal_2 = DetCalculator()
-rank = Rank()
-eigen = EigenSolver()
-svd = SVDSolver()
-
-
-class ProcessManager:
+class ProcessManager:  # pylint: disable=too-few-public-methods
     """Manager class for handling different matrix computation processes.
 
     This class routes requests to appropriate calculators based on process type
@@ -36,19 +29,25 @@ class ProcessManager:
                 - U, S, V (str, optional): LaTeX formatted SVD decomposition matrices.
         """
         res = {'success': True, 'process': ''}
+        # Fresh calculator per request: these objects hold mutable step state, so a
+        # module-level singleton let concurrent requests interleave and leak each
+        # other's steps into the returned derivation.
         if process_type == 'det_1':
-            res['process'] = det_cal_1.compute_latex(expression)
+            res['process'] = DeterminantCalculator().compute_latex(expression)
         elif process_type == 'det_2':
-            res['process'] = det_cal_2.compute_latex(expression)
+            res['process'] = DetCalculator().compute_latex(expression)
         elif process_type == 'rank':
-            rank.auto_matrix_rank(expression)
-            res['process'] = rank.get_steps_latex()
+            calculator = Rank()
+            calculator.auto_matrix_rank(expression)
+            res['process'] = calculator.get_steps_latex()
         elif process_type == 'eigen':
-            eigen.auto_eigen_solver(expression)
-            res['process'] = eigen.get_steps_latex()
+            calculator = EigenSolver()
+            calculator.auto_eigen_solver(expression)
+            res['process'] = calculator.get_steps_latex()
         elif process_type == 'svd':
-            U, S, V = svd.compute_svd(expression)
-            res['process'] = svd.get_steps_latex()
+            calculator = SVDSolver()
+            U, S, V = calculator.compute_svd(expression)
+            res['process'] = calculator.get_steps_latex()
             res['U'], res['S'], res['V'] = latex(U), latex(S), latex(V)
         else:
             res['success'] = False
