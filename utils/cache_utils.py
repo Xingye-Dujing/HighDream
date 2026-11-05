@@ -1,4 +1,5 @@
 import ast
+import builtins
 import re
 from functools import lru_cache
 
@@ -377,10 +378,24 @@ _UNSAFE_TEXT_RE = re.compile(r'__|\.\s*[A-Za-z_]')
 
 
 def _build_safe_globals():
-    """SymPy's own ``from sympy import *`` namespace, minus every builtin."""
+    """SymPy's own ``from sympy import *`` namespace, minus every builtin.
+
+    A small allowlist of *pure* builtins is re-added explicitly: ``sympify``
+    normally exposes them, and without ``abs`` the input ``abs(x)/x`` became
+    an undefined function instead of ``Abs(x)/x``, silently breaking limits.
+    Nothing here can execute code (no import/eval/open/getattr/attributes).
+    """
     namespace = {}
     exec('from sympy import *', namespace)  # pylint: disable=exec-used
     namespace['__builtins__'] = {}
+    namespace['abs'] = namespace['Abs']
+    namespace['min'] = namespace['Min']
+    namespace['max'] = namespace['Max']
+    for name in ('round', 'sum', 'len', 'pow', 'range', 'enumerate', 'zip',
+                 'sorted', 'reversed', 'all', 'any', 'bool', 'int', 'float',
+                 'complex', 'str', 'list', 'tuple', 'dict', 'set', 'frozenset',
+                 'slice'):
+        namespace[name] = getattr(builtins, name)
     return namespace
 
 

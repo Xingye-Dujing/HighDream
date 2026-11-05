@@ -5,7 +5,7 @@ entry point must stay on the builtin-free parsing path.
 """
 
 import pytest
-from sympy import sin, Symbol
+from sympy import Abs, sin, Symbol
 
 from app import app
 from utils.cache_utils import cached_sympify
@@ -57,6 +57,11 @@ def test_math_semantics_are_preserved():
     assert cached_sympify('sin(x)') == sin(x)
     assert cached_sympify(r'\frac{1}{x}') == 1 / x
     assert str(cached_sympify('x + 2**1000000')).startswith('x + 2**1000000')
+    # Pure builtins that sympify() normally exposes must keep working: without
+    # ``abs`` the input abs(x)/x degraded to an undefined function.
+    assert cached_sympify('abs(x)/x') == Abs(x) / x
+    assert cached_sympify('min(x, 2)').has(Symbol('x'))
+    assert cached_sympify('sum([1, 2, 3])') == 6
 
 
 def test_normal_expressions_still_parse():

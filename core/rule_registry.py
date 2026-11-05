@@ -63,7 +63,12 @@ class RuleRegistry:
         """Return all rules applicable to the given expression."""
         for matcher in self._matchers:
             # print(f"Matcher {matcher.__name__} matched.")
-            rule_name = matcher(expr, context)
+            try:
+                rule_name = matcher(expr, context)
+            except Exception:  # pylint: disable=broad-exception-caught
+                # A single broken matcher must not take down the whole rule set
+                # (and bubble up to a 500). Skip it and keep the other rules.
+                continue
             if rule_name is None:
                 continue
             if rule_name in self._rules:

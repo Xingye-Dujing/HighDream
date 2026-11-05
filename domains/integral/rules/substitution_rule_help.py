@@ -1,10 +1,11 @@
+import math
+
 from sympy import (
     Add, Abs, Dummy, Eq, Expr, Function, I, Integral, Pow, Rational, Symbol, Wild,
     acos, asin, atan, cancel, cos, cosh, coth, cot, csc, csch, diff, expand_trig, exp,
     fraction, latex, log, preorder_traversal, powdenest, sech, sec, simplify, sin, sinh,
     solve, sqrt, symbols, tan, tanh, together
 )
-import math
 
 from core import BaseStepGenerator
 from utils import RuleFunctionReturn
@@ -630,6 +631,10 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
 
     x_of_u, u = None, None
     for rad in candidates:
+        # Reset for every candidate: a failed solve() is swallowed below, and
+        # without this reset x_of_u would keep the previous candidate's value
+        # while u has already changed, producing a wrong substitution.
+        x_of_u = None
         base, _exp = rad.base, rad.exp  # rad = base**exp
         q = _exp.q  # denominator
         p = _exp.p  # numerator
@@ -662,6 +667,11 @@ def try_radical_substitution(expr: Expr, var: Symbol, step_gene: BaseStepGenerat
                     x_of_u = max(probes, key=lambda t: t[0])[1]
         except Exception:
             pass
+
+        # No x(u) was solved for this candidate (solve failed or had no root);
+        # skip it instead of reusing a stale value from an earlier candidate.
+        if x_of_u is None:
+            continue
 
         try:
             dx_du = diff(x_of_u, u)

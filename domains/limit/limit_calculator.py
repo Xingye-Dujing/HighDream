@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from sympy import AccumBounds, Basic, Expr, Limit, S, Symbol, latex, zoo
+from sympy import AccumBounds, Basic, Expr, Limit, S, Symbol, latex, simplify, zoo
 
 from core import BaseCalculator, SelectRuleCalculator
 from core.cached_calculator import DBCachedCalculator
@@ -84,8 +84,9 @@ def create_limit_calculator(base_class):
                 ""
             )
 
-        def _add_limit_step(self, direction, expr: Basic | Expr, var: Symbol, point: Expr, steps: List[Expr],
-                            explanations: List[str]) -> None:
+        def _add_limit_step(  # pylint: disable=too-many-positional-arguments
+                self, direction, expr: Basic | Expr, var: Symbol, point: Expr,
+                steps: List[Expr], explanations: List[str]) -> None:
             if direction == '+':
                 self._add_right_limit_step(expr, var, point)
             elif direction == '-':
@@ -96,22 +97,37 @@ def create_limit_calculator(base_class):
             self.step_generator._explanations += explanations[1:]
 
         def _add_final_step(self, left_result: Expr, right_result: Expr) -> None:
-            explanation = (
-                rf"最终结论: 左极限 = ${latex(left_result)}$, "
-                rf"右极限 = ${latex(right_result)}$, "
-            )
-            # Check if left limit or right limit NaN
-            if S.NaN in (left_result, right_result):
-                final_result = zoo
-                explanation += "至少一个极限为 NaN, 故极限不存在"
-            # Check if the left limit and right limit are equal
-            elif left_result.equals(right_result):
-                final_result = left_result
-                explanation += rf"左右极限相等, 故极限存在, 值为 ${latex(final_result)}$"
-            else:
-                final_result = zoo
-                explanation += "左右极限不相等, 故极限不存在"
-            self.step_generator.add_step(final_result, explanation)
+            try:
+                explanation = (
+                    rf"最终结论: 左极限 = ${latex(left_result)}$, "
+                    rf"右极限 = ${latex(right_result)}$, "
+                )
+                # `Basic.equals` raises AttributeError when a side is None
+                # (sudden_end) or not a SymPy expression. Guard it; when .equals
+                # itself fails, fall back to simplify(a-b)==0 / structural ==.
+                equal = False
+                if isinstance(left_result, Basic) and isinstance(right_result, Basic):
+                    try:
+                        equal = left_result.equals(right_result)
+                    except Exception:  # pylint: disable=broad-exception-caught
+                        equal = simplify(left_result - right_result) == 0
+                elif left_result is not None and right_result is not None:
+                    equal = left_result == right_result
+                # Check if left limit or right limit NaN
+                if S.NaN in (left_result, right_result):
+                    final_result = zoo
+                    explanation += "至少一个极限为 NaN, 故极限不存在"
+                # Check if the left limit and right limit are equal
+                elif equal:
+                    final_result = left_result
+                    explanation += rf"左右极限相等, 故极限存在, 值为 ${latex(final_result)}$"
+                else:
+                    final_result = zoo
+                    explanation += "左右极限不相等, 故极限不存在"
+                self.step_generator.add_step(final_result, explanation)
+            except Exception:  # pylint: disable=broad-exception-caught
+                # Never let a malformed one-sided result bubble up to the API.
+                self.step_generator.add_step(zoo, "结论: 计算左右极限时出错, 故极限不存在")
 
         def _compute_both_directions(self, expr: Basic | Expr, **context: Context) -> None:
             var, point, _ = self._context_split(**context)
@@ -167,7 +183,7 @@ def create_limit_calculator(base_class):
                 if not feasible_directions['right']:
                     self.step_generator.add_step(
                         Limit(expr, var, point, '+-'),
-                        rf"$初始检测: 在$\, x \to {point}^- \,$ 处, 右邻域违反定义域约束, 仅能尝试计算左极限."
+                        rf"初始检测: 在 $\, x \to {point}^- \,$ 处, 右邻域违反定义域约束, 仅能尝试计算左极限."
                     )
 
                     steps, explanations, left_result = self._compute_single_direction(

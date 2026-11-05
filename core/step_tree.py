@@ -116,19 +116,19 @@ def structured_solve(op_type: str, data: Dict[str, Any]) -> Dict[str, Any]:
     """
     try:
         exprs, explanations = _compute_steps(op_type, data)
+
+        steps: List[Dict[str, Any]] = []
+        for idx, (expr, reason) in enumerate(zip(exprs, explanations)):
+            step_latex = '' if expr is None else latex(expr)
+            pending = _subtasks_of(expr) if hasattr(expr, 'atoms') else []
+            # The final resolved step has no pending operations; still expose it.
+            steps.append({
+                'index': idx,
+                'latex': step_latex,
+                'reason': reason,
+                'subtasks': pending,
+            })
+
+        return {'success': True, 'op': op_type, 'steps': steps}
     except Exception as exc:  # pylint: disable=broad-exception-caught
         return {'success': False, 'error': str(exc)}
-
-    steps: List[Dict[str, Any]] = []
-    for idx, (expr, reason) in enumerate(zip(exprs, explanations)):
-        step_latex = '' if expr is None else latex(expr)
-        pending = _subtasks_of(expr) if hasattr(expr, 'atoms') else []
-        # The final resolved step has no pending operations; still expose it.
-        steps.append({
-            'index': idx,
-            'latex': step_latex,
-            'reason': reason,
-            'subtasks': pending,
-        })
-
-    return {'success': True, 'op': op_type, 'steps': steps}

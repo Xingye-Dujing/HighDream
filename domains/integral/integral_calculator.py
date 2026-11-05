@@ -2,7 +2,7 @@ from typing import List, Optional, Tuple
 
 import itertools
 
-from sympy import (Add, Eq, Integer, Interval, S, Symbol, Expr, Integral, fraction,
+from sympy import (Add, Eq, Integer, Interval, S, Symbol, Expr, Integral, Limit, fraction,
                    latex, limit, log, oo, preorder_traversal, simplify, solveset, sympify,
                    trigsimp)
 
@@ -268,7 +268,7 @@ def create_integral_calculator(base_class):
             # Treat "not a definite finite number" as improper: S.NaN exposes neither
             # is_nan nor is_finite==False, so a positive is_finite test is what catches
             # the finite-endpoint blow-up (e.g. log(x) at 0 -> NaN) and triggers a limit.
-            bad = (direct.has(Integral, Symbol('Limit'))
+            bad = (direct.has(Integral, Limit)
                    or getattr(direct, 'is_finite', None) is not True)
             if infinite or bad:
                 try:
@@ -441,75 +441,80 @@ def create_integral_calculator(base_class):
             Only fires for finite numeric bounds with no interior poles, so it can never
             mask a divergent integral. Returns (steps, explanations) recorded into the step
             generator, or None to fall through to the normal Newton-Leibniz path."""
-            a, b = lower, upper
-            a, b = sympify(a), sympify(b)
-            if not (getattr(a, 'is_number', False) and getattr(b, 'is_number', False)
-                    and getattr(a, 'is_finite', True) and getattr(b, 'is_finite', True)):
-                return None
-            if a == b:
-                return None
             try:
-                f = self._sympify(expr)
+                a, b = lower, upper
+                a, b = sympify(a), sympify(b)
+                if not (getattr(a, 'is_number', False) and getattr(b, 'is_number', False)
+                        and getattr(a, 'is_finite', True) and getattr(b, 'is_finite', True)):
+                    return None
+                if a == b:
+                    return None
+                try:
+                    f = self._sympify(expr)
+                except Exception:  # pylint: disable=broad-exception-caught
+                    return None
+                if self._interior_poles(f, var, a, b):
+                    return None
+                ab = a + b
+                fsub = f.subs(var, ab - var)
+                g = simplify(trigsimp(f + fsub))
+                is_const = g.is_number and getattr(g, 'is_finite', True)
+                is_odd = (simplify(ab) == 0
+                          and simplify(trigsimp(f + f.subs(var, -var))) == 0)
+                if not (is_const or is_odd):
+                    # King property with an x-factor: f = var*h with h symmetric about
+                    # (a+b)/2, e.g. int_0^pi x*f(sin x)dx = (pi/2)*int_0^pi f(sin x)dx.
+                    # The reduced integral is solved recursively; the indefinite
+                    # antiderivative of such f is often non-elementary even though the
+                    # definite value is, so this shortcut is essential (not just faster).
+                    h = simplify(f / var)
+                    if (h != f and h.free_symbols and h.free_symbols <= {var}
+                            and simplify(trigsimp(h - h.subs(var, ab - var))) == 0):
+                        fired = self._king_xfactor(f, h, var, a, b, ab)
+                        if fired is not None:
+                            return fired
+                    return None
+
+                v = latex(var)
+                la, lb = latex(a), latex(b)
+                ih = "\\int_{" + la + "}^{" + lb + "}"
+                self.step_generator.reset()
+                if is_const:
+                    span = b - a
+                    half = simplify(g * span / 2)
+                    self.step_generator.add_step(
+                        Integral(f, (var, a, b)),
+                        "记 $I=" + ih + latex(f) + "\\,d" + v + "$")
+                    self.step_generator.add_step(
+                        Integral(fsub, (var, a, b)),
+                        "区间再现(镜像): 令 $t=" + latex(ab) + "-" + v + "$, 则 $I=" + ih
+                        + latex(fsub) + "\\,d" + v + "$")
+                    self.step_generator.add_step(
+                        Integral(g, (var, a, b)),
+                        "两式相加: $2I=" + ih + "[f(" + v + ")+f(" + latex(ab) + "-" + v
+                        + ")]\\,d" + v + "=\\int_{" + la + "}^{" + lb + "} " + latex(g) + "\\,d" + v + "$")
+                    self.step_generator.add_step(
+                        g * span,
+                        "和式为常数 $" + latex(g) + "$: $\\int_{" + la + "}^{" + lb + "} "
+                        + latex(g) + "\\,d" + v + "=" + latex(g * span) + "$")
+                    self.step_generator.add_step(
+                        half,
+                        "故 $I=\\dfrac{" + latex(g * span) + "}{2}=" + latex(half) + "$")
+                else:
+                    self.step_generator.add_step(
+                        Integral(f, (var, a, b)),
+                        "记 $I=" + ih + latex(f) + "\\,d" + v + "$")
+                    self.step_generator.add_step(
+                        Integer(0),
+                        "积分区间 $[" + la + "," + lb + "]$ 关于原点对称, 且 $f(-" + v + ")=-f("
+                        + v + ")$ 为奇函数, 故 $I=0$")
+                return self.step_generator.get_steps()
             except Exception:  # pylint: disable=broad-exception-caught
-                return None
-            if self._interior_poles(f, var, a, b):
-                return None
-            ab = a + b
-            fsub = f.subs(var, ab - var)
-            g = simplify(trigsimp(f + fsub))
-            is_const = g.is_number and getattr(g, 'is_finite', True)
-            is_odd = (simplify(ab) == 0
-                      and simplify(trigsimp(f + f.subs(var, -var))) == 0)
-            if not (is_const or is_odd):
-                # King property with an x-factor: f = var*h with h symmetric about
-                # (a+b)/2, e.g. int_0^pi x*f(sin x)dx = (pi/2)*int_0^pi f(sin x)dx.
-                # The reduced integral is solved recursively; the indefinite
-                # antiderivative of such f is often non-elementary even though the
-                # definite value is, so this shortcut is essential (not just faster).
-                h = simplify(f / var)
-                if (h != f and h.free_symbols and h.free_symbols <= {var}
-                        and simplify(trigsimp(h - h.subs(var, ab - var))) == 0):
-                    fired = self._king_xfactor(f, h, var, a, b, ab)
-                    if fired is not None:
-                        return fired
+                # A complex integrand may make simplify/trigsimp raise; never let
+                # the shortcut break the solve -- fall back to Newton-Leibniz.
                 return None
 
-            v = latex(var)
-            la, lb = latex(a), latex(b)
-            ih = "\\int_{" + la + "}^{" + lb + "}"
-            self.step_generator.reset()
-            if is_const:
-                span = b - a
-                half = simplify(g * span / 2)
-                self.step_generator.add_step(
-                    Integral(f, (var, a, b)),
-                    "记 $I=" + ih + latex(f) + "\\,d" + v + "$")
-                self.step_generator.add_step(
-                    Integral(fsub, (var, a, b)),
-                    "区间再现(镜像): 令 $t=" + latex(ab) + "-" + v + "$, 则 $I=" + ih
-                    + latex(fsub) + "\\,d" + v + "$")
-                self.step_generator.add_step(
-                    Integral(g, (var, a, b)),
-                    "两式相加: $2I=" + ih + "[f(" + v + ")+f(" + latex(ab) + "-" + v
-                    + ")]\\,d" + v + "=\\int_{" + la + "}^{" + lb + "} " + latex(g) + "\\,d" + v + "$")
-                self.step_generator.add_step(
-                    g * span,
-                    "和式为常数 $" + latex(g) + "$: $\\int_{" + la + "}^{" + lb + "} "
-                    + latex(g) + "\\,d" + v + "=" + latex(g * span) + "$")
-                self.step_generator.add_step(
-                    half,
-                    "故 $I=\\dfrac{" + latex(g * span) + "}{2}=" + latex(half) + "$")
-            else:
-                self.step_generator.add_step(
-                    Integral(f, (var, a, b)),
-                    "记 $I=" + ih + latex(f) + "\\,d" + v + "$")
-                self.step_generator.add_step(
-                    Integer(0),
-                    "积分区间 $[" + la + "," + lb + "]$ 关于原点对称, 且 $f(-" + v + ")=-f("
-                    + v + ")$ 为奇函数, 故 $I=0$")
-            return self.step_generator.get_steps()
-
-        def _king_xfactor(self, f, h, var, a, b, ab):
+        def _king_xfactor(self, f, h, var, a, b, ab):  # pylint: disable=too-many-positional-arguments
             """King property with an x-factor: if f = var*h and h is symmetric about
             (a+b)/2, then I = ∫_a^b f dx = (a+b)/2 · ∫_a^b h dx. Solves the reduced
             integral recursively (its indefinite form is often non-elementary)."""

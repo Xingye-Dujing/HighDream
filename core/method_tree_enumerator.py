@@ -185,6 +185,15 @@ class MethodTreeEnumerator:
         for rule_name in rule_path:
             if solver.done:
                 break
+            # A single SymPy rule cannot be interrupted, but the gap between
+            # rules is a safe checkpoint for cancel/time cutoffs.  Without it a
+            # long replay ignored both until the whole path had finished.
+            if self._stop.is_set():
+                self.truncated, self.reason = True, 'cancelled'
+                break
+            if not self.interactive and self._elapsed() >= self.time_limit:
+                self.truncated, self.reason = True, 'time_limit'
+                break
             try:
                 state = solver.apply_rule(rule_name)
             except Exception:  # pylint: disable=broad-exception-caught
@@ -223,7 +232,15 @@ class MethodTreeEnumerator:
         truncated: bool,
         final_latex: Optional[str],
     ) -> str:
-        """Allocate a node ID, record the node, and link it to its parent."""
+        """Allocate a node ID, record the node, and link it to its parent.
+
+        Returns ``''`` when the hard cap has been reached.  One BFS iteration
+        can register both a child and a back-substitution node, so checking
+        only in ``_should_stop`` allowed the cap to be exceeded.
+        """
+        if len(self._nodes) >= self.max_nodes:
+            self.truncated, self.reason = True, 'node_limit'
+            return ''
         nid = self._new_node_id()
         self._nodes[nid] = {
             'id': nid,
@@ -292,6 +309,8 @@ class MethodTreeEnumerator:
                 continue
 
             solver = self._replay_solver(rule_path)
+            if self._should_stop():
+                break
             if solver.done:
                 with self._lock:
                     node = self._nodes.get(parent_id)
@@ -343,6 +362,8 @@ class MethodTreeEnumerator:
 
                 child_rule_path = rule_path + [rule['name']]
                 child_solver = self._replay_solver(child_rule_path)
+                if self._should_stop():
+                    break
 
                 # If replay failed (error set), drop this branch silently.
                 if child_solver.error:
@@ -406,6 +427,9 @@ class MethodTreeEnumerator:
                         truncated=False,
                         final_latex=final,
                     )
+                    if not child_id:
+                        # Hard node cap reached; do not queue a dangling child.
+                        break
                     # If back-substitution was detected, register a dedicated
                     # child node that shows the result in the original variable.
                     if _back_subs_latex is not None:
@@ -422,7 +446,7 @@ class MethodTreeEnumerator:
                             final_latex=_back_subs_latex,
                         )
 
-                if not child_done:
+                if child_id and not child_done:
                     queue.append((child_id, child_rule_path, depth + 1))
 
             # After all rules for this node were rejected (interactive mode),

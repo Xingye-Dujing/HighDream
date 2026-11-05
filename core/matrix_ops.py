@@ -35,49 +35,49 @@ def matrix_subspace(expression, kind):
     try:
         mat = matrix_of(expression)
         rref_mat, pivots = mat.rref()
+        title = {'nullspace': '零空间 N(A)', 'colspace': '列空间 C(A)', 'rowspace': '行空间 R(A)'}[kind]
+        pivot_latex = ', '.join(str(p + 1) for p in pivots) if pivots else '无'
+        lines = ['& ' + latex(mat),
+                 r'&= ' + latex(rref_mat) + r' \quad \text{行最简形, 主元在第 } ' + pivot_latex + r' \text{ 列}']
+        if kind == 'nullspace':
+            basis = mat.nullspace()
+        elif kind == 'rowspace':
+            basis = [rref_mat.row(i).T for i in range(rref_mat.rows)
+                     if any(not rref_mat[i, j].is_zero for j in range(rref_mat.cols))]
+        else:  # colspace: pivot columns of the ORIGINAL matrix
+            basis = [mat.col(p) for p in pivots]
+        for vec in basis:
+            lines.append(r'&\rightarrow\ ' + latex(vec))
+        lines.append(r'&\quad \text{' + title + ' 的一组基如上' +
+                     (f', 维数 = {len(basis)}' if basis else ', 维数 = 0') + '}')
+        return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
     except Exception as exc:  # pylint: disable=broad-exception-caught
-        return False, f'矩阵解析失败: {exc}'
-    title = {'nullspace': '零空间 N(A)', 'colspace': '列空间 C(A)', 'rowspace': '行空间 R(A)'}[kind]
-    pivot_latex = ', '.join(str(p + 1) for p in pivots) if pivots else '无'
-    lines = ['& ' + latex(mat),
-             r'&= ' + latex(rref_mat) + r' \quad \text{行最简形, 主元在第 } ' + pivot_latex + r' \text{ 列}']
-    if kind == 'nullspace':
-        basis = mat.nullspace()
-    elif kind == 'rowspace':
-        basis = [rref_mat.row(i).T for i in range(rref_mat.rows)
-                 if any(not rref_mat[i, j].is_zero for j in range(rref_mat.cols))]
-    else:  # colspace: pivot columns of the ORIGINAL matrix
-        basis = [mat.col(p) for p in pivots]
-    for vec in basis:
-        lines.append(r'&\rightarrow\ ' + latex(vec))
-    lines.append(r'&\quad \text{' + title + ' 的一组基如上' +
-                 (f', 维数 = {len(basis)}' if basis else ', 维数 = 0') + '}')
-    return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
+        return False, f'子空间计算失败: {exc}'
 
 
 def matrix_pinv(expression):
     """Moore-Penrose pseudoinverse, via full-rank formulas when applicable."""
     try:
         mat = matrix_of(expression)
+        rank, rows, cols = mat.rank(), mat.rows, mat.cols
+        lines = ['& ' + latex(mat)]
+        if rank == cols and cols <= rows:  # full column rank
+            ata = simplify(mat.T * mat)
+            lines.append(r'&\Rightarrow A^{T}A = ' + latex(ata)
+                         + r' \quad \text{列满秩: } A^{+}=(A^{T}A)^{-1}A^{T}')
+            pinv_mat = simplify(ata.inv() * mat.T)
+        elif rank == rows and rows <= cols:  # full row rank
+            aat = simplify(mat * mat.T)
+            lines.append(r'&\Rightarrow AA^{T} = ' + latex(aat)
+                         + r' \quad \text{行满秩: } A^{+}=A^{T}(AA^{T})^{-1}')
+            pinv_mat = simplify(mat.T * aat.inv())
+        else:
+            pinv_mat = mat.pinv()
+            lines.append(r'& \quad \text{秩亏, 由 Moore-Penrose 定义(SVD/降阶)求伪逆}')
+        lines.append(r'&= \boxed{' + latex(pinv_mat) + '}')
+        return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
     except Exception as exc:  # pylint: disable=broad-exception-caught
-        return False, f'矩阵解析失败: {exc}'
-    rank, rows, cols = mat.rank(), mat.rows, mat.cols
-    lines = ['& ' + latex(mat)]
-    if rank == cols and cols <= rows:  # full column rank
-        ata = simplify(mat.T * mat)
-        lines.append(r'&\Rightarrow A^{T}A = ' + latex(ata)
-                     + r' \quad \text{列满秩: } A^{+}=(A^{T}A)^{-1}A^{T}')
-        pinv_mat = simplify(ata.inv() * mat.T)
-    elif rank == rows and rows <= cols:  # full row rank
-        aat = simplify(mat * mat.T)
-        lines.append(r'&\Rightarrow AA^{T} = ' + latex(aat)
-                     + r' \quad \text{行满秩: } A^{+}=A^{T}(AA^{T})^{-1}')
-        pinv_mat = simplify(mat.T * aat.inv())
-    else:
-        pinv_mat = mat.pinv()
-        lines.append(r'& \quad \text{秩亏, 由 Moore-Penrose 定义(SVD/降阶)求伪逆}')
-    lines.append(r'&= \boxed{' + latex(pinv_mat) + '}')
-    return True, r'\begin{align}' + r' \\ '.join(lines) + r'\end{align}'
+        return False, f'伪逆计算失败: {exc}'
 
 
 def matrix_jordan(expression):

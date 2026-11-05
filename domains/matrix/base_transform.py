@@ -159,11 +159,28 @@ class BaseTransform(CommonMatrixCalculator):
         self.step_generator.add_step(
             r"\text{即 } [\boldsymbol{x}]_{V} = V^{-1} \boldsymbol{x}")
 
-        coords = basis.solve(vector)
-        self.add_vector(basis.inv(), r"其中\;V^{-1}")
-        self.add_vector(coords, r"[\boldsymbol{x}]_{V}")
-
-        return coords
+        # [x]_V = V^{-1} x; V must be a square, full-rank (invertible) basis.
+        # Guard solve()/inv() so a non-square or singular "basis" yields a
+        # friendly error instead of an uncaught SymPy exception (API 500).
+        try:
+            if basis.rows != basis.cols:
+                self.step_generator.add_step(r"\text{目标基矩阵不是方阵, 不构成基}")
+                raise ValueError('目标基必须是方阵(列向量构成一组基)')
+            if basis.rows != vector.rows:
+                self.step_generator.add_step(r"\text{向量维数与基的维数不一致}")
+                raise ValueError('向量维数与基矩阵不匹配, 无法求解坐标')
+            if basis.rank() < basis.rows or basis.det() == 0:
+                self.step_generator.add_step(
+                    r"\text{V 不可逆, 这意味着 V 的列向量线性相关, 不构成基}")
+                raise ValueError('目标基不可逆（列向量线性相关），不构成基')
+            coords = basis.solve(vector)
+            self.add_vector(basis.inv(), r"其中\;V^{-1}")
+            self.add_vector(coords, r"[\boldsymbol{x}]_{V}")
+            return coords
+        except ValueError:
+            raise
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            raise ValueError(f'坐标变换失败: {exc}') from exc
 
     def basis_to_standard(self, coordinates_input: str, basis_input: str, show_steps: bool = True) -> Matrix:
         """Convert vector coordinates from a given basis to the standard basis."""

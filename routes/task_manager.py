@@ -20,7 +20,7 @@ class TaskStatus(Enum):
     FAILED = "failed"  # Processing failed
 
 
-class Task:
+class Task:  # pylint: disable=too-few-public-methods
 
     def __init__(self, task_id: str, operation_type: str, data: Dict[str, Any]) -> None:
         self.task_id = task_id
@@ -63,7 +63,9 @@ class TaskManager:
         """Initialize task manager"""
         if not hasattr(self, '_initialized'):
             self._tasks = {}
-            self._task_lock = threading.Lock()
+            # Re-entrant: terminal-state writes may signal a task event while
+            # already holding the lock.
+            self._task_lock = threading.RLock()
             self._initialized = True
             self._executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
             self._semaphore = threading.Semaphore(MAX_WORKERS)
@@ -119,6 +121,21 @@ class TaskManager:
             task = self._tasks.get(task_id)
             return task.to_dict() if task else None
 
+    def _set_final_state(self, task: Task, status: TaskStatus,
+                         result=None, error=None) -> None:
+        """Publish a terminal state atomically.
+
+        The payload is written *before* the status: an SSE stream that sees
+        ``completed`` must never observe ``result is None``.
+        """
+        with self._task_lock:
+            if result is not None:
+                task.result = result
+            if error is not None:
+                task.error = error
+            task.completed_at = datetime.now()
+            task.status = status
+
     def _execute_task(self, task: Task):
         """Execute the task (runs in background thread)"""
         timeout = (task.timeout_seconds
@@ -129,9 +146,8 @@ class TaskManager:
         # is failed instead of waiting forever (hung tasks keep their slot until
         # they really finish, so this is honest backpressure, not a false error).
         if not self._semaphore.acquire(timeout=timeout):  # pylint: disable=consider-using-with
-            task.status = TaskStatus.FAILED
-            task.error = "服务正忙, 任务排队超时, 请稍后重试."
-            task.completed_at = datetime.now()
+            self._set_final_state(task, TaskStatus.FAILED,
+                                  error="服务正忙, 任务排队超时, 请稍后重试.")
             self._set_task_event(task.task_id)
             return
 
@@ -139,24 +155,22 @@ class TaskManager:
         # keeps computing in the executor stays counted until it actually ends.
         release_semaphore = True
         try:
-            # Update status to running
-            task.status = TaskStatus.RUNNING
-            task.started_at = datetime.now()
+            with self._task_lock:
+                task.status = TaskStatus.RUNNING
+                task.started_at = datetime.now()
 
             future = self._executor.submit(
                 start_compute, task.operation_type, task.data)
             try:
                 success, result = future.result(timeout=timeout)
-                # Update task result
                 if success:
-                    task.status = TaskStatus.COMPLETED
-                    task.result = result
+                    self._set_final_state(task, TaskStatus.COMPLETED, result=result)
                 else:
-                    task.status = TaskStatus.FAILED
-                    task.error = result
+                    self._set_final_state(task, TaskStatus.FAILED, error=result)
             except TimeoutError:
-                task.status = TaskStatus.FAILED
-                task.error = "任务超时, 程序无法求解该题. 若确定其有初等函数解, 可尝试等价变形表达式后再次运行计算."
+                self._set_final_state(task, TaskStatus.FAILED, error=(
+                    "任务超时, 程序无法求解该题. 若确定其有初等函数解, "
+                    "可尝试等价变形表达式后再次运行计算."))
                 # The computation cannot be cancelled (SymPy has no kill switch).
                 # Keep its slot occupied until the future finishes, otherwise
                 # timed-out work would let the executor queue grow without bound
@@ -165,13 +179,11 @@ class TaskManager:
                 self._release_semaphore_when_done(future)
 
         except Exception as e:
-            task.status = TaskStatus.FAILED
-            task.error = str(e)
+            self._set_final_state(task, TaskStatus.FAILED, error=str(e))
 
         finally:
             if release_semaphore:
                 self._semaphore.release()
-            task.completed_at = datetime.now()
             self._set_task_event(task.task_id)
 
     def _release_semaphore_when_done(self, future) -> None:
@@ -203,14 +215,21 @@ class TaskManager:
         cleanup_thread.start()
 
     def cleanup_old_tasks(self, max_age_seconds: int = TASK_CLEAR_AFTER_CREAT_SECONDS):
-        """Clean up old tasks"""
+        """Clean up finished tasks once their result has had time to be read.
+
+        The TTL starts at ``completed_at``, not at creation: a method-tree run
+        can legitimately take 610s/7200s, and a task waiting for a worker slot
+        (PENDING) may wait minutes behind a timed-out SymPy computation.
+        Evicting either by creation time silently lost the user's result.
+        """
         current_time = datetime.now()
         with self._task_lock:
             tasks_to_delete = []
             for task_id, task in self._tasks.items():
-                if task.status == TaskStatus.RUNNING:
+                if task.status in (TaskStatus.PENDING, TaskStatus.RUNNING):
                     continue
-                if (current_time - task.created_at).total_seconds() > max_age_seconds:
+                reference = task.completed_at or task.created_at
+                if (current_time - reference).total_seconds() > max_age_seconds:
                     tasks_to_delete.append(task_id)
 
             for task_id in tasks_to_delete:
