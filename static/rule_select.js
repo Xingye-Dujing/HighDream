@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
     $statusPanel.style.display = 'block';
     const lines = [];
     lines.push('<div>步骤数: <strong>' + state.steps.length + '</strong></div>');
-    lines.push('<div>域: <strong>' + state.domain + '</strong></div>');
+    lines.push('<div>域: <strong>' + escapeHtml(String(state.domain)) + '</strong></div>');
     if (state.done) {
       lines.push('<div style="margin-top:6px;color:var(--accent-green)"><i class="fas fa-check-circle"></i> 推导完成</div>');
     }

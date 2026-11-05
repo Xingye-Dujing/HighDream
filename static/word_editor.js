@@ -1,6 +1,9 @@
 let paragraphCounter = 0;
 let activeParagraphId = null;
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
+// Guards the "run all" button against rapid double-clicks resubmitting every
+// SymPy paragraph while the previous batch is still in flight.
+let runAllBusy = false;
 
 // Escape untrusted text (server error echoes, JS error messages) before innerHTML.
 function escapeHtml(s) {
@@ -698,25 +701,35 @@ function renderMarkdown(paragraph) {
     .replace(/~~(.*?)~~/gim, '<del>$1</del>');
 
   // Handle multiple consecutive line breaks (paragraphs)
-  html = html.replace(/(<br>\s*){2+}/gim, '</p><p>');
+  html = html.replace(/(<br>\s*){2,}/gim, '</p><p>');
   html = '<p>' + html + '</p>';
 
   render.innerHTML = html || '<span style="color: var(--text-faint);">空段落</span>';
 }
 
 function runSymPyCode(paragraph) {
+  // One in-flight request per paragraph: ignore repeated clicks so an older,
+  // slower response cannot be submitted twice for the same paragraph.
+  if (paragraph.dataset.sympyRunning === '1') return Promise.resolve();
+
   const textarea = paragraph.querySelector('.code-input');
   const output = paragraph.querySelector('.code-output');
   const code = textarea.value.trim();
 
   if (!code) {
     showWarning('请输入 SymPy 代码');
-    return;
+    return Promise.resolve();
   }
+
+  // Per-paragraph monotonic sequence: only the newest request is allowed to
+  // write its result, so a late response from an earlier run is discarded.
+  const seq = (parseInt(paragraph.dataset.sympySeq, 10) || 0) + 1;
+  paragraph.dataset.sympySeq = String(seq);
+  paragraph.dataset.sympyRunning = '1';
 
   output.innerHTML = '<div class="computing"><div class="loading-spinner"></div><div class="loading-text">计算中...</div></div>';
 
-  fetch('/api/sympy_execute', {
+  return fetch('/api/sympy_execute', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -725,6 +738,8 @@ function runSymPyCode(paragraph) {
   })
     .then((response) => response.json())
     .then((data) => {
+      if (String(seq) !== paragraph.dataset.sympySeq) return; // stale response
+      paragraph.dataset.sympyRunning = '0';
       if (data.success) {
         // If there is LaTeX result, prioritize displaying LaTeX
         if (data.latex) {
@@ -751,6 +766,8 @@ function runSymPyCode(paragraph) {
       }
     })
     .catch((error) => {
+      if (String(seq) !== paragraph.dataset.sympySeq) return; // stale response
+      paragraph.dataset.sympyRunning = '0';
       output.innerHTML = `<div class="error">错误: ${escapeHtml(error.message)}</div>`;
       showError('请求失败，请检查服务是否在运行', error.message);
     });
@@ -776,12 +793,21 @@ function renderLatex(paragraph) {
 }
 
 function runAllSymPyCode() {
+  if (runAllBusy) return;
+  runAllBusy = true;
+  const tasks = [];
   document.querySelectorAll('.sympy-paragraph').forEach((paragraph) => {
     const textarea = paragraph.querySelector('.code-input');
     if (textarea.value.trim()) {
-      runSymPyCode(paragraph);
+      tasks.push(runSymPyCode(paragraph));
     }
   });
+  if (tasks.length === 0) { runAllBusy = false; return; }
+  // Release the guard only once the whole batch has settled (success or error).
+  Promise.all(tasks).then(
+    () => { runAllBusy = false; },
+    () => { runAllBusy = false; }
+  );
 }
 
 function deleteActiveParagraph() {

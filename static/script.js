@@ -292,6 +292,10 @@ let foreverVisible = true;
 // Store polling timers
 const pollTimers = new Map();
 
+// Fallback deadline (ms) for one SSE stream: a hung task that never emits
+// completed/failed must not leave the cell stuck on the computing spinner.
+const STREAM_TIMEOUT_MS = 10 * 60 * 1000;
+
 // Initialize after page loads
 document.addEventListener("DOMContentLoaded", function () {
   applyTheme(isDarkTheme);
@@ -2578,7 +2582,12 @@ function attachStepLinks(outputArea, cell) {
         }
       }
     })
-    .catch(() => {});
+    .catch(() => {
+      const tip = document.createElement("div");
+      tip.className = "error";
+      tip.textContent = "分步信息加载失败";
+      outputArea.appendChild(tip);
+    });
 }
 
 function cancelCellTask(outputArea) {
@@ -2586,6 +2595,7 @@ function cancelCellTask(outputArea) {
   if (!oldId) return;
   const old = pollTimers.get(oldId);
   if (old) {
+    clearTimeout(old.streamTimer);  // drop the replaced stream's fallback timer
     old.close();
     pollTimers.delete(oldId);
   }
@@ -2597,25 +2607,46 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
   pollTimers.set(taskId, es);
   outputArea.dataset.activeTask = taskId;
 
+  let errorCount = 0;
+
   /** True when a newer run of this cell replaced the one that opened this stream. */
   function isStale() {
     return outputArea.dataset.activeTask !== taskId;
   }
 
+  // Single funnel for every way this stream can end. Returns false when a newer
+  // run already owns the cell, so callers skip UI work that would clobber the
+  // newer result. Always clears the fallback timer to avoid leaks.
+  function cleanupTask() {
+    clearTimeout(es.streamTimer);
+    es.close();
+    pollTimers.delete(taskId);
+    if (isStale()) return false;
+    delete outputArea.dataset.activeTask;
+    runButton.classList.remove("running");
+    updateKernelStatus('idle');
+    return true;
+  }
+
+  // A hung task that never emits completed/failed and never trips onerror would
+  // otherwise leave the cell stuck on the computing spinner forever.
+  es.streamTimer = setTimeout(function () {
+    if (cleanupTask()) {
+      outputArea.innerHTML = '<div class="error">计算超时，请重试</div>';
+      updateKernelStatus('error');
+    }
+  }, STREAM_TIMEOUT_MS);
+
   es.addEventListener('status', function (e) {
     if (isStale()) return;
+    errorCount = 0;
     const data = JSON.parse(e.data);
     updateComputingStatus(outputArea, data.status);
   });
 
   es.addEventListener('completed', function (e) {
-    es.close();
-    pollTimers.delete(taskId);
-    if (isStale()) return;
-    delete outputArea.dataset.activeTask;
-
-    runButton.classList.remove("running");
-    updateKernelStatus('idle');
+    if (!cleanupTask()) return;
+    errorCount = 0;
 
     const task = JSON.parse(e.data);
 
@@ -2656,13 +2687,7 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
   });
 
   es.addEventListener('failed', function (e) {
-    es.close();
-    pollTimers.delete(taskId);
-    if (isStale()) return;
-    delete outputArea.dataset.activeTask;
-
-    runButton.classList.remove("running");
-    updateKernelStatus('idle');
+    if (!cleanupTask()) return;
 
     let msg = '任务失败';
     try {
@@ -2675,15 +2700,15 @@ function subscribeTask(taskId, outputArea, runButton, operationType) {
   });
 
   es.onerror = function () {
-    // EventSource auto-reconnects; only clean up if permanently closed
-    if (es.readyState === EventSource.CLOSED) {
-      pollTimers.delete(taskId);
-      if (isStale()) return;
-      delete outputArea.dataset.activeTask;
-      runButton.classList.remove("running");
-      updateKernelStatus('idle');
-      outputArea.innerHTML = '<div class="error">连接中断</div>';
-      updateKernelStatus('error');
+    // EventSource auto-reconnects: on a real network drop readyState stays
+    // CONNECTING (it is CLOSED only after an explicit close()), so the old
+    // CLOSED-only branch never ran and the UI stayed stuck on computing forever.
+    errorCount += 1;
+    if (errorCount >= 3 || es.readyState === EventSource.CLOSED) {
+      if (cleanupTask()) {
+        outputArea.innerHTML = '<div class="error">连接中断，请重试</div>';
+        updateKernelStatus('error');
+      }
     }
   };
 }

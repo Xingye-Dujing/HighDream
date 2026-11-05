@@ -28,6 +28,9 @@
   // Tree state
   var currentTaskId = null;
   var pollTimer = null;
+  // Only one status request may be in flight at a time (the 400 ms interval can
+  // otherwise stack requests when the server is slow).
+  var pollInFlight = false;
   var renderedNodeIds = new Set();
   var renderedTree = null;
   // Monotonic token so a slow linear-path response cannot overwrite a newer one.
@@ -229,14 +232,22 @@
   }
 
   function pollOnce() {
-    if (!currentTaskId) return;
+    if (!currentTaskId || pollInFlight) return;
+    // Bind this request to the task that was active when it was issued. After a
+    // cancel/restart, currentTaskId may already point at a new task (or null),
+    // so a late response from the old request must be ignored instead of
+    // stopping the new task's polling / clearing its busy state.
+    var taskId = currentTaskId;
+    pollInFlight = true;
     fetch('/api/method_tree_status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ task_id: currentTaskId }),
+      body: JSON.stringify({ task_id: taskId }),
     })
       .then(function (r) { return r.json(); })
       .then(function (payload) {
+        pollInFlight = false;
+        if (!currentTaskId || taskId !== currentTaskId) return;
         pollFailures = 0;
         if (payload.tree && !window.__mtFirstPayloadLogged) {
           window.__mtFirstPayloadLogged = true;
@@ -245,6 +256,8 @@
         handlePoll(payload);
       })
       .catch(function (err) {
+        pollInFlight = false;
+        if (!currentTaskId || taskId !== currentTaskId) return;
         // A dead server or flaky network must not spin a request every 400 ms
         // forever: stop after a few consecutive failures and let the user retry.
         pollFailures += 1;
@@ -494,7 +507,7 @@
     var cls = 'mt-reason' + (stats.truncated ? ' mt-truncated' : '') +
               (stats.error ? ' mt-error' : '');
     elStats.innerHTML =
-      '<div class="mt-stat-line"><span class="' + cls + '">' + label + '</span></div>' +
+      '<div class="mt-stat-line"><span class="' + cls + '">' + escapeHtml(String(label)) + '</span></div>' +
       '<div class="mt-stat-line">节点 ' + stats.node_count +
         ' · 最大深度 ' + stats.max_depth_seen +
         ' · 用时 ' + stats.elapsed_seconds.toFixed(2) + ' 秒</div>' +
