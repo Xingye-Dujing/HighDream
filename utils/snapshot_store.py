@@ -9,13 +9,18 @@ A snapshot row stores the same JSON array produced by the page's
 ``getNotebookData()`` so restoring is a straight ``loadNotebookData(parsed)``.
 """
 
+import os
 import sqlite3
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-DB_DIR = Path(__file__).resolve().parent.parent / 'cache'
+# Same override as the computation cache: read-only deployments (Vercel) must
+# point this at a writable directory (e.g. /tmp) or snapshot writes would fail.
+DB_DIR = Path(os.environ.get(
+    'HIGHDREAM_CACHE_DIR',
+    str(Path(__file__).resolve().parent.parent / 'cache')))
 DB_PATH = DB_DIR / 'snapshots.db'
 
 # Older snapshots are pruned so the database cannot grow without bound.

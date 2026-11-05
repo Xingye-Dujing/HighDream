@@ -1,12 +1,15 @@
 """Notebook history snapshot endpoints."""
 
 import json
+import sqlite3
 
 from flask import jsonify, request
 
 from utils import snapshot_store
 
 from .api_blueprint import api
+
+_STORAGE_ERRORS = (sqlite3.Error, OSError)
 
 
 @api.route('/snapshot_save', methods=['POST'])
@@ -33,6 +36,8 @@ def snapshot_save():
         )
     except (ValueError, TypeError, AttributeError) as exc:
         return jsonify({'success': False, 'error': str(exc)})
+    except _STORAGE_ERRORS:
+        return jsonify({'success': False, 'error': '快照存储不可用，请检查缓存目录权限'})
     return jsonify({'success': True, 'snapshot': meta})
 
 
@@ -43,7 +48,11 @@ def snapshot_list():
         max_rows = int(request.args.get('limit', '50'))
     except (TypeError, ValueError):
         max_rows = 50
-    return jsonify({'success': True, 'snapshots': snapshot_store.list_snapshots(max_rows)})
+    try:
+        snapshots = snapshot_store.list_snapshots(max_rows)
+    except _STORAGE_ERRORS:
+        return jsonify({'success': False, 'error': '快照存储不可用，请检查缓存目录权限'})
+    return jsonify({'success': True, 'snapshots': snapshots})
 
 
 @api.route('/snapshot_get', methods=['GET'])
@@ -53,7 +62,10 @@ def snapshot_get():
         snapshot_id = int(request.args.get('id', ''))
     except (TypeError, ValueError):
         return jsonify({'success': False, 'error': '无效的快照编号'})
-    snapshot = snapshot_store.get_snapshot(snapshot_id)
+    try:
+        snapshot = snapshot_store.get_snapshot(snapshot_id)
+    except _STORAGE_ERRORS:
+        return jsonify({'success': False, 'error': '快照存储不可用，请检查缓存目录权限'})
     if snapshot is None:
         return jsonify({'success': False, 'error': '快照不存在'})
     return jsonify({'success': True, 'snapshot': snapshot})
@@ -69,5 +81,8 @@ def snapshot_delete():
         snapshot_id = int(data.get('id'))
     except (TypeError, ValueError):
         return jsonify({'success': False, 'error': '无效的快照编号'})
-    removed = snapshot_store.delete_snapshot(snapshot_id)
+    try:
+        removed = snapshot_store.delete_snapshot(snapshot_id)
+    except _STORAGE_ERRORS:
+        return jsonify({'success': False, 'error': '快照存储不可用，请检查缓存目录权限'})
     return jsonify({'success': removed, 'error': '' if removed else '快照不存在'})

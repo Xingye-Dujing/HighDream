@@ -2,6 +2,7 @@
 """Endpoint/API contract tests for every product page and API family."""
 
 import importlib
+import sqlite3
 import time
 
 import pytest
@@ -411,6 +412,19 @@ def test_snapshot_crud_api(client, temp_snapshot_db):
     assert client.post('/api/snapshot_delete', json={'id': snapshot_id}).get_json()['success'] is True
     assert client.post('/api/snapshot_delete', json={'id': snapshot_id}).get_json()['success'] is False
     assert client.get('/api/snapshot_list?limit=bad').get_json()['success'] is True
+
+
+def test_snapshot_storage_failure_returns_json_not_500(client, monkeypatch):
+    """A read-only cache directory must degrade to a clear error, not a 500."""
+    def _unavailable():
+        raise sqlite3.OperationalError('attempt to write a readonly database')
+
+    monkeypatch.setattr(snapshot_store, '_get_conn', _unavailable)
+    assert client.post('/api/snapshot_save', json={'cells': [{'content': 'x'}]}).status_code == 200
+    assert client.post('/api/snapshot_save', json={'cells': [{'content': 'x'}]}).get_json()['success'] is False
+    assert client.get('/api/snapshot_list').get_json()['success'] is False
+    assert client.get('/api/snapshot_get?id=1').get_json()['success'] is False
+    assert client.post('/api/snapshot_delete', json={'id': 1}).get_json()['success'] is False
 
 
 def test_snapshot_store_prunes_to_max(temp_snapshot_db):
