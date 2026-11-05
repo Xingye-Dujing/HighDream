@@ -13,10 +13,33 @@ def test_detection_threshold():
     assert _has_huge_power_literal('2**500') is False
 
 
+def test_nested_towers_are_detected():
+    assert _has_huge_power_literal('2**10**9') is True
+    assert _has_huge_power_literal('2**9**9') is True
+    assert _has_huge_power_literal('9**9') is False
+    assert _has_huge_power_literal('3**5**3') is False
+    assert _has_huge_power_literal('2**5**5') is False
+    assert _has_huge_power_literal('2**(10**9)') is True
+    assert _has_huge_power_literal('2**(3**5**5)') is True
+    assert _has_huge_power_literal('2**(9**9)') is True
+    assert _has_huge_power_literal('2**(1000000*1000000)') is True
+    assert _has_huge_power_literal('2**(1000000/1000)') is False
+    assert _has_huge_power_literal('2**(x*10**9)') is False
+    assert _has_huge_power_literal('2**(10+1)') is False
+
+
 def test_huge_power_stays_symbolic_and_renders():
     rendered = latex(cached_sympify('x + 2**1000000'))
     assert '2^' in rendered
     assert 'x' in rendered
+
+
+def test_nested_towers_stay_unevaluated_and_render():
+    # Regression: these used to be fed to evaluate=True parsing and computed
+    # (or hung). They must parse instantly as unevaluated powers.
+    for text in ('2**10**9', '2**(10**9)', '2**9**9', '2**(1000000*1000000)'):
+        rendered = latex(cached_sympify(text))
+        assert '^{' in rendered or '^' in rendered, text
 
 
 def test_normal_parse_unaffected():

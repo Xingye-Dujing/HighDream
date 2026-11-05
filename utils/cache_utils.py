@@ -1,5 +1,6 @@
 import ast
 import builtins
+import math
 import re
 from functools import lru_cache
 
@@ -19,16 +20,122 @@ _LATEX_COMMAND_RE = re.compile(r'\\[a-zA-Z]')
 # MathLive renders powers/subscripts with braced ^{...} / _{...} (SymPy source uses
 # ** and bare names), so a braced caret/underscore marks WYSIWYG LaTeX input.
 _LATEX_MARK_RE = re.compile(r'\^\{|_\{')
+# Cap on exponent magnitudes we are willing to let Python materialize at all.
+# ``2**10**9`` / ``2**(10**9)`` have no huge flat literal but would still build
+# a 10**9-exponent power, so towers of integer literals are scanned for their
+# outermost exponent's value instead of looking only at the literal text.
+_EXPONENT_CAP = 10_000
+_INT_TOKEN = r'-?\d+'
+_TOWER_RE = re.compile(_INT_TOKEN + r'(?:\s*(?:\*\*|\^)\s*' + _INT_TOKEN + r'){2,}')
+_PAREN_POWER_RE = re.compile(r'(?:\*\*|\^)\s*\(')
 
 
-def _has_huge_power_literal(expr_str: str) -> bool:
-    """True if the input has a power whose integer exponent literal is very large.
+def _int_tokens(text: str):
+    """Integer tokens of a pure integer power tower like ``3**5**2``, or None."""
+    nums = []
+    for part in re.split(r'(?:\*\*|\^)', text):
+        part = part.strip().strip('{}').strip()
+        if not re.fullmatch(r'-?\d+', part):
+            return None
+        nums.append(int(part))
+    return nums
 
-    Detection uses the exponent literal's digit count as a cheap pre-check so we
-    can avoid ever materializing huge integer powers such as ``2**1000000``.
+
+def _capped_tower_value(tokens):
+    """Right-associative value of an integer power tower, capped at _EXPONENT_CAP.
+
+    ``2**10**9`` has exponent ``10**9``; the 1e9 must be detected without
+    ever computing ``2**1e9``. Any step exceeding _EXPONENT_CAP stops the
+    evaluation and reports the cap plus one instead."""
+    value = abs(tokens[-1])
+    for token in reversed(tokens[:-1]):
+        if value > _EXPONENT_CAP:
+            return _EXPONENT_CAP + 1
+        value = abs(token) ** value
+    return value
+
+
+def _arith_only_value(text: str) -> bool | float | None:
+    """Value of a string containing only ``+ - * /`` and integer literals (or
+    ``math.inf``), or None when it is not such a string or not finite.
+
+    Used to judge whether a parenthesised exponent such as ``(1000000*1000000)``
+    is huge without letting Python compute ``2**10**12``."""
+    try:
+        tree = ast.parse(text, mode='eval')
+    except SyntaxError:
+        return None
+
+    def _fold(node):
+        if isinstance(node, ast.Expression):
+            return _fold(node.body)
+        if isinstance(node, ast.Constant):
+            if isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
+                return float(node.value)
+            return None
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+            value = _fold(node.operand)
+            if value is None:
+                return None
+            return value if isinstance(node.op, ast.UAdd) else -value
+        if isinstance(node, ast.BinOp):
+            left, right = _fold(node.left), _fold(node.right)
+            if left is None or right is None:
+                return None
+            try:
+                if isinstance(node.op, ast.Add):
+                    value = left + right
+                elif isinstance(node.op, ast.Sub):
+                    value = left - right
+                elif isinstance(node.op, ast.Mult):
+                    value = left * right
+                elif isinstance(node.op, ast.Div):
+                    if right == 0:
+                        return None
+                    value = left / right
+                else:
+                    return None
+            except OverflowError:
+                return math.inf
+            return math.inf if abs(value) > 1e300 else value
+        return None
+
+    return _fold(tree)
+
+
+def _has_huge_power_literal(expr_str: str, _depth: int = 0) -> bool:
+    """True if the input can produce an enormous integer power when evaluated.
+
+    Catches three shapes, none of which are ever materialized:
+    - a flat exponent literal with many digits (``2**1000000``)
+    - a tower of integer literals whose outermost exponent is huge (``2**10**9``)
+    - a parenthesised tower used as an exponent (``2**(10**9)``)
+
+    ``_depth`` caps the parenthesised recursion so a pathological nested input
+    cannot overflow the interpreter stack.
     """
-    return any(len(match.group(1)) >= LARGE_POWER_EXPONENT_DIGITS
-               for match in _HUGE_POWER_RE.finditer(expr_str))
+    if _depth > 8:
+        return True
+    if any(len(match.group(1)) >= LARGE_POWER_EXPONENT_DIGITS
+           for match in _HUGE_POWER_RE.finditer(expr_str)):
+        return True
+    for match in _TOWER_RE.finditer(expr_str):
+        tokens = _int_tokens(match.group(0))
+        if tokens and _capped_tower_value(tokens[1:]) > _EXPONENT_CAP:
+            return True
+    for match in _PAREN_POWER_RE.finditer(expr_str):
+        inner = extract_paren_arg(expr_str, match.end() - 1)
+        if not inner:
+            continue
+        value = _arith_only_value(inner)
+        if value is not None and (value is math.inf or abs(value) > _EXPONENT_CAP):
+            return True
+        tokens = _int_tokens(inner)
+        if tokens is not None and _capped_tower_value(tokens) > _EXPONENT_CAP:
+            return True
+        if _has_huge_power_literal(inner, _depth + 1):
+            return True
+    return False
 
 
 def has_unfilled_placeholders(expr_str: str) -> bool:

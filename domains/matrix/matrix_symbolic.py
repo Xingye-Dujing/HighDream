@@ -17,7 +17,7 @@ from sympy import Expr, Symbol, expand
 from sympy.matrices.expressions import Identity, Inverse, MatMul, MatrixSymbol, Transpose
 from sympy.parsing.sympy_parser import parse_expr, standard_transformations
 
-from utils.cache_utils import _reject_unsafe_syntax
+from utils.cache_utils import _has_huge_power_literal, _reject_unsafe_syntax
 
 _N = Symbol('n')
 _TOKEN_RE = re.compile(r'[A-Za-z_]\w*')
@@ -36,7 +36,8 @@ def _parse_matrix_expr(text: str) -> Expr:
     local['Inverse'] = Inverse
     local['Transpose'] = Transpose
     local['Identity'] = Identity
-    return parse_expr(text, local_dict=local, transformations=standard_transformations)
+    return parse_expr(text, local_dict=local,
+                      transformations=standard_transformations)
 
 
 def _is_inverse_target(e) -> bool:
@@ -74,6 +75,10 @@ def simplify_matrix_symbolic(text: str) -> List[Tuple[Expr, str]]:
     # NOT sandbox it. Block attribute access / dunder names / calls to
     # non-symbols outright, exactly as the scalar parser does.
     _reject_unsafe_syntax(raw)
+    # A huge power literal (2**1000000 style) is not something a symbolic
+    # matrix simplifier should materialize: decline instead of hanging the worker.
+    if _has_huge_power_literal(raw):
+        raise ValueError('表达式包含过大的幂字面量，请避免使用超大指数')
     expr = _parse_matrix_expr(raw)
     steps: List[Tuple[Expr, str]] = [(expr, '原始符号矩阵表达式')]
 
