@@ -27,6 +27,14 @@ def matrix_analyze():
     from utils.matrix_latex import latex_to_nested  # pylint: disable=import-outside-toplevel
     try:
         expr = latex_to_nested(expr)
+        from core.common_matrix_calculator import CommonMatrixCalculator  # pylint: disable=import-outside-toplevel
+        matrix = CommonMatrixCalculator.parse_matrix_input(expr)
+        if matrix.rows >= 3 and len(matrix.free_symbols) > 2:
+            return jsonify({
+                'success': False,
+                'error': '该分析对 3×3 及以上、含 3 个以上独立符号的矩阵会不可控地耗时; '
+                         '请改用具体数值矩阵, 或减少符号个数后再试',
+            })
         return jsonify(MatrixAnalyzer().analyze(expr))
     except Exception as exc:  # pylint: disable=broad-exception-caught
         # Any SymPy failure inside analyze() must become a JSON error, not an

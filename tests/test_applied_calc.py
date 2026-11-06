@@ -44,6 +44,22 @@ def test_iterative_methods_are_numeric_and_bounded():
     assert '1.41421' in str(res), res
 
 
+def test_heavy_symbolic_matrix_operations_are_rejected_quickly():
+    """3x3+ matrices with many independent symbols would make SymPy's
+    eigenvects/ref run for minutes; they must be declined up front."""
+    m = '[[a,b,c],[d,e,f],[g,h,i]]'
+    for op in ('eigen', 'diag', 'jordan', 'svd', 'ref'):
+        ok, res = start_compute(op, {'operation_type': op,
+                                     'expression': m,
+                                     'target_form': 'rref', 'type': '1'})
+        assert not ok, (op, res)
+        assert '不可控' in str(res), (op, res)
+    # 2x2 symbolic still works.
+    ok, res = start_compute('eigen', {'operation_type': 'eigen',
+                                      'expression': '[[a,b],[c,d]]'})
+    assert ok, res
+
+
 def test_symbolic_diagonalization_does_not_hang():
     """Symbolic eigenvector normalization used to make P.inv() uncomputable."""
     ok, res = start_compute('diag', {'operation_type': 'diag',

@@ -668,6 +668,25 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
             if matrix.rows != matrix.cols:
                 return False, f'该运算要求方阵，当前矩阵为 {matrix.rows}×{matrix.cols}'
 
+        # Heavy symbolic linear algebra (eigen/diag/jordan/svd/ref/orthogonal) on a
+        # 3x3+ matrix with several independent symbols asks SymPy to solve an
+        # irreducible cubic/quartic symbolically; that can run for minutes and pin
+        # a worker. Numeric matrices are unaffected; small/2-symbol symbolic ones
+        # still work. Decline early with an actionable message.
+        _HEAVY_SYMBOLIC_OPS = {'eigen', 'diag', 'jordan', 'svd', 'singular',
+                               'orthogonal', 'ref'}
+        if operation_type in _HEAVY_SYMBOLIC_OPS:
+            from core.common_matrix_calculator import CommonMatrixCalculator  # pylint: disable=import-outside-toplevel
+            try:
+                _sym_matrix = CommonMatrixCalculator.parse_matrix_input(expression)
+            except Exception:  # pylint: disable=broad-exception-caught
+                _sym_matrix = None
+            if (_sym_matrix is not None and _sym_matrix.rows >= 3
+                    and len(_sym_matrix.free_symbols) > 2):
+                return False, (
+                    '该运算对 3×3 及以上、含 3 个以上独立符号的矩阵会不可控地耗时; '
+                    '请改用具体数值矩阵, 或减少符号个数后再试')
+
         # Every downstream handler reads data['expression']; keep the canonical
         # normalized value there too (mutating this request's payload is safe and
         # lets applied handlers publish their composable _auto_value back).
