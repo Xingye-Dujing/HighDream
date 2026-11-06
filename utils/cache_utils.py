@@ -4,7 +4,7 @@ import math
 import re
 from functools import lru_cache
 
-from sympy import (Expr, Mul, S, Symbol, bottom_up, evaluate, expand_log,
+from sympy import (Add, Expr, Mul, S, Symbol, bottom_up, evaluate, expand_log,
                    latex, log, pi, radsimp, simplify, sympify)
 from sympy.parsing.sympy_parser import (convert_xor,
                                         implicit_multiplication_application,
@@ -447,17 +447,22 @@ def _drop_unit_factor(node):
 
 
 def _flatten_mul(node):
-    """Rebuild a ``Mul`` with evaluation on so nested products collapse.
+    """Rebuild an ``Add``/``Mul`` with evaluation on so nesting collapses.
 
-    parse_latex can leave products unevaluated — e.g. an exponent as
-    ``Mul(1/2, Mul(-1, x))`` instead of the canonical ``-x/2``. Structural
-    matching in the substitution rule compares expressions with ``==``/
-    ``free_symbols``, which fails on the non-canonical shape, so an otherwise
-    solvable integral comes back unresolved. ``Mul(*args)`` forces sympy to
-    re-associate and fold the numeric coefficients. Used with ``bottom_up`` so
-    operands (and exponents) are flattened before their parents rebuild."""
+    parse_latex can leave sums/products unevaluated — e.g. ``1/((x**2+2*x)+5)``
+    (a nested Add as the denominator) or an exponent as ``Mul(1/2, Mul(-1, x))``
+    instead of the canonical ``-x/2``. Structural matching in the rule engine
+    compares expressions with ``==``/``free_symbols`` and degree/coefficient
+    extraction, which fails on the non-canonical shape. The nested-Add case was
+    severe: ``integral('1/(x^2+2*x+5)')`` missed the direct arctan rule, fell
+    into integration by parts and ran for many minutes. ``Add(*args)`` /
+    ``Mul(*args)`` force sympy to re-associate (and fold numeric coefficients)
+    without touching ``Pow`` operands, so a huge unevaluated power stays
+    unevaluated. Used with ``bottom_up`` so operands are flattened first."""
     if node.is_Mul:
         return Mul(*node.args)
+    if node.is_Add:
+        return Add(*node.args)
     return node
 
 
