@@ -117,6 +117,12 @@ def user_error(exc, operation_type: str) -> str:
     if 'cannot convert' in low or 'could not parse' in low or 'sympify' in low \
             or 'syntaxerror' in low or 'unexpected character' in low:
         return f'无法解析输入，请检查表达式写法: {msg}'
+    if 'exceeds the limit' in low or 'int too large to convert' in low \
+            or '4300 digits' in low:
+        # A huge power stays unevaluated while parsing, but evaluating/printing it
+        # later trips Python's int<->str digit limit. Say so in plain language
+        # instead of surfacing the CPython internal message.
+        return '表达式中的幂次或整数过大, 无法展开或显示; 请改用较小的指数'
     if 'list index out of range' in low or 'not enough values' in low \
             or 'pop from empty' in low:
         return '矩阵输入格式不正确，请检查每行元素个数和运算参数'
