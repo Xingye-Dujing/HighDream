@@ -83,7 +83,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
             if show_steps:
                 self.add_step(f"\\det(A) = {latex(det_A)}")
 
-            if det_A != 0:
+            if not CommonMatrixCalculator.is_symbolically_zero(det_A):
                 if show_steps:
                     self.add_step("系统有唯一解")
                 return "unique_solution"
@@ -233,7 +233,9 @@ class LinearSystemSolver(CommonMatrixCalculator):
         has_solution = True
         for i in range(n):
             # If coefficient part is all zeros but constant term is non-zero, no solution.
-            if all(rref_matrix[i, j] == 0 for j in range(n)) and rref_matrix[i, n] != 0:
+            if all(CommonMatrixCalculator.is_symbolically_zero(rref_matrix[i, j])
+                   for j in range(n)) \
+                    and not CommonMatrixCalculator.is_symbolically_zero(rref_matrix[i, n]):
                 has_solution = False
                 if show_steps:
                     self.add_step(
@@ -289,7 +291,8 @@ class LinearSystemSolver(CommonMatrixCalculator):
         # Establish equations for each pivot variable
         pivot_rows = []
         for i in range(n):
-            if any(rref_matrix[i, j] != 0 for j in range(n)):
+            if any(not CommonMatrixCalculator.is_symbolically_zero(rref_matrix[i, j])
+                   for j in range(n)):
                 pivot_rows.append(i)
 
         for i, row_idx in enumerate(pivot_rows):
@@ -373,7 +376,9 @@ class LinearSystemSolver(CommonMatrixCalculator):
 
         # Check if the solution exists
         for i in range(m):
-            if all(rref_matrix[i, j] == 0 for j in range(n)) and rref_matrix[i, n] != 0:
+            if all(CommonMatrixCalculator.is_symbolically_zero(rref_matrix[i, j])
+                   for j in range(n)) \
+                    and not CommonMatrixCalculator.is_symbolically_zero(rref_matrix[i, n]):
                 if show_steps:
                     self.add_step("系统无解")
                 return None
@@ -555,7 +560,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
             # Find pivot
             pivot_row = i
             for r in range(i, m):
-                if augmented[r, i] != 0:
+                if not CommonMatrixCalculator.is_symbolically_zero(augmented[r, i]):
                     pivot_row = r
                     break
 
@@ -569,7 +574,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
                     self.add_matrix(augmented, "[A|\\boldsymbol{{b}}]")
 
             # If pivot is 0, skip this column
-            if augmented[i, i] == 0:
+            if CommonMatrixCalculator.is_symbolically_zero(augmented[i, i]):
                 if show_steps:
                     self.add_step(f"第 {i + 1} 列主元为 0，跳过")
                 continue
@@ -585,7 +590,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
 
             # Eliminate other rows
             for j in range(i + 1, m):
-                if augmented[j, i] != 0:
+                if not CommonMatrixCalculator.is_symbolically_zero(augmented[j, i]):
                     factor = augmented[j, i]
                     if show_steps:
                         self.add_step(
@@ -684,7 +689,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
             # Find pivot
             pivot_row = i
             for r in range(i, m):
-                if augmented[r, i] != 0:
+                if not CommonMatrixCalculator.is_symbolically_zero(augmented[r, i]):
                     pivot_row = r
                     break
 
@@ -698,7 +703,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
                     self.add_matrix(augmented, "[A|\\boldsymbol{b}]")
 
             # If pivot is 0, skip this column
-            if augmented[i, i] == 0:
+            if CommonMatrixCalculator.is_symbolically_zero(augmented[i, i]):
                 if show_steps:
                     self.add_step(f"第 {i + 1} 列主元为 0, 跳过")
                 continue
@@ -714,7 +719,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
 
             # Eliminate other rows
             for j in range(m):
-                if j != i and augmented[j, i] != 0:
+                if j != i and not CommonMatrixCalculator.is_symbolically_zero(augmented[j, i]):
                     factor = augmented[j, i]
                     if show_steps:
                         self.add_step(
@@ -730,7 +735,7 @@ class LinearSystemSolver(CommonMatrixCalculator):
         # Extract solution
         x = zeros(n, 1)
         for i in range(min(m, n)):
-            if augmented[i, i] != 0:
+            if not CommonMatrixCalculator.is_symbolically_zero(augmented[i, i]):
                 x[i] = augmented[i, n]
 
         # Simplify results
