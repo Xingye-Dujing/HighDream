@@ -354,6 +354,16 @@ def test_square_only_operation_rejects_non_square(op):
     assert '方阵' in result
 
 
+def test_eigen_and_svd_failures_are_not_reported_as_success():
+    """A failed decomposition must return success=False, not a step note."""
+    for op in ('eigen', 'svd'):
+        for matrix in ('[[oo,1],[1,1]]', '[[nan,1],[1,1]]'):
+            ok, result = start_compute(op, {
+                'operation_type': op, 'expression': matrix})
+            assert not ok, (op, matrix, result)
+            assert '失败' in result, (op, matrix, result)
+
+
 def test_linear_transform_failure_is_not_reported_as_success():
     """A singular basis must fail the request, not embed "计算失败" in a success."""
     for payload in (

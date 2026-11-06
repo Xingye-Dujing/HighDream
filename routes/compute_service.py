@@ -823,14 +823,22 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
         if operation_type in ('svd', 'singular'):
             calc = _calculators['svd']()
             if operation_type == 'svd':
-                calc.compute_svd(expression)
+                result = calc.compute_svd(expression)
+                failed = result is None or result[0] is None
             else:
-                calc.compute_singular_values_only(expression)
+                result = calc.compute_singular_values_only(expression)
+                failed = not result
+            # A failed decomposition used to be reported as success with an
+            # embedded "失败" note.
+            if failed:
+                return False, '奇异值分解失败: 矩阵可能含无法处理的符号或不是实矩阵'
             return True, calc.get_steps_latex()
 
         if operation_type == 'eigen':
             calc = _calculators['eigen']()
-            calc.auto_eigen_solver(expression)
+            eigenvalues, _eigenvectors = calc.auto_eigen_solver(expression)
+            if not eigenvalues:
+                return False, '特征值求解失败: 矩阵可能含无法解析的符号特征值'
             return True, calc.get_steps_latex()
 
         if operation_type == 'schur':
