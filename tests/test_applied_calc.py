@@ -179,6 +179,19 @@ def test_ode_exact():
     assert '恰当' in body and 'x^{2}+1' in body.replace(' ', '') and '$' not in body
 
 
+def test_ode_nonlinear_in_derivative_is_not_treated_as_exact():
+    """y'**2 - 1 = 0 used to be declared an "exact equation".
+
+    Its M(y') contained the derivative, so dM/dy was trivially 0 and the exact
+    path integrated y' as a constant, producing x(y'^2-1)=C. A nonlinear-in-y'
+    equation must never take the exact path, and the dsolve fallback should list
+    every branch instead of silently keeping one.
+    """
+    body = _res('ode', expression='Derivative(f(x), x)**2 - 1', variable='x')
+    assert '恰当' not in body, body
+    assert 'C_{1}' in body, body
+
+
 def test_ode_second_order_distinct_roots():
     # y'' - 5y' + 6y = 0 -> e^{2x}, e^{3x}
     body = _res('ode', expression='Derivative(f(x),(x,2))-5*Derivative(f(x),x)+6*f(x)', variable='x')

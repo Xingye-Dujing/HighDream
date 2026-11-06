@@ -188,7 +188,18 @@ def first_order_ode(eq, x, f):
         sols = solve(alg, p)
         if not sols:
             return None, False
-        phi = simplify(sols[0])
+        # A quadratic-or-higher equation in y' has several branches (e.g.
+        # y'**2 - 1 = 0). This path can only display one derivation chain, so
+        # silently keeping sols[0] dropped the other solutions; decline instead
+        # and let the dsolve fallback list every branch.
+        distinct = []
+        for cand in sols:
+            cand = simplify(cand)
+            if not any(simplify(cand - seen) == 0 for seen in distinct):
+                distinct.append(cand)
+        if len(distinct) > 1:
+            return None, False
+        phi = distinct[0]
         c = Symbol('C')
         for maker in (_separable_rows, _homogeneous_rows, _linear_rows, _bernoulli_rows):
             rows = maker(phi, x, y, c, f)
@@ -206,6 +217,14 @@ def _exact_rows(alg, x, y, c, f):
     expr = expr.subs(Derivative(y, x), p)
     n = expr.coeff(p, 1)
     m = simplify(expr - n * p)
+    # Exactness only applies to M(x,y) + N(x,y) y' = 0, i.e. linear in y'.
+    # A nonlinear equation such as y'**2 - 1 = 0 has n = 0 and m depending on p;
+    # the derivative of m wrt y is then trivially 0, so the test declared it
+    # "exact" and integrated p as if it were a constant (a wrong answer).
+    if m.has(p) or n.has(p):
+        return None
+    if m == 0 and n == 0:
+        return None
     if simplify(diff(m, y) - diff(n, x)) != 0:
         return None                 # not exact
     rows = [
@@ -238,6 +257,8 @@ def _exact_factor_rows(alg, x, y, c, f):
     m = simplify(expr - n * p)
     if n == 0 or m == 0:
         return None
+    if m.has(p) or n.has(p):
+        return None                               # not linear in y'
     if simplify(diff(m, y) - diff(n, x)) == 0:
         return None                               # already exact -> the plain path handles it
     my, nx = simplify(diff(m, y)), simplify(diff(n, x))
