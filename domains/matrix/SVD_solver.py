@@ -343,6 +343,10 @@ class SVDSolver(CommonMatrixCalculator):
         A = self.parse_matrix_input(matrix_input)
         if A.has(I):
             raise ValueError('奇异值分解仅支持实矩阵（输入含虚数单位 i）')
+        if A.free_symbols:
+            # The sign test below (eig >= 0) cannot be decided for symbolic
+            # eigenvalues; singular values are a numeric operation here.
+            raise ValueError('奇异值计算仅支持数值矩阵（请输入具体数字的方阵）')
 
         if show_steps:
             self.step_generator.add_step(r"\textbf{奇异值计算}")

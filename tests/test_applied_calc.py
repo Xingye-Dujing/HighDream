@@ -44,6 +44,22 @@ def test_iterative_methods_are_numeric_and_bounded():
     assert '1.41421' in str(res), res
 
 
+def test_symbolic_diagonalization_does_not_hang():
+    """Symbolic eigenvector normalization used to make P.inv() uncomputable."""
+    ok, res = start_compute('diag', {'operation_type': 'diag',
+                                     'expression': '[[a,b],[c,d]]'})
+    assert ok, res
+    assert 'P' in str(res)
+
+
+def test_symbolic_schur_and_singular_values_are_rejected_clearly():
+    for op in ('schur', 'singular'):
+        ok, res = start_compute(op, {'operation_type': op,
+                                     'expression': '[[a,b],[c,d]]'})
+        assert not ok, (op, res)
+        assert '数值矩阵' in str(res), (op, res)
+
+
 def test_upper_case_sympy_tuple_specs_are_flattened():
     """Derivative/Sum/Product/Integral with a SymPy ``(var, ...)`` spec argument.
 

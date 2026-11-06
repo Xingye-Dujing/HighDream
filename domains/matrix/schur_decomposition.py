@@ -465,6 +465,12 @@ class SchurDecomposition(CommonMatrixCalculator):
 
         A = self.parse_matrix_input(matrix_input)
 
+        if A.free_symbols:
+            # The recursive deflation calls eigenvects/simplify on every level;
+            # with symbolic eigenvalues and nested radicals it never finishes in
+            # practice. Schur decomposition is a numeric algorithm here.
+            raise ValueError('Schur 分解暂仅支持数值矩阵（请输入具体数字的方阵）')
+
         if show_steps:
             self.step_generator.add_step("自动 Schur 分解")
             self.add_matrix(A, "A")

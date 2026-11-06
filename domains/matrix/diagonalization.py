@@ -226,10 +226,15 @@ class Diagonalization(CommonMatrixCalculator):
         P_columns = []
         D_diag = []
 
+        # Normalising a symbolic eigenvector wraps it in nested radicals whose
+        # inverse explodes (P.inv() did not finish). Keep raw symbolic columns;
+        # they are still a valid (non-orthogonal) eigenbasis.
+        normalize_here = normalize and not A.free_symbols
+
         for eigenval in eigenvalues.keys():
             eigenvectors = eigenvectors_dict[eigenval]
             for eigenvec_info in eigenvectors:
-                if normalize:
+                if normalize_here:
                     P_columns.append(eigenvec_info['normalized'])
                 else:
                     P_columns.append(eigenvec_info['raw'])
