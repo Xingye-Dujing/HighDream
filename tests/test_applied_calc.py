@@ -153,6 +153,14 @@ def test_series_converges_and_sums():
     assert r'\pi' in _res('series_convergence', expression='1/n**2', variable='n')
 
 
+def test_directional_derivative_rejects_zero_direction():
+    ok, res = start_compute('directional', {
+        'operation_type': 'directional', 'expression': 'x^2+y^2',
+        'direction': '0|0'})
+    assert not ok
+    assert '零向量' in str(res), res
+
+
 def test_parametric():
     assert r'3t}{2}' in _res('parametric_diff', expression='t**2\nt**3', variable='t')
 

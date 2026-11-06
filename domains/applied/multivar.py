@@ -213,6 +213,8 @@ def directional_derivative(data):
     dir_vec = Matrix([sympify(d) for d in dir_comps])
     grad = Matrix([derivative_value(f_str, s) for s in syms])
     norm = simplify(sqrt(sum(c ** 2 for c in dir_vec)))
+    if norm == 0:
+        return False, '方向向量不能是零向量'
     unit = dir_vec / norm
     result = simplify((grad.T * unit)[0])
     items = [(f, note("f"))]
