@@ -3,7 +3,6 @@ from typing import List
 from sympy import Matrix, latex
 
 from core import CommonMatrixCalculator
-from utils.cache_utils import cached_sympify
 
 
 # from sympy import symbols
@@ -62,7 +61,7 @@ class LinearTransform(CommonMatrixCalculator):
             ValueError: If the transformation input cannot be parsed
         """
         try:
-            return Matrix(cached_sympify(transformation_input))
+            return CommonMatrixCalculator.parse_matrix_input(transformation_input)
         except Exception as e:
             raise ValueError(
                 f"无法解析线性变换输入: {transformation_input}") from e

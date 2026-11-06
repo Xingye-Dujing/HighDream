@@ -16,7 +16,10 @@ import pytest
 from domains import MatrixAnalyzer
 from domains.matrix.det_calculator_1 import DeterminantCalculator
 from domains.matrix.det_calculator_2 import DetCalculator
+from domains.matrix.linear_dependence import LinearDependence
+from domains.matrix.linear_transform import LinearTransform
 from domains.matrix.rank import Rank
+from domains.matrix.ref_calculator import RefCalculator
 from routes.compute_service import start_compute
 from utils.elementary_expression import can_use_weierstrass
 
@@ -78,6 +81,16 @@ def test_determinant_calculators_reject_non_finite_entries():
             calculator().compute_latex('[[oo,1],[1,1]]')
         with pytest.raises(ValueError):
             calculator().compute_latex('[[nan,1],[1,1]]')
+
+
+def test_matrix_calculators_reject_non_finite_entries():
+    with pytest.raises(ValueError):
+        RefCalculator().compute_latex('[[oo,1],[1,1]]', 'rref')
+    with pytest.raises(ValueError):
+        LinearDependence().auto_check_dependence('[[nan,1],[1,1]]')
+    with pytest.raises(ValueError):
+        LinearTransform().find_linear_transform_matrix(
+            '[[oo,1],[1,1]]', '[[1,0],[0,1]]')
 
 
 def test_matrix_analyzer_rejects_non_finite_and_empty_matrices():

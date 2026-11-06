@@ -62,6 +62,7 @@ class LinearDependence(CommonMatrixCalculator):
                             matrix[j, i] = vec[j]
             else:
                 matrix = vectors_input
+            self._reject_non_finite(matrix)
             return matrix
         except Exception as e:
             raise ValueError(

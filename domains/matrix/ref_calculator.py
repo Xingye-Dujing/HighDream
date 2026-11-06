@@ -4,7 +4,7 @@ from sympy import Eq, Expr, Matrix, Ne, latex, simplify
 from sympy.core.relational import Relational
 
 import config
-from utils.cache_utils import cached_sympify
+from core import CommonMatrixCalculator
 
 from domains.matrix import (
     BranchManager, BranchNode, RefStepGenerator, apply_elimination_rule,
@@ -52,7 +52,7 @@ class RefCalculator:
             ValueError: If the matrix cannot be parsed from the input string.
         """
         try:
-            return Matrix(cached_sympify(matrix_input))
+            return CommonMatrixCalculator.parse_matrix_input(matrix_input)
         except Exception as e:
             raise ValueError("无法解析矩阵输入. 请使用有效的矩阵格式 '[[1, 2], [3, 4]]'") from e
 
