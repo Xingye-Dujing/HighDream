@@ -90,6 +90,20 @@ def handle_poly(num: Expr, den: Expr, var: Expr) -> tuple[Expr | None, str | Non
         expr_copy = part1 + part2
         return expr_copy, rf"(分母为不可约二次) $构造等式(分子 = \alpha \cdot 分母导数 + \beta)进行裂项$", False
 
+    # 3. Constant numerator over a higher-degree polynomial denominator, e.g.
+    # 1/(x**2+2x+5)**2 or 1/(x**4+1). The rule-by-rule path (parts reduction /
+    # substitution / Weierstrass) can spend minutes on these before giving up,
+    # while SymPy has a closed form instantly. Only return a completed
+    # antiderivative: an unevaluated Integral would just restart the BFS.
+    if num.is_constant():
+        try:
+            if den.is_polynomial(var) and degree(den) >= 3:
+                closed = integrate(expr_copy, var)
+                if closed is not None and not closed.has(Integral):
+                    return closed, "(常分子有理分式)使用有理函数积分公式", True
+        except Exception:  # pylint: disable=broad-exception-caught
+            pass
+
     # Cases like 1/(x**2+1)**2 that have already been reduced to the simplest form will reach here.
     return None, None, False
 
