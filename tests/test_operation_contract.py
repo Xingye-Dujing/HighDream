@@ -352,3 +352,19 @@ def test_square_only_operation_rejects_non_square(op):
     ok, result = start_compute(op, {'operation_type': op, **payload})
     assert not ok, (op, result)
     assert '方阵' in result
+
+
+def test_linear_system_rejects_nonlinear_equations():
+    """A nonlinear equation must not be silently turned into a linear system.
+
+    x**2 + y = 2 used to be accepted (the x**2 remainder was swept into b), and
+    x*y = 2 was treated as linear with coefficient y.
+    """
+    for expr in ('x^2+y=2\nx-y=0', 'x*y=2\nx-y=0', 'sin(x)+y=2\nx-y=0'):
+        ok, result = start_compute('linear-system', {
+            'operation_type': 'linear-system', 'expression': expr})
+        assert not ok, (expr, result)
+        assert '线性' in result, (expr, result)
+    ok, result = start_compute('linear-system', {
+        'operation_type': 'linear-system', 'expression': 'x+y=2\nx-y=0'})
+    assert ok, result

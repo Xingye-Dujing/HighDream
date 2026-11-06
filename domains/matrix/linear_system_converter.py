@@ -36,7 +36,10 @@ class LinearSystemConverter(CommonMatrixCalculator):
         for i, expr in enumerate(expressions):
             left, sep, right = expr.partition('=')
             if not sep:
-                raise ValueError(f"Equation format error in line {i + 1}")
+                raise ValueError(
+                    f'第 {i + 1} 行缺少等号，请写成 x+y=2 这样的方程形式')
+            if not left.strip() or not right.strip():
+                raise ValueError(f'第 {i + 1} 行等号两侧都必须有表达式')
             # partition() on the first '=' keeps a stray comparison operator from
             # silently becoming a wrong equation (x = y = 3 now errors at parse time).
             left_obj = cached_sympify(left.strip())
@@ -110,9 +113,27 @@ class LinearSystemConverter(CommonMatrixCalculator):
             for j, unknown in enumerate(unknowns):
                 # Extract coefficient of unknown (may contain parameters)
                 coeff = eq.coeff(unknown)
+                # A coefficient that still contains an unknown means the term is
+                # nonlinear (x*y, x**2 via coeff extraction, ...), not a valid
+                # linear coefficient.
+                if coeff.has(*unknowns):
+                    raise ValueError(
+                        f'第 {i + 1} 个方程不是线性方程'
+                        f'（{unknown} 的系数仍含未知数），请仅输入线性方程组')
                 A[i, j] = coeff
                 # Subtract this term from equation
                 eq = eq - coeff * unknown
+
+            # Anything still containing an unknown is a nonlinear term (x**2,
+            # x*y, sin(x), ...). It must NOT be swept into b as if it were a
+            # constant: that silently turned x**2 + y = 2 into a bogus linear
+            # system. Only parameters/constants may remain here.
+            residual_unknowns = [u for u in unknowns if eq.has(u)]
+            if residual_unknowns:
+                names = ', '.join(str(u) for u in residual_unknowns)
+                raise ValueError(
+                    f'第 {i + 1} 个方程不是关于 {names} 的线性方程'
+                    '（含平方、乘积或函数等非线性项），请仅输入线性方程组')
 
             # The Remaining part (with parameters and constants) goes to b with sign change.
             b[i, 0] = -eq
