@@ -4,7 +4,6 @@ from sympy import Expr, Matrix, latex, simplify
 
 from core import CommonMatrixCalculator
 from domains.matrix import RefStepGenerator
-from utils.cache_utils import cached_sympify
 
 
 class DeterminantCalculator:
@@ -30,7 +29,8 @@ class DeterminantCalculator:
     def _parse_matrix_input(matrix_input: str) -> Matrix:
         """Parse the input string into a SymPy Matrix."""
         try:
-            M = Matrix(cached_sympify(matrix_input))
+            # Shared parser: rejects ∞/NaN entries as well as unparseable text.
+            M = CommonMatrixCalculator.parse_matrix_input(matrix_input)
             if M.shape[0] != M.shape[1]:  # The Matrix must be square
                 raise ValueError("矩阵必须为方阵")
             return M

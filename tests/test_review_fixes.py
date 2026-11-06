@@ -11,7 +11,11 @@ Each test pins down the behaviour that used to be wrong or to crash:
 
 from sympy import Symbol, sqrt, sin, Matrix
 
+import pytest
+
 from domains import MatrixAnalyzer
+from domains.matrix.det_calculator_1 import DeterminantCalculator
+from domains.matrix.det_calculator_2 import DetCalculator
 from domains.matrix.rank import Rank
 from routes.compute_service import start_compute
 from utils.elementary_expression import can_use_weierstrass
@@ -66,6 +70,14 @@ def test_diff_order_is_clamped():
     # server-side to HARD_MAX_DIFF_ORDER and must return promptly.
     ok, _ = start_compute('diff', {'operation_type': 'diff', 'expression': 'x**3', 'variable': 'x', 'order': '1000000000'})
     assert ok
+
+
+def test_determinant_calculators_reject_non_finite_entries():
+    for calculator in (DeterminantCalculator, DetCalculator):
+        with pytest.raises(ValueError):
+            calculator().compute_latex('[[oo,1],[1,1]]')
+        with pytest.raises(ValueError):
+            calculator().compute_latex('[[nan,1],[1,1]]')
 
 
 def test_matrix_analyzer_rejects_non_finite_and_empty_matrices():

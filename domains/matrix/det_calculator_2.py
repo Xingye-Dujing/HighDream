@@ -3,10 +3,9 @@ from typing import Deque, Dict, List, Tuple
 
 from sympy import Basic, Determinant, Expr, Matrix, Symbol, latex, simplify
 
-from core import BaseCalculator
+from core import BaseCalculator, CommonMatrixCalculator
 from domains.matrix import DetStepGenerator, MATCHER_LIST, RULE_DICT
 from utils import Context, Operation
-from utils.cache_utils import cached_sympify
 
 
 class DetCalculator(BaseCalculator):
@@ -104,7 +103,7 @@ class DetCalculator(BaseCalculator):
 
     def _sympify(self, matrix_expr: str) -> Matrix:
         """Convert the input expression to a SymPy matrix."""
-        return Matrix(cached_sympify(matrix_expr))
+        return CommonMatrixCalculator.parse_matrix_input(matrix_expr)
 
     def _perform_operation(self, matrix: Expr | Matrix, _operation: Operation, **_context: Context) -> Operation:
         return Determinant(matrix)
