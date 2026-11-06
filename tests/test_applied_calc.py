@@ -173,6 +173,17 @@ def test_ode_linear_integrating_factor():
     assert '积分因子' in body and '$' not in body
 
 
+def test_ode_dsolve_list_with_initial_condition():
+    """dsolve returns a list for multi-branch ODEs; an IC must not crash it.
+
+    Regression: y'**2 - 1 = 0 with y(0)=1 raised
+    "'list' object has no attribute 'rhs'" instead of showing both branches.
+    """
+    body = _res('ode', expression='Derivative(f(x), x)**2 - 1', variable='x',
+                point='0', upper='1')
+    assert '1-x' in body and 'x+1' in body, body
+
+
 def test_ode_exact():
     # (2xy) + (x^2+1) y' = 0 exact -> (x^2+1) y = C
     body = _res('ode', expression='2*x*f(x)+(x**2+1)*Derivative(f(x),x)', variable='x')

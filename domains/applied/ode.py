@@ -68,21 +68,33 @@ def solve_ode(data):
 
     # Fallback: not a supported first-order rule form.
     try:
-        sol = dsolve(eq, f)
+        raw_sols = dsolve(eq, f)
     except Exception as exc:  # pylint: disable=broad-exception-caught
         return False, f'ODE 无法求解: {exc}'
 
+    # dsolve returns a LIST for equations with several branches (e.g.
+    # y'**2 - 1 = 0). Treating it as a single Eq crashed on ``sol.rhs`` whenever
+    # an initial condition was supplied.
+    solutions = raw_sols if isinstance(raw_sols, list) else [raw_sols]
     items = [(eq, note("微分方程"))]
     x0 = to_num(data.get('point'))
     y0 = to_num(data.get('upper'))
     c1 = Symbol('C1')
-    if x0 is not None and y0 is not None and c1 in sol.rhs.free_symbols:
-        try:
-            const_sol = solve(Eq(sol.rhs.subs(x, x0), y0), c1)
-            if const_sol:
-                sol = simplify(sol.subs(c1, const_sol[0]))
-                items.append((Eq(f.subs(x, x0), y0), note("代入初始条件求常数")))
-        except Exception:  # pylint: disable=broad-exception-caught
-            pass
-    items.append((sol, note("非一阶可分离/线性型, 由 dsolve 给出结果(展示用)")))
+    fitted = False
+    resolved = []
+    for sol in solutions:
+        if (x0 is not None and y0 is not None and isinstance(sol, Eq)
+                and c1 in sol.rhs.free_symbols):
+            try:
+                const_sol = solve(Eq(sol.rhs.subs(x, x0), y0), c1)
+                if const_sol:
+                    sol = simplify(sol.subs(c1, const_sol[0]))
+                    fitted = True
+            except Exception:  # pylint: disable=broad-exception-caught
+                pass
+        resolved.append(sol)
+    if fitted:
+        items.append((Eq(f.subs(x, x0), y0), note("代入初始条件求常数")))
+    for sol in resolved:
+        items.append((sol, note("非一阶可分离/线性型, 由 dsolve 给出结果(展示用)")))
     return True, align(items)
