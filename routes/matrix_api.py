@@ -28,7 +28,9 @@ def matrix_analyze():
     try:
         expr = latex_to_nested(expr)
         return jsonify(MatrixAnalyzer().analyze(expr))
-    except (ValueError, TypeError) as exc:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        # Any SymPy failure inside analyze() must become a JSON error, not an
+        # HTML 500 that breaks the client's res.json() call.
         return jsonify({'success': False, 'error': str(exc)})
 
 
