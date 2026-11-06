@@ -622,6 +622,12 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
 
         if not str(expression or '').strip():
             return False, '请输入表达式'
+        # A blank variable name (e.g. the user cleared the selector) must be
+        # rejected rather than silently producing Symbol('') which never matches
+        # the integration/differentiation/limit variable and yields wrong answers.
+        if operation_type in ('diff', 'integral', 'limit'):
+            if not str(variable or '').strip():
+                return False, '请选择求导/积分/极限变量'
 
         # The symbolic-matrix palette key wraps the expression as msimplify(...);
         # the operation selector already says "symbolic matrix", so unwrap it.
