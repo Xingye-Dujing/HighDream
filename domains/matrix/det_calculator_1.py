@@ -2,6 +2,7 @@ from typing import List, Tuple
 
 from sympy import Expr, Matrix, latex, simplify
 
+from core import CommonMatrixCalculator
 from domains.matrix import RefStepGenerator
 from utils.cache_utils import cached_sympify
 
@@ -343,11 +344,11 @@ class DeterminantCalculator:
                     pass
 
         # Identity / diagonal / triangular
-        is_diag = all((i == j) or (A[i, j] == 0)
+        is_diag = all((i == j) or CommonMatrixCalculator.is_symbolically_zero(A[i, j])
                       for i in range(n) for j in range(n))
-        is_upper = all((i <= j) or (A[i, j] == 0)
+        is_upper = all((i <= j) or CommonMatrixCalculator.is_symbolically_zero(A[i, j])
                        for i in range(n) for j in range(n))
-        is_lower = all((i >= j) or (A[i, j] == 0)
+        is_lower = all((i >= j) or CommonMatrixCalculator.is_symbolically_zero(A[i, j])
                        for i in range(n) for j in range(n))
         if is_diag or is_upper or is_lower:
             val = simplify(A.det())
@@ -370,10 +371,11 @@ class DeterminantCalculator:
 
         for pivot_row in range(rows):
             pivot_elem = M[pivot_row, pivot_row]
-            if pivot_elem == 0:
+            if CommonMatrixCalculator.is_symbolically_zero(pivot_elem):
                 found = False
                 for swap_row in range(pivot_row + 1, rows):
-                    if M[swap_row, pivot_row] != 0:
+                    if not CommonMatrixCalculator.is_symbolically_zero(
+                            M[swap_row, pivot_row]):
                         M.row_swap(pivot_row, swap_row)
                         self.step_generator.add_step("", "")
                         self.step_generator.add_step(
