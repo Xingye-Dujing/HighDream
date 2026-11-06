@@ -134,8 +134,10 @@ class LinearTransform(CommonMatrixCalculator):
             return A
 
         except Exception as e:
-            self.step_generator.add_step(f"\\text{{计算失败: {str(e)}}}")
-            return None
+            # Returning None here left the API reporting success with an
+            # embedded "计算失败" note; surface it as a real failure instead.
+            raise ValueError(
+                f'线性变换矩阵求解失败（基矩阵不可逆或维度不匹配）: {e}') from e
 
     def change_transform_basis(self, transform_matrix: str, from_basis_input: str, to_basis_input: str,
                                show_steps: bool = True) -> Matrix | None:
@@ -197,8 +199,8 @@ class LinearTransform(CommonMatrixCalculator):
             return A_prime
 
         except Exception as e:
-            self.step_generator.add_step(f"\\text{{计算失败: {str(e)}}}")
-            return None
+            raise ValueError(
+                f'线性变换的基变换失败（基矩阵不可逆或维度不匹配）: {e}') from e
 
     def compute(self, expression: str, operation: str) -> str:
         """Process computational requests based on the expression and operation type.

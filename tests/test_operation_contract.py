@@ -354,6 +354,19 @@ def test_square_only_operation_rejects_non_square(op):
     assert '方阵' in result
 
 
+def test_linear_transform_failure_is_not_reported_as_success():
+    """A singular basis must fail the request, not embed "计算失败" in a success."""
+    for payload in (
+        {'expression': '[[1,0],[0,1]]\n[[1,1],[1,1]]', 'type': 'find_matrix'},
+        {'expression': '[[1,0],[0,1]]\n[[1,0],[0,1]]\n[[1,1],[1,1]]',
+         'type': 'change_basis'},
+    ):
+        ok, result = start_compute('transform-2', {
+            'operation_type': 'transform-2', **payload})
+        assert not ok, (payload, result)
+        assert '失败' in result or '不可逆' in result, result
+
+
 def test_linear_system_rejects_nonlinear_equations():
     """A nonlinear equation must not be silently turned into a linear system.
 
