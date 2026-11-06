@@ -1,6 +1,6 @@
 from abc import ABC
 
-from sympy import Matrix, latex, simplify
+from sympy import Matrix, S, latex, simplify
 
 from core.matrix_step_generator import MatrixStepGenerator
 from core.base_step_generator import format_note
@@ -70,17 +70,30 @@ class CommonMatrixCalculator(ABC):
         return self.step_generator.get_steps_latex()
 
     @staticmethod
+    def _reject_non_finite(matrix: Matrix) -> None:
+        """Reject matrices containing ∞/NaN/zoo before any operation.
+
+        Such entries made inversion/LU/QR report success while their own steps
+        said "验证失败"/"分解错误"; none of the operations is meaningful for them.
+        """
+        bad = (S.NaN, S.Infinity, S.NegativeInfinity, S.ComplexInfinity)
+        if any(entry.has(*bad) for entry in matrix):
+            raise ValueError('矩阵包含无穷大或未定义值（∞ / NaN），无法进行矩阵运算')
+
+    @staticmethod
     def parse_matrix_input(matrix_input: str | Matrix) -> Matrix:
         """Parse matrix input string into a SymPy Matrix."""
         try:
             if isinstance(matrix_input, Matrix):
-                return matrix_input
-            parsed = cached_sympify(matrix_input)
-            if isinstance(parsed, dict):
-                raise ValueError('矩阵不能是字典/空集合')
-            matrix = Matrix(parsed)
+                matrix = matrix_input
+            else:
+                parsed = cached_sympify(matrix_input)
+                if isinstance(parsed, dict):
+                    raise ValueError('矩阵不能是字典/空集合')
+                matrix = Matrix(parsed)
             if matrix.rows == 0 or matrix.cols == 0:
                 raise ValueError('矩阵不能为空')
+            CommonMatrixCalculator._reject_non_finite(matrix)
             return matrix
         except Exception as e:
             raise ValueError(
@@ -90,11 +103,11 @@ class CommonMatrixCalculator(ABC):
         """Parse vector input string into a SymPy Matrix (column vector)."""
         try:
             if isinstance(vector_input, Matrix):
-                return vector_input
-            if isinstance(vector_input, dict):
+                vector = vector_input
+            elif isinstance(vector_input, dict):
                 raise ValueError('向量不能是字典/空集合')
             # Handle column vector format, e.g. '[[1],[2],[3]]'
-            if vector_input.startswith('[[') and vector_input.endswith(']]'):
+            elif vector_input.startswith('[[') and vector_input.endswith(']]'):
                 vector = Matrix(cached_sympify(vector_input))
             # Handle row vector format, e.g. '[1,2,3]'
             else:
@@ -107,6 +120,7 @@ class CommonMatrixCalculator(ABC):
                 vector = Matrix(elements)
             if vector.rows == 0 or vector.cols == 0:
                 raise ValueError('向量不能为空')
+            self._reject_non_finite(vector)
             return vector
         except Exception as e:
             raise ValueError(
