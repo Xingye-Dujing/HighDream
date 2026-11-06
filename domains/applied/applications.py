@@ -80,9 +80,20 @@ def newton(data):
     iters = to_count(data.get('order') or data.get('expr-depth'), 4)
     items = [(f, note("f(x)"))] + derivative_steps(f_str, x)
     items.append((Eq(Symbol('x_0'), x0), note("初值")))
+    # Compute the derivative once (it used to be re-derived through the whole
+    # rule engine on every iteration). Evaluate numerically when no parameters
+    # are present: exact rationals double their digit count per step, so a
+    # 200-step request would build an astronomically large fraction.
+    fp = derivative_value(f_str, x, 1)
+    numeric = (f.free_symbols | fp.free_symbols) <= {x}
     cur = x0
     for k in range(1, iters + 1):
-        nxt = simplify(cur - f.subs(x, cur) / derivative_value(f_str, x, 1).subs(x, cur))
+        den = fp.subs(x, cur)
+        if den == 0:
+            items.append((None, note(f'第 {k} 步导数为 0, 迭代终止')))
+            break
+        nxt = cur - f.subs(x, cur) / den
+        nxt = nxt.evalf(12) if numeric else simplify(nxt)
         items.append((Eq(Symbol(f'x_{k}'), nxt), note("牛顿迭代 x_{k}=x_{k-1}-f/f'")))
         cur = nxt
     return True, align(items)
@@ -120,13 +131,17 @@ def secant(data):
     x_prev = to_num(data.get('point'), 0)
     x_cur = to_num(data.get('x1'), 1)
     iters = to_count(data.get('order') or data.get('steps'), 6)
+    # Numeric evaluation keeps exact rationals from doubling digit counts each
+    # step (a long request would otherwise build an unrenderable fraction).
+    numeric = f.free_symbols <= {x}
     items = [(f, note('f(x)')), (None, note(f'初值 x_0={N(x_prev,6)}, x_1={N(x_cur,6)}'))]
     for k in range(1, iters + 1):
-        f_prev, f_cur = _as_float(f.subs(x, x_prev)), _as_float(f.subs(x, x_cur))
+        f_prev_val, f_cur_val = f.subs(x, x_prev), f.subs(x, x_cur)
+        f_prev, f_cur = _as_float(f_prev_val), _as_float(f_cur_val)
         if f_prev is None or f_cur is None or abs(f_cur - f_prev) < 1e-15:
             break
-        x_new = simplify(x_cur - f.subs(x, x_cur) * (x_cur - x_prev)
-                         / (f.subs(x, x_cur) - f.subs(x, x_prev)))
+        x_new = x_cur - f_cur_val * (x_cur - x_prev) / (f_cur_val - f_prev_val)
+        x_new = x_new.evalf(12) if numeric else simplify(x_new)
         items.append((Eq(Symbol(f'x_{k}'), N(x_new, 6)),
                       note('割线法 x_k = x_{k-1} - f(x_{k-1})(x_{k-1}-x_{k-2})/(f(x_{k-1})-f(x_{k-2}))')))
         x_prev, x_cur = x_cur, x_new
@@ -139,9 +154,23 @@ def fixed_point(data):
     g = sympify(expr_text(data))
     cur = to_num(data.get('point'), 0)
     iters = to_count(data.get('order') or data.get('steps'), 8)
+    # Evaluate each step numerically when the iteration function is numeric:
+    # keeping exact cos(cos(...)) nesting grows the expression exponentially and
+    # makes simplify() hang for a single user request. With free parameters the
+    # nesting cannot be collapsed, so cap the depth instead.
+    numeric = g.free_symbols <= {x}
+    limit_iters = iters if numeric else min(iters, 12)
     items = [(g, note('迭代函数 g(x)')), (Eq(Symbol('x_0'), cur), note('初值'))]
-    for k in range(1, iters + 1):
-        cur = simplify(g.subs(x, cur))
+    for k in range(1, limit_iters + 1):
+        nxt = g.subs(x, cur)
+        if numeric:
+            try:
+                nxt = nxt.evalf(12)
+            except Exception:  # pylint: disable=broad-exception-caught
+                nxt = simplify(nxt)
+        else:
+            nxt = simplify(nxt)
+        cur = nxt
         items.append((Eq(Symbol(f'x_{k}'), N(cur, 6)), note('不动点迭代 x_k = g(x_{k-1})')))
     items.append((N(cur, 6), note('不动点近似')))
     return True, align(items)
@@ -153,12 +182,12 @@ def mean_value(data):
     f = sympify(f_str)
     a = to_num(data.get('lower'), 0)
     b = to_num(data.get('upper'), 1)
-    secant = simplify((f.subs(x, b) - f.subs(x, a)) / (b - a))
-    data['_auto_value'] = secant
+    secant_slope = simplify((f.subs(x, b) - f.subs(x, a)) / (b - a))
+    data['_auto_value'] = secant_slope
     items = [(f, note("f(x)"))] + derivative_steps(f_str, x)
-    items.append((Eq(Symbol('k'), secant), note("割线斜率 (f(b)-f(a))/(b-a)")))
+    items.append((Eq(Symbol('k'), secant_slope), note("割线斜率 (f(b)-f(a))/(b-a)")))
     try:
-        cands = solve(Eq(derivative_value(f_str, x, 1), secant), x)
+        cands = solve(Eq(derivative_value(f_str, x, 1), secant_slope), x)
     except Exception:  # pylint: disable=broad-exception-caught
         cands = []
     if not cands:

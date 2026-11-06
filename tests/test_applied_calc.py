@@ -1,5 +1,8 @@
 """Regression tests for the applied-calculus / series / ODE / numerical ops."""
 
+import re
+import time
+
 from routes.compute_service import start_compute
 
 
@@ -13,6 +16,34 @@ def test_tangent_line():
     assert r'2x-1' in _res('tangent', expression='x**2', variable='x', point='1')
 
 
+def test_iterative_methods_are_numeric_and_bounded():
+    """Newton/secant/fixed-point must not keep exact rationals/nested trig.
+
+    Regression: ``fixed_point(cos(x), 30)`` built ``cos(cos(...))`` recursively
+    and ``newton`` re-derived f' through the whole rule engine each step; both
+    hung a worker for ordinary inputs.
+    """
+    cases = [
+        ('newton', {'expression': 'x^2-2', 'variable': 'x', 'point': '1', 'order': '200'}),
+        ('secant', {'expression': 'x^2-2', 'variable': 'x', 'point': '1',
+                    'x1': '2', 'order': '200'}),
+        ('fixed_point', {'expression': 'cos(x)', 'variable': 'x',
+                         'point': '1', 'order': '200'}),
+    ]
+    for op, kw in cases:
+        started = time.time()
+        ok, res = start_compute(op, {'operation_type': op, **kw})
+        assert ok, (op, res)
+        assert time.time() - started < 30, op
+        numbers = re.findall(r'\d+\.\d+', str(res))
+        assert numbers, (op, res)
+
+    ok, res = start_compute('newton', {
+        'operation_type': 'newton', 'expression': 'x^2-2',
+        'variable': 'x', 'point': '1', 'order': '6'})
+    assert '1.41421' in str(res), res
+
+
 def test_upper_case_sympy_tuple_specs_are_flattened():
     """Derivative/Sum/Product/Integral with a SymPy ``(var, ...)`` spec argument.
 
@@ -20,8 +51,6 @@ def test_upper_case_sympy_tuple_specs_are_flattened():
     name and silently returned 0; ``Sum(n, (n, 1, 10))`` fell into convergence
     analysis instead of evaluating 55.
     """
-    from routes.compute_service import start_compute
-
     cases = [
         ('Derivative(x**3, (x, 2))', '6 x'),
         ('Sum(n, (n, 1, 10))', '55'),
@@ -36,8 +65,6 @@ def test_upper_case_sympy_tuple_specs_are_flattened():
 
 def test_absurd_derivative_order_is_rejected():
     """A ~10^10-order derivative must be rejected quickly, not exhaust memory."""
-    from routes.compute_service import start_compute
-
     ok, res = start_compute('ode', {
         'operation_type': 'ode',
         'expression': 'Derivative(f(x), (x, 9999999999)) + f(x)',
