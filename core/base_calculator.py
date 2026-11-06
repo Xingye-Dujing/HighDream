@@ -315,6 +315,16 @@ class BaseCalculator(ABC):
                         context['variable'] = list(self.step_generator.subs_dict.keys())[-1]
                     else:
                         context['variable'] = Symbol("x")
+            else:
+                # Partial integration keeps the requested variable (other free
+                # symbols are constants), BUT a u-substitution inside it introduces
+                # a dummy that must be integrated over. Without this, ∫(x+y+z)dx
+                # became ∫u du displayed then evaluated as ∫u dx = u·x, and the
+                # iterated/triple integral returned a wrong value.
+                op_vars = getattr(current_operation, 'variables', None) \
+                    if current_operation is not None else None
+                if op_vars and op_vars[0] in self.step_generator.subs_dict:
+                    context['variable'] = op_vars[0]
 
             new_expr, explanation, expr_to_operation = self._update_expression(
                 current_expr, operation, expr_to_operation, direct_compute,

@@ -348,6 +348,18 @@ def test_auto_matrix_svd_and_symbolic():
     assert '$' not in sym and len(sym) > 20
 
 
+def test_triple_integral_uses_the_substituted_variable():
+    """∫₀¹∫₀¹∫₀¹ (x+y+z) dx dy dz = 3/2.
+
+    Regression: inside a partial integral the u-substitution dummy kept the
+    outer working variable, so ∫u du was evaluated as ∫u dx = u·x and the triple
+    integral returned 5/2.
+    """
+    body = _res('triple_integral', expression='x+y+z', variable='x',
+                variable2='y', variable3='z', lower='0', upper='1')
+    assert r'\frac{3}{2}' in body, body
+
+
 def test_iterated_integral_rectangular():
     # int_0^2 int_0^1 x*y dx dy = 1, inner result F(y)=y/2
     body = _res('iterated_integral', expression='x*y', variable='x', variable2='y',
