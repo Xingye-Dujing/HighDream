@@ -1,7 +1,8 @@
 from collections import Counter
 from typing import Dict, List, Tuple
 
-from sympy import Expr, I, Matrix, Symbol, eye, factor, latex, simplify, solve, symbols, zeros
+from sympy import (Expr, I, Matrix, Poly, Symbol, eye, factor, latex, roots, simplify,
+                   solve, symbols, zeros)
 
 from core import CommonMatrixCalculator
 
@@ -262,18 +263,27 @@ class EigenSolver(CommonMatrixCalculator):
 
         eigenvalues = solve(char_poly_simplified, lambda_sym, dict=False)
 
-        # Handle complex eigenvalues
-        complex_eigenvalues = any(eig.has(I) for eig in eigenvalues)
-        if complex_eigenvalues and show_steps:
-            self.step_generator.add_step(r"\text{注意: 存在复数特征值}")
-
-        # Handle repeated roots
-        eigenvalue_counts = Counter(eigenvalues)
+        # ``solve`` returns each distinct root once, so repeated eigenvalues lost
+        # their algebraic multiplicity (identity: λ=1 shown as multiplicity 1,
+        # geometric multiplicity 2 -> wrongly "not diagonalizable"). Recover the
+        # multiplicities from the characteristic polynomial.
+        try:
+            root_multiplicities = roots(Poly(char_poly_simplified, lambda_sym))
+        except Exception:  # pylint: disable=broad-exception-caught
+            root_multiplicities = {}
+        if root_multiplicities and sum(root_multiplicities.values()) == n:
+            eigenvalues = [root for root, mult in root_multiplicities.items()
+                           for _ in range(int(mult))]
+            eigenvalue_counts = Counter(eigenvalues)
+        else:
+            eigenvalue_counts = Counter(eigenvalues)
 
         if show_steps:
             part = rf',\;'.join(
                 [f'\\lambda_{{{i + 1}}} = {latex(eig)}' for i, eig in enumerate(eigenvalues)])
             self.step_generator.add_step(f"\\text{{特征值: }} {part}")
+            if any(eig.has(I) for eig in eigenvalues):
+                self.step_generator.add_step(r"\text{注意: 存在复数特征值}")
 
             # Show algebraic multiplicity
             for eig, count in eigenvalue_counts.items():
@@ -288,7 +298,7 @@ class EigenSolver(CommonMatrixCalculator):
         eigenvectors = {}
         geometric_multiplicities = {}
 
-        for eigenvalue in set(eigenvalues):
+        for eigenvalue in dict.fromkeys(eigenvalues):
             if show_steps:
                 self.step_generator.add_step(
                     f"\\textbf{{求解特征值 }} \\lambda = {latex(eigenvalue)} \\textbf{{ 的特征向量}}")
@@ -345,7 +355,9 @@ class EigenSolver(CommonMatrixCalculator):
 
         self.step_generator.add_step(r"\textbf{特征值总结:}")
         is_diagonalizable = True
-        for i, eigenvalue in enumerate(set(eigenvalues)):
+        # Preserve the eigenvalue order shown earlier (set() used to reorder it,
+        # so λ1 in the summary could be λ2 from the list above).
+        for i, eigenvalue in enumerate(dict.fromkeys(eigenvalues)):
             algebraic = eigenvalue_counts[eigenvalue]
             geometric = geometric_multiplicities.get(eigenvalue, 0)
             self.step_generator.add_step(

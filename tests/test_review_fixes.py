@@ -65,3 +65,24 @@ def test_diff_order_is_clamped():
     # server-side to HARD_MAX_DIFF_ORDER and must return promptly.
     ok, _ = start_compute('diff', {'operation_type': 'diff', 'expression': 'x**3', 'variable': 'x', 'order': '1000000000'})
     assert ok
+
+
+def test_repeated_eigenvalue_multiplicity_and_diagonalizability():
+    """Identity has λ=1 with algebraic multiplicity 2, not 1.
+
+    ``solve`` returned each distinct root once, so the summary said algebraic 1
+    vs geometric 2 and concluded "not diagonalizable" for the identity matrix.
+    """
+    ok, res = start_compute('eigen', {
+        'operation_type': 'eigen', 'expression': '[[1,0],[0,1]]'})
+    text = str(res).replace(' ', '')
+    assert ok
+    assert '代数重数为}2' in text and '几何重数:}2' in text, text
+    assert '矩阵可对角化' in text and '矩阵不可对角化' not in text, text
+
+    # A genuine Jordan block must still be reported as non-diagonalizable.
+    ok, res = start_compute('eigen', {
+        'operation_type': 'eigen', 'expression': '[[2,1],[0,2]]'})
+    text = str(res).replace(' ', '')
+    assert '代数重数为}2' in text and '几何重数:}1' in text, text
+    assert '矩阵不可对角化' in text, text
