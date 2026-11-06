@@ -11,6 +11,7 @@ Each test pins down the behaviour that used to be wrong or to crash:
 
 from sympy import Symbol, sqrt, sin, Matrix
 
+from domains import MatrixAnalyzer
 from domains.matrix.rank import Rank
 from routes.compute_service import start_compute
 from utils.elementary_expression import can_use_weierstrass
@@ -65,6 +66,16 @@ def test_diff_order_is_clamped():
     # server-side to HARD_MAX_DIFF_ORDER and must return promptly.
     ok, _ = start_compute('diff', {'operation_type': 'diff', 'expression': 'x**3', 'variable': 'x', 'order': '1000000000'})
     assert ok
+
+
+def test_matrix_analyzer_rejects_non_finite_and_empty_matrices():
+    for expr in ('[[oo,1],[1,1]]', '[[nan,1],[1,1]]', '[]'):
+        try:
+            MatrixAnalyzer().analyze(expr)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(expr)
 
 
 def test_repeated_eigenvalue_multiplicity_and_diagonalizability():

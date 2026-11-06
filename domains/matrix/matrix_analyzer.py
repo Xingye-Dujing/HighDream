@@ -5,8 +5,6 @@ from typing import List, Dict
 
 from sympy import Matrix, latex
 
-from utils.cache_utils import cached_sympify
-
 from .ref_calculator import RefCalculator
 
 
@@ -32,7 +30,11 @@ class MatrixAnalyzer:
         """
         try:
             from utils.matrix_latex import latex_to_nested  # pylint: disable=import-outside-toplevel
-            return Matrix(cached_sympify(latex_to_nested(matrix_input)))
+            from core.common_matrix_calculator import CommonMatrixCalculator  # pylint: disable=import-outside-toplevel
+            # Reuse the shared parser so the analysis page also rejects empty
+            # matrices and ∞/NaN entries (instead of reporting a determinant of NaN).
+            return CommonMatrixCalculator.parse_matrix_input(
+                latex_to_nested(matrix_input))
         except Exception as e:
             raise ValueError("无法解析矩阵输入. 请使用有效的矩阵格式 '[[1, 2], [3, 4]]'") from e
 
