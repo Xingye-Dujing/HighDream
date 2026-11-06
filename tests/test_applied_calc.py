@@ -44,6 +44,17 @@ def test_iterative_methods_are_numeric_and_bounded():
     assert '1.41421' in str(res), res
 
 
+def test_taylor_order_is_capped():
+    """A 200-order Taylor expansion used to run the rule engine 200 times."""
+    started = time.time()
+    ok, res = start_compute('taylor', {'operation_type': 'taylor',
+                                       'expression': '1/(1-x)', 'variable': 'x',
+                                       'point': '0', 'order': '200'})
+    assert ok, res
+    assert time.time() - started < 60
+    assert 'x^{' in str(res)
+
+
 def test_heavy_symbolic_matrix_operations_are_rejected_quickly():
     """3x3+ matrices with many independent symbols would make SymPy's
     eigenvects/ref run for minutes; they must be declined up front."""

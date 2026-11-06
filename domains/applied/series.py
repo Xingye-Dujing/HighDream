@@ -17,12 +17,15 @@ from domains.applied._common import (align, derivative_value, expr_text, get_var
                                      to_count, to_num)
 from domains.applied._convergence import convergence_rows
 
+from config import HARD_MAX_TAYLOR_ORDER
+
 
 def taylor(data):
     x = get_var(data)
     f = sympify(expr_text(data))
     x0 = to_num(data.get('point'), 0)
-    order = to_count(data.get('order') or data.get('expr-depth'), 6)
+    order = to_count(data.get('order') or data.get('expr-depth'), 6,
+                     high=HARD_MAX_TAYLOR_ORDER)
     # Build each order's derivative by feeding the previous result back through the
     # rule engine (never a black-box f.diff(x, k)).
     derivs = [f]
@@ -51,7 +54,8 @@ def taylor_error(data):
     x = get_var(data)
     f = sympify(expr_text(data))
     x0 = to_num(data.get('point'), 0)
-    order = to_count(data.get('order') or data.get('expr-depth'), 6)
+    order = to_count(data.get('order') or data.get('expr-depth'), 6,
+                     high=HARD_MAX_TAYLOR_ORDER)
     m = order + 1
     deriv = simplify(derivative_value(expr_text(data), x, m))
     xi = Symbol('xi')

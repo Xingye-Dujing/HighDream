@@ -21,6 +21,10 @@ HARD_MAX_LHOPITAL_COUNT = 50
 # series order, ...). The UI uses small values; without a server-side cap an API
 # client could ask for 10**9 steps and pin a worker thread for minutes.
 HARD_MAX_ITERATIONS = 200
+# Taylor/Maclaurin order is additionally capped: each order re-runs the rule
+# derivative engine, and rational functions grow super-linearly, so 200 orders
+# take minutes. Series taught in the UI use small orders.
+HARD_MAX_TAYLOR_ORDER = 20
 # Integer-exponent literals with at least this many digits (e.g. 2**1000000 ->
 # exponent "1000000" is 7 digits) are parsed with evaluation disabled, so huge
 # integer powers are never materialized -- doing so wastes CPU/memory and trips
