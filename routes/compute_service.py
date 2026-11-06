@@ -220,10 +220,30 @@ def _dispatch_calculus(expression: str):
 _COMPOUND_MAX_STEPS = 64
 
 
+def _expand_tuple_spec(args):
+    """Expand SymPy-style tuple specs into flat positional args.
+
+    ``Derivative(x**3, (x, 2))`` / ``Sum(n, (n, 1, 10))`` / ``Integral(x, (x, 0, 1))``
+    put the variable specification in one tuple argument. The field mapping below
+    expects it flattened; without this the whole ``(x, 2)`` became the variable
+    name, so a second derivative silently came back as 0.
+    """
+    if len(args) < 2:
+        return args
+    spec = str(args[1]).strip()
+    if not (spec.startswith('(') and spec.endswith(')')):
+        return args
+    parts = _split_top_args(spec[1:-1])
+    if not parts:
+        return args
+    return [args[0]] + parts + list(args[2:])
+
+
 def _build_op_data(name, args, user_data=None):
     """Assemble the per-op data payload from a function name + positional args
     (the same assembly the single-operator path uses, factored for reuse)."""
     op, fields = _AUTO_FUNCS[name]
+    args = _expand_tuple_spec(args)
     if name == 'limit' and len(args) == 3:
         # The universal box's \lim / limit(f,x,a) is two-sided; the dedicated
         # limit operation keeps its explicit UI direction (default right).

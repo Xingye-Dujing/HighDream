@@ -13,6 +13,27 @@ def test_tangent_line():
     assert r'2x-1' in _res('tangent', expression='x**2', variable='x', point='1')
 
 
+def test_upper_case_sympy_tuple_specs_are_flattened():
+    """Derivative/Sum/Product/Integral with a SymPy ``(var, ...)`` spec argument.
+
+    Regression: ``Derivative(x**3, (x, 2))`` used the whole tuple as the variable
+    name and silently returned 0; ``Sum(n, (n, 1, 10))`` fell into convergence
+    analysis instead of evaluating 55.
+    """
+    from routes.compute_service import start_compute
+
+    cases = [
+        ('Derivative(x**3, (x, 2))', '6 x'),
+        ('Sum(n, (n, 1, 10))', '55'),
+        ('Product(n, (n, 1, 4))', '24'),
+        ('sum(1/n**2, (n, 1, oo))', r'\pi^{2}'),
+    ]
+    for expr, expected in cases:
+        ok, res = start_compute('auto', {'expression': expr})
+        assert ok, (expr, res)
+        assert expected.replace(' ', '') in str(res).replace(' ', ''), (expr, res)
+
+
 def test_absurd_derivative_order_is_rejected():
     """A ~10^10-order derivative must be rejected quickly, not exhaust memory."""
     from routes.compute_service import start_compute
