@@ -13,6 +13,19 @@ def test_tangent_line():
     assert r'2x-1' in _res('tangent', expression='x**2', variable='x', point='1')
 
 
+def test_absurd_derivative_order_is_rejected():
+    """A ~10^10-order derivative must be rejected quickly, not exhaust memory."""
+    from routes.compute_service import start_compute
+
+    ok, res = start_compute('ode', {
+        'operation_type': 'ode',
+        'expression': 'Derivative(f(x), (x, 9999999999)) + f(x)',
+        'variable': 'x',
+    })
+    assert not ok
+    assert '阶' in str(res)
+
+
 def test_user_iteration_counts_are_clamped():
     """API clients must not be able to request an unbounded loop count."""
     from config import HARD_MAX_ITERATIONS  # pylint: disable=import-outside-toplevel

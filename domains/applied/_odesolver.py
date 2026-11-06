@@ -404,11 +404,31 @@ def _cauchy_euler_rows(alg, x, f):
 
 
 def _max_deriv_order(eq, x, f):
-    """Highest derivative order of ``f`` wrt ``x`` appearing in the equation."""
+    """Highest derivative order of ``f`` wrt ``x`` appearing in the equation.
+
+    Computed straight from ``Derivative`` arguments instead of ``.variables``:
+    sympy materializes a tuple with one entry per differentiation step on demand,
+    so a ten-billion order derivative would exhaust memory just asking its length.
+    """
+    from sympy import Integer, Tuple  # pylint: disable=import-outside-toplevel
+
     best = 0
     for d in _derivs_of(eq):
-        if d.expr == f and d.variables and all(v == x for v in d.variables):
-            best = max(best, d.variables.count(x))
+        if d.expr != f:
+            continue
+        count = 0
+        for spec in d.args[1:]:
+            if isinstance(spec, (tuple, Tuple)):
+                if len(spec) == 2 and spec[0] == x:
+                    count += int(spec[1]) if isinstance(spec[1], Integer) else 10**9
+                elif len(spec) == 1 and spec[0] == x:
+                    count += 1
+            elif spec == x:
+                count += 1
+        if count > best:
+            best = count
+            if best > MAX_ODE_ORDER:
+                return best
     return best
 
 
@@ -565,10 +585,20 @@ def _try(fn, *args):
         return None
 
 
+MAX_ODE_ORDER = 8
+
+
 def solve_ode_rule(eq, x, f):
-    """Dispatch to the applicable rule method (2nd-order, exact, separable, linear)."""
+    """Dispatch to the applicable rule method (2nd-order, exact, separable, linear).
+
+    The order is capped: a ten-digit derivative count would otherwise send
+    ``_higher_order_homogeneous`` into billions of simplify() calls and pin a
+    worker thread for the rest of the process lifetime.
+    """
     try:
         order = _max_deriv_order(eq, x, f)
+        if order > MAX_ODE_ORDER:
+            return None, False
         if order >= 2:
             if order == 2:
                 rows = _try(_second_order_rows, eq, x, f)

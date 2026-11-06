@@ -12,7 +12,7 @@ from sympy import Eq, Expr, Function, Symbol, dsolve, simplify, solve
 from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import align, expr_text, get_var, render_note as note, to_num
-from domains.applied._odesolver import solve_ode_rule
+from domains.applied._odesolver import MAX_ODE_ORDER, _max_deriv_order, solve_ode_rule
 
 
 def _fit_constant(rows, x, x0, y0, f):
@@ -50,6 +50,11 @@ def solve_ode(data):
     if hasattr(expr, 'subs'):
         expr = expr.subs(Symbol('y'), f)
     eq = expr if isinstance(expr, Eq) else Eq(expr, 0)
+    # Reject absurd derivative orders outright: the constant/high-order path would
+    # otherwise iterate billions of simplify() calls and pin a worker thread.
+    order = _max_deriv_order(eq, x, f)
+    if order > MAX_ODE_ORDER:
+        return False, f'微分方程阶数过高（{order} 阶），仅支持 {MAX_ODE_ORDER} 阶及以下，请检查导数阶数'
 
     rows, handled = solve_ode_rule(eq, x, f)
     if handled:
