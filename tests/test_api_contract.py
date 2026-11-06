@@ -313,6 +313,16 @@ def test_manual_rule_selection_api(client, manual_sessions):
     bad = client.post('/api/manual_start', json={'domain': 'nope', 'expression': 'x'}).get_json()
     assert bad['success'] is False
 
+    # Non-scalar input must be rejected with a readable message, not the raw
+    # "unhashable type: 'list'" that leaked from the solver's internal dict keys.
+    for payload in ({'domain': 'diff', 'expression': '[[1,2],[3,4]]'},
+                    {'domain': 'diff', 'expression': ['x']},
+                    {'domain': 'diff', 'expression': 'x', 'variable': ['x']}):
+        rejected = client.post('/api/manual_start', json=payload).get_json()
+        assert rejected['success'] is False, payload
+        assert 'unhashable' not in rejected['error'], rejected
+        assert 'name should be a string' not in rejected['error'], rejected
+
     for domain, expression, extra in [
         ('diff', 'x**2 + sin(x)', {}),
         ('integral', 'x*exp(x**2)', {}),

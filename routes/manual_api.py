@@ -90,6 +90,25 @@ def manual_start():
     variable = data.get('variable', 'x')
     point = data.get('point', '0')
     direction = data.get('direction', '+')
+    if not isinstance(expression, str) or not expression.strip():
+        return jsonify({'success': False, 'error': '请输入要计算的表达式'})
+    if not isinstance(variable, str) or not variable.strip():
+        return jsonify({'success': False, 'error': '变量名必须是字符串'})
+    if not isinstance(domain, str):
+        return jsonify({'success': False, 'error': 'domain 必须是字符串'})
+
+    try:
+        from utils.cache_utils import cached_sympify  # pylint: disable=import-outside-toplevel
+        parsed = cached_sympify(expression)
+        if isinstance(parsed, (list, tuple, dict)):
+            return jsonify({
+                'success': False,
+                'error': '手动分步求解仅支持单个标量表达式; 矩阵请使用矩阵运算页面',
+            })
+    except Exception:  # pylint: disable=broad-exception-caught
+        # Defer malformed expressions to the solver, which produces the detailed
+        # domain-specific error message.
+        pass
 
     try:
         solver = ManualStepSolver(
