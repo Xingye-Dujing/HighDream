@@ -625,7 +625,26 @@ def _dispatch_compute(operation_type: str, data: Dict[str, Any]) -> Tuple[bool, 
         # A blank variable name (e.g. the user cleared the selector) must be
         # rejected rather than silently producing Symbol('') which never matches
         # the integration/differentiation/limit variable and yields wrong answers.
-        if operation_type in ('diff', 'integral', 'limit'):
+        # Covers the core calculus ops plus every applied handler that reads
+        # ``variable`` via ``get_var`` (taylor, ode, newton, arc_length, ...).
+        _VAR_OPS = ('diff', 'integral', 'limit',
+                    'taylor', 'taylor_error', 'series_convergence',
+                    'finite_sum', 'finite_product', 'radius_of_convergence',
+                    'power_series', 'improper_integral',
+                    'ode',
+                    'tangent', 'linearization', 'critical_points', 'newton',
+                    'bisection', 'secant', 'fixed_point', 'mean_value',
+                    'arc_length', 'volume_disk', 'volume_shell', 'surface_area',
+                    'iterated_integral', 'triple_integral', 'cylindrical',
+                    'spherical', 'changeorder',
+                    'implicit_diff', 'parametric_diff', 'polar_area',
+                    'polar_slope', 'gradient', 'hessian', 'jacobian',
+                    'directional', 'curl', 'divergence', 'lagrange',
+                    'line_integral', 'line_integral2', 'surface_integral',
+                    'flux',
+                    'complex_roots',
+                    'numerical_integration', 'euler', 'heun', 'rk4')
+        if operation_type in _VAR_OPS:
             if not str(variable or '').strip():
                 return False, '请选择求导/积分/极限变量'
 
