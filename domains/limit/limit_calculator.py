@@ -10,6 +10,25 @@ from utils.cache_utils import cached_sympify
 from .limit_help_func import detect_feasible_directions
 
 
+def normalize_direction(direction) -> str:
+    """Normalize API/UI spellings of a limit direction to '+', '-' or 'both'.
+
+    The UI sends '+', '-' or 'both', SymPy templates use '+-', and API clients
+    naturally write 'left'/'right'. Anything else used to be passed straight to
+    SymPy as a one-sided direction: 'left' raised a raw English ValueError and
+    '+-' silently produced a wrong ``\\tilde{\\infty}`` instead of the two-sided
+    analysis.
+    """
+    text = str(direction if direction is not None else '+').strip().lower()
+    if text in ('', '+', 'right', 'r', 'positive', 'pos'):
+        return '+'
+    if text in ('-', 'left', 'l', 'negative', 'neg'):
+        return '-'
+    if text in ('both', '+-', '-+', 'pm', 'two-sided', 'two_sided', 'twosided'):
+        return 'both'
+    raise ValueError('极限方向必须是 +、- 或 both（也可写 left/right）')
+
+
 def create_limit_calculator(base_class):
     """Factory function to create limit calculator classes."""
 
@@ -158,6 +177,8 @@ def create_limit_calculator(base_class):
         def _compute(self, expr: str, **context: Context) -> None:
             """Compute the limit in the specified direction after validating its feasibility."""
             var, point, direction = self._context_split(**context)
+            direction = normalize_direction(direction)
+            context['direction'] = direction
             expr, point = cached_sympify(expr), cached_sympify(point)
 
             feasible_directions = detect_feasible_directions(expr, var, point)
@@ -218,9 +239,11 @@ def create_limit_calculator(base_class):
 
         def compute_list(self, expr: str, var: Symbol = Symbol('x'), point: Expr = 0, direction: str = '+') \
                 -> Tuple[List[Expr], List[str]]:
-            return super().compute_list(expr, variable=var, point=point, direction=direction)
+            return super().compute_list(expr, variable=var, point=point,
+                                        direction=normalize_direction(direction))
 
         def compute_latex(self, expr: str, var: Symbol = Symbol('x'), point: Expr = 0, direction: str = '+') -> str:
+            direction = normalize_direction(direction)
             self._compute(expr, variable=var,
                           point=point, direction=direction)
             if direction == 'both':

@@ -38,6 +38,19 @@ def test_third_order_trig_quotient():
     assert simplify(_limit('(sin(x)-x)/x**3', 0) + Rational(1, 6)) == 0
 
 
+def test_direction_spellings_are_normalized():
+    """'left'/'right' and '+-' must map to the documented directions.
+
+    Regression: 'left' raised a raw English ValueError and '+-' was treated as a
+    single direction, so 1/x came back as \\tilde{\\infty} instead of "no limit".
+    """
+    assert _limit('1/x', 0, 'left') == -S.Infinity
+    assert _limit('1/x', 0, 'right') == S.Infinity
+    for spelling in ('both', '+-', 'pm'):
+        steps, _ = LimitCalculator().compute_list('1/x', x, 0, spelling)
+        assert steps[-1] == S.ComplexInfinity, spelling
+
+
 def test_exp_linear_standard_limit_still_works():
     assert simplify(_limit('(exp(2*x)-1)/x', 0) - 2) == 0
 
