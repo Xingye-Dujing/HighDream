@@ -1,3 +1,4 @@
+import concurrent.futures
 import threading
 import time
 import uuid
@@ -10,6 +11,18 @@ from config import (
     MAX_WORKERS, SINGLE_TASK_EXECUTE_TIMEOUT_SECONDS, TASK_CLEAR_AFTER_CREAT_SECONDS
 )
 from .compute_service import start_compute
+
+# Cross-version Future-timeout exception. Python 3.8-3.10 has a distinct
+# concurrent.futures.TimeoutError; 3.11 made it an alias of builtin
+# TimeoutError; 3.12 removed the alias. Catching only the builtin would leave
+# the future unhandled on 3.8-3.10 (task stuck RUNNING forever); referencing
+# the removed alias would NameError on 3.12.
+try:
+    _future_timeout = concurrent.futures.TimeoutError  # py3.8-3.11
+except AttributeError:
+    _future_timeout = TimeoutError  # py3.12+
+_TIMEOUT_ERRORS = (TimeoutError, _future_timeout)
+_TIMEOUT_ERRORS = (TimeoutError,) if _future_timeout is TimeoutError else _TIMEOUT_ERRORS
 
 
 class TaskStatus(Enum):
@@ -167,7 +180,7 @@ class TaskManager:
                     self._set_final_state(task, TaskStatus.COMPLETED, result=result)
                 else:
                     self._set_final_state(task, TaskStatus.FAILED, error=result)
-            except TimeoutError:
+            except _TIMEOUT_ERRORS:
                 self._set_final_state(task, TaskStatus.FAILED, error=(
                     "任务超时, 程序无法求解该题. 若确定其有初等函数解, "
                     "可尝试等价变形表达式后再次运行计算."))
