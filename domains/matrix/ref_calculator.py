@@ -3,6 +3,7 @@ from typing import List, Tuple, Union
 from sympy import Eq, Expr, Matrix, Ne, latex, simplify
 from sympy.core.relational import Relational
 
+import config
 from utils.cache_utils import cached_sympify
 
 from domains.matrix import (
@@ -29,11 +30,13 @@ class RefCalculator:
         # Global record of expressions that might be zero (denominator candidates)
         self.denominators = set()
         self.branch_manager = BranchManager()
+        self.truncated = False
 
     def _reset_process(self) -> None:
         """Reset the calculation process by clearing steps and denominators."""
         self.step_generator.reset()
         self.denominators.clear()
+        self.truncated = False
 
     @staticmethod
     def _parse_matrix_input(matrix_input: str) -> Matrix:
@@ -300,6 +303,12 @@ class RefCalculator:
                     # No splittable expressions -> branch stuck, mark as unsatisfiable
                     branch.reason = "无可分裂的表达式但未完成"
                     continue
+                # Hard cap: case analysis is exponential in the number of
+                # ambiguous pivots and each satisfiability check is NP-hard.
+                if len(queue) + len(finished_leaves) >= config.REF_MAX_BRANCHES:
+                    branch.reason = f"分支数超过上限 {config.REF_MAX_BRANCHES}, 已截断"
+                    self.truncated = True
+                    continue
                 # Split on first available expression
                 den = to_split[0]
                 new_branches = self._split_branch_on_denominator(branch, den)
@@ -332,6 +341,9 @@ class RefCalculator:
         leaves = self._compute_branches(original_matrix, target_form)
 
         self.step_generator.add_step(original_matrix, "初始矩阵")
+        if self.truncated:
+            self.step_generator.add_step(
+                "", f"\\text{{分支数超过上限 {config.REF_MAX_BRANCHES}, 部分情况未展开}}")
 
         # Write each leaf's steps to step_generator (with branch title and conditions)
         for i, leaf in enumerate(leaves):

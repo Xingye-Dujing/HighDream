@@ -48,6 +48,12 @@ METHOD_TREE_TASK_TIMEOUT_SECONDS = METHOD_TREE_HARD_MAX_TIME_SECONDS + 10
 # to 2 hours so the worker thread doesn't live forever if the user walks away.
 METHOD_TREE_INTERACTIVE_TASK_TIMEOUT_SECONDS = 7200
 
+# Maximum REF/RREF symbolic-case branches. Each case-split can double the queue
+# (and every unordered pair is checked with sympy.satisfiable, which is NP-hard);
+# without a hard cap a symbolic matrix with many ambiguous pivots can pin a worker
+# forever. Excess branches are reported as truncated, never silently mixed up.
+REF_MAX_BRANCHES = 128
+
 # Function-plot sampling (SVG curve via /api/plot). The endpoint is synchronous,
 # so the grid is clamped hard to bound CPU/memory; y is rejected beyond PLOT_MAX_ABS_Y
 # (asymptotes become null holes the client breaks the polyline at).
