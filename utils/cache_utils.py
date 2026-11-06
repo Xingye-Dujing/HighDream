@@ -144,16 +144,19 @@ def has_unfilled_placeholders(expr_str: str) -> bool:
 
 
 def _is_latex(expr_str: str) -> bool:
-    """Heuristic: a backslash command or a caret/braced-subscript marks LaTeX input.
+    """Heuristic: a backslash command, braced index, or equation marks LaTeX.
 
-    A bare ``^`` (e.g. MathLive's ``x^2+3x``) is also treated as LaTeX because
-    raw ``sympify`` rejects both ``^`` and implicit multiplication, whereas
-    ``parse_latex`` handles them. ``_`` is deliberately excluded (common in
-    plain identifiers); MathLive subscripts always emit the braced ``_{`` form.
+    Bare ``x^2`` is handled by the plain-text parser: it supports ``^``
+    (convert_xor), implicit multiplication, function names and Greek variable
+    names. Routing it through parse_latex corrupted multi-letter names
+    (``pi*x^2`` became ``i*p*x**2``, ``alpha*x^2`` became ``a**2*h*l*p*x**2``).
+    Equations (``x^2+y^2=1``) still use LaTeX because the plain parser has no
+    ``=`` syntax. MathLive's WYSIWYG output braces its exponents (``x^{2}``) and
+    subscripts (``_{...}``), so it still routes here.
     """
     return bool(_LATEX_COMMAND_RE.search(expr_str)
                 or _LATEX_MARK_RE.search(expr_str)
-                or '^' in expr_str)
+                or '=' in expr_str)
 
 
 # MathLive emits LaTeX that parse_latex mis-handles; normalize it first.
@@ -550,7 +553,32 @@ _SAFE_GLOBALS = _build_safe_globals()
 # reproducing it keeps ``xy`` a single symbol (no implicit multiplication),
 # while the second set is the textbook-shorthand fallback the old code used.
 _PLAIN_TRANSFORMATIONS = standard_transformations + (convert_xor,)
-_IMPLICIT_TRANSFORMATIONS = standard_transformations + (implicit_multiplication_application,)
+_IMPLICIT_TRANSFORMATIONS = standard_transformations + (convert_xor, implicit_multiplication_application)
+
+# Plain-text exponential spellings: e^x, e**x, e^{...}, e^(...). The prefix
+# capture lets "2e^x"/"xe^x" keep their implicit multiplication (2*exp(x)).
+_PLAIN_EPOW_RE = re.compile(
+    r'(^|[\s\S])e\s*(?:\^|\*\*)\s*'
+    r'(\{[^{}]*\}|\([^()]*\)|[A-Za-z0-9]+)')
+
+# Greek-letter variable names collide with SymPy functions (``beta``, ``gamma``,
+# ``zeta``, ...). ``beta*x`` used to raise ``TypeError: FunctionClass * Symbol``.
+# Binding them as plain symbols in the parser's local dict makes textbook input
+# such as ``alpha*x^2`` behave as the user expects.
+_GREEK_VARIABLES = frozenset({
+    'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
+    'iota', 'kappa', 'mu', 'nu', 'xi', 'rho', 'sigma', 'tau', 'phi', 'chi',
+    'psi', 'omega',
+})
+
+
+def _plain_local_dict(expr_str: str):
+    """Symbol overrides for Greek-letter identifiers present in ``expr_str``."""
+    names = [name for name in _GREEK_VARIABLES
+             if re.search(rf'(?<![A-Za-z0-9_]){name}(?![A-Za-z0-9_])', expr_str)]
+    if not names:
+        return None
+    return {name: Symbol(name) for name in names}
 
 
 def _reject_unsafe_syntax(expr_str: str) -> None:
@@ -583,17 +611,42 @@ def _reject_unsafe_syntax(expr_str: str) -> None:
                 raise ValueError('表达式包含不允许的语法')
 
 
+def _rewrite_plain_e_powers(expr_str: str) -> str:
+    """Turn plain-text ``e^x`` / ``e**x`` into ``exp(x)``.
+
+    The LaTeX branch already does this (MathLive emits ``e^{x}``); keeping the
+    same meaning in the plain branch preserves textbook input. Braced and
+    parenthesised exponents are kept as one unit; a preceding identifier gets an
+    explicit ``*`` so ``2e^x`` / ``xe^x`` do not fuse into one symbol.
+    """
+    if 'e' not in expr_str:
+        return expr_str
+
+    def replace(match):
+        prefix, exponent = match.group(1), match.group(2)
+        if exponent[0] in '{(':
+            exponent = exponent[1:-1]
+        glue = '*' if prefix and (prefix[-1].isalnum() or prefix[-1] in '_)]') else ''
+        return f'{prefix}{glue}exp({exponent})'
+
+    return _PLAIN_EPOW_RE.sub(replace, expr_str)
+
+
 def _parse_plain_input(expr_str: str, trusted: bool) -> Expr:
     """Reproduce ``sympify``'s string parsing without exposing builtins."""
     if not trusted:
         _reject_unsafe_syntax(expr_str)
+    expr_str = _rewrite_plain_e_powers(expr_str)
     global_dict = None if trusted else _SAFE_GLOBALS
+    local_dict = _plain_local_dict(expr_str)
     try:
         return parse_expr(expr_str, global_dict=global_dict,
+                          local_dict=local_dict,
                           transformations=_PLAIN_TRANSFORMATIONS)
     except Exception:  # pylint: disable=broad-exception-caught
         try:
             return parse_expr(expr_str, global_dict=global_dict,
+                              local_dict=local_dict,
                               transformations=_IMPLICIT_TRANSFORMATIONS)
         except Exception as exc:  # pylint: disable=broad-exception-caught
             raise ValueError(f'无法解析表达式: {expr_str}') from exc
@@ -612,6 +665,11 @@ def cached_sympify(expr_str: str, trusted: bool = False) -> Expr:
     if not isinstance(expr_str, str):
         return sympify(expr_str)  # type: ignore
     expr_str = _normalize_infinities(expr_str)
+    if not trusted:
+        # Run the syntax guard before choosing a parser: an input containing
+        # "=" now routes to the LaTeX branch, and that must not become a way to
+        # skip the blacklist (e.g. exec("x=1")).
+        _reject_unsafe_syntax(expr_str)
     # Braced MathLive powers (2^{1000000}) are LaTeX: parse_latex keeps them as
     # an unevaluated Pow, so they must NOT go through the plain-text parser.
     if _has_huge_power_literal(expr_str) and not _is_latex(expr_str):
