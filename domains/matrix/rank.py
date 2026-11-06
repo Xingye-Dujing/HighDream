@@ -53,7 +53,7 @@ class Rank(CommonMatrixCalculator):
             # Find pivot element
             pivot_found = False
             for r in range(pivot_row, m):
-                if current_matrix[r, pivot_col] != 0:
+                if not CommonMatrixCalculator.is_symbolically_zero(current_matrix[r, pivot_col]):
                     pivot_found = True
                     if r != pivot_row:
                         if show_steps:
@@ -81,7 +81,7 @@ class Rank(CommonMatrixCalculator):
 
                 # Eliminate elements below pivot
                 for r in range(pivot_row + 1, m):
-                    if current_matrix[r, pivot_col] != 0:
+                    if not CommonMatrixCalculator.is_symbolically_zero(current_matrix[r, pivot_col]):
                         factor = current_matrix[r, pivot_col]
                         if show_steps:
                             self.step_generator.add_step(
@@ -93,8 +93,9 @@ class Rank(CommonMatrixCalculator):
                 pivot_row += 1
 
             else:
-                self.step_generator.add_step(
-                    f"\\text{{第 {pivot_col + 1} 列没有主元}}")
+                if show_steps:
+                    self.step_generator.add_step(
+                        f"\\text{{第 {pivot_col + 1} 列没有主元}}")
 
             pivot_col += 1
 
@@ -111,7 +112,8 @@ class Rank(CommonMatrixCalculator):
             # Count non-zero rows
             non_zero_rows = 0
             for i in range(m):
-                if any(current_matrix_simplified[i, j] != 0 for j in range(n)):
+                if any(not CommonMatrixCalculator.is_symbolically_zero(current_matrix_simplified[i, j])
+                       for j in range(n)):
                     non_zero_rows += 1
 
             self.step_generator.add_step(f"\\text{{非零行数: }} {non_zero_rows}")
@@ -275,7 +277,8 @@ class Rank(CommonMatrixCalculator):
             if show_steps:
                 self.step_generator.add_step(r"\text{零矩阵, 所有元素都为0}")
         elif rank == 0:
-            rank = 1 if any(A[i, j] != 0 for i in range(m)
+            rank = 1 if any(not CommonMatrixCalculator.is_symbolically_zero(A[i, j])
+                            for i in range(m)
                             for j in range(n)) else 0
             if show_steps and rank == 1:
                 self.step_generator.add_step(
@@ -358,8 +361,8 @@ class Rank(CommonMatrixCalculator):
         except Exception as e:
             if show_steps:
                 self.step_generator.add_step(f"\\text{{特征值计算失败: {str(e)}}}")
-            # Fallback to row echelon method
-            return self.rank_by_row_echelon(A, show_steps=False)
+            # Fallback to row echelon method (keep the accumulated steps)
+            return self.rank_by_row_echelon(A, show_steps=False, is_clear=False)
 
     def rank_by_row_reduction(self, matrix_input: str, show_steps: bool = True, is_clear: bool = True) -> int:
         """Method 4: Compute rank using the reduced row echelon form.
@@ -440,14 +443,15 @@ class Rank(CommonMatrixCalculator):
         is_diagonal = True
         for i in range(m):
             for j in range(n):
-                if i != j and A[i, j] != 0:
+                if i != j and not CommonMatrixCalculator.is_symbolically_zero(A[i, j]):
                     is_diagonal = False
                     break
             if not is_diagonal:
                 break
 
         if is_diagonal:
-            nonzero_diag = sum(1 for i in range(min(m, n)) if A[i, i] != 0)
+            nonzero_diag = sum(1 for i in range(min(m, n))
+                               if not CommonMatrixCalculator.is_symbolically_zero(A[i, i]))
             if show_steps:
                 self.step_generator.add_step(r"\text{对角矩阵: 非零元素只在主对角线上}")
                 self.step_generator.add_step(
@@ -455,9 +459,9 @@ class Rank(CommonMatrixCalculator):
                 self.step_generator.add_step(r"\text{说明: 秩等于非零对角线元素的个数}")
             return nonzero_diag
 
-        det_A = A.det()
+        det_A = simplify(A.det())
         # Check for full-rank square matrix
-        if m == n and det_A != 0:
+        if m == n and not CommonMatrixCalculator.is_symbolically_zero(det_A):
             if show_steps:
                 self.step_generator.add_step(
                     f"\\text{{满秩方阵: }} \\det(A) = {latex(det_A)} \\neq 0")

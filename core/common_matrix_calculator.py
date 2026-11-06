@@ -32,6 +32,23 @@ class CommonMatrixCalculator(ABC):
         """True when a matrix has as many rows as columns."""
         return matrix.rows == matrix.cols
 
+    @staticmethod
+    def is_symbolically_zero(value) -> bool:
+        """True when the entry can be shown to be zero.
+
+        A plain ``value == 0`` wrongly reports e.g. ``sin(x)**2 + cos(x)**2 - 1``
+        or ``cot(2x) - (cos(x)**2 - sin(x)**2)/(2sin(x)cos(x))`` as a nonzero pivot.
+        ``simplify`` first; undecidable stays nonzero (matching the historical
+        structural check's bias, so no previously-working case flips)."""
+        if getattr(value, 'is_zero', None) is True:
+            return True
+        if getattr(value, 'is_zero', None) is False:
+            return False
+        try:
+            return bool(simplify(value).is_zero)
+        except Exception:  # pylint: disable=broad-exception-caught
+            return False
+
     def add_matrix(self, matrix: str | Matrix, name: str = "A") -> None:
         """Add a matrix to the calculation steps display."""
         self.step_generator.add_step(f"{name} = {latex(matrix)}")
