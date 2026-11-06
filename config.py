@@ -25,6 +25,10 @@ HARD_MAX_ITERATIONS = 200
 # derivative engine, and rational functions grow super-linearly, so 200 orders
 # take minutes. Series taught in the UI use small orders.
 HARD_MAX_TAYLOR_ORDER = 20
+# Number of complex n-th roots listed by the De Moivre operation. Each root is
+# rendered separately; the UI only ever needs a handful and a 200-root list made
+# one request take minutes (simplify per root).
+HARD_MAX_COMPLEX_ROOTS = 24
 # Integer-exponent literals with at least this many digits (e.g. 2**1000000 ->
 # exponent "1000000" is 7 digits) are parsed with evaluation disabled, so huge
 # integer powers are never materialized -- doing so wastes CPU/memory and trips

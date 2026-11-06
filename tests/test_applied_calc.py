@@ -348,6 +348,19 @@ def test_auto_matrix_svd_and_symbolic():
     assert '$' not in sym and len(sym) > 20
 
 
+def test_complex_nth_roots_is_bounded():
+    """Asking for 200 n-th roots used to run simplify() per root (minutes)."""
+    t0 = time.time()
+    body = _res('complex_nth_roots', expression='1+i', order='200')
+    assert time.time() - t0 < 30, 'complex_nth_roots too slow'
+    from config import HARD_MAX_COMPLEX_ROOTS  # pylint: disable=import-outside-toplevel
+    assert f'z_{{{HARD_MAX_COMPLEX_ROOTS - 1}}}' in body
+    assert f'z_{{{HARD_MAX_COMPLEX_ROOTS}}}' not in body
+    # Exact roots of 1 (n=4) are 1, i, -1, -i.
+    body = _res('complex_nth_roots', expression='1', order='4')
+    assert 'z_{1}=i' in body and 'z_{3}=-i' in body
+
+
 def test_triple_integral_uses_the_substituted_variable():
     """∫₀¹∫₀¹∫₀¹ (x+y+z) dx dy dz = 3/2.
 

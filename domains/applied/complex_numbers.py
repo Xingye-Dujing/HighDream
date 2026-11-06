@@ -2,7 +2,7 @@
 
 from sympy import Abs, Eq, I, S, Symbol, arg, expand, exp, im, pi, re, root, simplify, solve
 
-from config import HARD_MAX_ITERATIONS
+from config import HARD_MAX_COMPLEX_ROOTS
 from utils.cache_utils import cached_sympify as sympify
 
 from domains.applied._common import align, expr_text, get_var, render_note as note
@@ -45,7 +45,7 @@ def complex_nth_roots(data):
         return False, '开方阶数 n 需为正整数'
     if n <= 0:
         return False, '开方阶数 n 需为正整数'
-    n = min(n, HARD_MAX_ITERATIONS)
+    n = min(n, HARD_MAX_COMPLEX_ROOTS)
     r = simplify(Abs(w))
     theta = arg(w)
     modulus = root(r, n) if r.is_number else r ** (S(1) / n)
@@ -53,8 +53,13 @@ def complex_nth_roots(data):
     items.append((note(f"n 次根: z_k = |w|^{{1/n}}·exp(i·(θ + 2πk)/n), k = 0..{n-1}"), None))
     for k in range(n):
         angle = (theta + 2 * pi * k) / n
-        zk = simplify(expand(modulus * exp(I * angle), complex=True))
-        items.append((Eq(Symbol('z_%d' % k), zk), note(f"第 {k} 个根 (k={k})")))
+        # Keep the exact exponential (polar) form |w|^{1/n}·e^{i(θ+2πk)/n}.
+        # Expanding into a+bi produces enormous nested radicals for larger n
+        # (kilobytes per root) and a full simplify() per root triggered a
+        # trigsimp explosion (10 s for just five roots).
+        zk = modulus * exp(I * angle)
+        items.append((Eq(Symbol(f'z_{k}'), zk),
+                      note(f"第 {k} 个根 (k={k}), 指数形式")))
     return True, align(items)
 
 
