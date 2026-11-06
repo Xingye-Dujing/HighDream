@@ -20,10 +20,15 @@ from utils.cache_utils import cached_sympify
 
 def _to_float(expr, var, xval):
     """f(xval) as a finite float within magnitude cap, else None (a polyline break)."""
-    val = expr.subs(var, xval)
     try:
+        # subs() itself can raise (e.g. factorial(-3) -> gamma pole, exp towers
+        # overflowing); the substitution must be inside the guard too.
+        val = expr.subs(var, xval)
         f = float(N(val))
-    except (TypeError, ValueError):
+    except Exception:  # pylint: disable=broad-exception-caught
+        # SymPy's numeric conversion can raise OverflowError (huge exp towers),
+        # RecursionError (floor/sign derivatives), or complex TypeError; a plot
+        # must degrade to a gap, never turn into a 500.
         return None
     if not math.isfinite(f) or abs(f) > PLOT_MAX_ABS_Y:
         return None
@@ -44,7 +49,7 @@ def _eval_float(expr, var, xval):
     try:
         val = expr.subs(var, Float(repr(xval)))
         f = float(N(val))
-    except (TypeError, ValueError, ArithmeticError, AttributeError):
+    except Exception:  # pylint: disable=broad-exception-caught
         return None
     return f if math.isfinite(f) else None
 
@@ -236,7 +241,8 @@ def sample_curve(data):
         try:
             slope = float(N(expr.diff(var).subs(var, Float(repr(a)))))
             y0 = float(N(expr.subs(var, Float(repr(a)))))
-        except (TypeError, ValueError):
+        except Exception:  # pylint: disable=broad-exception-caught
+            # floor/sign derivatives recurse inside evalf; exp towers overflow.
             slope = y0 = None
         if slope is not None and math.isfinite(slope) and math.isfinite(y0):
             out['tangent'] = {

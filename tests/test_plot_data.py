@@ -44,6 +44,26 @@ def test_huge_power_does_not_raise():
     assert res['success'] is True
 
 
+def test_numeric_failures_degrade_to_holes():
+    """floor/sign/gamma-pole/exp-tower sampling must not raise a 500.
+
+    Regression: subs() ran outside the try in ``_to_float``, so floor/sign
+    (RecursionError in evalf), factorial at a negative integer (gamma pole) and
+    exp(exp(exp(x))) (OverflowError) escaped the plot endpoint.
+    """
+    for expr, window in (
+        ('floor(x)', (-10, 10)),
+        ('sign(x)', (-10, 10)),
+        ('factorial(x)', (-10, 10)),
+        ('exp(exp(exp(x)))', (700, 800)),
+    ):
+        res = sample_curve({'expression': expr, 'variable': 'x',
+                            'xmin': window[0], 'xmax': window[1],
+                            'samples': 37, 'tangent_at': sum(window) / 2})
+        assert res['success'] is True, (expr, res)
+        assert res['points'], expr
+
+
 def test_one_sided_window_keeps_direction():
     # Only a lower bound: the window must run forwards, not [100 .. 10].
     res = sample_curve({'expression': 'x', 'xmin': 100, 'samples': 5})
