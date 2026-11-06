@@ -36,7 +36,7 @@ class Inverter(CommonMatrixCalculator):
             self.add_matrix(matrix, "A")
             self.step_generator.add_step(f"\\det(A) = {latex(det)}")
 
-        if det == 0:
+        if CommonMatrixCalculator.is_symbolically_zero(det):
             if show_steps:
                 self.step_generator.add_step(r"\text{矩阵行列式为 0, 不可逆}")
             return False
@@ -147,7 +147,7 @@ class Inverter(CommonMatrixCalculator):
             # Find pivot element
             pivot_row = i
             for r in range(i, n):
-                if augmented[r, i] != 0:
+                if not CommonMatrixCalculator.is_symbolically_zero(augmented[r, i]):
                     pivot_row = r
                     break
 
@@ -172,7 +172,7 @@ class Inverter(CommonMatrixCalculator):
 
             # Eliminate other rows
             for j in range(n):
-                if j != i and augmented[j, i] != 0:
+                if j != i and not CommonMatrixCalculator.is_symbolically_zero(augmented[j, i]):
                     factor = augmented[j, i]
                     if show_steps:
                         self.step_generator.add_step(
@@ -344,8 +344,9 @@ class Inverter(CommonMatrixCalculator):
             # Calculate L's i-th column
             for j in range(i + 1, n):
                 sum_val = sum(L[j, k] * U[k, i] for k in range(i))
-                if U[i, i] == 0:
-                    self.step_generator.add_step(r"\textbf{不能进行 LU 分解}")
+                if CommonMatrixCalculator.is_symbolically_zero(U[i, i]):
+                    if show_steps:
+                        self.step_generator.add_step(r"\textbf{不能进行 LU 分解}")
                     return None
                 L[j, i] = (A[j, i] - sum_val) / U[i, i]
 
@@ -503,7 +504,7 @@ class Inverter(CommonMatrixCalculator):
             # Find pivot element
             pivot_row = col
             for r in range(col, n):
-                if A_work[r, col] != 0:
+                if not CommonMatrixCalculator.is_symbolically_zero(A_work[r, col]):
                     pivot_row = r
                     break
 
@@ -533,7 +534,7 @@ class Inverter(CommonMatrixCalculator):
 
             # Eliminate other rows
             for row in range(n):
-                if row != col and A_work[row, col] != 0:
+                if row != col and not CommonMatrixCalculator.is_symbolically_zero(A_work[row, col]):
                     factor = A_work[row, col]
                     if show_steps:
                         self.step_generator.add_step(
@@ -591,7 +592,8 @@ class Inverter(CommonMatrixCalculator):
             "diagonal": "对角矩阵",
             "permutation": "置换矩阵",
             "upper_triangular": "上三角矩阵",
-            "lower_triangular": "下三角矩阵"
+            "lower_triangular": "下三角矩阵",
+            "general": "一般矩阵",
         }
         A = self.parse_matrix_input(matrix_input)
 
@@ -602,6 +604,13 @@ class Inverter(CommonMatrixCalculator):
             return None
 
         matrix_type = self.check_special_matrix(A)
+
+        if matrix_type == "general":
+            # No specialized shortcut: fall back to the general Gauss-Jordan path
+            # so direct callers (not only the dispatch) get a real inverse.
+            if show_steps:
+                self.step_generator.add_step(r"\text{不是特殊矩阵, 使用一般方法求逆}")
+            return self.inverse_by_augmented(matrix_input, show_steps, simplify_result, is_clear=False)
 
         if show_steps:
             self.step_generator.add_step(r"\textbf{特殊矩阵求逆}")

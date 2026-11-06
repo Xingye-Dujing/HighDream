@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
-from sympy import And, Eq, Expr, Matrix, Ne, Or, latex, simplify, simplify_logic, satisfiable
+from sympy import And, Eq, Expr, Matrix, Ne, Or, S, latex, simplify, simplify_logic, satisfiable
 from sympy.core.relational import Relational
 
 
@@ -132,7 +132,10 @@ class BranchManager:
             cond_sets = [g.conditions for g in group]
             ors = Or(*[And(*conds) if conds else True for conds in cond_sets])
             simplified_ors = simplify_logic(ors, force=True)
-            if simplified_ors is False:
+            # Discard the group only when the logic solver proved it unsatisfiable.
+            # ``== False`` / bool() raise on symbolic relationals, so the honest
+            # test is syntactic: Python's False or sympy's S.false.
+            if simplified_ors is False or simplified_ors == S.false:
                 # Discard unsatisfiable group
                 continue
             # Use the first branch as base, merge steps, and add merge explanation.

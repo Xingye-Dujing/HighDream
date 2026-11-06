@@ -172,6 +172,7 @@ class RefCalculator:
                 if swap_r != pivot_row:
                     matrix, expl = apply_swap_rule(
                         matrix, pivot_row, swap_r)
+                    branch.matrix = matrix.copy()
                     branch.add_step(matrix.copy(), expl)
                 # If the pivot element contains symbols and current conditions are not enough
                 # to determine it is non-zero, record it as a denominator for case analysis.
